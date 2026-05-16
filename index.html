@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Damas Multiplayer Seguro - Firebase</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-bg: #16213e;
+            --accent-color: #e94560;
+            --light-square: #f0d9b5;
+            --dark-square: #b58863;
+            --p1-color: #e74c3c;
+            --p2-color: #2c3e50;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            color: var(--text-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 5px 0 15px 0;
+            border: none;
+            border-radius: 8px;
+            background-color: #0f172a;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        input:focus {
+            outline: 2px solid var(--accent-color);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        button:disabled {
+            background-color: #444;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #ff5e7e;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #2ecc71;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #27ae60;
+        }
+
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .status-panel {
+            background-color: var(--panel-bg);
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .badge-p1 { background-color: var(--p1-color); }
+        .badge-p2 { background-color: var(--p2-color); border: 1px solid #7f8c8d;}
+
+        .board-wrapper {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 4px solid #2c1d11;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: 100%;
+            height: 100%;
+        }
+
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .light { background-color: var(--light-square); }
+        .dark { background-color: var(--dark-square); }
+
+        .square.highlight {
+            box-shadow: inset 0 0 15px rgba(46, 204, 113, 0.8);
+            background-color: #a3e4d7;
+        }
+
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.4), inset 0 4px 4px rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .p1-piece { background-color: var(--p1-color); border: 2px solid #b71c1c; }
+        .p2-piece { background-color: var(--p2-color); border: 2px solid #111; }
+
+        .piece.selected {
+            transform: scale(1.1);
+            outline: 3px solid #2ecc71;
+            box-shadow: 0 0 20px #2ecc71;
+        }
+
+        .king::after {
+            content: '👑';
+            font-size: 1.2rem;
+            color: #f1c40f;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 1.8rem; }
+            .card { padding: 20px; }
+            .status-panel { font-size: 0.9rem; }
+            .king::after { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Damas Multiplayer</h1>
+
+    <!-- Tela do Lobby -->
+    <div id="lobby-screen" class="card">
+        <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
+        
+        <label for="name-input">Seu Nome:</label>
+        <input type="text" id="name-input" placeholder="Digite seu nome" maxlength="15" disabled>
+
+        <label for="room-input">Código da Sala:</label>
+        <input type="text" id="room-input" placeholder="Ex: pai" maxlength="15" disabled>
+        
+        <div class="btn-group">
+            <button id="join-btn" disabled>Jogar Online (Multiplayer)</button>
+            <button id="practice-btn" class="btn-secondary" disabled>Modo Treino (Testar Sozinho)</button>
+        </div>
+    </div>
+
+    <!-- Tela do Jogo -->
+    <div id="game-screen">
+        <div class="status-panel">
+            <div class="status-row">
+                <div>Sala: <span id="display-room" style="color: var(--accent-color);"></span></div>
+                <div id="turn-indicator">Carregando turno...</div>
+            </div>
+            <div class="status-row" style="border-top: 1px solid #333; padding-top: 5px; margin-top: 5px; font-size:0.85rem; color:#aaa;">
+                <div id="players-names">Vermelho vs Preto</div>
+                <div>Você é: <span id="player-badge" class="badge">Espectador</span></div>
+            </div>
+        </div>
+
+        <div class="board-wrapper">
+            <div id="board" class="board"></div>
+        </div>
+
+        <button id="leave-btn" style="background-color: #555; max-width: 200px;">Sair da Sala</button>
+    </div>
+</div>
+
+<!-- Firebase SDK via CDN -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Suas credenciais do Firebase[span_0](start_span)[span_0](end_span)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAyjusKD0t6DOtI93bxYbWRSiSHe0jvStA",
+        authDomain: "damas-57b07.firebaseapp.com",
+        projectId: "damas-57b07",
+        storageBucket: "damas-57b07.firebasestorage.app",
+        messagingSenderId: "178140626924",
+        appId: "1:178140626924:web:195432bbba189d48630ac9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    let playerId = null; 
+    let roomId = "";
+    let playerRole = "spectator"; // p1, p2, spectator, ou "both" (Modo Treino)
+    let isPracticeMode = false;
+    let currentGameState = null;
+    let selectedPiece = null;
+    let validMoves = [];
+
+    // Elementos DOM
+    const lobbyScreen = document.getElementById('lobby-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const nameInput = document.getElementById('name-input');
+    const roomInput = document.getElementById('room-input');
+    const joinBtn = document.getElementById('join-btn');
+    const practiceBtn = document.getElementById('practice-btn');
+    const leaveBtn = document.getElementById('leave-btn');
+    const displayRoom = document.getElementById('display-room');
+    const turnIndicator = document.getElementById('turn-indicator');
+    const playersNamesEl = document.getElementById('players-names');
+    const playerBadge = document.getElementById('player-badge');
+    const boardEl = document.getElementById('board');
+    const authStatusEl = document.getElementById('auth-status');
+
+    // Inicialização da Autenticação Anônima para Segurança
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            playerId = user.uid; 
+            authStatusEl.innerText = "Conexão Segura Ativa ✓";
+            nameInput.disabled = false;
+            roomInput.disabled = false;
+            joinBtn.disabled = false;
+            practiceBtn.disabled = false;
+        } else {
+            signInAnonymously(auth).catch(err => {
+                authStatusEl.innerText = "Erro de conexão segura.";
+                authStatusEl.style.color = "var(--accent-color)";
+            });
+        }
+    });
+
+    function getInitialBoard() {
+        let board = Array(8).fill(null).map(() => Array(8).fill(0));
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if ((r + c) % 2 === 1) {
+                    if (r < 3) board[r][c] = 3;      // Pretas (P2)
+                    else if (r > 4) board[r][c] = 1; // Vermelhas (P1)
+                }
+            }
+        }
+        return board;
+    }
+
+    // Ação: Jogar Online (Multiplayer Real)
+    joinBtn.addEventListener('click', () => {
+        const playerName = nameInput.value.trim();
+        const roomName = roomInput.value.trim().toLowerCase();
+        
+        if (!playerName) return alert("Por favor, digite seu nome para identificação.");
+        if (!roomName) return alert("Por favor, digite um código de sala.");
+        
+        isPracticeMode = false;
+        roomId = roomName;
+        joinRoom(roomName, playerName);
+    });
+
+    // Ação: Modo Treino (Testar Sozinho no Leitor)
+    practiceBtn.addEventListener('click', () => {
+        const playerName = nameInput.value.trim() || "Desenvolvedor";
+        isPracticeMode = true;
+        playerRole = "both"; // Permite controlar ambos os lados localmente
+        roomId = "treino_local";
+
+        currentGameState = {
+            status: "playing",
+            turn: "p1",
+            players: { p1_name: playerName, p2_name: "Clone Teste" },
+            board: getInitialBoard()
+        };
+
+        setupUIForGame();
+        renderGame();
+    });
+
+    leaveBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+
+    // Conexão e sincronização com o Firebase Realtime Database
+    async function joinRoom(roomName, playerName) {
+        const roomRef = ref(db, 'rooms/' + roomName);
+        const snapshot = await get(roomRef);
+        const data = snapshot.val();
+
+        if (!data) {
+            playerRole = "p1";
+            const newRoom = {
+                status: "waiting",
+                turn: "p1",
+                players: { 
+                    p1: playerId, p1_name: playerName,
+                    p2: "", p2_name: "" 
+                },
+                board: getInitialBoard()
+            };
+            await set(roomRef, newRoom);
+        } else {
+            if (data.players.p1 === playerId) {
+                playerRole = "p1";
+                await update(ref(db, `rooms/${roomName}/players`), { p1_name: playerName });
+            } else if (data.players.p2 === playerId || data.players.p2 === "") {
+                playerRole = "p2";
+                const updates = { "players/p2": playerId, "players/p2_name": playerName };
+                if (data.status === "waiting") updates.status = "playing";
+                await update(roomRef, updates);
+            } else {
+                playerRole = "spectator";
+            }
+        }
+
+        setupUIForGame();
+        
+        onValue(roomRef, (snap) => {
+            if (!isPracticeMode) {
+                currentGameState = snap.val();
+                if (currentGameState) renderGame();
+            }
+        });
+    }
+
+    function setupUIForGame() {
+        lobbyScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        displayRoom.innerText = isPracticeMode ? "Modo Treino" : roomId;
+
+        if (playerRole === "p1") {
+            playerBadge.innerText = "Vermelho (P1)";
+            playerBadge.className = "badge badge-p1";
+        } else if (playerRole === "p2") {
+            playerBadge.innerText = "Preto (P2)";
+            playerBadge.className = "badge badge-p2";
+        } else if (playerRole === "both") {
+            playerBadge.innerText = "Modo Teste";
+            playerBadge.className = "badge";
+            playerBadge.style.backgroundColor = "#2ecc71";
+        } else {
+            playerBadge.innerText = "Espectador";
+            playerBadge.className = "badge";
+        }
+    }
+
+    function renderGame() {
+        // Nomes dos competidores sincronizados
+        const name1 = currentGameState.players.p1_name || "Aguardando...";
+        const name2 = currentGameState.players.p2_name || "Aguardando...";
+        playersNamesEl.innerText = `${name1} VS ${name2}`;
+
+        if (currentGameState.status === "waiting") {
+            turnIndicator.innerText = "Aguardando Oponente...";
+        } else {
+            const turnText = currentGameState.turn === "p1" ? `Vez de ${name1}` : `Vez de ${name2}`;
+            const isMyTurn = currentGameState.turn === playerRole || playerRole === "both";
+            turnIndicator.innerText = isMyTurn ? `${turnText} (Sua vez!)` : turnText;
+        }
+
+        boardEl.innerHTML = "";
+        const board = currentGameState.board;
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const square = document.createElement('div');
+                const isDark = (r + c) % 2 === 1;
+                square.className = `square ${isDark ? 'dark' : 'light'}`;
+                
+                const isHighlight = validMoves.some(m => m.r === r && m.c === c);
+                if (isHighlight) square.classList.add('highlight');
+
+                const cellValue = board[r][c];
+                if (cellValue !== 0) {
+                    const piece = document.createElement('div');
+                    piece.className = `piece ${ (cellValue === 1 || cellValue === 2) ? 'p1-piece' : 'p2-piece' }`;
+                    if (cellValue === 2 || cellValue === 4) piece.classList.add('king');
+                    
+                    if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) {
+                        piece.classList.add('selected');
+                    }
+                    square.appendChild(piece);
+                }
+
+                square.addEventListener('click', () => handleSquareClick(r, c));
+                boardEl.appendChild(square);
+            }
+        }
+    }
+
+    function handleSquareClick(r, c) {
+        if (currentGameState.status !== "playing") return;
+        
+        // Se não for o seu turno (e não estiver no modo treino), bloqueia o clique
+        if (playerRole !== "both" && currentGameState.turn !== playerRole) return;
+
+        const board = currentGameState.board;
+        const cellValue = board[r][c];
+
+        const moveIndex = validMoves.findIndex(m => m.r === r && m.c === c);
+        if (moveIndex !== -1) {
+            executeMove(validMoves[moveIndex]);
+            return;
+        }
+
+        if (cellValue !== 0) {
+            // No modo treino você clica em qualquer peça, no online apenas na sua
+            const isP1Piece = (cellValue === 1 || cellValue === 2);
+            const isP2Piece = (cellValue === 3 || cellValue === 4);
+            
+            const isMyPiece = (playerRole === "both" && ((currentGameState.turn === "p1" && isP1Piece) || (currentGameState.turn === "p2" && isP2Piece))) ||
+                              (playerRole === 'p1' && isP1Piece) ||
+                              (playerRole === 'p2' && isP2Piece);
+
+            if (isMyPiece) {
+                selectedPiece = { r, c };
+                validMoves = calculateValidMoves(r, c, board, cellValue);
+                renderGame();
+            } else {
+                clearSelection();
+            }
+        } else {
+            clearSelection();
+        }
+    }
+
+    function clearSelection() {
+        selectedPiece = null;
+        validMoves = [];
+        renderGame();
+    }
+
+    function calculateValidMoves(row, col, board, piece) {
+        let moves = [];
+        let directions = [];
+
+        if (piece === 1) directions = [[-1, -1], [-1, 1]]; 
+        if (piece === 3) directions = [[1, -1], [1, 1]];   
+        if (piece === 2 || piece === 4) directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; 
+
+        directions.forEach(([dr, dc]) => {
+            let nr = row + dr;
+            let nc = col + dc;
+            if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                if (board[nr][nc] === 0) {
+                    moves.push({ r: nr, c: nc, type: 'normal' });
+                } else {
+                    const currentIsP1 = (piece === 1 || piece === 2);
+                    const targetPiece = board[nr][nc];
+                    const targetIsOpponent = currentIsP1 ? (targetPiece === 3 || targetPiece === 4) : (targetPiece === 1 || targetPiece === 2);
+
+                    if (targetIsOpponent) {
+                        let jr = nr + dr;
+                        let jc = nc + dc;
+                        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && board[jr][jc] === 0) {
+                            moves.push({ r: jr, c: jc, type: 'capture', capR: nr, capC: nc });
+                        }
+                    }
+                }
+            }
+        });
+        return moves;
+    }
+
+    async function executeMove(move) {
+        let board = JSON.parse(JSON.stringify(currentGameState.board));
+        let piece = board[selectedPiece.r][selectedPiece.c];
+
+        board[move.r][move.c] = piece;
+        board[selectedPiece.r][selectedPiece.c] = 0;
+
+        if (move.type === 'capture') {
+            board[move.capR][move.capC] = 0;
+        }
+
+        if (piece === 1 && move.r === 0) board[move.r][move.c] = 2;
+        if (piece === 3 && move.r === 7) board[move.r][move.c] = 4;
+
+        const nextTurn = currentGameState.turn === "p1" ? "p2" : "p1";
+
+        selectedPiece = null;
+        validMoves = [];
+
+        if (isPracticeMode) {
+            // No modo treino, atualiza o estado local imediatamente sem enviar ao Firebase
+            currentGameState.board = board;
+            currentGameState.turn = nextTurn;
+            renderGame();
+        } else {
+            // Sincroniza de forma segura via regras do Firebase[span_1](start_span)[span_1](end_span)
+            const updates = {};
+            updates[`rooms/${roomId}/board`] = board;
+            updates[`rooms/${roomId}/turn`] = nextTurn;
+
+            try {
+                await update(ref(db), updates);
+            } catch (error) {
+                alert("Movimento não permitido!");
+                window.location.reload();
+            }
+        }
+    }
+</script>
+</body>
+</html>
