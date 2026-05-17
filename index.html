@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Damas Multiplayer Seguro - Firebase</title>
+    <title>Isiquel & Amigos - Jogo de Damas</title>
     <style>
         :root {
             --bg-color: #1a1a2e;
@@ -114,12 +114,17 @@
             transform: translateY(-2px);
         }
 
-        .btn-secondary {
-            background-color: #2ecc71;
-        }
-        .btn-secondary:hover:not(:disabled) {
-            background-color: #27ae60;
-        }
+        .btn-secondary { background-color: #2ecc71; }
+        .btn-secondary:hover:not(:disabled) { background-color: #27ae60; }
+
+        .btn-info { background-color: #3498db; }
+        .btn-info:hover:not(:disabled) { background-color: #2980b9; }
+
+        .btn-ranking { background-color: #9b59b6; }
+        .btn-ranking:hover:not(:disabled) { background-color: #8e44ad; }
+
+        .btn-spectate { background-color: #34495e; border: 1px solid #5d6d7e; }
+        .btn-spectate:hover:not(:disabled) { background-color: #415b76; }
 
         #game-screen {
             display: none;
@@ -157,6 +162,7 @@
 
         .badge-p1 { background-color: var(--p1-color); }
         .badge-p2 { background-color: var(--p2-color); border: 1px solid #7f8c8d;}
+        .badge-spec { background-color: #7f8c8d; color: #fff; }
 
         .board-wrapper {
             width: 100%;
@@ -224,10 +230,84 @@
         }
 
         .control-box {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             width: 100%;
             max-width: 500px;
+        }
+
+        /* Modais */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 10, 25, 0.85);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: var(--panel-bg);
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            text-align: left;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-content h2 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-size: 1.4rem;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .modal-content ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-content li {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .rank-table th, .rank-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+            font-size: 0.9rem;
+        }
+
+        .rank-table th {
+            background-color: #0f172a;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .rank-table tr:hover {
+            background-color: rgba(255,255,255,0.05);
         }
 
         @media (max-width: 480px) {
@@ -235,13 +315,15 @@
             .card { padding: 20px; }
             .status-panel { font-size: 0.9rem; }
             .king::after { font-size: 0.9rem; }
+            .control-box { grid-template-columns: 1fr 1fr; }
+            #rules-btn-game { grid-column: span 2; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Damas Multiplayer</h1>
+    <h1>Isiquel & Amigos</h1>
 
     <div id="lobby-screen" class="card">
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
@@ -254,7 +336,10 @@
         
         <div class="btn-group">
             <button id="join-btn" disabled>Jogar Online (Multiplayer)</button>
-            <button id="practice-btn" class="btn-secondary" disabled>Modo Treino (Testar Sozinho)</button>
+            <button id="spectate-btn" class="btn-spectate" disabled>Assistir Jogo (Espectador)</button>
+            <button id="practice-btn" class="btn-secondary" disabled>Contra a Máquina (Modo Treino)</button>
+            <button id="rules-btn-lobby" class="btn-info" disabled>Regras e Instruções</button>
+            <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Ranking Global</button>
         </div>
     </div>
 
@@ -275,9 +360,45 @@
         </div>
 
         <div class="control-box">
-            <button id="leave-btn" style="background-color: #555;">Sair da Sala</button>
-            <button id="reset-room-btn" style="background-color: #d35400;">Resetar Sala</button>
+            <button id="leave-btn" style="background-color: #555;">Sair</button>
+            <button id="reset-room-btn" style="background-color: #d35400;">Resetar</button>
+            <button id="rules-btn-game" class="btn-info">Regras</button>
         </div>
+    </div>
+</div>
+
+<div id="rules-modal" class="modal">
+    <div class="modal-content">
+        <h2>Como Funciona o Jogo?</h2>
+        <ul>
+            <li><strong>Início da Partida:</strong> O jogo online libera os movimentos quando 2 jogadores entrarem com a mesma sala. O Vermelho inicia jogando.</li>
+            <li><strong>Movimentos:</strong> Suas peças andam apenas 1 casa para frente pelas diagonais escuras.</li>
+            <li><strong>Capturas:</strong> Salte por cima da peça adversária para uma casa vazia atrás dela.</li>
+            <li><strong>Virar Dama (👑):</strong> Ao levar a peça até a última fileira adversária, ela vira Dama e anda livremente por todas as diagonais livres.</li>
+            <li><strong>Modo Treino:</strong> Jogue localmente contra o Robô do sistema. Ele calcula o melhor movimento e prioriza capturar suas peças!</li>
+        </ul>
+        <button id="close-rules-btn">Fechar</button>
+    </div>
+</div>
+
+<div id="rank-modal" class="modal">
+    <div class="modal-content" style="max-width: 550px;">
+        <h2>Ranking Global - Top Melhores</h2>
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Jogador</th>
+                    <th>Vitórias</th>
+                    <th>Derrotas</th>
+                    <th>Aproveitamento</th>
+                </tr>
+            </thead>
+            <tbody id="rank-table-body">
+                <tr><td colspan="5">Carregando dados dos competidores...</td></tr>
+            </tbody>
+        </table>
+        <button id="close-rank-btn" style="background-color: #555;">Fechar Janela</button>
     </div>
 </div>
 
@@ -286,7 +407,6 @@
     import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Suas credenciais do Firebase configuradas corretamente
     const firebaseConfig = {
         apiKey: "AIzaSyAyjusKD0t6DOtI93bxYbWRSiSHe0jvStA",
         authDomain: "damas-57b07.firebaseapp.com",
@@ -307,6 +427,7 @@
     let currentGameState = null;
     let selectedPiece = null;
     let validMoves = [];
+    let hasRecordedResult = false;
 
     // Elementos DOM
     const lobbyScreen = document.getElementById('lobby-screen');
@@ -314,6 +435,7 @@
     const nameInput = document.getElementById('name-input');
     const roomInput = document.getElementById('room-input');
     const joinBtn = document.getElementById('join-btn');
+    const spectateBtn = document.getElementById('spectate-btn');
     const practiceBtn = document.getElementById('practice-btn');
     const leaveBtn = document.getElementById('leave-btn');
     const resetRoomBtn = document.getElementById('reset-room-btn');
@@ -323,8 +445,27 @@
     const playerBadge = document.getElementById('player-badge');
     const boardEl = document.getElementById('board');
     const authStatusEl = document.getElementById('auth-status');
+    
+    const rulesModal = document.getElementById('rules-modal');
+    const rulesBtnLobby = document.getElementById('rules-btn-lobby');
+    const rulesBtnGame = document.getElementById('rules-btn-game');
+    const closeRulesBtn = document.getElementById('close-rules-btn');
 
-    // Estado da Autenticação do Firebase
+    const rankModal = document.getElementById('rank-modal');
+    const rankBtnLobby = document.getElementById('rank-btn-lobby');
+    const closeRankBtn = document.getElementById('close-rank-btn');
+    const rankTableBody = document.getElementById('rank-table-body');
+
+    rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
+    rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
+    closeRulesBtn.addEventListener('click', () => rulesModal.style.display = 'none');
+
+    rankBtnLobby.addEventListener('click', () => {
+        rankModal.style.display = 'flex';
+        loadLeaderboard();
+    });
+    closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             playerId = user.uid; 
@@ -332,7 +473,10 @@
             nameInput.disabled = false;
             roomInput.disabled = false;
             joinBtn.disabled = false;
+            spectateBtn.disabled = false;
             practiceBtn.disabled = false;
+            rulesBtnLobby.disabled = false;
+            rankBtnLobby.disabled = false;
         } else {
             signInAnonymously(auth).catch(err => {
                 authStatusEl.innerText = "Erro de conexão segura.";
@@ -341,42 +485,96 @@
         }
     });
 
-    // Gera a matriz inicial de damas padrão
     function getInitialBoard() {
         let board = Array(8).fill(null).map(() => Array(8).fill(0));
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 if ((r + c) % 2 === 1) {
-                    if (r < 3) board[r][c] = 3;      // Peças Pretas (P2)
-                    else if (r > 4) board[r][c] = 1; // Peças Vermelhas (P1)
+                    if (r < 3) board[r][c] = 3;      
+                    else if (r > 4) board[r][c] = 1; 
                 }
             }
         }
         return board;
     }
 
+    async function loadLeaderboard() {
+        rankTableBody.innerHTML = "<tr><td colspan='5'>Buscando pontuações...</td></tr>";
+        const rankRef = ref(db, 'leaderboard');
+        const snapshot = await get(rankRef);
+        const data = snapshot.val();
+
+        if (!data) {
+            rankTableBody.innerHTML = "<tr><td colspan='5'>Nenhuma partida registrada ainda!</td></tr>";
+            return;
+        }
+
+        const sortedPlayers = Object.values(data).sort((a, b) => b.wins - a.wins);
+        rankTableBody.innerHTML = "";
+
+        sortedPlayers.forEach((player, index) => {
+            const totalGames = player.wins + player.losses;
+            const pct = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>#${index + 1}</strong></td>
+                <td>${player.name}</td>
+                <td style="color:#2ecc71; font-weight:bold;">${player.wins}</td>
+                <td style="color:#e74c3c;">${player.losses}</td>
+                <td><span class="badge" style="background-color:#34495e;">${pct}%</span></td>
+            `;
+            rankTableBody.appendChild(row);
+        });
+    }
+
+    async function updatePlayerRanking(isWin) {
+        if (isPracticeMode || hasRecordedResult) return;
+        hasRecordedResult = true;
+
+        const userRankRef = ref(db, 'leaderboard/' + playerId);
+        const snapshot = await get(userRankRef);
+        let stats = snapshot.val() || { name: nameInput.value.trim(), wins: 0, losses: 0 };
+        
+        stats.name = nameInput.value.trim();
+        if (isWin) stats.wins += 1;
+        else stats.losses += 1;
+        await set(userRankRef, stats);
+    }
+
     joinBtn.addEventListener('click', () => {
         const playerName = nameInput.value.trim();
         const roomName = roomInput.value.trim().toLowerCase();
-        
-        if (!playerName) return alert("Por favor, digite seu nome para identificação.");
-        if (!roomName) return alert("Por favor, digite um código de sala.");
+        if (!playerName) return alert("Por favor, digite seu nome.");
+        if (!roomName) return alert("Por favor, digite o código da sala.");
         
         isPracticeMode = false;
+        hasRecordedResult = false;
         roomId = roomName;
-        joinRoom(roomName, playerName);
+        joinRoom(roomName, playerName, false);
     });
 
+    spectateBtn.addEventListener('click', () => {
+        const roomName = roomInput.value.trim().toLowerCase();
+        if (!roomName) return alert("Por favor, digite o código da sala para assistir.");
+        
+        isPracticeMode = false;
+        hasRecordedResult = false;
+        roomId = roomName;
+        joinRoom(roomName, "Olheiro", true);
+    });
+
+    // Ativação do treino contra o computador
     practiceBtn.addEventListener('click', () => {
-        const playerName = nameInput.value.trim() || "Desenvolvedor";
+        const playerName = nameInput.value.trim() || "Ezequiel";
         isPracticeMode = true;
-        playerRole = "both"; 
-        roomId = "treino_local";
+        playerRole = "p1"; // O humano joga com as vermelhas
+        roomId = "treino_maquina";
 
         currentGameState = {
             status: "playing",
             turn: "p1",
-            players: { p1_name: playerName, p2_name: "Clone Teste" },
+            players: { p1_name: playerName, p2_name: "Sistema Smart" },
             board: getInitialBoard()
         };
 
@@ -388,53 +586,58 @@
         window.location.reload();
     });
 
-    // RESET COMPLETO: Deleta a sala inteira do banco e reinicia limpo
     resetRoomBtn.addEventListener('click', async () => {
         if (isPracticeMode) {
             currentGameState.board = getInitialBoard();
+            currentGameState.status = "playing";
             currentGameState.turn = "p1";
             renderGame();
         } else {
             const roomRef = ref(db, 'rooms/' + roomId);
-            await set(roomRef, null); // Apaga os dados antigos do Firebase completamente
-            window.location.reload(); // Recarrega o app para voltar ao lobby limpo
+            await set(roomRef, null); 
+            window.location.reload(); 
         }
     });
 
-    // Entrada na sala
-    async function joinRoom(roomName, playerName) {
+    async function joinRoom(roomName, playerName, forceSpectator) {
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
         const data = snapshot.val();
 
-        if (!data) {
-            playerRole = "p1";
-            const newRoom = {
-                status: "waiting",
-                turn: "p1",
-                players: { 
-                    p1: playerId, 
-                    p1_name: playerName
-                },
-                board: getInitialBoard()
-            };
-            await set(roomRef, newRoom);
+        if (forceSpectator) {
+            playerRole = "spectator";
+            if (!data) {
+                alert("Esta sala ainda não existe.");
+                window.location.reload();
+                return;
+            }
         } else {
-            const players = data.players || {};
-            
-            if (players.p1 === playerId) {
+            if (!data) {
                 playerRole = "p1";
-                await update(ref(db, `rooms/${roomName}/players`), { p1_name: playerName });
-            } else if (!players.p2 || players.p2 === playerId || data.status === "waiting") {
-                playerRole = "p2";
-                const updates = {
-                    "players/p2": playerId,
-                    "players/p2_name": playerName,
-                    "status": "playing"
+                const newRoom = {
+                    status: "waiting",
+                    turn: "p1",
+                    players: { p1: playerId, p1_name: playerName },
+                    board: getInitialBoard()
                 };
-                await update(roomRef, updates);
+                await set(roomRef, newRoom);
             } else {
-                playerRole = "spectator";
+                const players = data.players || {};
+                
+                if (players.p1 === playerId) {
+                    playerRole = "p1";
+                    await update(ref(db, `rooms/${roomName}/players`), { p1_name: playerName });
+                } else if (!players.p2 || players.p2 === playerId || data.status === "waiting") {
+                    playerRole = "p2";
+                    const updates = {
+                        "players/p2": playerId,
+                        "players/p2_name": playerName,
+                        "status": "playing"
+                    };
+                    await update(roomRef, updates);
+                } else {
+                    playerRole = "spectator"; 
+                }
             }
         }
 
@@ -453,19 +656,19 @@
         gameScreen.style.display = 'flex';
         displayRoom.innerText = isPracticeMode ? "Modo Treino" : roomId;
 
-        if (playerRole === "p1") {
+        if (isPracticeMode) {
+            playerBadge.innerText = "Treino vs Máquina";
+            playerBadge.className = "badge";
+            playerBadge.style.backgroundColor = "#2ecc71";
+        } else if (playerRole === "p1") {
             playerBadge.innerText = "Vermelho (P1)";
             playerBadge.className = "badge badge-p1";
         } else if (playerRole === "p2") {
             playerBadge.innerText = "Preto (P2)";
             playerBadge.className = "badge badge-p2";
-        } else if (playerRole === "both") {
-            playerBadge.innerText = "Modo Teste";
-            playerBadge.className = "badge";
-            playerBadge.style.backgroundColor = "#2ecc71";
         } else {
-            playerBadge.innerText = "Espectador";
-            playerBadge.className = "badge";
+            playerBadge.innerText = "Espectador 👁️";
+            playerBadge.className = "badge badge-spec";
         }
     }
 
@@ -475,12 +678,24 @@
         const name2 = pData.p2_name || "Aguardando...";
         playersNamesEl.innerText = `${name1} VS ${name2}`;
 
-        if (currentGameState.status === "waiting") {
+        if (currentGameState.status === "finished") {
+            const winnerRole = currentGameState.winner;
+            const winnerName = winnerRole === "p1" ? name1 : name2;
+            turnIndicator.innerText = `🏆 FIM: ${winnerName} GANHOU!`;
+            turnIndicator.style.color = "#2ecc71";
+            
+            if (playerRole !== "spectator" && !isPracticeMode) {
+                const iWon = playerRole === winnerRole;
+                updatePlayerRanking(iWon);
+            }
+        } else if (currentGameState.status === "waiting") {
             turnIndicator.innerText = "Aguardando Oponente...";
+            turnIndicator.style.color = "#fff";
         } else {
+            turnIndicator.style.color = "#fff";
             const turnText = currentGameState.turn === "p1" ? `Vez de ${name1}` : `Vez de ${name2}`;
-            const isMyTurn = currentGameState.turn === playerRole || playerRole === "both";
-            turnIndicator.innerText = isMyTurn ? `${turnText} (Sua vez!)` : turnText;
+            const isMyTurn = currentGameState.turn === playerRole;
+            turnIndicator.innerText = isPracticeMode ? (currentGameState.turn === "p1" ? "Sua Vez de Jogar!" : "Máquina pensando...") : (isMyTurn ? `${turnText} (Sua vez!)` : turnText);
         }
 
         boardEl.innerHTML = "";
@@ -515,7 +730,9 @@
 
     function handleSquareClick(r, c) {
         if (currentGameState.status !== "playing") return;
-        if (playerRole !== "both" && currentGameState.turn !== playerRole) return;
+        // No modo treino o humano só mexe no turno p1
+        if (isPracticeMode && currentGameState.turn !== "p1") return;
+        if (!isPracticeMode && currentGameState.turn !== playerRole) return;
 
         const board = currentGameState.board;
         const cellValue = board[r][c];
@@ -528,11 +745,7 @@
 
         if (cellValue !== 0) {
             const isP1Piece = (cellValue === 1 || cellValue === 2);
-            const isP2Piece = (cellValue === 3 || cellValue === 4);
-            
-            const isMyPiece = (playerRole === "both" && ((currentGameState.turn === "p1" && isP1Piece) || (currentGameState.turn === "p2" && isP2Piece))) ||
-                              (playerRole === 'p1' && isP1Piece) ||
-                              (playerRole === 'p2' && isP2Piece);
+            const isMyPiece = isPracticeMode ? isP1Piece : ((playerRole === 'p1' && isP1Piece) || (playerRole === 'p2' && (cellValue === 3 || cellValue === 4)));
 
             if (isMyPiece) {
                 selectedPiece = { r, c };
@@ -584,6 +797,50 @@
         return moves;
     }
 
+    // Inteligência Artificial do Sistema (Máquina)
+    function runMachineAI() {
+        if (!isPracticeMode || currentGameState.status !== "playing" || currentGameState.turn !== "p2") return;
+
+        setTimeout(() => {
+            let board = currentGameState.board;
+            let movesPool = [];
+
+            // Captura todas as jogadas possíveis para as peças pretas (3 e 4)
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    let piece = board[r][c];
+                    if (piece === 3 || piece === 4) {
+                        let valid = calculateValidMoves(r, c, board, piece);
+                        valid.forEach(m => {
+                            movesPool.push({ from: { r, c }, to: m });
+                        });
+                    }
+                }
+            }
+
+            if (movesPool.length === 0) {
+                currentGameState.status = "finished";
+                currentGameState.winner = "p1";
+                renderGame();
+                return;
+            }
+
+            // Filtra se existe algum movimento de captura para comer peça
+            let captures = movesPool.filter(m => m.to.type === 'capture');
+            let chosen = null;
+
+            if (captures.length > 0) {
+                chosen = captures[Math.floor(Math.random() * captures.length)];
+            } else {
+                chosen = movesPool[Math.floor(Math.random() * movesPool.length)];
+            }
+
+            // Simula a seleção e execução da IA
+            selectedPiece = chosen.from;
+            executeMove(chosen.to);
+        }, 700); // 700 milissegundos de delay para simular pensamento
+    }
+
     async function executeMove(move) {
         let board = JSON.parse(JSON.stringify(currentGameState.board));
         let piece = board[selectedPiece.r][selectedPiece.c];
@@ -598,6 +855,20 @@
         if (piece === 1 && move.r === 0) board[move.r][move.c] = 2;
         if (piece === 3 && move.r === 7) board[move.r][move.c] = 4;
 
+        let redPieces = 0, blackPieces = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] === 1 || board[r][c] === 2) redPieces++;
+                if (board[r][c] === 3 || board[r][c] === 4) blackPieces++;
+            }
+        }
+
+        let nextStatus = "playing";
+        let winnerRole = "";
+
+        if (redPieces === 0) { nextStatus = "finished"; winnerRole = "p2"; }
+        if (blackPieces === 0) { nextStatus = "finished"; winnerRole = "p1"; }
+
         const nextTurn = currentGameState.turn === "p1" ? "p2" : "p1";
 
         selectedPiece = null;
@@ -606,11 +877,24 @@
         if (isPracticeMode) {
             currentGameState.board = board;
             currentGameState.turn = nextTurn;
+            if (nextStatus === "finished") {
+                currentGameState.status = "finished";
+                currentGameState.winner = winnerRole;
+            }
             renderGame();
+            
+            // Dispara a vez da Máquina caso o jogo continue
+            if (nextTurn === "p2" && nextStatus === "playing") {
+                runMachineAI();
+            }
         } else {
             const updates = {};
             updates[`rooms/${roomId}/board`] = board;
             updates[`rooms/${roomId}/turn`] = nextTurn;
+            if (nextStatus === "finished") {
+                updates[`rooms/${roomId}/status`] = "finished";
+                updates[`rooms/${roomId}/winner`] = winnerRole;
+            }
 
             try {
                 await update(ref(db), updates);
