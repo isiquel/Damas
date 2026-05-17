@@ -223,6 +223,13 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
+        .control-box {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -236,7 +243,6 @@
 <div class="container">
     <h1>Damas Multiplayer</h1>
 
-    <!-- Tela do Lobby -->
     <div id="lobby-screen" class="card">
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
         
@@ -252,7 +258,6 @@
         </div>
     </div>
 
-    <!-- Tela do Jogo -->
     <div id="game-screen">
         <div class="status-panel">
             <div class="status-row">
@@ -269,17 +274,19 @@
             <div id="board" class="board"></div>
         </div>
 
-        <button id="leave-btn" style="background-color: #555; max-width: 200px;">Sair da Sala</button>
+        <div class="control-box">
+            <button id="leave-btn" style="background-color: #555;">Sair da Sala</button>
+            <button id="reset-room-btn" style="background-color: #d35400;">Resetar Sala</button>
+        </div>
     </div>
 </div>
 
-<!-- Firebase SDK via CDN -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Suas credenciais do Firebase[span_0](start_span)[span_0](end_span)
+    // Suas credenciais do Firebase configuradas corretamente
     const firebaseConfig = {
         apiKey: "AIzaSyAyjusKD0t6DOtI93bxYbWRSiSHe0jvStA",
         authDomain: "damas-57b07.firebaseapp.com",
@@ -295,7 +302,7 @@
 
     let playerId = null; 
     let roomId = "";
-    let playerRole = "spectator"; // p1, p2, spectator, ou "both" (Modo Treino)
+    let playerRole = "spectator"; 
     let isPracticeMode = false;
     let currentGameState = null;
     let selectedPiece = null;
@@ -309,6 +316,7 @@
     const joinBtn = document.getElementById('join-btn');
     const practiceBtn = document.getElementById('practice-btn');
     const leaveBtn = document.getElementById('leave-btn');
+    const resetRoomBtn = document.getElementById('reset-room-btn');
     const displayRoom = document.getElementById('display-room');
     const turnIndicator = document.getElementById('turn-indicator');
     const playersNamesEl = document.getElementById('players-names');
@@ -316,7 +324,7 @@
     const boardEl = document.getElementById('board');
     const authStatusEl = document.getElementById('auth-status');
 
-    // Inicialização da Autenticação Anônima para Segurança
+    // Estado da Autenticação do Firebase
     onAuthStateChanged(auth, (user) => {
         if (user) {
             playerId = user.uid; 
@@ -333,20 +341,20 @@
         }
     });
 
+    // Gera a matriz inicial de damas padrão
     function getInitialBoard() {
         let board = Array(8).fill(null).map(() => Array(8).fill(0));
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 if ((r + c) % 2 === 1) {
-                    if (r < 3) board[r][c] = 3;      // Pretas (P2)
-                    else if (r > 4) board[r][c] = 1; // Vermelhas (P1)
+                    if (r < 3) board[r][c] = 3;      // Peças Pretas (P2)
+                    else if (r > 4) board[r][c] = 1; // Peças Vermelhas (P1)
                 }
             }
         }
         return board;
     }
 
-    // Ação: Jogar Online (Multiplayer Real)
     joinBtn.addEventListener('click', () => {
         const playerName = nameInput.value.trim();
         const roomName = roomInput.value.trim().toLowerCase();
@@ -359,11 +367,10 @@
         joinRoom(roomName, playerName);
     });
 
-    // Ação: Modo Treino (Testar Sozinho no Leitor)
     practiceBtn.addEventListener('click', () => {
         const playerName = nameInput.value.trim() || "Desenvolvedor";
         isPracticeMode = true;
-        playerRole = "both"; // Permite controlar ambos os lados localmente
+        playerRole = "both"; 
         roomId = "treino_local";
 
         currentGameState = {
@@ -381,7 +388,20 @@
         window.location.reload();
     });
 
-    // Conexão e sincronização com o Firebase Realtime Database
+    // RESET COMPLETO: Deleta a sala inteira do banco e reinicia limpo
+    resetRoomBtn.addEventListener('click', async () => {
+        if (isPracticeMode) {
+            currentGameState.board = getInitialBoard();
+            currentGameState.turn = "p1";
+            renderGame();
+        } else {
+            const roomRef = ref(db, 'rooms/' + roomId);
+            await set(roomRef, null); // Apaga os dados antigos do Firebase completamente
+            window.location.reload(); // Recarrega o app para voltar ao lobby limpo
+        }
+    });
+
+    // Entrada na sala
     async function joinRoom(roomName, playerName) {
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
@@ -393,20 +413,25 @@
                 status: "waiting",
                 turn: "p1",
                 players: { 
-                    p1: playerId, p1_name: playerName,
-                    p2: "", p2_name: "" 
+                    p1: playerId, 
+                    p1_name: playerName
                 },
                 board: getInitialBoard()
             };
             await set(roomRef, newRoom);
         } else {
-            if (data.players.p1 === playerId) {
+            const players = data.players || {};
+            
+            if (players.p1 === playerId) {
                 playerRole = "p1";
                 await update(ref(db, `rooms/${roomName}/players`), { p1_name: playerName });
-            } else if (data.players.p2 === playerId || data.players.p2 === "") {
+            } else if (!players.p2 || players.p2 === playerId || data.status === "waiting") {
                 playerRole = "p2";
-                const updates = { "players/p2": playerId, "players/p2_name": playerName };
-                if (data.status === "waiting") updates.status = "playing";
+                const updates = {
+                    "players/p2": playerId,
+                    "players/p2_name": playerName,
+                    "status": "playing"
+                };
                 await update(roomRef, updates);
             } else {
                 playerRole = "spectator";
@@ -445,9 +470,9 @@
     }
 
     function renderGame() {
-        // Nomes dos competidores sincronizados
-        const name1 = currentGameState.players.p1_name || "Aguardando...";
-        const name2 = currentGameState.players.p2_name || "Aguardando...";
+        const pData = currentGameState.players || {};
+        const name1 = pData.p1_name || "Aguardando...";
+        const name2 = pData.p2_name || "Aguardando...";
         playersNamesEl.innerText = `${name1} VS ${name2}`;
 
         if (currentGameState.status === "waiting") {
@@ -490,8 +515,6 @@
 
     function handleSquareClick(r, c) {
         if (currentGameState.status !== "playing") return;
-        
-        // Se não for o seu turno (e não estiver no modo treino), bloqueia o clique
         if (playerRole !== "both" && currentGameState.turn !== playerRole) return;
 
         const board = currentGameState.board;
@@ -504,7 +527,6 @@
         }
 
         if (cellValue !== 0) {
-            // No modo treino você clica em qualquer peça, no online apenas na sua
             const isP1Piece = (cellValue === 1 || cellValue === 2);
             const isP2Piece = (cellValue === 3 || cellValue === 4);
             
@@ -582,12 +604,10 @@
         validMoves = [];
 
         if (isPracticeMode) {
-            // No modo treino, atualiza o estado local imediatamente sem enviar ao Firebase
             currentGameState.board = board;
             currentGameState.turn = nextTurn;
             renderGame();
         } else {
-            // Sincroniza de forma segura via regras do Firebase[span_1](start_span)[span_1](end_span)
             const updates = {};
             updates[`rooms/${roomId}/board`] = board;
             updates[`rooms/${roomId}/turn`] = nextTurn;
@@ -595,7 +615,7 @@
             try {
                 await update(ref(db), updates);
             } catch (error) {
-                alert("Movimento não permitido!");
+                alert("Movimento rejeitado.");
                 window.location.reload();
             }
         }
