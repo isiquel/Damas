@@ -166,6 +166,7 @@
         .badge-p1 { background-color: var(--p1-color); }
         .badge-p2 { background-color: var(--p2-color); border: 1px solid #7f8c8d;}
         .badge-spec { background-color: #7f8c8d; color: #fff; }
+        .badge-admin { background-color: #9b59b6; color: #fff; }
 
         .board-wrapper {
             width: 100%;
@@ -239,6 +240,39 @@
             width: 100%;
             max-width: 500px;
             margin-bottom: 15px;
+        }
+
+        .admin-panel-card {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            background: linear-gradient(135deg, #2c1a3a, #16213e);
+            border: 2px dashed #9b59b6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            text-align: left;
+        }
+
+        .admin-panel-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #9b59b6;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #9b59b6;
+            padding-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .admin-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
 
         .chat-container {
@@ -443,6 +477,18 @@
             </div>
         </div>
 
+        <div id="admin-panel" class="admin-panel-card">
+            <div class="admin-panel-title">🛡️ Painel do Dono do Jogo <span>Ativo</span></div>
+            <div class="admin-row">
+                <span>Status da Sala Atual:</span>
+                <button id="admin-toggle-room-btn" style="background-color: #27ae60; padding: 6px 12px; width: auto; font-size: 0.85rem;">AUTORIZADA</button>
+            </div>
+            <div class="admin-row">
+                <span>Controle Geral da Sala:</span>
+                <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">FORÇAR RESET TOTAL</button>
+            </div>
+        </div>
+
         <div class="board-wrapper">
             <div id="board" class="board"></div>
         </div>
@@ -554,42 +600,4 @@
     
     const gameTimerEl = document.getElementById('game-timer');
     const liveSpectatorsEl = document.getElementById('live-spectators');
-    const chatBoxMessages = document.getElementById('chat-box-messages');
-    const chatInputField = document.getElementById('chat-input-field');
-    const chatSendBtn = document.getElementById('chat-send-btn');
-    const toggleChatVisibility = document.getElementById('toggle-chat-visibility');
-    const chatInputWrapper = document.getElementById('chat-input-wrapper');
-
-    const rulesModal = document.getElementById('rules-modal');
-    const rulesBtnLobby = document.getElementById('rules-btn-lobby');
-    const rulesBtnGame = document.getElementById('rules-btn-game');
-    const closeRulesBtn = document.getElementById('close-rules-btn');
-
-    const rankModal = document.getElementById('rank-modal');
-    const rankBtnLobby = document.getElementById('rank-btn-lobby');
-    const closeRankBtn = document.getElementById('close-rank-btn');
-    const rankTableBody = document.getElementById('rank-table-body');
-
-    rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
-    rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
-    closeRulesBtn.addEventListener('click', () => rulesModal.style.display = 'none');
-
-    rankBtnLobby.addEventListener('click', () => {
-        networkLeaderboard();
-    });
-    
-    async function networkLeaderboard() {
-        rankModal.style.display = 'flex';
-        await loadLeaderboard();
-    }
-    
-    closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
-
-    downloadBtnLobby.addEventListener('click', () => {
-        window.location.href = 'jogo.apk';
-    });
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            playerId = user.uid; 
-            authStatusEl.innerText = "Conexão 
+    c
