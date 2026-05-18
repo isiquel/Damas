@@ -166,6 +166,7 @@
         .badge-p1 { background-color: var(--p1-color); }
         .badge-p2 { background-color: var(--p2-color); border: 1px solid #7f8c8d;}
         .badge-spec { background-color: #7f8c8d; color: #fff; }
+        .badge-admin { background-color: #9b59b6; color: #fff; }
 
         .board-wrapper {
             width: 100%;
@@ -443,6 +444,18 @@
             </div>
         </div>
 
+        <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
+            <div style="font-size: 1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #9b59b6; padding-bottom: 4px; display: flex; justify-content: space-between;">🛡️ Painel do Dono do Jogo <span>Ativo</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
+                <span>Status da Sala Atual:</span>
+                <button id="admin-toggle-room-btn" style="background-color: #27ae60; padding: 6px 12px; width: auto; font-size: 0.85rem;">AUTORIZADA</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
+                <span>Controle Geral da Sala:</span>
+                <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">FORÇAR RESET TOTAL</button>
+            </div>
+        </div>
+
         <div class="board-wrapper">
             <div id="board" class="board"></div>
         </div>
@@ -503,7 +516,6 @@
         <button id="close-rank-btn" style="background-color: #555;">Fechar Janela</button>
     </div>
 </div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, get, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -560,6 +572,10 @@
     const toggleChatVisibility = document.getElementById('toggle-chat-visibility');
     const chatInputWrapper = document.getElementById('chat-input-wrapper');
 
+    const adminPanel = document.getElementById('admin-panel');
+    const adminToggleRoomBtn = document.getElementById('admin-toggle-room-btn');
+    const adminClearAllBtn = document.getElementById('admin-clear-all-btn');
+
     const rulesModal = document.getElementById('rules-modal');
     const rulesBtnLobby = document.getElementById('rules-btn-lobby');
     const rulesBtnGame = document.getElementById('rules-btn-game');
@@ -592,4 +608,654 @@
     onAuthStateChanged(auth, (user) => {
         if (user) {
             playerId = user.uid; 
-            authStatusEl.innerText = "Conexão 
+            authStatusEl.innerText = "Conexão Segura Ativa ✓";
+            nameInput.disabled = false;
+            roomInput.disabled = false;
+            joinBtn.disabled = false;
+            spectateBtn.disabled = false;
+            practiceBtn.disabled = false;
+            rulesBtnLobby.disabled = false;
+            rankBtnLobby.disabled = false;
+        } else {
+            signInAnonymously(auth).catch(err => {
+                authStatusEl.innerText = "Erro de conexão segura.";
+                authStatusEl.style.color = "var(--accent-color)";
+            });
+        }
+    });
+
+    function getInitialBoard() {
+        let board = Array(8).fill(null).map(() => Array(8).fill(0));
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if ((r + c) % 2 === 1) {
+                    if (r < 3) board[r][c] = 3;      
+                    else if (r > 4) board[r][c] = 1; 
+                }
+            }
+        }
+        return board;
+    }
+
+    async function loadLeaderboard() {
+        rankTableBody.innerHTML = "<tr><td colspan='5'>Buscando pontuações...</td></tr>";
+        const rankRef = ref(db, 'leaderboard');
+        const snapshot = await get(rankRef);
+        const data = snapshot.val();
+
+        if (!data) {
+            rankTableBody.innerHTML = "<tr><td colspan='5'>Nenhuma partida registrada ainda!</td></tr>";
+            return;
+        }
+
+        const sortedPlayers = Object.values(data).sort((a, b) => b.wins - a.wins);
+        rankTableBody.innerHTML = "";
+
+        sortedPlayers.forEach((player, index) => {
+            const totalGames = player.wins + player.losses;
+            const pct = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>#${index + 1}</strong></td>
+                <td>${player.name}</td>
+                <td style="color:#2ecc71; font-weight:bold;">${player.wins}</td>
+                <td style="color:#e74c3c;">${player.losses}</td>
+                <td><span class="badge" style="background-color:#34495e;">${pct}%</span></td>
+            `;
+            rankTableBody.appendChild(row);
+        });
+    }
+
+    async function updatePlayerRanking(isWin) {
+        if (isPracticeMode || hasRecordedResult) return;
+        hasRecordedResult = true;
+
+        const userRankRef = ref(db, 'leaderboard/' + playerId);
+        const snapshot = await get(userRankRef);
+        let stats = snapshot.val() || { name: nameInput.value.trim(), wins: 0, losses: 0 };
+        
+        stats.name = nameInput.value.trim();
+        if (isWin) stats.wins += 1;
+        else stats.losses += 1;
+        await set(userRankRef, stats);
+    }
+
+    joinBtn.addEventListener('click', () => {
+        const playerName = nameInput.value.trim();
+        const roomName = roomInput.value.trim().toLowerCase();
+        if (!playerName) return alert("Por favor, digite seu nome.");
+        if (!roomName) return alert("Por favor, digite o código da sala.");
+        
+        isPracticeMode = false;
+        hasRecordedResult = false;
+        roomId = roomName;
+        joinRoom(roomName, playerName, false);
+    });
+
+    spectateBtn.addEventListener('click', () => {
+        const roomName = roomInput.value.trim().toLowerCase();
+        if (!roomName) return alert("Por favor, digite o código da sala para assistir.");
+        
+        isPracticeMode = false;
+        hasRecordedResult = false;
+        roomId = roomName;
+        joinRoom(roomName, "Olheiro", true);
+    });
+
+    practiceBtn.addEventListener('click', () => {
+        const playerName = nameInput.value.trim() || "Você";
+        isPracticeMode = true;
+        hasRecordedResult = false;
+        playerRole = "p1";
+        
+        setupPracticeGame(playerName);
+    });
+
+    function runLocalTimer(startTimestamp, gameStatus) {
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        
+        if (gameStatus !== "playing" || !startTimestamp) {
+            if (gameStatus === "waiting") gameTimerEl.innerText = "⏱️ Aguardando";
+            return;
+        }
+
+        gameTimerInterval = setInterval(() => {
+            const totalSeconds = Math.floor((Date.now() - startTimestamp) / 1000);
+            if (totalSeconds < 0) return;
+            const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            gameTimerEl.innerText = `⏱️ ${mins}:${secs}`;
+        }, 1000);
+    }
+
+    toggleChatVisibility.addEventListener('click', () => {
+        isChatMutedLocally = !isChatMutedLocally;
+        if (isChatMutedLocally) {
+            toggleChatVisibility.innerText = "Ligar Chat";
+            toggleChatVisibility.classList.add('off');
+            chatBoxMessages.style.opacity = "0.15";
+            chatBoxMessages.style.pointerEvents = "none";
+            chatInputWrapper.style.display = "none";
+        } else {
+            toggleChatVisibility.innerText = "Desligar Chat";
+            toggleChatVisibility.classList.remove('off');
+            chatBoxMessages.style.opacity = "1";
+            chatBoxMessages.style.pointerEvents = "auto";
+            chatInputWrapper.style.display = "flex";
+            chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
+        }
+    });
+
+    function pushChatMessage() {
+        const text = chatInputField.value.trim();
+        if (!text) return;
+        const author = nameInput.value.trim() || "Anônimo";
+
+        if (isPracticeMode) {
+            appendChatRow(author, text);
+            chatInputField.value = "";
+            return;
+        }
+
+        const msgRef = ref(db, `rooms/${roomId}/chat`);
+        push(msgRef, {
+            author: author,
+            text: text,
+            timestamp: Date.now()
+        });
+        chatInputField.value = "";
+    }
+
+    chatSendBtn.addEventListener('click', pushChatMessage);
+    chatInputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') pushChatMessage();
+    });
+
+    function appendChatRow(author, text) {
+        const row = document.createElement('div');
+        row.className = "chat-msg-row";
+        
+        const authorSpan = document.createElement('span');
+        authorSpan.className = "msg-author";
+        authorSpan.innerText = author + ": ";
+        
+        const textSpan = document.createElement('span');
+        textSpan.innerText = text;
+        
+        row.appendChild(authorSpan);
+        row.appendChild(textSpan);
+        chatBoxMessages.appendChild(row);
+        chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
+    }
+
+    async function joinRoom(roomName, playerName, forceSpectator) {
+        const roomRef = ref(db, 'rooms/' + roomName);
+        const snapshot = await get(roomRef);
+        let roomData = snapshot.val();
+
+        const isAdminMode = (playerName === "Isiquel_Admin");
+
+        if (roomData && !roomData.isAuthorized && !isAdminMode && !forceSpectator) {
+            alert("Acesso Negado! Esta sala ainda não foi liberada pelo Administrador.");
+            return;
+        }
+
+        if (!roomData) {
+            playerRole = forceSpectator ? "spectator" : (isAdminMode ? "admin" : "p1");
+            roomData = {
+                id: roomName,
+                board: getInitialBoard(),
+                turn: 1,
+                status: "waiting",
+                p1Id: playerRole === "p1" ? playerId : null,
+                p1Name: playerRole === "p1" ? playerName : "",
+                p2Id: null,
+                p2Name: "",
+                startTime: 0,
+                chat: null,
+                isAuthorized: isAdminMode ? true : false 
+            };
+            await set(roomRef, roomData);
+        } else {
+            if (isAdminMode) {
+                playerRole = "admin";
+            } else if (forceSpectator) {
+                playerRole = "spectator";
+            } else if (roomData.p1Id === playerId) {
+                playerRole = "p1";
+            } else if (roomData.p2Id === playerId) {
+                playerRole = "p2";
+            } else if (!roomData.p1Id || roomData.p1Id === "") {
+                playerRole = "p1";
+                await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null });
+            } else if (!roomData.p2Id || roomData.p2Id === "") {
+                playerRole = "p2";
+                await update(roomRef, { 
+                    p2Id: playerId, 
+                    p2Name: playerName, 
+                    status: "playing", 
+                    startTime: Date.now() 
+                });
+            } else {
+                playerRole = "spectator";
+            }
+        }
+
+        if (playerRole === "spectator") {
+            const specPresenceRef = ref(db, `rooms/${roomName}/spectators/${playerId}`);
+            set(specPresenceRef, playerName);
+            onDisconnect(specPresenceRef).remove();
+        }
+
+        displayRoom.innerText = roomName.toUpperCase();
+        lobbyScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+
+        if (playerRole === "admin") {
+            adminPanel.style.display = "block";
+            toggleChatVisibility.style.display = "block";
+        } else if (playerRole === "p1" || playerRole === "p2") {
+            adminPanel.style.display = "none";
+            toggleChatVisibility.style.display = "block";
+        } else {
+            adminPanel.style.display = "none";
+            toggleChatVisibility.style.display = "none";
+        }
+
+        onValue(roomRef, (snap) => {
+            const data = snap.val();
+            if (!data) return;
+            currentGameState = data;
+            
+            let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
+            liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
+            runLocalTimer(data.startTime, data.status);
+            
+            if (data.isAuthorized !== undefined) {
+                if (data.isAuthorized) {
+                    adminToggleRoomBtn.innerText = "AUTORIZADA";
+                    adminToggleRoomBtn.style.backgroundColor = "#27ae60";
+                } else {
+                    adminToggleRoomBtn.innerText = "BLOQUEADA";
+                    adminToggleRoomBtn.style.backgroundColor = "#c0392b";
+                }
+            }
+
+            renderGameStatus(data);
+            generateBoardUI(data.board);
+            checkEndGameConditions(data.board);
+        });
+
+        const chatRef = ref(db, `rooms/${roomName}/chat`);
+        onValue(chatRef, (snap) => {
+            chatBoxMessages.innerHTML = "";
+            const data = snap.val();
+            if (data) {
+                Object.values(data).forEach(msg => {
+                    appendChatRow(msg.author, msg.text);
+                });
+            } else {
+                chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>`;
+            }
+        });
+    }
+
+    adminToggleRoomBtn.addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const roomRef = ref(db, 'rooms/' + roomId);
+        const nextState = !currentGameState.isAuthorized;
+        await update(roomRef, { isAuthorized: nextState });
+    });
+
+    adminClearAllBtn.addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        if (!confirm("Deseja mesmo forçar a limpeza e reiniciar esta sala inteira?")) return;
+        const roomRef = ref(db, 'rooms/' + roomId);
+        await update(roomRef, {
+            board: getInitialBoard(),
+            turn: 1,
+            status: "waiting",
+            startTime: 0,
+            p1Id: "",
+            p1Name: "",
+            p2Id: "",
+            p2Name: "",
+            chat: null
+        });
+        alert("Sala resetada com sucesso!");
+    });
+
+    function setupPracticeGame(playerName) {
+        isPracticeMode = true;
+        toggleChatVisibility.style.display = "block";
+        adminPanel.style.display = "none";
+        currentGameState = {
+            board: getInitialBoard(),
+            turn: 1,
+            status: "playing",
+            p1Name: playerName,
+            p2Name: "Robô Smart",
+            startTime: Date.now()
+        };
+
+        displayRoom.innerText = "TREINO";
+        lobbyScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        
+        runLocalTimer(currentGameState.startTime, "playing");
+        renderGameStatus(currentGameState);
+        generateBoardUI(currentGameState.board);
+    }
+
+    function renderGameStatus(data) {
+        const p1 = data.p1Name || "Aguardando...";
+        const p2 = data.p2Name || "Aguardando...";
+        playersNamesEl.innerText = `${p1} VS ${p2}`;
+
+        if (playerRole === "p1") {
+            playerBadge.innerText = "Vermelho";
+            playerBadge.className = "badge badge-p1";
+        } else if (playerRole === "p2") {
+            playerBadge.innerText = "Preto";
+            playerBadge.className = "badge badge-p2";
+        } else if (playerRole === "admin") {
+            playerBadge.innerText = "Dono";
+            playerBadge.className = "badge badge-admin";
+        } else {
+            playerBadge.innerText = "Espectador";
+            playerBadge.className = "badge badge-spec";
+        }
+
+        if (data.status === "waiting") {
+            turnIndicator.innerText = "Aguardando Rival...";
+            turnIndicator.style.color = "#f1c40f";
+        } else if (data.status === "playing") {
+            if (data.turn === 1) {
+                turnIndicator.innerText = "Turno: Vermelho";
+                turnIndicator.style.color = "var(--p1-color)";
+            } else {
+                turnIndicator.innerText = "Turno: Preto";
+                turnIndicator.style.color = "#ecf0f1";
+            }
+        } else if (data.status === "finished") {
+            turnIndicator.innerText = "Fim de Jogo!";
+            turnIndicator.style.color = "#2ecc71";
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+        }
+    }
+
+    function generateBoardUI(board) {
+        boardEl.innerHTML = "";
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const square = document.createElement('div');
+                square.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                square.dataset.row = r;
+                square.dataset.col = c;
+
+                const val = board[r][c];
+                if (val !== 0) {
+                    const piece = document.createElement('div');
+                    piece.className = `piece ${val === 1 || val === 2 ? 'p1-piece' : 'p2-piece'}`;
+                    if (val === 2 || val === 4) piece.classList.add('king');
+                    
+                    if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) {
+                        piece.classList.add('selected');
+                    }
+                    square.appendChild(piece);
+                }
+
+                if (validMoves.some(m => m.toR === r && m.toC === c)) {
+                    square.classList.add('highlight');
+                }
+
+                square.addEventListener('click', () => handleSquareInteraction(r, c));
+                boardEl.appendChild(square);
+            }
+        }
+    }
+
+    function handleSquareInteraction(r, c) {
+        if (!currentGameState || currentGameState.status !== "playing") return;
+        
+        if (!isPracticeMode) {
+            if (currentGameState.turn === 1 && playerRole !== "p1") return;
+            if (currentGameState.turn === 2 && playerRole !== "p2") return;
+        } else {
+            if (currentGameState.turn === 2) return; 
+        }
+
+        const board = currentGameState.board;
+        const clickedValue = board[r][c];
+
+        if (clickedValue !== 0) {
+            const isP1Turn = currentGameState.turn === 1;
+            const ownsPiece = isP1Turn ? (clickedValue === 1 || clickedValue === 2) : (clickedValue === 3 || clickedValue === 4);
+            
+            if (ownsPiece) {
+                selectedPiece = { r, c };
+                validMoves = computeValidMovesForPiece(r, c, board);
+                generateBoardUI(board);
+            }
+        } else {
+            const move = validMoves.find(m => m.toR === r && m.toC === c);
+            if (move) {
+                executeGameMove(move);
+            }
+        }
+    }
+
+    function computeValidMovesForPiece(r, c, board) {
+        const piece = board[r][c];
+        let moves = [];
+        if (piece === 0) return moves;
+
+        const isKing = piece === 2 || piece === 4;
+        const isP1 = piece === 1 || piece === 2;
+
+        if (isKing) {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                let nr = r + dr;
+                let nc = c + dc;
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) {
+                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    } else {
+                        const targetP1 = board[nr][nc] === 1 || board[nr][nc] === 2;
+                        if (targetP1 !== isP1) {
+                            let rr = nr + dr;
+                            let cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                        break; 
+                    }
+                    nr += dr;
+                    nc += dc;
+                }
+            });
+        } else {
+            const dirs = isP1 ? [[-1, 1], [-1, -1]] : [[1, 1], [1, -1]];
+            dirs.forEach(([dr, dc]) => {
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) {
+                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    } else {
+                        const targetP1 = board[nr][nc] === 1 || board[nr][nc] === 2;
+                        if (targetP1 !== isP1) {
+                            const rr = nr + dr;
+                            const cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const forceCaptures = moves.filter(m => m.capture !== null);
+        return forceCaptures.length > 0 ? forceCaptures : moves;
+    }
+
+    function computeAllValidMoves(turn, board) {
+        let allMoves = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p === 0) continue;
+                const isP1 = p === 1 || p === 2;
+                if ((turn === 1 && isP1) || (turn === 2 && !isP1)) {
+                    allMoves = allMoves.concat(computeValidMovesForPiece(r, c, board));
+                }
+            }
+        }
+        const captures = allMoves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : allMoves;
+    }
+
+    function executeGameMove(move) {
+        let board = currentGameState.board.map(row => row.slice());
+        let piece = board[move.fromR][move.fromC];
+
+        if (move.capture) {
+            board[move.capture.r][move.capture.c] = 0;
+        }
+
+        if (piece === 1 && move.toR === 0) piece = 2; 
+        if (piece === 3 && move.toR === 7) piece = 4; 
+
+        board[move.toR][move.toC] = piece;
+        board[move.fromR][move.fromC] = 0;
+
+        let nextTurn = currentGameState.turn === 1 ? 2 : 1;
+        selectedPiece = null;
+        validMoves = [];
+
+        if (isPracticeMode) {
+            currentGameState.board = board;
+            currentGameState.turn = nextTurn;
+            renderGameStatus(currentGameState);
+            generateBoardUI(board);
+            if (!checkEndGameConditions(board) && nextTurn === 2) {
+                setTimeout(executeRobotTurn, 600);
+            }
+        } else {
+            const roomRef = ref(db, 'rooms/' + roomId);
+            update(roomRef, { board: board, turn: nextTurn });
+        }
+    }
+
+    function executeRobotTurn() {
+        if (!isPracticeMode || currentGameState.status !== "playing") return;
+        
+        const board = currentGameState.board;
+        const robotMoves = computeAllValidMoves(2, board);
+
+        if (robotMoves.length === 0) {
+            currentGameState.status = "finished";
+            alert("Parabéns! Você venceu a máquina.");
+            renderGameStatus(currentGameState);
+            return;
+        }
+
+        const captures = robotMoves.filter(m => m.capture !== null);
+        const selectedMove = captures.length > 0 
+            ? captures[Math.floor(Math.random() * captures.length)]
+            : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+
+        let nextBoard = board.map(row => row.slice());
+        let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
+
+        if (selectedMove.capture) {
+            nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0;
+        }
+
+        if (piece === 3 && selectedMove.toR === 7) piece = 4;
+
+        nextBoard[selectedMove.toR][selectedMove.toC] = piece;
+        nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
+
+        currentGameState.board = nextBoard;
+        currentGameState.turn = 1;
+
+        renderGameStatus(currentGameState);
+        generateBoardUI(nextBoard);
+        checkEndGameConditions(nextBoard);
+    }
+
+    function checkEndGameConditions(board) {
+        let p1Pieces = 0, p2Pieces = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] === 1 || board[r][c] === 2) p1Pieces++;
+                if (board[r][c] === 3 || board[r][c] === 4) p2Pieces++;
+            }
+        }
+
+        if (p1Pieces === 0 || p2Pieces === 0) {
+            if (currentGameState.status === "playing") {
+                currentGameState.status = "finished";
+                if (gameTimerInterval) clearInterval(gameTimerInterval);
+                
+                let winnerText = p1Pieces > 0 ? "Jogador Vermelho Venceu!" : "Jogador Preto Venceu!";
+                alert(winnerText);
+
+                if (!isPracticeMode) {
+                    const roomRef = ref(db, 'rooms/' + roomId);
+                    update(roomRef, { status: "finished" });
+
+                    if (playerRole === "p1") updatePlayerRanking(p1Pieces > 0);
+                    if (playerRole === "p2") updatePlayerRanking(p2Pieces > 0);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    resetRoomBtn.addEventListener('click', async () => {
+        if (isPracticeMode) {
+            setupPracticeGame(nameInput.value.trim() || "Você");
+            return;
+        }
+        if (playerRole === "spectator") return alert("Espectadores não podem resetar a sala.");
+        
+        const roomRef = ref(db, 'rooms/' + roomId);
+        await update(roomRef, {
+            board: getInitialBoard(),
+            turn: 1,
+            status: "playing",
+            startTime: Date.now()
+        });
+    });
+
+    leaveBtn.addEventListener('click', async () => {
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        
+        if (!isPracticeMode && roomId) {
+            if (playerRole === "spectator") {
+                const specPresenceRef = ref(db, `rooms/${roomId}/spectators/${playerId}`);
+                await set(specPresenceRef, null);
+            } else if (playerRole !== "admin") {
+                const roomRef = ref(db, 'rooms/' + roomId);
+                if (playerRole === "p1") await update(roomRef, { p1Id: "", p1Name: "", status: "finished" });
+                if (playerRole === "p2") await update(roomRef, { p2Id: "", p2Name: "", status: "finished" });
+            }
+        }
+        
+        roomId = "";
+        playerRole = "spectator";
+        isPracticeMode = false;
+        gameScreen.style.display = 'none';
+        lobbyScreen.style.display = 'block';
+    });
+</script>
+
+</body>
+</html>
