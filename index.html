@@ -238,6 +238,88 @@
             gap: 10px;
             width: 100%;
             max-width: 500px;
+            margin-bottom: 15px;
+        }
+
+        /* Novas Estilizações: Chat & Modificadores */
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+
+        .chat-messages {
+            height: 120px;
+            overflow-y: auto;
+            background-color: #0f172a;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .chat-msg-row {
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .chat-msg-row .msg-author {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .chat-input-box {
+            display: flex;
+            gap: 6px;
+        }
+
+        .chat-input-box input {
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            text-align: left;
+            border-radius: 6px;
+        }
+
+        .chat-input-box button {
+            width: auto;
+            padding: 0 15px;
+            font-size: 0.85rem;
+            text-transform: none;
+            border-radius: 6px;
+        }
+
+        .toggle-chat-btn {
+            background-color: #475569;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            width: auto;
+            text-transform: none;
+        }
+
+        .toggle-chat-btn.off {
+            background-color: #991b1b;
         }
 
         /* Modais */
@@ -351,11 +433,15 @@
         <div class="status-panel">
             <div class="status-row">
                 <div>Sala: <span id="display-room" style="color: var(--accent-color);"></span></div>
+                <div id="game-timer" style="color: #f1c40f; font-family: monospace; font-size: 1.1rem;">⏱️ 00:00</div>
                 <div id="turn-indicator">Carregando turno...</div>
             </div>
             <div class="status-row" style="border-top: 1px solid #333; padding-top: 5px; margin-top: 5px; font-size:0.85rem; color:#aaa;">
                 <div id="players-names">Vermelho vs Preto</div>
-                <div>Você é: <span id="player-badge" class="badge">Espectador</span></div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span id="live-spectators" style="color: #3498db;">👁️ 0 assistindo</span>
+                    <div>Você é: <span id="player-badge" class="badge">Espectador</span></div>
+                </div>
             </div>
         </div>
 
@@ -367,6 +453,21 @@
             <button id="leave-btn" style="background-color: #555;">Sair</button>
             <button id="reset-room-btn" style="background-color: #d35400;">Resetar</button>
             <button id="rules-btn-game" class="btn-info">Regras</button>
+        </div>
+
+        <!-- Interface de Conversação Integrada -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <span>💬 Chat em Tempo Real</span>
+                <button id="toggle-chat-visibility" class="toggle-chat-btn" style="display: none;">Desligar Chat</button>
+            </div>
+            <div id="chat-box-messages" class="chat-messages">
+                <div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>
+            </div>
+            <div id="chat-input-wrapper" class="chat-input-box">
+                <input type="text" id="chat-input-field" placeholder="Escreva sua mensagem..." maxlength="80">
+                <button id="chat-send-btn">Enviar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -408,7 +509,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, update, get, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -432,6 +533,10 @@
     let selectedPiece = null;
     let validMoves = [];
     let hasRecordedResult = false;
+    
+    // Variáveis de Controle das Novas Funções
+    let gameTimerInterval = null;
+    let isChatMutedLocally = false;
 
     // Elementos DOM
     const lobbyScreen = document.getElementById('lobby-screen');
@@ -451,6 +556,14 @@
     const authStatusEl = document.getElementById('auth-status');
     const downloadBtnLobby = document.getElementById('download-btn-lobby');
     
+    const gameTimerEl = document.getElementById('game-timer');
+    const liveSpectatorsEl = document.getElementById('live-spectators');
+    const chatBoxMessages = document.getElementById('chat-box-messages');
+    const chatInputField = document.getElementById('chat-input-field');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const toggleChatVisibility = document.getElementById('toggle-chat-visibility');
+    const chatInputWrapper = document.getElementById('chat-input-wrapper');
+
     const rulesModal = document.getElementById('rules-modal');
     const rulesBtnLobby = document.getElementById('rules-btn-lobby');
     const rulesBtnGame = document.getElementById('rules-btn-game');
@@ -476,7 +589,6 @@
     
     closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
 
-    // Executa a ação de baixar o arquivo ao clicar no botão
     downloadBtnLobby.addEventListener('click', () => {
         window.location.href = 'jogo.apk';
     });
@@ -580,155 +692,250 @@
     });
 
     practiceBtn.addEventListener('click', () => {
-        const playerName = nameInput.value.trim() || "Ezequiel";
+        const playerName = nameInput.value.trim() || "Você";
         isPracticeMode = true;
-        playerRole = "p1"; 
-        roomId = "treino_maquina";
-
-        currentGameState = {
-            status: "playing",
-            turn: "p1",
-            players: { p1_name: playerName, p2_name: "Sistema Smart" },
-            board: getInitialBoard()
-        };
-
-        setupUIForGame();
-        renderGame();
+        hasRecordedResult = false;
+        playerRole = "p1";
+        
+        setupPracticeGame(playerName);
     });
 
-    leaveBtn.addEventListener('click', () => {
-        window.location.reload();
-    });
+    // Funções do Gerenciador de Tempo e Visibilidade de Chat
+    function runLocalTimer(startTimestamp, gameStatus) {
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        
+        if (gameStatus !== "playing" || !startTimestamp) {
+            if (gameStatus === "waiting") gameTimerEl.innerText = "⏱️ Aguardando";
+            return;
+        }
 
-    resetRoomBtn.addEventListener('click', async () => {
-        if (isPracticeMode) {
-            currentGameState.board = getInitialBoard();
-            currentGameState.status = "playing";
-            currentGameState.turn = "p1";
-            renderGame();
+        gameTimerInterval = setInterval(() => {
+            const totalSeconds = Math.floor((Date.now() - startTimestamp) / 1000);
+            if (totalSeconds < 0) return;
+            const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            gameTimerEl.innerText = `⏱️ ${mins}:${secs}`;
+        }, 1000);
+    }
+
+    toggleChatVisibility.addEventListener('click', () => {
+        isChatMutedLocally = !isChatMutedLocally;
+        if (isChatMutedLocally) {
+            toggleChatVisibility.innerText = "Ligar Chat";
+            toggleChatVisibility.classList.add('off');
+            chatBoxMessages.style.opacity = "0.15";
+            chatBoxMessages.style.pointerEvents = "none";
+            chatInputWrapper.style.display = "none";
         } else {
-            const roomRef = ref(db, 'rooms/' + roomId);
-            await set(roomRef, null); 
-            window.location.reload(); 
+            toggleChatVisibility.innerText = "Desligar Chat";
+            toggleChatVisibility.classList.remove('off');
+            chatBoxMessages.style.opacity = "1";
+            chatBoxMessages.style.pointerEvents = "auto";
+            chatInputWrapper.style.display = "flex";
+            chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
         }
     });
+
+    function pushChatMessage() {
+        const text = chatInputField.value.trim();
+        if (!text) return;
+        const author = nameInput.value.trim() || "Anônimo";
+
+        if (isPracticeMode) {
+            appendChatRow(author, text);
+            chatInputField.value = "";
+            return;
+        }
+
+        const msgRef = ref(db, `rooms/${roomId}/chat`);
+        push(msgRef, {
+            author: author,
+            text: text,
+            timestamp: Date.now()
+        });
+        chatInputField.value = "";
+    }
+
+    chatSendBtn.addEventListener('click', pushChatMessage);
+    chatInputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') pushChatMessage();
+    });
+
+    function appendChatRow(author, text) {
+        const row = document.createElement('div');
+        row.className = "chat-msg-row";
+        
+        const authorSpan = document.createElement('span');
+        authorSpan.className = "msg-author";
+        authorSpan.innerText = author + ": ";
+        
+        const textSpan = document.createElement('span');
+        textSpan.innerText = text;
+        
+        row.appendChild(authorSpan);
+        row.appendChild(textSpan);
+        chatBoxMessages.appendChild(row);
+        chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
+    }
 
     async function joinRoom(roomName, playerName, forceSpectator) {
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
-        const data = snapshot.val();
+        let roomData = snapshot.val();
 
-        if (forceSpectator) {
-            playerRole = "spectator";
-            if (!data) {
-                alert("Esta sala ainda não existe.");
-                window.location.reload();
-                return;
-            }
+        if (!roomData) {
+            playerRole = forceSpectator ? "spectator" : "p1";
+            roomData = {
+                id: roomName,
+                board: getInitialBoard(),
+                turn: 1,
+                status: "waiting",
+                p1Id: playerRole === "p1" ? playerId : null,
+                p1Name: playerRole === "p1" ? playerName : "",
+                p2Id: null,
+                p2Name: "",
+                startTime: 0
+            };
+            await set(roomRef, roomData);
         } else {
-            if (!data) {
+            if (forceSpectator) {
+                playerRole = "spectator";
+            } else if (roomData.p1Id === playerId) {
                 playerRole = "p1";
-                const newRoom = {
-                    status: "waiting",
-                    turn: "p1",
-                    players: { p1: playerId, p1_name: playerName },
-                    board: getInitialBoard()
-                };
-                await set(roomRef, newRoom);
+            } else if (roomData.p2Id === playerId) {
+                playerRole = "p2";
+            } else if (!roomData.p1Id) {
+                playerRole = "p1";
+                roomData.p1Id = playerId;
+                roomData.p1Name = playerName;
+                await update(roomRef, { p1Id: playerId, p1Name: playerName });
+            } else if (!roomData.p2Id) {
+                playerRole = "p2";
+                roomData.p2Id = playerId;
+                roomData.p2Name = playerName;
+                roomData.status = "playing";
+                roomData.startTime = Date.now();
+                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: roomData.startTime });
             } else {
-                const players = data.players || {};
-                
-                if (players.p1 === playerId) {
-                    playerRole = "p1";
-                    await update(ref(db, `rooms/${roomName}/players`), { p1_name: playerName });
-                } else if (!players.p2 || players.p2 === playerId || data.status === "waiting") {
-                    playerRole = "p2";
-                    const updates = {
-                        "players/p2": playerId,
-                        "players/p2_name": playerName,
-                        "status": "playing"
-                    };
-                    await update(roomRef, updates);
-                } else {
-                    playerRole = "spectator"; 
-                }
+                playerRole = "spectator";
             }
         }
 
-        setupUIForGame();
-        
+        // Sistema estável de contagem de audiência usando os nós do Firebase
+        if (playerRole === "spectator") {
+            const specPresenceRef = ref(db, `rooms/${roomName}/spectators/${playerId}`);
+            set(specPresenceRef, playerName);
+            onDisconnect(specPresenceRef).remove();
+        }
+
+        displayRoom.innerText = roomName.toUpperCase();
+        lobbyScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+
+        if (playerRole === "p1" || playerRole === "p2") {
+            toggleChatVisibility.style.display = "block";
+        } else {
+            toggleChatVisibility.style.display = "none";
+        }
+
+        // Conecta os Ouvintes de Eventos da Sala
         onValue(roomRef, (snap) => {
-            if (!isPracticeMode) {
-                currentGameState = snap.val();
-                if (currentGameState) renderGame();
+            const data = snap.val();
+            if (!data) return;
+            currentGameState = data;
+            
+            // Atualiza Painéis, Cronômetro e Espectadores
+            let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
+            liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
+            runLocalTimer(data.startTime, data.status);
+            
+            renderGameStatus(data);
+            generateBoardUI(data.board);
+            checkEndGameConditions(data.board);
+        });
+
+        // Ouvinte estável estruturado para mensagens do chat
+        const chatRef = ref(db, `rooms/${roomName}/chat`);
+        onValue(chatRef, (snap) => {
+            chatBoxMessages.innerHTML = "";
+            const data = snap.val();
+            if (data) {
+                Object.values(data).forEach(msg => {
+                    appendChatRow(msg.author, msg.text);
+                });
             }
         });
     }
 
-    function setupUIForGame() {
+    function setupPracticeGame(playerName) {
+        isPracticeMode = true;
+        toggleChatVisibility.style.display = "block";
+        currentGameState = {
+            board: getInitialBoard(),
+            turn: 1,
+            status: "playing",
+            p1Name: playerName,
+            p2Name: "Robô Smart",
+            startTime: Date.now()
+        };
+
+        displayRoom.innerText = "TREINO";
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
-        displayRoom.innerText = isPracticeMode ? "Modo Treino" : roomId;
+        
+        runLocalTimer(currentGameState.startTime, "playing");
+        renderGameStatus(currentGameState);
+        generateBoardUI(currentGameState.board);
+    }
 
-        if (isPracticeMode) {
-            playerBadge.innerText = "Treino vs Máquina";
-            playerBadge.className = "badge";
-            playerBadge.style.backgroundColor = "#2ecc71";
-        } else if (playerRole === "p1") {
-            playerBadge.innerText = "Vermelho (P1)";
+    function renderGameStatus(data) {
+        const p1 = data.p1Name || "Aguardando...";
+        const p2 = data.p2Name || "Aguardando...";
+        playersNamesEl.innerText = `${p1} VS ${p2}`;
+
+        if (playerRole === "p1") {
+            playerBadge.innerText = "Vermelho";
             playerBadge.className = "badge badge-p1";
         } else if (playerRole === "p2") {
-            playerBadge.innerText = "Preto (P2)";
+            playerBadge.innerText = "Preto";
             playerBadge.className = "badge badge-p2";
         } else {
-            playerBadge.innerText = "Espectador 👁️";
+            playerBadge.innerText = "Espectador";
             playerBadge.className = "badge badge-spec";
+        }
+
+        if (data.status === "waiting") {
+            turnIndicator.innerText = "Aguardando Rival...";
+            turnIndicator.style.color = "#f1c40f";
+        } else if (data.status === "playing") {
+            if (data.turn === 1) {
+                turnIndicator.innerText = "Turno: Vermelho";
+                turnIndicator.style.color = "var(--p1-color)";
+            } else {
+                turnIndicator.innerText = "Turno: Preto";
+                turnIndicator.style.color = "#ecf0f1";
+            }
+        } else if (data.status === "finished") {
+            turnIndicator.innerText = "Fim de Jogo!";
+            turnIndicator.style.color = "#2ecc71";
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
         }
     }
 
-    function renderGame() {
-        const pData = currentGameState.players || {};
-        const name1 = pData.p1_name || "Aguardando...";
-        const name2 = pData.p2_name || "Aguardando...";
-        playersNamesEl.innerText = `${name1} VS ${name2}`;
-
-        if (currentGameState.status === "finished") {
-            const winnerRole = currentGameState.winner;
-            const winnerName = winnerRole === "p1" ? name1 : name2;
-            turnIndicator.innerText = `🏆 FIM: ${winnerName} GANHOU!`;
-            turnIndicator.style.color = "#2ecc71";
-            
-            if (playerRole !== "spectator" && !isPracticeMode) {
-                const iWon = playerRole === winnerRole;
-                updatePlayerRanking(iWon);
-            }
-        } else if (currentGameState.status === "waiting") {
-            turnIndicator.innerText = "Aguardando Oponente...";
-            turnIndicator.style.color = "#fff";
-        } else {
-            turnIndicator.style.color = "#fff";
-            const turnText = currentGameState.turn === "p1" ? `Vez de ${name1}` : `Vez de ${name2}`;
-            const isMyTurn = currentGameState.turn === playerRole;
-            turnIndicator.innerText = isPracticeMode ? (currentGameState.turn === "p1" ? "Sua Vez de Jogar!" : "Máquina pensando...") : (isMyTurn ? `${turnText} (Sua vez!)` : turnText);
-        }
-
+    function generateBoardUI(board) {
         boardEl.innerHTML = "";
-        const board = currentGameState.board;
-
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 const square = document.createElement('div');
-                const isDark = (r + c) % 2 === 1;
-                square.className = `square ${isDark ? 'dark' : 'light'}`;
-                
-                const isHighlight = validMoves.some(m => m.r === r && m.c === c);
-                if (isHighlight) square.classList.add('highlight');
+                square.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                square.dataset.row = r;
+                square.dataset.col = c;
 
-                const cellValue = board[r][c];
-                if (cellValue !== 0) {
+                const val = board[r][c];
+                if (val !== 0) {
                     const piece = document.createElement('div');
-                    piece.className = `piece ${ (cellValue === 1 || cellValue === 2) ? 'p1-piece' : 'p2-piece' }`;
-                    if (cellValue === 2 || cellValue === 4) piece.classList.add('king');
+                    piece.className = `piece ${val === 1 || val === 2 ? 'p1-piece' : 'p2-piece'}`;
+                    if (val === 2 || val === 4) piece.classList.add('king');
                     
                     if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) {
                         piece.classList.add('selected');
@@ -736,182 +943,256 @@
                     square.appendChild(piece);
                 }
 
-                square.addEventListener('click', () => handleSquareClick(r, c));
+                if (validMoves.some(m => m.toR === r && m.toC === c)) {
+                    square.classList.add('highlight');
+                }
+
+                square.addEventListener('click', () => handleSquareInteraction(r, c));
                 boardEl.appendChild(square);
             }
         }
     }
 
-    function handleSquareClick(r, c) {
-        if (currentGameState.status !== "playing") return;
-        if (isPracticeMode && currentGameState.turn !== "p1") return;
-        if (!isPracticeMode && currentGameState.turn !== playerRole) return;
+    function handleSquareInteraction(r, c) {
+        if (!currentGameState || currentGameState.status !== "playing") return;
+        
+        if (!isPracticeMode) {
+            if (currentGameState.turn === 1 && playerRole !== "p1") return;
+            if (currentGameState.turn === 2 && playerRole !== "p2") return;
+        } else {
+            if (currentGameState.turn === 2) return; 
+        }
 
         const board = currentGameState.board;
-        const cellValue = board[r][c];
+        const clickedValue = board[r][c];
 
-        const moveIndex = validMoves.findIndex(m => m.r === r && m.c === c);
-        if (moveIndex !== -1) {
-            executeMove(validMoves[moveIndex]);
-            return;
-        }
-
-        if (cellValue !== 0) {
-            const isP1Piece = (cellValue === 1 || cellValue === 2);
-            const isMyPiece = isPracticeMode ? isP1Piece : ((playerRole === 'p1' && isP1Piece) || (playerRole === 'p2' && (cellValue === 3 || cellValue === 4)));
-
-            if (isMyPiece) {
+        if (clickedValue !== 0) {
+            const isP1Turn = currentGameState.turn === 1;
+            const ownsPiece = isP1Turn ? (clickedValue === 1 || clickedValue === 2) : (clickedValue === 3 || clickedValue === 4);
+            
+            if (ownsPiece) {
                 selectedPiece = { r, c };
-                validMoves = calculateValidMoves(r, c, board, cellValue);
-                renderGame();
-            } else {
-                clearSelection();
+                validMoves = computeValidMovesForPiece(r, c, board);
+                generateBoardUI(board);
             }
         } else {
-            clearSelection();
+            const move = validMoves.find(m => m.toR === r && m.toC === c);
+            if (move) {
+                executeGameMove(move);
+            }
         }
     }
 
-    function clearSelection() {
-        selectedPiece = null;
-        validMoves = [];
-        renderGame();
-    }
-
-    function calculateValidMoves(row, col, board, piece) {
+    function computeValidMovesForPiece(r, c, board) {
+        const piece = board[r][c];
         let moves = [];
-        let directions = [];
+        if (piece === 0) return moves;
 
-        if (piece === 1) directions = [[-1, -1], [-1, 1]]; 
-        if (piece === 3) directions = [[1, -1], [1, 1]];   
-        if (piece === 2 || piece === 4) directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; 
+        const isKing = piece === 2 || piece === 4;
+        const isP1 = piece === 1 || piece === 2;
 
-        directions.forEach(([dr, dc]) => {
-            let nr = row + dr;
-            let nc = col + dc;
-            if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                if (board[nr][nc] === 0) {
-                    moves.push({ r: nr, c: nc, type: 'normal' });
-                } else {
-                    const currentIsP1 = (piece === 1 || piece === 2);
-                    const targetPiece = board[nr][nc];
-                    const targetIsOpponent = currentIsP1 ? (targetPiece === 3 || targetPiece === 4) : (targetPiece === 1 || targetPiece === 2);
-
-                    if (targetIsOpponent) {
-                        let jr = nr + dr;
-                        let jc = nc + dc;
-                        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && board[jr][jc] === 0) {
-                            moves.push({ r: jr, c: jc, type: 'capture', capR: nr, capC: nc });
+        if (isKing) {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                let nr = r + dr;
+                let nc = c + dc;
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) {
+                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    } else {
+                        const targetP1 = board[nr][nc] === 1 || board[nr][nc] === 2;
+                        if (targetP1 !== isP1) {
+                            let rr = nr + dr;
+                            let cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                        break; 
+                    }
+                    nr += dr;
+                    nc += dc;
+                }
+            });
+        } else {
+            const dirs = isP1 ? [[-1, 1], [-1, -1]] : [[1, 1], [1, -1]];
+            dirs.forEach(([dr, dc]) => {
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) {
+                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    } else {
+                        const targetP1 = board[nr][nc] === 1 || board[nr][nc] === 2;
+                        if (targetP1 !== isP1) {
+                            const rr = nr + dr;
+                            const cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
                         }
                     }
                 }
-            }
-        });
-        return moves;
-    }
-
-    function runMachineAI() {
-        if (!isPracticeMode || currentGameState.status !== "playing" || currentGameState.turn !== "p2") return;
-
-        setTimeout(() => {
-            let board = currentGameState.board;
-            let movesPool = [];
-
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    let piece = board[r][c];
-                    if (piece === 3 || piece === 4) {
-                        let valid = calculateValidMoves(r, c, board, piece);
-                        valid.forEach(m => {
-                            movesPool.push({ from: { r, c }, to: m });
-                        });
-                    }
-                }
-            }
-
-            if (movesPool.length === 0) {
-                currentGameState.status = "finished";
-                currentGameState.winner = "p1";
-                renderGame();
-                return;
-            }
-
-            let captures = movesPool.filter(m => m.to.type === 'capture');
-            let chosen = null;
-
-            if (captures.length > 0) {
-                chosen = captures[Math.floor(Math.random() * captures.length)];
-            } else {
-                chosen = movesPool[Math.floor(Math.random() * movesPool.length)];
-            }
-
-            selectedPiece = chosen.from;
-            executeMove(chosen.to);
-        }, 700); 
-    }
-
-    async function executeMove(move) {
-        let board = JSON.parse(JSON.stringify(currentGameState.board));
-        let piece = board[selectedPiece.r][selectedPiece.c];
-
-        board[move.r][move.c] = piece;
-        board[selectedPiece.r][selectedPiece.c] = 0;
-
-        if (move.type === 'capture') {
-            board[move.capR][move.capC] = 0;
+            });
         }
 
-        if (piece === 1 && move.r === 0) board[move.r][move.c] = 2;
-        if (piece === 3 && move.r === 7) board[move.r][move.c] = 4;
+        const forceCaptures = moves.filter(m => m.capture !== null);
+        return forceCaptures.length > 0 ? forceCaptures : moves;
+    }
 
-        let redPieces = 0, blackPieces = 0;
+    function computeAllValidMoves(turn, board) {
+        let allMoves = [];
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
-                if (board[r][c] === 1 || board[r][c] === 2) redPieces++;
-                if (board[r][c] === 3 || board[r][c] === 4) blackPieces++;
+                const p = board[r][c];
+                if (p === 0) continue;
+                const isP1 = p === 1 || p === 2;
+                if ((turn === 1 && isP1) || (turn === 2 && !isP1)) {
+                    allMoves = allMoves.concat(computeValidMovesForPiece(r, c, board));
+                }
             }
         }
+        const captures = allMoves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : allMoves;
+    }
 
-        let nextStatus = "playing";
-        let winnerRole = "";
+    function executeGameMove(move) {
+        let board = currentGameState.board.map(row => row.slice());
+        let piece = board[move.fromR][move.fromC];
 
-        if (redPieces === 0) { nextStatus = "finished"; winnerRole = "p2"; }
-        if (blackPieces === 0) { nextStatus = "finished"; winnerRole = "p1"; }
+        if (move.capture) {
+            board[move.capture.r][move.capture.c] = 0;
+        }
 
-        const nextTurn = currentGameState.turn === "p1" ? "p2" : "p1";
+        if (piece === 1 && move.toR === 0) piece = 2; 
+        if (piece === 3 && move.toR === 7) piece = 4; 
 
+        board[move.toR][move.toC] = piece;
+        board[move.fromR][move.fromC] = 0;
+
+        let nextTurn = currentGameState.turn === 1 ? 2 : 1;
         selectedPiece = null;
         validMoves = [];
 
         if (isPracticeMode) {
             currentGameState.board = board;
             currentGameState.turn = nextTurn;
-            if (nextStatus === "finished") {
-                currentGameState.status = "finished";
-                currentGameState.winner = winnerRole;
-            }
-            renderGame();
-            
-            if (nextTurn === "p2" && nextStatus === "playing") {
-                runMachineAI();
+            renderGameStatus(currentGameState);
+            generateBoardUI(board);
+            if (!checkEndGameConditions(board) && nextTurn === 2) {
+                setTimeout(executeRobotTurn, 600);
             }
         } else {
-            const updates = {};
-            updates[`rooms/${roomId}/board`] = board;
-            updates[`rooms/${roomId}/turn`] = nextTurn;
-            if (nextStatus === "finished") {
-                updates[`rooms/${roomId}/status`] = "finished";
-                updates[`rooms/${roomId}/winner`] = winnerRole;
-            }
-
-            try {
-                await update(ref(db), updates);
-            } catch (error) {
-                alert("Movimento rejeitado.");
-                window.location.reload();
-            }
+            const roomRef = ref(db, 'rooms/' + roomId);
+            update(roomRef, { board: board, turn: nextTurn });
         }
     }
+
+    function executeRobotTurn() {
+        if (!isPracticeMode || currentGameState.status !== "playing") return;
+        
+        const board = currentGameState.board;
+        const robotMoves = computeAllValidMoves(2, board);
+
+        if (robotMoves.length === 0) {
+            currentGameState.status = "finished";
+            alert("Parabéns! Você venceu a máquina.");
+            renderGameStatus(currentGameState);
+            return;
+        }
+
+        const captures = robotMoves.filter(m => m.capture !== null);
+        const selectedMove = captures.length > 0 
+            ? captures[Math.floor(Math.random() * captures.length)]
+            : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+
+        let nextBoard = board.map(row => row.slice());
+        let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
+
+        if (selectedMove.capture) {
+            nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0;
+        }
+
+        if (piece === 3 && selectedMove.toR === 7) piece = 4;
+
+        nextBoard[selectedMove.toR][selectedMove.toC] = piece;
+        nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
+
+        currentGameState.board = nextBoard;
+        currentGameState.turn = 1;
+
+        renderGameStatus(currentGameState);
+        generateBoardUI(nextBoard);
+        checkEndGameConditions(nextBoard);
+    }
+
+    function checkEndGameConditions(board) {
+        let p1Pieces = 0, p2Pieces = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] === 1 || board[r][c] === 2) p1Pieces++;
+                if (board[r][c] === 3 || board[r][c] === 4) p2Pieces++;
+            }
+        }
+
+        if (p1Pieces === 0 || p2Pieces === 0) {
+            if (currentGameState.status === "playing") {
+                currentGameState.status = "finished";
+                if (gameTimerInterval) clearInterval(gameTimerInterval);
+                
+                let winnerText = p1Pieces > 0 ? "Jogador Vermelho Venceu!" : "Jogador Preto Venceu!";
+                alert(winnerText);
+
+                if (!isPracticeMode) {
+                    const roomRef = ref(db, 'rooms/' + roomId);
+                    update(roomRef, { status: "finished" });
+
+                    if (playerRole === "p1") updatePlayerRanking(p1Pieces > 0);
+                    if (playerRole === "p2") updatePlayerRanking(p2Pieces > 0);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    resetRoomBtn.addEventListener('click', async () => {
+        if (isPracticeMode) {
+            setupPracticeGame(nameInput.value.trim() || "Você");
+            return;
+        }
+        if (playerRole === "spectator") return alert("Espectadores não podem resetar a sala.");
+        
+        const roomRef = ref(db, 'rooms/' + roomId);
+        await update(roomRef, {
+            board: getInitialBoard(),
+            turn: 1,
+            status: "playing",
+            startTime: Date.now()
+        });
+    });
+
+    leaveBtn.addEventListener('click', async () => {
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        
+        if (!isPracticeMode && roomId) {
+            if (playerRole === "spectator") {
+                const specPresenceRef = ref(db, `rooms/${roomId}/spectators/${playerId}`);
+                await set(specPresenceRef, null);
+            } else {
+                const roomRef = ref(db, 'rooms/' + roomId);
+                if (playerRole === "p1") await update(roomRef, { p1Id: null, p1Name: "", status: "finished" });
+                if (playerRole === "p2") await update(roomRef, { p2Id: null, p2Name: "", status: "finished" });
+            }
+        }
+        
+        roomId = "";
+        playerRole = "spectator";
+        isPracticeMode = false;
+        gameScreen.style.display = 'none';
+        lobbyScreen.style.display = 'block';
+    });
 </script>
+
 </body>
 </html>
