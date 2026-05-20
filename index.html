@@ -234,7 +234,6 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* Ajustado de 3 para 4 colunas nos botões de controle do jogo */
         .control-box {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -575,7 +574,6 @@
     </div>
 </div>
 
-<!-- MANUAL COMPLETO E REFORMULADO DE REGRAS OFICIAIS BRASILEIRAS -->
 <div id="rules-modal" class="modal">
     <div class="modal-content">
         <h2>Regras Oficiais do Jogo de Damas</h2>
@@ -584,7 +582,7 @@
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
-            <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça ganha uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
+            <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça gains uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
         </ul>
         <button id="close-rules-btn">Entendido, Fechar</button>
     </div>
@@ -762,7 +760,7 @@
                     let tagInvict = isInvict ? " <span style='color:#f1c40f; font-size:0.75rem; font-weight:bold;'>🔥 INTACTO</span>" : "";
                     const row = document.createElement('div');
                     row.className = "podium-row";
-                    row.innerHTML = `<div>${medalhas[idx]} <strong>${player.name}</strong>${tagInvict}</div><div style="color:#2ecc71; font-weight:bold;">${player.wins} Vagas</div>`;
+                    row.innerHTML = `<div>${medalhas[idx]} <strong>${player.name}</strong>${tagInvict}</div><div style="color:#2ecc71; font-weight:bold;">${player.wins} Vitórias</div>`;
                     livePodiumContent.appendChild(row);
                 });
                 if(sorted.length > 0) {
@@ -936,6 +934,31 @@
         chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
     }
 
+    // FUNÇÃO AUXILIAR PARA CONTAR PEÇAS DE UM TABULEIRO
+    function contarPecasNoTabuleiro(board) {
+        let count = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] !== 0) count++;
+            }
+        }
+        return count;
+    }
+
+    // FUNÇÃO AUXILIAR PARA VERIFICAR SE UMA JOGADA FOI UMA NOVA COROA DE DAMA
+    function detectouNovaDama(oldBoard, newBoard) {
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                let antes = oldBoard[r][c];
+                let depois = newBoard[r][c];
+                if ((antes === 1 && depois === 2) || (antes === 3 && depois === 4)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     async function joinRoom(roomName, playerName, forceSpectator) {
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
@@ -993,7 +1016,31 @@
         onValue(roomRef, (snap) => {
             const data = snap.val();
             if (!data) return;
-            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") { reproduzirSomDoJogo('inicio'); }
+            
+            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") { 
+                reproduzirSomDoJogo('inicio'); 
+            }
+            
+            // 🌐 DETECTOR DE MOVIMENTO ONLINE PARA REPRODUZIR OS SONS DO ADVERSÁRIO E ESPECTADORES
+            if (currentGameState && currentGameState.board && data.board) {
+                const stringTabAnterior = JSON.stringify(currentGameState.board);
+                const stringTabNovo = JSON.stringify(data.board);
+                
+                // Se o texto do tabuleiro mudou, significa que alguém mexeu uma peça na rede
+                if (stringTabAnterior !== stringTabNovo) {
+                    const pecasAntes = contarPecasNoTabuleiro(currentGameState.board);
+                    const pecasDepois = contarPecasNoTabuleiro(data.board);
+                    
+                    if (pecasDepois < pecasAntes) {
+                        reproduzirSomDoJogo('capture');
+                    } else if (detectouNovaDama(currentGameState.board, data.board)) {
+                        reproduzirSomDoJogo('king');
+                    } else {
+                        reproduzirSomDoJogo('move');
+                    }
+                }
+            }
+
             currentGameState = data;
             
             let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
@@ -1180,9 +1227,6 @@
         let board = currentGameState.board.map(row => row.slice());
         let piece = board[move.fromR][move.fromC];
 
-        if (move.capture) { board[move.capture.r][move.capture.c] = 0; reproduzirSomDoJogo('capture'); } 
-        else { reproduzirSomDoJogo((piece === 1 && move.toR === 0) || (piece === 3 && move.toR === 7) ? 'king' : 'move'); }
-
         if (piece === 1 && move.toR === 0) piece = 2; 
         if (piece === 3 && move.toR === 7) piece = 4; 
 
@@ -1192,10 +1236,16 @@
         selectedPiece = null; validMoves = [];
 
         if (isPracticeMode) {
+            // No modo treino local, as funções manuais de áudio ainda agilizam a resposta
+            if (move.capture) reproduzirSomDoJogo('capture');
+            else reproduzirSomDoJogo((piece === 2 || piece === 4) ? 'king' : 'move');
+            
             currentGameState.board = board; currentGameState.turn = nextTurn;
             renderGameStatus(currentGameState); generateBoardUI(board);
             if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
-        } else { update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); }
+        } else { 
+            update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); 
+        }
     }
 
     function avaliarCenarioPosicional(board, m) {
@@ -1278,7 +1328,6 @@
 
         if (currentGameState.status !== "playing") return false;
 
-        // VERIFICAÇÃO 1: FIM DE JOGO POR FALTA DE PEÇAS
         if (p1Pieces === 0 || p2Pieces === 0) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
@@ -1288,12 +1337,10 @@
             return true;
         }
 
-        // VERIFICAÇÃO 2: DETECÇÃO AUTOMÁTICA DE ENCURRALAMENTO (BLOQUEIO)
         const totalMovimentosPossiveis = computeAllValidMoves(currentGameState.turn, board).length;
         if (totalMovimentosPossiveis === 0) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            // Se a vez era do jogador 1 e ele não se mexe, vitória do jogador 2 e vice-versa
             let p1Venceu = (currentGameState.turn === 2); 
             let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
             
@@ -1311,7 +1358,6 @@
         if (playerRole === "p2") updatePlayerRanking(!p1Venceu, currentGameState.p2Name);
     }
 
-    // BOTÃO DE PROPOR EMPATE AMIGÁVEL
     drawBtn.addEventListener('click', async () => {
         if (!currentGameState || currentGameState.status !== "playing") return;
         if (playerRole === "spectator") return alert("Espectadores não podem propor empate.");
