@@ -466,7 +466,6 @@
             font-size: 0.85rem;
         }
 
-        /* Styles para o Novo Alerta Customizado */
         .custom-alert-title {
             color: #e94560 !important;
             border-bottom: 2px solid #e94560 !important;
@@ -477,6 +476,45 @@
             color: #e2e8f0;
             margin-bottom: 20px;
             text-align: center;
+        }
+
+        /* Classes Novas da Central de Monitoramento do Administrador */
+        .admin-dashboard-box {
+            margin-top: 20px;
+            background-color: #0f172a;
+            border: 1px solid #9b59b6;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .admin-dashboard-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #9b59b6;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 4px;
+        }
+        .admin-room-row {
+            display: flex;
+            flex-direction: column;
+            background-color: #16213e;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            text-align: left;
+            border-left: 4px solid #7f8c8d;
+        }
+        .admin-room-row.auth-true { border-left-color: #27ae60; }
+        .admin-room-row.auth-false { border-left-color: #c0392b; }
+        .admin-room-meta {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 4px;
         }
 
         @media (max-width: 480px) {
@@ -558,6 +596,14 @@
                 <span>Controle Geral da Sala:</span>
                 <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">FORÇAR RESET TOTAL</button>
             </div>
+
+            <!-- 📊 NOVA CENTRAL DE MONITORAMENTO DE TODAS AS SALAS -->
+            <div class="admin-dashboard-box">
+                <div class="admin-dashboard-title">📋 Monitoramento Geral de Salas (Realtime)</div>
+                <div id="admin-rooms-dashboard-list">
+                    <div style="color: #666; font-style: italic; font-size: 0.8rem;">Rastreando atividade nos servidores...</div>
+                </div>
+            </div>
         </div>
 
         <div class="board-wrapper">
@@ -587,7 +633,6 @@
     </div>
 </div>
 
-<!-- 📦 NOVO MODAL DE ALERTA PROFISSIONAL DO SISTEMA -->
 <div id="custom-alert-modal" class="modal">
     <div class="modal-content" style="max-width: 420px; text-align: center;">
         <h2 id="custom-alert-title" class="custom-alert-title">Aviso do Sistema</h2>
@@ -664,7 +709,6 @@
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
-    // Função para chamar o Novo Alerta Customizado Visual
     function exibirAlertaDoSistema(titulo, texto) {
         document.getElementById('custom-alert-title').innerText = titulo;
         document.getElementById('custom-alert-text').innerHTML = texto;
@@ -765,6 +809,7 @@
     const adminPanel = document.getElementById('admin-panel');
     const adminToggleRoomBtn = document.getElementById('admin-toggle-room-btn');
     const adminClearAllBtn = document.getElementById('admin-clear-all-btn');
+    const adminRoomsDashboardList = document.getElementById('admin-rooms-dashboard-list');
 
     const rulesModal = document.getElementById('rules-modal');
     const rulesBtnLobby = document.getElementById('rules-btn-lobby');
@@ -1003,7 +1048,7 @@
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 let antes = oldBoard[r][c];
-                let depois = newBoard[r][c];
+                let depois = newBoard[r][varC = c];
                 if ((antes === 1 && depois === 2) || (antes === 3 && depois === 4)) {
                     return true;
                 }
@@ -1012,13 +1057,46 @@
         return false;
     }
 
+    // 📊 FUNÇÃO DA CENTRAL DE MONITORAMENTO DO ADMINISTRADOR
+    function ativarPainelMonitoramentoRealtime() {
+        const todasSalasRef = ref(db, 'rooms');
+        onValue(todasSalasRef, (snapshot) => {
+            const roomsData = snapshot.val();
+            if (!roomsData) {
+                adminRoomsDashboardList.innerHTML = `<div style="color: #666; font-style: italic;">Nenhuma sala ativa no sistema no momento.</div>`;
+                return;
+            }
+            adminRoomsDashboardList.innerHTML = "";
+            Object.keys(roomsData).forEach(idSala => {
+                const sala = roomsData[idSala];
+                const statusTxt = sala.isAuthorized ? "AUTORIZADA" : "BLOQUEADA";
+                const classAuth = sala.isAuthorized ? "auth-true" : "auth-false";
+                
+                let p1 = sala.p1Name || "(Vazio)";
+                let p2 = sala.p2Name || "(Vazio)";
+                let dataUso = sala.lastUsedDate || "Sem registros de data";
+
+                const row = document.createElement('div');
+                row.className = `admin-room-row ${classAuth}`;
+                row.innerHTML = `
+                    <div class="admin-room-meta">
+                        <span>Sala: ${idSala.toUpperCase()}</span>
+                        <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'}">${statusTxt}</span>
+                    </div>
+                    <div>👥 Jogadores: <span style="color: #bbb;">${p1} vs ${p2}</span></div>
+                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 2px;">📅 Data do Confronto: ${dataUso}</div>
+                `;
+                adminRoomsDashboardList.appendChild(row);
+            });
+        });
+    }
+
     async function joinRoom(roomName, playerName, forceSpectator) {
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
         const isAdminMode = (playerName === "Isiquel_Admin");
 
-        // 🛡️ TRAVA PROFISSIONAL CUSTOMIZADA COM SEU NOME OFICIAL
         if (!roomData) {
             if (!isAdminMode) {
                 exibirAlertaDoSistema(
@@ -1039,7 +1117,8 @@
                 p2Name: "",
                 startTime: 0,
                 chat: null,
-                isAuthorized: false 
+                isAuthorized: false,
+                lastUsedDate: ""
             };
             await set(roomRef, roomData);
         } else {
@@ -1057,10 +1136,12 @@
             else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
             else if (!roomData.p1Id || roomData.p1Id === "") {
                 playerRole = "p1";
-                await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null });
+                const dataFormatada = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+                await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null, lastUsedDate: dataFormatada });
             } else if (!roomData.p2Id || roomData.p2Id === "") {
                 playerRole = "p2";
-                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now() });
+                const dataFormatada = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now(), lastUsedDate: dataFormatada });
             } else { playerRole = "spectator"; }
         }
 
@@ -1074,7 +1155,13 @@
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
 
-        adminPanel.style.display = playerRole === "admin" ? "block" : "none";
+        if (playerRole === "admin") {
+            adminPanel.style.display = "block";
+            ativarPainelMonitoramentoRealtime(); // Inicializa o monitoramento de todas as salas
+        } else {
+            adminPanel.style.display = "none";
+        }
+        
         toggleChatVisibility.style.display = (playerRole === "spectator") ? "none" : "block";
 
         onValue(roomRef, (snap) => {
@@ -1115,6 +1202,11 @@
             }
             ultimoContadorEspectadores = specsCount;
 
+            // 👁️ ESCUTADOR VISUAL DE FIM DE JOGO PARA ESPECTADORES E JOGADORES CONECTADOS
+            if (currentGameState && currentGameState.status === "playing" && data.status === "finished") {
+                executarAlertaVisualDeVitoria(data.board);
+            }
+
             currentGameState = data;
             
             liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
@@ -1127,7 +1219,6 @@
 
             renderGameStatus(data);
             generateBoardUI(data.board);
-            checkEndGameConditions(data.board);
         });
 
         let primeiraCargaChat = true;
@@ -1366,7 +1457,12 @@
             renderGameStatus(currentGameState); generateBoardUI(board);
             if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
         } else { 
-            update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); 
+            // Se a jogada causar fim de jogo, o próprio checkEndGameConditions disparará a finalização
+            currentGameState.board = board;
+            currentGameState.turn = nextTurn;
+            if (!checkEndGameConditions(board)) {
+                update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); 
+            }
         }
     }
 
@@ -1402,7 +1498,7 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            exibirAlertaDoSistema("Fim de Jogo", `🏆 PARABÉNS! Vitória de ${currentGameState.p1Name || "Você"} por bloqueio total do adversário! 🎉`);
+            exibirAlertaDoSistema("Fim de Jogo 👑", `🏆 PARABÉNS! Vitória de <strong>${currentGameState.p1Name || "Você"}</strong> por bloqueio total do adversário! 🎉`);
             renderGameStatus(currentGameState); return;
         }
 
@@ -1438,6 +1534,35 @@
         checkEndGameConditions(nextBoard);
     }
 
+    // 🏆 NOVA LOGA DE ALERTAS DE VITÓRIA INTEGRADA PARA JOGADORES E OLHEIROS
+    function executarAlertaVisualDeVitoria(board) {
+        let p1Pieces = 0, p2Pieces = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] === 1 || board[r][c] === 2) p1Pieces++;
+                if (board[r][c] === 3 || board[r][c] === 4) p2Pieces++;
+            }
+        }
+
+        let nomeDoGanhador = "";
+        let motivo = "";
+
+        if (p1Pieces === 0 || p2Pieces === 0) {
+            nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
+            motivo = "por eliminação completa de todas as peças adversárias!";
+        } else {
+            // Se as peças não acabaram, foi por falta de movimentos (bloqueio)
+            let p1Venceu = (currentGameState.turn === 2);
+            nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
+            motivo = "por bloqueio tático! O oponente ficou totalmente encurralado e sem jogadas.";
+        }
+
+        exibirAlertaDoSistema(
+            "Fim de Jogo! 👑", 
+            `🎉 <strong>MEUS PARABÉNS!</strong> 🎉<br><br>O grande vencedor da batalha é: <strong style="color: #2ecc71; font-size: 1.2rem;">${nomeDoGanhador}</strong><br><small style="color: #aaa;">${motivo}</small>`
+        );
+    }
+
     function checkEndGameConditions(board) {
         let p1Pieces = 0, p2Pieces = 0;
         for (let r = 0; r < 8; r++) {
@@ -1452,9 +1577,11 @@
         if (p1Pieces === 0 || p2Pieces === 0) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            let nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            exibirAlertaDoSistema("Vitória Decisiva 👑", `Vitória incontestável de <strong>${nomeDoGanhador}</strong> por eliminação completa! 🎉`);
-            finalizarPartidaOnline(p1Pieces > 0);
+            if (isPracticeMode) {
+                executarAlertaVisualDeVitoria(board);
+            } else {
+                finalizarPartidaOnline(p1Pieces > 0, board);
+            }
             return true;
         }
 
@@ -1462,18 +1589,21 @@
         if (totalMovimentosPossiveis === 0 && !lockPieceForMultiCapture) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            let p1Venceu = (currentGameState.turn === 2); 
-            let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            exibirAlertaDoSistema("Bloqueio Tático ⚔️", `Vitória tática de <strong>${nomeDoGanhador}</strong> por encurralar e trancar o adversário! 🎉`);
-            finalizarPartidaOnline(p1Venceu);
+            if (isPracticeMode) {
+                executarAlertaVisualDeVitoria(board);
+            } else {
+                let p1Venceu = (currentGameState.turn === 2);
+                finalizarPartidaOnline(p1Venceu, board);
+            }
             return true;
         }
         return false;
     }
 
-    async function finalizarPartidaOnline(p1Venceu) {
+    async function finalizarPartidaOnline(p1Venceu, board) {
         if (isPracticeMode) return;
-        update(ref(db, 'rooms/' + roomId), { status: "finished" });
+        // Grava no Firebase primeiro para disparar o gatilho visual para todos na sala
+        await update(ref(db, 'rooms/' + roomId), { board: board, status: "finished" });
         if (playerRole === "p1") updatePlayerRanking(p1Venceu, currentGameState.p1Name);
         if (playerRole === "p2") updatePlayerRanking(!p1Venceu, currentGameState.p2Name);
     }
@@ -1484,7 +1614,7 @@
         if (!confirm("Deseja declarar empate consensual e reiniciar a partida?")) return;
 
         if (isPracticeMode) {
-            exibirAlertaDoSistema("Empate", "Partida empatada contra a máquina.");
+            exibirAlertaDoSistema("Empate", "Partida terminou em empate amigável contra a máquina.");
             setupPracticeGame(nameInput.value.trim() || "Você");
         } else {
             const roomRef = ref(db, 'rooms/' + roomId);
