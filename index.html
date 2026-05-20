@@ -466,6 +466,19 @@
             font-size: 0.85rem;
         }
 
+        /* Styles para o Novo Alerta Customizado */
+        .custom-alert-title {
+            color: #e94560 !important;
+            border-bottom: 2px solid #e94560 !important;
+        }
+        .custom-alert-text {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -574,6 +587,15 @@
     </div>
 </div>
 
+<!-- 📦 NOVO MODAL DE ALERTA PROFISSIONAL DO SISTEMA -->
+<div id="custom-alert-modal" class="modal">
+    <div class="modal-content" style="max-width: 420px; text-align: center;">
+        <h2 id="custom-alert-title" class="custom-alert-title">Aviso do Sistema</h2>
+        <div id="custom-alert-text" class="custom-alert-text">Mensagem...</div>
+        <button id="close-alert-btn" style="background-color: var(--accent-color); width: auto; padding: 10px 30px;">OK</button>
+    </div>
+</div>
+
 <div id="rules-modal" class="modal">
     <div class="modal-content">
         <h2>Regras Oficiais do Jogo de Damas</h2>
@@ -641,6 +663,16 @@
     
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
+
+    // Função para chamar o Novo Alerta Customizado Visual
+    function exibirAlertaDoSistema(titulo, texto) {
+        document.getElementById('custom-alert-title').innerText = titulo;
+        document.getElementById('custom-alert-text').innerHTML = texto;
+        document.getElementById('custom-alert-modal').style.display = 'flex';
+    }
+    document.getElementById('close-alert-btn').addEventListener('click', () => {
+        document.getElementById('custom-alert-modal').style.display = 'none';
+    });
 
     function reproduzirSomDoJogo(tipo) {
         try {
@@ -856,8 +888,8 @@
     joinBtn.addEventListener('click', () => {
         const playerName = nameInput.value.trim();
         const roomName = roomInput.value.trim().toLowerCase();
-        if (!playerName) return alert("Por favor, digite seu nome.");
-        if (!roomName) return alert("Por favor, digite o código da sala.");
+        if (!playerName) return exibirAlertaDoSistema("Identificação", "Por favor, digite seu nome para continuar.");
+        if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe o código da sala para conectar.");
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
@@ -869,7 +901,7 @@
 
     spectateBtn.addEventListener('click', () => {
         const roomName = roomInput.value.trim().toLowerCase();
-        if (!roomName) return alert("Por favor, digite o código da sala para assistir.");
+        if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe o código da sala para assistir.");
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
@@ -986,14 +1018,15 @@
         let roomData = snapshot.val();
         const isAdminMode = (playerName === "Isiquel_Admin");
 
-        // 🛡️ REVISÃO PROFUNDA DE SEGURANÇA: Bloqueio estrito de salas não autorizadas
+        // 🛡️ TRAVA PROFISSIONAL CUSTOMIZADA COM SEU NOME OFICIAL
         if (!roomData) {
-            // Se a sala não existe e quem está tentando entrar NÃO é o administrador, barra imediatamente!
             if (!isAdminMode) {
-                alert("Acesso Negado! Esta sala ainda não existe ou não foi liberada pelo Administrador.");
+                exibirAlertaDoSistema(
+                    "Sala Bloqueada 🛡️", 
+                    "Esta sala precisa da liberação do Administrador <strong>Isiquel Rodrigues</strong>.<br><br>Por favor, entre em contato com o administrador e peça a liberação deste código de sala."
+                );
                 return;
             }
-            // Se for o administrador criando uma nova sala do painel dele:
             playerRole = "admin";
             roomData = {
                 id: roomName,
@@ -1006,13 +1039,15 @@
                 p2Name: "",
                 startTime: 0,
                 chat: null,
-                isAuthorized: false // Começa estritamente bloqueada até você clicar no botão do painel
+                isAuthorized: false 
             };
             await set(roomRef, roomData);
         } else {
-            // Se a sala já existe no banco, mas NÃO está autorizada e quem está entrando NÃO é você:
             if (!roomData.isAuthorized && !isAdminMode) {
-                alert("Acesso Negado! Esta sala está bloqueada e precisa de liberação do Administrador.");
+                exibirAlertaDoSistema(
+                    "Sala Bloqueada 🛡️", 
+                    "Esta sala está temporariamente trancada.<br><br>Entre em contato com o Administrador <strong>Isiquel Rodrigues</strong> para solicitar a liberação do acesso."
+                );
                 return;
             }
 
@@ -1120,7 +1155,7 @@
         if (playerRole !== "admin") return;
         if (!confirm("Deseja mesmo forçar a limpeza e reiniciar esta sala inteira?")) return;
         update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "waiting", startTime: 0, p1Id: "", p1Name: "", p2Id: "", p2Name: "", chat: null });
-        alert("Sala resetada com sucesso!");
+        exibirAlertaDoSistema("Reset de Sala", "A sala foi completamente limpa e redefinida.");
     });
 
     function setupPracticeGame(playerName) {
@@ -1367,7 +1402,7 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            alert(`🏆 PARABÉNS! Vitória de ${currentGameState.p1Name || "Você"} por bloqueio total do adversário! 🎉`);
+            exibirAlertaDoSistema("Fim de Jogo", `🏆 PARABÉNS! Vitória de ${currentGameState.p1Name || "Você"} por bloqueio total do adversário! 🎉`);
             renderGameStatus(currentGameState); return;
         }
 
@@ -1418,7 +1453,7 @@
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
             let nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador}! 🎉`);
+            exibirAlertaDoSistema("Vitória Decisiva 👑", `Vitória incontestável de <strong>${nomeDoGanhador}</strong> por eliminação completa! 🎉`);
             finalizarPartidaOnline(p1Pieces > 0);
             return true;
         }
@@ -1429,7 +1464,7 @@
             if (gameTimerInterval) clearInterval(gameTimerInterval);
             let p1Venceu = (currentGameState.turn === 2); 
             let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador} por bloqueio total do adversário! 🎉`);
+            exibirAlertaDoSistema("Bloqueio Tático ⚔️", `Vitória tática de <strong>${nomeDoGanhador}</strong> por encurralar e trancar o adversário! 🎉`);
             finalizarPartidaOnline(p1Venceu);
             return true;
         }
@@ -1445,11 +1480,11 @@
 
     drawBtn.addEventListener('click', async () => {
         if (!currentGameState || currentGameState.status !== "playing") return;
-        if (playerRole === "spectator") return alert("Espectadores não podem propor empate.");
+        if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem propor empate.");
         if (!confirm("Deseja declarar empate consensual e reiniciar a partida?")) return;
 
         if (isPracticeMode) {
-            alert("Partida empatada contra a máquina.");
+            exibirAlertaDoSistema("Empate", "Partida empatada contra a máquina.");
             setupPracticeGame(nameInput.value.trim() || "Você");
         } else {
             const roomRef = ref(db, 'rooms/' + roomId);
@@ -1460,7 +1495,7 @@
 
     resetRoomBtn.addEventListener('click', async () => {
         if (isPracticeMode) { setupPracticeGame(nameInput.value.trim() || "Você"); return; }
-        if (playerRole === "spectator") return alert("Espectadores não podem resetar a sala.");
+        if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem resetar a sala.");
         lockPieceForMultiCapture = null;
         update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
     });
