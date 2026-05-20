@@ -394,6 +394,48 @@
             background-color: rgba(255,255,255,0.05);
         }
 
+        /* Estilo da Caixa de Destaque dos Vencedores no Lobby */
+        .live-podium {
+            background: linear-gradient(135deg, #1f4068, #16213e);
+            border: 1px solid #3498db;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .podium-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #3498db;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .podium-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .podium-row:last-child { border-bottom: none; }
+
+        .call-to-arms {
+            background-color: #0f172a;
+            border-left: 4px solid var(--accent-color);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: #e2e8f0;
+            margin-top: 10px;
+            text-align: left;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -412,6 +454,17 @@
     <div id="lobby-screen" class="card">
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
         
+        <!-- PÓDIUM DOS GRANDES VENCEDORES EM TEMPO REAL -->
+        <div class="live-podium">
+            <div class="podium-title">🏆 Top Campeões do Sistema</div>
+            <div id="live-podium-content">
+                <div style="font-size:0.85rem; color:#aaa; padding:5px 0;">Carregando os donos do tabuleiro...</div>
+            </div>
+            <div class="call-to-arms" id="motivate-box">
+                ⚔️ Carregando convocação de batalha...
+            </div>
+        </div>
+
         <label for="name-input">Seu Nome:</label>
         <input type="text" id="name-input" placeholder="Digite seu nome" maxlength="15" disabled>
 
@@ -486,7 +539,7 @@
     <div class="modal-content">
         <h2>Como Funciona o Jogo?</h2>
         <ul>
-            <li><strong>Início da Partida:</strong> O jogo online libera os movimentos quando 2 jogadores entrarem com a mesma sala. O Vermelho inicia jogando.</li>
+            <li><strong>Início da Partida:</strong> O jogo online libera os movimentos quando 2 jogadores entrarem com a mesma sala. O Vermelho inicia jugas.</li>
             <li><strong>Movimentos:</strong> Suas peças andam apenas 1 casa para frente pelas diagonais escuras.</li>
             <li><strong>Capturas:</strong> Salte por cima da peça adversária para uma casa vazia atrás dela.</li>
             <li><strong>Virar Dama (👑):</strong> Ao levar a peça até a última fileira adversária, ela vira Dama e anda livremente por todas as diagonais livres.</li>
@@ -547,10 +600,8 @@
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
-    // GERADOR MULTIMÍDIA DE ÁUDIO NATIVO
     function reproduzirSomDoJogo(tipo) {
         try {
-            // Cria o contexto de áudio do navegador dinamicamente
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return;
             const ctx = new AudioCtx();
@@ -564,17 +615,15 @@
             const agora = ctx.currentTime;
             
             if (tipo === 'inicio') {
-                // Efeito sonoro subindo de tom ao começar o jogo
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(261.63, agora); // Dó
-                osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); // Dó oitava
+                osc.frequency.setValueAtTime(261.63, agora); 
+                osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); 
                 gain.gain.setValueAtTime(0.15, agora);
                 gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
                 osc.start(agora);
                 osc.stop(agora + 0.3);
             } 
             else if (tipo === 'move') {
-                // Bipe rápido e curto para movimento simples
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(400, agora);
                 gain.gain.setValueAtTime(0.1, agora);
@@ -583,7 +632,6 @@
                 osc.stop(agora + 0.08);
             } 
             else if (tipo === 'capture') {
-                // Som duplo agressivo (queda e corte) ao capturar peças
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(180, agora);
                 osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
@@ -592,7 +640,6 @@
                 osc.start(agora);
                 osc.stop(agora + 0.15);
                 
-                // Segundo bipe complementar de impacto
                 const osc2 = ctx.createOscillator();
                 const gain2 = ctx.createGain();
                 osc2.type = 'triangle';
@@ -605,17 +652,16 @@
                 osc2.stop(agora + 0.2);
             } 
             else if (tipo === 'king') {
-                // Som majestoso e agudo de conquista (Virou Dama)
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, agora); // Ré
-                osc.frequency.setValueAtTime(880.00, agora + 0.1); // Lá
+                osc.frequency.setValueAtTime(587.33, agora); 
+                osc.frequency.setValueAtTime(880.00, agora + 0.1); 
                 gain.gain.setValueAtTime(0.15, agora);
                 gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
                 osc.start(agora);
                 osc.stop(agora + 0.3);
             }
         } catch (e) {
-            console.log("Áudio bloqueado ou não suportado", e);
+            console.log("Áudio bloqueado", e);
         }
     }
 
@@ -658,6 +704,8 @@
     const rankBtnLobby = document.getElementById('rank-btn-lobby');
     const closeRankBtn = document.getElementById('close-rank-btn');
     const rankTableBody = document.getElementById('rank-table-body');
+    const livePodiumContent = document.getElementById('live-podium-content');
+    const motivateBox = document.getElementById('motivate-box');
 
     rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
     rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
@@ -678,6 +726,44 @@
         window.location.href = 'jogo.apk';
     });
 
+    // ESCUTADOR DO LOBBY - CARREGA O TOP 3 E AS FRASES ASSIM QUE ABRE
+    async function carregarPodiumLobby() {
+        try {
+            const rankRef = ref(db, 'leaderboard');
+            onValue(rankRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    livePodiumContent.innerHTML = "<div style='font-size:0.85rem; color:#aaa;'>Nenhuma batalha online registrada ainda!</div>";
+                    motivateBox.innerText = "⚔️ Seja o primeiro a inaugurar o tabuleiro e assumir o topo!";
+                    return;
+                }
+
+                const sorted = Object.values(data).sort((a, b) => b.wins - a.wins).slice(0, 3);
+                livePodiumContent.innerHTML = "";
+                
+                let medalhas = ["🥇", "🥈", "🥉"];
+                sorted.forEach((player, idx) => {
+                    let isInvict = player.losses === 0 && player.wins > 0;
+                    let tagInvict = isInvict ? " <span style='color:#f1c40f; font-size:0.75rem; font-weight:bold;'>🔥 INTACTO</span>" : "";
+                    
+                    const row = document.createElement('div');
+                    row.className = "podium-row";
+                    row.innerHTML = `
+                        <div>${medalhas[idx]} <strong>${player.name}</strong>${tagInvict}</div>
+                        <div style="color:#2ecc71; font-weight:bold;">${player.wins} Vitórias</div>
+                    `;
+                    livePodiumContent.appendChild(row);
+                });
+
+                if(sorted.length > 0) {
+                    motivateBox.innerHTML = `⚔️ Desafie o topo! <strong>${sorted[0].name}</strong> está dominando. Crie uma sala online e marque um confronto direto contra os campeões!`;
+                }
+            });
+        } catch(e) {
+            console.log("Erro ao carregar podium", e);
+        }
+    }
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             playerId = user.uid; 
@@ -689,6 +775,7 @@
             practiceBtn.disabled = false;
             rulesBtnLobby.disabled = false;
             rankBtnLobby.disabled = false;
+            carregarPodiumLobby(); // Ativa a busca automática do pódio
         } else {
             signInAnonymously(auth).catch(err => {
                 authStatusEl.innerText = "Erro de conexão segura.";
@@ -951,7 +1038,6 @@
             const data = snap.val();
             if (!data) return;
             
-            // Toca som de início quando o jogo muda de esperando para jogando online
             if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") {
                 reproduzirSomDoJogo('inicio');
             }
@@ -1038,7 +1124,7 @@
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
         
-        reproduzirSomDoJogo('inicio'); // Som de início no modo offline
+        reproduzirSomDoJogo('inicio'); 
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
         generateBoardUI(currentGameState.board);
@@ -1219,16 +1305,14 @@
         let board = currentGameState.board.map(row => row.slice());
         let piece = board[move.fromR][move.fromC];
 
-        // Gatilho de sons inteligentes baseado no tipo de jogada feita
         if (move.capture) {
             board[move.capture.r][move.capture.c] = 0;
-            reproduzirSomDoJogo('capture'); // Som de comer peça
+            reproduzirSomDoJogo('capture'); 
         } else {
-            // Verifica se a jogada gerou uma dama
             if ((piece === 1 && move.toR === 0) || (piece === 3 && move.toR === 7)) {
-                reproduzirSomDoJogo('king'); // Som de virar dama
+                reproduzirSomDoJogo('king'); 
             } else {
-                reproduzirSomDoJogo('move'); // Som comum
+                reproduzirSomDoJogo('move'); 
             }
         }
 
@@ -1352,7 +1436,6 @@
         let nextBoard = board.map(row => row.slice());
         let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
 
-        // Sons para as ações tomadas pelo próprio robô
         if (selectedMove.capture) {
             nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0;
             reproduzirSomDoJogo('capture');
