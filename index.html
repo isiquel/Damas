@@ -55,6 +55,7 @@
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             margin-bottom: 20px;
+            position: relative;
         }
 
         label {
@@ -435,6 +436,37 @@
             text-align: left;
         }
 
+        /* Estilo da nova caixinha de dificuldades rápida */
+        .difficulty-selector-box {
+            display: none;
+            background-color: #0f172a;
+            border: 2px solid #2ecc71;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }
+
+        .difficulty-selector-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #2ecc71;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .difficulty-buttons-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-diff-select {
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -442,6 +474,7 @@
             .king::after { font-size: 0.9rem; }
             .control-box { grid-template-columns: 1fr 1fr; }
             #rules-btn-game { grid-column: span 2; }
+            .difficulty-buttons-row { flex-direction: column; }
         }
     </style>
 </head>
@@ -473,6 +506,17 @@
             <button id="join-btn" disabled>Jogar Online (Multiplayer)</button>
             <button id="spectate-btn" class="btn-spectate" disabled>Assistir Jogo (Espectador)</button>
             <button id="practice-btn" class="btn-secondary" disabled>Contra a Máquina (Modo Treino)</button>
+            
+            <!-- CAIXINHA DE SELEÇÃO RÁPIDA (Substitui o prompt chato) -->
+            <div id="difficulty-box" class="difficulty-selector-box">
+                <div class="difficulty-selector-title">Escolha o Nível para Jogar:</div>
+                <div class="difficulty-buttons-row">
+                    <button class="btn-diff-select" id="btn-choose-easy" style="background-color: #3498db;">Fácil</button>
+                    <button class="btn-diff-select" id="btn-choose-medium" style="background-color: #f39c12;">Médio</button>
+                    <button class="btn-diff-select" id="btn-choose-hard" style="background-color: #e74c3c;">Difícil</button>
+                </div>
+            </div>
+
             <button id="rules-btn-lobby" class="btn-info" disabled>Regras e Instruções</button>
             <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Ranking Global</button>
             <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
@@ -704,6 +748,12 @@
     const rankTableBody = document.getElementById('rank-table-body');
     const livePodiumContent = document.getElementById('live-podium-content');
     const motivateBox = document.getElementById('motivate-box');
+    
+    // Novos elementos do menu de dificuldade nativo
+    const difficultyBox = document.getElementById('difficulty-box');
+    const btnChooseEasy = document.getElementById('btn-choose-easy');
+    const btnChooseMedium = document.getElementById('btn-choose-medium');
+    const btnChooseHard = document.getElementById('btn-choose-hard');
 
     rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
     rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
@@ -844,6 +894,7 @@
         if (!playerName) return alert("Por favor, digite seu nome.");
         if (!roomName) return alert("Por favor, digite o código da sala.");
         
+        difficultyBox.style.display = "none"; // Garante que fecha se estivesse aberto
         isPracticeMode = false;
         hasRecordedResult = false;
         roomId = roomName;
@@ -854,31 +905,46 @@
         const roomName = roomInput.value.trim().toLowerCase();
         if (!roomName) return alert("Por favor, digite o código da sala para assistir.");
         
+        difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
         roomId = roomName;
         joinRoom(roomName, "Olheiro", true);
     });
 
+    // CLIQUE NO BOTÃO CONTRA A MÁQUINA: Abre ou fecha o menu deslizante
     practiceBtn.addEventListener('click', () => {
-        const playerName = nameInput.value.trim() || "Você";
-        
-        const escolha = prompt("Escolha o nível de dificuldade:\n1 - Fácil (Iniciante)\n2 - Médio (Intermediário)\n3 - Difícil (Quase Impossível)", "2");
-        
-        if (escolha === "1") {
-            practiceDifficulty = "facil";
-        } else if (escolha === "3") {
-            practiceDifficulty = "dificil";
+        if (difficultyBox.style.display === "flex") {
+            difficultyBox.style.display = "none";
         } else {
-            practiceDifficulty = "medio";
+            difficultyBox.style.display = "flex";
         }
+    });
 
+    // BOTÕES DE CLIQUE DIRETO NA DIFICULDADE (Super prático!)
+    btnChooseEasy.addEventListener('click', () => {
+        practiceDifficulty = "facil";
+        iniciarTreinoDireto();
+    });
+
+    btnChooseMedium.addEventListener('click', () => {
+        practiceDifficulty = "medio";
+        iniciarTreinoDireto();
+    });
+
+    btnChooseHard.addEventListener('click', () => {
+        practiceDifficulty = "dificil";
+        iniciarTreinoDireto();
+    });
+
+    function iniciarTreinoDireto() {
+        const playerName = nameInput.value.trim() || "Você";
+        difficultyBox.style.display = "none"; // Oculta o menu pós-escolha
         isPracticeMode = true;
         hasRecordedResult = false;
         playerRole = "p1";
-        
         setupPracticeGame(playerName);
-    });
+    }
 
     function runLocalTimer(startTimestamp, gameStatus) {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
@@ -1150,7 +1216,6 @@
             turnIndicator.innerText = "Aguardando Rival...";
             turnIndicator.style.color = "#f1c40f";
         } else if (data.status === "playing") {
-            // INTERCALANDO NOMES DOS JOGADORES REAIS CONFORME O TURNO ATUAL
             if (data.turn === 1) {
                 turnIndicator.innerText = `Vez de: ${p1}`;
                 turnIndicator.style.color = "var(--p1-color)";
@@ -1396,7 +1461,6 @@
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
             
-            // ALERT DE VITÓRIA COM NOME EM MODO TREINO
             const nomeDoHumano = currentGameState.p1Name || "Você";
             alert(`🏆 PARABÉNS! Vitória de ${nomeDoHumano}! 🎉`);
             
@@ -1476,7 +1540,6 @@
                 currentGameState.status = "finished";
                 if (gameTimerInterval) clearInterval(gameTimerInterval);
                 
-                // DETECÇÃO EXATA DO NOME DE QUEM VENCEU PARA O POP-UP FINAL
                 let nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
                 alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador}! 🎉`);
 
@@ -1526,6 +1589,7 @@
         roomId = "";
         playerRole = "spectator";
         isPracticeMode = false;
+        difficultyBox.style.display = "none";
         gameScreen.style.display = 'none';
         lobbyScreen.style.display = 'block';
     });
