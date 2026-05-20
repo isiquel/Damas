@@ -547,6 +547,78 @@
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
+    // GERADOR MULTIMÍDIA DE ÁUDIO NATIVO
+    function reproduzirSomDoJogo(tipo) {
+        try {
+            // Cria o contexto de áudio do navegador dinamicamente
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            const agora = ctx.currentTime;
+            
+            if (tipo === 'inicio') {
+                // Efeito sonoro subindo de tom ao começar o jogo
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(261.63, agora); // Dó
+                osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); // Dó oitava
+                gain.gain.setValueAtTime(0.15, agora);
+                gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora);
+                osc.stop(agora + 0.3);
+            } 
+            else if (tipo === 'move') {
+                // Bipe rápido e curto para movimento simples
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, agora);
+                gain.gain.setValueAtTime(0.1, agora);
+                gain.gain.linearRampToValueAtTime(0.01, agora + 0.08);
+                osc.start(agora);
+                osc.stop(agora + 0.08);
+            } 
+            else if (tipo === 'capture') {
+                // Som duplo agressivo (queda e corte) ao capturar peças
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, agora);
+                osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
+                gain.gain.setValueAtTime(0.2, agora);
+                gain.gain.linearRampToValueAtTime(0.01, agora + 0.15);
+                osc.start(agora);
+                osc.stop(agora + 0.15);
+                
+                // Segundo bipe complementar de impacto
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(120, agora + 0.05);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                gain2.gain.setValueAtTime(0.2, agora + 0.05);
+                gain2.gain.linearRampToValueAtTime(0.01, agora + 0.2);
+                osc2.start(agora + 0.05);
+                osc2.stop(agora + 0.2);
+            } 
+            else if (tipo === 'king') {
+                // Som majestoso e agudo de conquista (Virou Dama)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, agora); // Ré
+                osc.frequency.setValueAtTime(880.00, agora + 0.1); // Lá
+                gain.gain.setValueAtTime(0.15, agora);
+                gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora);
+                osc.stop(agora + 0.3);
+            }
+        } catch (e) {
+            console.log("Áudio bloqueado ou não suportado", e);
+        }
+    }
+
     // Elementos DOM
     const lobbyScreen = document.getElementById('lobby-screen');
     const gameScreen = document.getElementById('game-screen');
@@ -878,6 +950,12 @@
         onValue(roomRef, (snap) => {
             const data = snap.val();
             if (!data) return;
+            
+            // Toca som de início quando o jogo muda de esperando para jogando online
+            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") {
+                reproduzirSomDoJogo('inicio');
+            }
+            
             currentGameState = data;
             
             let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
@@ -960,6 +1038,7 @@
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
         
+        reproduzirSomDoJogo('inicio'); // Som de início no modo offline
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
         generateBoardUI(currentGameState.board);
@@ -1140,8 +1219,17 @@
         let board = currentGameState.board.map(row => row.slice());
         let piece = board[move.fromR][move.fromC];
 
+        // Gatilho de sons inteligentes baseado no tipo de jogada feita
         if (move.capture) {
             board[move.capture.r][move.capture.c] = 0;
+            reproduzirSomDoJogo('capture'); // Som de comer peça
+        } else {
+            // Verifica se a jogada gerou uma dama
+            if ((piece === 1 && move.toR === 0) || (piece === 3 && move.toR === 7)) {
+                reproduzirSomDoJogo('king'); // Som de virar dama
+            } else {
+                reproduzirSomDoJogo('move'); // Som comum
+            }
         }
 
         if (piece === 1 && move.toR === 0) piece = 2; 
@@ -1168,38 +1256,29 @@
         }
     }
 
-    // ANALISADOR TÁTICO AVANÇADO (Mecanismo de Pontuação Posicional Dinâmica)
     function avaliarCenarioPosicional(board, m) {
         let pontuacao = 0;
-
-        // 1. Clonar tabuleiro para analisar o cenário resultante pós-jogada
         let simBoard = board.map(row => row.slice());
         let peca = simBoard[m.fromR][m.fromC];
         if (m.capture) simBoard[m.capture.r][m.capture.c] = 0;
         simBoard[m.toR][m.toC] = (peca === 3 && m.toR === 7) ? 4 : peca;
         simBoard[m.fromR][m.fromC] = 0;
 
-        // 2. Prioridade Máxima Absoluta: Comer Peças
         if (m.capture) {
             const pecaComida = board[m.capture.r][m.capture.c];
-            pontuacao += (pecaComida === 2) ? 350 : 200; // Comer dama adversária dá bônus massivo
+            pontuacao += (pecaComida === 2) ? 350 : 200;
         }
 
-        // 3. Tática de Coroação (Transformar em Dama)
         if (peca === 3 && m.toR === 7) {
             pontuacao += 150;
         }
 
-        // 4. Mapeamento de Controle de Centro e Vulnerabilidades Laterais
-        // O robô mestre prioriza as colunas centrais (2, 3, 4, 5) para sufocar os movimentos do usuário
         if (m.toC >= 2 && m.toC <= 5) {
             pontuacao += 25; 
         } else {
-            pontuacao += 10; // Bordas dão proteção parcial mas tiram mobilidade
+            pontuacao += 10; 
         }
 
-        // 5. Penalização por se expor à captura imediata (Não entregar peça de graça)
-        // Varre o entorno do quadrado destino simulado para ver se o player 1 conseguiria comer
         const dirsOponente = [[-1, 1], [-1, -1]];
         dirsOponente.forEach(([dr, dc]) => {
             let adjR = m.toR + dr;
@@ -1210,18 +1289,15 @@
             if (adjR >= 0 && adjR < 8 && adjC >= 0 && adjC < 8) {
                 let pecaInimiga = simBoard[adjR][adjC];
                 if (pecaInimiga === 1 || pecaInimiga === 2) {
-                    // Se houver espaço vazio atrás do robô, o player vai capturá-lo no próximo turno
                     if (espacoAtrasR >= 0 && espacoAtrasR < 8 && espacoAtrasC >= 0 && espacoAtrasC < 8) {
                         if (simBoard[espacoAtrasR][espacoAtrasC] === 0) {
-                            pontuacao -= 220; // Penalidade maior que o valor de um movimento comum
+                            pontuacao -= 220; 
                         }
                     }
                 }
             }
         });
 
-        // 6. Manutenção Estratégica da Linha de Base (Defesa Superior do Robô)
-        // Evita mover as peças da linha row = 0 precocemente para impedir o jogador de fazer damas fácil
         if (m.fromR === 0 && (board[0].filter(p => p === 3 || p === 4).length > 2)) {
             pontuacao -= 40;
         }
@@ -1245,24 +1321,18 @@
         let selectedMove = null;
 
         if (practiceDifficulty === "facil") {
-            // FÁCIL: Escolhe de forma aleatória entre todos os movimentos disponíveis (com ou sem sentido tático)
             selectedMove = robotMoves[Math.floor(Math.random() * robotMoves.length)];
-            
         } else if (practiceDifficulty === "medio") {
-            // MÉDIO: Se houver captura obriga a fazer, se não houver faz movimentos comuns com análise simples
             const captures = robotMoves.filter(m => m.capture !== null);
             if (captures.length > 0) {
                 selectedMove = captures[Math.floor(Math.random() * captures.length)];
             } else {
-                // Filtra os movimentos que pelo menos não se suicidam
                 let jogadasSeguras = robotMoves.filter(m => avaliarCenarioPosicional(board, m) > -100);
                 selectedMove = jogadasSeguras.length > 0 
                     ? jogadasSeguras[Math.floor(Math.random() * jogadasSeguras.length)]
                     : robotMoves[Math.floor(Math.random() * robotMoves.length)];
             }
-                
         } else if (practiceDifficulty === "dificil") {
-            // DIFÍCIL (MESTRE): Inteligência Posicional Profunda. Escolhe milimetricamente a jogada de maior pontuação
             let melhorPeso = -Infinity;
             let melhoresMovimentos = [];
             
@@ -1276,15 +1346,22 @@
                 }
             });
             
-            // Escolhe o melhor movimento avaliado
             selectedMove = melhoresMovimentos[Math.floor(Math.random() * melhoresMovimentos.length)];
         }
 
         let nextBoard = board.map(row => row.slice());
         let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
 
+        // Sons para as ações tomadas pelo próprio robô
         if (selectedMove.capture) {
             nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0;
+            reproduzirSomDoJogo('capture');
+        } else {
+            if (piece === 3 && selectedMove.toR === 7) {
+                reproduzirSomDoJogo('king');
+            } else {
+                reproduzirSomDoJogo('move');
+            }
         }
 
         if (piece === 3 && selectedMove.toR === 7) piece = 4;
