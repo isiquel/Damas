@@ -538,7 +538,7 @@
     let roomId = "";
     let playerRole = "spectator"; 
     let isPracticeMode = false;
-    let practiceDifficulty = "medio"; // Opções: 'facil', 'medio', 'dificil'
+    let practiceDifficulty = "medio"; 
     let currentGameState = null;
     let selectedPiece = null;
     let validMoves = [];
@@ -707,8 +707,7 @@
     practiceBtn.addEventListener('click', () => {
         const playerName = nameInput.value.trim() || "Você";
         
-        // Seleção inteligente dos 3 níveis de treino
-        const escolha = prompt("Escolha o nível de dificuldade:\n1 - Fácil\n2 - Médio\n3 - Difícil", "2");
+        const escolha = prompt("Escolha o nível de dificuldade:\n1 - Fácil (Iniciante)\n2 - Médio (Intermediário)\n3 - Difícil (Quase Impossível)", "2");
         
         if (escolha === "1") {
             practiceDifficulty = "facil";
@@ -944,9 +943,9 @@
         toggleChatVisibility.style.display = "block";
         adminPanel.style.display = "none";
         
-        let robotLabel = "Robô Médio";
-        if (practiceDifficulty === "facil") robotLabel = "Robô Fácil";
-        if (practiceDifficulty === "dificil") robotLabel = "Robô Invencível";
+        let robotLabel = "Robô Desafio";
+        if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
+        if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 🧠";
 
         currentGameState = {
             board: getInitialBoard(),
@@ -1169,34 +1168,65 @@
         }
     }
 
-    // Avaliação de peso das casas para a IA avançada
-    function avaliarMovimento(move, board) {
-        let peso = 0;
-        
-        // Regra base: capturas valem muito
-        if (move.capture) {
-            peso += 100;
-        }
-        
-        // Simula o movimento hipoteticamente
-        let peca = board[move.fromR][move.fromC];
-        
-        // Virar dama é excelente estratégia
-        if (peca === 3 && move.toR === 7) {
-            peso += 50;
-        }
-        
-        // Proteger as bordas laterais do tabuleiro (posições defensivas fortes)
-        if (move.toC === 0 || move.toC === 7) {
-            peso += 10;
-        }
-        
-        // Evitar mover peças da última linha defensiva cedo demais
-        if (move.fromR === 0) {
-            peso -= 15;
+    // ANALISADOR TÁTICO AVANÇADO (Mecanismo de Pontuação Posicional Dinâmica)
+    function avaliarCenarioPosicional(board, m) {
+        let pontuacao = 0;
+
+        // 1. Clonar tabuleiro para analisar o cenário resultante pós-jogada
+        let simBoard = board.map(row => row.slice());
+        let peca = simBoard[m.fromR][m.fromC];
+        if (m.capture) simBoard[m.capture.r][m.capture.c] = 0;
+        simBoard[m.toR][m.toC] = (peca === 3 && m.toR === 7) ? 4 : peca;
+        simBoard[m.fromR][m.fromC] = 0;
+
+        // 2. Prioridade Máxima Absoluta: Comer Peças
+        if (m.capture) {
+            const pecaComida = board[m.capture.r][m.capture.c];
+            pontuacao += (pecaComida === 2) ? 350 : 200; // Comer dama adversária dá bônus massivo
         }
 
-        return peso;
+        // 3. Tática de Coroação (Transformar em Dama)
+        if (peca === 3 && m.toR === 7) {
+            pontuacao += 150;
+        }
+
+        // 4. Mapeamento de Controle de Centro e Vulnerabilidades Laterais
+        // O robô mestre prioriza as colunas centrais (2, 3, 4, 5) para sufocar os movimentos do usuário
+        if (m.toC >= 2 && m.toC <= 5) {
+            pontuacao += 25; 
+        } else {
+            pontuacao += 10; // Bordas dão proteção parcial mas tiram mobilidade
+        }
+
+        // 5. Penalização por se expor à captura imediata (Não entregar peça de graça)
+        // Varre o entorno do quadrado destino simulado para ver se o player 1 conseguiria comer
+        const dirsOponente = [[-1, 1], [-1, -1]];
+        dirsOponente.forEach(([dr, dc]) => {
+            let adjR = m.toR + dr;
+            let adjC = m.toC + dc;
+            let espacoAtrasR = m.toR - dr;
+            let espacoAtrasC = m.toC - dc;
+
+            if (adjR >= 0 && adjR < 8 && adjC >= 0 && adjC < 8) {
+                let pecaInimiga = simBoard[adjR][adjC];
+                if (pecaInimiga === 1 || pecaInimiga === 2) {
+                    // Se houver espaço vazio atrás do robô, o player vai capturá-lo no próximo turno
+                    if (espacoAtrasR >= 0 && espacoAtrasR < 8 && espacoAtrasC >= 0 && espacoAtrasC < 8) {
+                        if (simBoard[espacoAtrasR][espacoAtrasC] === 0) {
+                            pontuacao -= 220; // Penalidade maior que o valor de um movimento comum
+                        }
+                    }
+                }
+            }
+        });
+
+        // 6. Manutenção Estratégica da Linha de Base (Defesa Superior do Robô)
+        // Evita mover as peças da linha row = 0 precocemente para impedir o jogador de fazer damas fácil
+        if (m.fromR === 0 && (board[0].filter(p => p === 3 || p === 4).length > 2)) {
+            pontuacao -= 40;
+        }
+
+        return pontuacao;
     }
 
     function executeRobotTurn() {
@@ -1215,23 +1245,29 @@
         let selectedMove = null;
 
         if (practiceDifficulty === "facil") {
-            // NÍVEL FÁCIL: Escolha 100% aleatória (ignora prioridades lógicas complexas)
+            // FÁCIL: Escolhe de forma aleatória entre todos os movimentos disponíveis (com ou sem sentido tático)
             selectedMove = robotMoves[Math.floor(Math.random() * robotMoves.length)];
             
         } else if (practiceDifficulty === "medio") {
-            // NÍVEL MÉDIO: Prioriza capturas se houver, se não houver faz movimento aleatório
+            // MÉDIO: Se houver captura obriga a fazer, se não houver faz movimentos comuns com análise simples
             const captures = robotMoves.filter(m => m.capture !== null);
-            selectedMove = captures.length > 0 
-                ? captures[Math.floor(Math.random() * captures.length)]
-                : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+            if (captures.length > 0) {
+                selectedMove = captures[Math.floor(Math.random() * captures.length)];
+            } else {
+                // Filtra os movimentos que pelo menos não se suicidam
+                let jogadasSeguras = robotMoves.filter(m => avaliarCenarioPosicional(board, m) > -100);
+                selectedMove = jogadasSeguras.length > 0 
+                    ? jogadasSeguras[Math.floor(Math.random() * jogadasSeguras.length)]
+                    : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+            }
                 
         } else if (practiceDifficulty === "dificil") {
-            // NÍVEL DIFÍCIL (INVENCÍVEL): Avalia pesos táticos de cada movimento e escolhe o melhor
+            // DIFÍCIL (MESTRE): Inteligência Posicional Profunda. Escolhe milimetricamente a jogada de maior pontuação
             let melhorPeso = -Infinity;
             let melhoresMovimentos = [];
             
             robotMoves.forEach(m => {
-                let peso = avaliarMovimento(m, board);
+                let peso = avaliarCenarioPosicional(board, m);
                 if (peso > melhorPeso) {
                     melhorPeso = peso;
                     melhoresMovimentos = [m];
@@ -1240,6 +1276,7 @@
                 }
             });
             
+            // Escolhe o melhor movimento avaliado
             selectedMove = melhoresMovimentos[Math.floor(Math.random() * melhoresMovimentos.length)];
         }
 
