@@ -516,7 +516,6 @@
             margin-bottom: 4px;
         }
 
-        /* Botões do Modal Customizado de Confirmação */
         .confirm-buttons-box {
             display: flex;
             gap: 15px;
@@ -595,21 +594,22 @@
             </div>
         </div>
 
+        <!-- 🛡️ CENTRAL SUPREMA DE COMANDO ADMINISTRATIVO -->
         <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
-            <div style="font-size: 1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #9b59b6; padding-bottom: 4px; display: flex; justify-content: space-between;">🛡️ Painel do Dono do Jogo <span>Ativo</span></div>
+            <div style="font-size: 1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #9b59b6; padding-bottom: 4px; display: flex; justify-content: space-between;">🛡️ Central de Controle Geral <span>Ativo</span></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
-                <span>Status da Sala Atual:</span>
+                <span>Status da Sala 00:</span>
                 <button id="admin-toggle-room-btn" style="background-color: #27ae60; padding: 6px 12px; width: auto; font-size: 0.85rem;">AUTORIZADA</button>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
-                <span>Controle Geral da Sala:</span>
+                <span>Controle Mestre:</span>
                 <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">FORÇAR RESET TOTAL</button>
             </div>
 
             <div class="admin-dashboard-box">
-                <div class="admin-dashboard-title">📋 Monitoramento Geral de Salas (Realtime)</div>
+                <div class="admin-dashboard-title">📋 Panorama Geral de Salas Ativas (Realtime)</div>
                 <div id="admin-rooms-dashboard-list">
-                    <div style="color: #666; font-style: italic; font-size: 0.8rem;">Aguardando conexões nos servidores...</div>
+                    <div style="color: #666; font-style: italic; font-size: 0.8rem;">Rastreando atividade nos servidores...</div>
                 </div>
             </div>
         </div>
@@ -649,13 +649,12 @@
     </div>
 </div>
 
-<!-- 📦 MODAL PREMIUM DE CONFIRMAÇÃO DE RESET ADMINISTRATIVO -->
 <div id="custom-confirm-modal" class="modal">
     <div class="modal-content" style="max-width: 440px; text-align: center;">
         <h2 style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
         <div style="font-size: 1.05rem; line-height: 1.5; margin: 15px 0; color: #e2e8f0;">
-            Você tem certeza que deseja forçar o <strong>RESET TOTAL</strong> desta sala?<br>
-            <small style="color: #aaa;">Isso desconectará os jogadores e limpará o tabuleiro na hora.</small>
+            Você tem certeza que deseja forçar o <strong>RESET TOTAL</strong> desta sala administrativa?<br>
+            <small style="color: #aaa;">Isso limpará os dados e redefinirá o tabuleiro do servidor.</small>
         </div>
         <div class="confirm-buttons-box">
             <button id="btn-confirm-reset-yes" class="btn-confirm-yes">Sim, Resetar</button>
@@ -888,7 +887,6 @@
         } catch(e) { console.log("Erro ao carregar podium", e); }
     }
 
-    // ⚡ ESTRUTURA ORIGINAL DE AUTENTICAÇÃO RESTAURADA (TRAVA DESFEITA)
     onAuthStateChanged(auth, (user) => {
         if (user) {
             playerId = user.uid; 
@@ -1081,7 +1079,7 @@
         return false;
     }
 
-    // 🔌 VOLTA DO MONITORAMENTO ESTÁVEL ORIGINAL DE SEGURANÇA MÁXIMA
+    // 🎯 PANORAMA REALTIME ESTÁVEL DA CENTRAL SUPREMA 00
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1093,26 +1091,38 @@
             adminRoomsDashboardList.innerHTML = "";
             
             Object.keys(roomsData).forEach(idSala => {
+                // Esconde a própria sala administrativa de comando da visualização geral
+                if (idSala === "00") return;
+
                 const sala = roomsData[idSala];
-                const statusTxt = sala.isAuthorized ? "AUTORIZADA" : "BLOQUEADA";
+                const statusTxt = sala.isAuthorized ? "LIBERADA" : "BLOQUEADA";
                 const classAuth = sala.isAuthorized ? "auth-true" : "auth-false";
                 
                 let p1 = sala.p1Name || "(Vazio)";
                 let p2 = sala.p2Name || "(Vazio)";
-                let dataUso = sala.lastUsedDate || "Sem confrontos gravados hoje";
+                let dataUso = sala.lastUsedDate || "Nenhum acesso hoje";
+                
+                let vencedorTxt = "";
+                if (sala.status === "finished") {
+                    vencedorTxt = ` <span style="color:#cca43b;">[FIM DE JOGO]</span>`;
+                }
 
                 const row = document.createElement('div');
                 row.className = `admin-room-row ${classAuth}`;
                 row.innerHTML = `
                     <div class="admin-room-meta">
-                        <span>Sala: ${idSala.toUpperCase()}</span>
+                        <span>SALA: ${idSala.toUpperCase()}${vencedorTxt}</span>
                         <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'}">${statusTxt}</span>
                     </div>
                     <div>👥 Jogadores: <span style="color: #bbb;">${p1} vs ${p2}</span></div>
-                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">📅 Última Entrada: ${dataUso}</div>
+                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">📅 Horário da Partida: ${dataUso}</div>
                 `;
                 adminRoomsDashboardList.appendChild(row);
             });
+
+            if(adminRoomsDashboardList.innerHTML === "") {
+                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.8rem;">Nenhuma sala de jogador criada no momento.</div>`;
+            }
         });
     }
 
@@ -1120,7 +1130,9 @@
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
-        const isAdminMode = (playerName === "Isiquel_Admin");
+        
+        // Ativação da Central Suprema com base no Código 00 + Nome Isiquel_Admin
+        const isAdminMode = (roomName === "00" && playerName === "Isiquel_Admin");
 
         if (!roomData) {
             if (!isAdminMode) {
@@ -1137,13 +1149,13 @@
                 turn: 1,
                 status: "waiting",
                 p1Id: "",
-                p1Name: "",
+                p1Name: "Central Suprema",
                 p2Id: null,
                 p2Name: "",
                 startTime: 0,
                 chat: null,
-                isAuthorized: false,
-                lastUsedDate: ""
+                isAuthorized: true,
+                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             };
             await set(roomRef, roomData);
         } else {
@@ -1266,7 +1278,6 @@
         update(ref(db, 'rooms/' + roomId), { isAuthorized: !currentGameState.isAuthorized });
     });
 
-    // 🛡️ MODAL DE CONFIRMAÇÃO PREMIUM MANTIDO (FIM DA MENSAGEM FEIA DE LINKS NO TOPO)
     adminClearAllBtn.addEventListener('click', () => {
         if (playerRole !== "admin") return;
         document.getElementById('custom-confirm-modal').style.display = 'flex';
@@ -1274,8 +1285,10 @@
 
     document.getElementById('btn-confirm-reset-yes').addEventListener('click', async () => {
         document.getElementById('custom-confirm-modal').style.display = 'none';
-        await update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "waiting", startTime: 0, p1Id: "", p1Name: "", p2Id: "", p2Name: "", chat: null });
-        exibirAlertaDoSistema("Reset de Sala", "A sala foi completamente limpa e redefinida.");
+        
+        // O administrador limpa a central ou reinicia o escopo geral de testes
+        await update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "waiting", startTime: 0, p1Id: "", p1Name: "Central Suprema", p2Id: "", p2Name: "", chat: null });
+        exibirAlertaDoSistema("Reset de Sala", "A central de comando foi redefinida com sucesso.");
     });
 
     document.getElementById('btn-confirm-reset-no').addEventListener('click', () => {
