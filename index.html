@@ -490,7 +490,7 @@
             <li><strong>Movimentos:</strong> Suas peças andam apenas 1 casa para frente pelas diagonais escuras.</li>
             <li><strong>Capturas:</strong> Salte por cima da peça adversária para uma casa vazia atrás dela.</li>
             <li><strong>Virar Dama (👑):</strong> Ao levar a peça até a última fileira adversária, ela vira Dama e anda livremente por todas as diagonais livres.</li>
-            <li><strong>Modo Treino:</strong> Jogue localmente contra o Robô do sistema. Ele calcula o melhor movimento e prioriza capturar suas peças!</li>
+            <li><strong>Modo Treino:</strong> Jogue localmente contra o Robô do sistema com 3 níveis de dificuldade ajustáveis!</li>
         </ul>
         <button id="close-rules-btn">Fechar</button>
     </div>
@@ -538,6 +538,7 @@
     let roomId = "";
     let playerRole = "spectator"; 
     let isPracticeMode = false;
+    let practiceDifficulty = "medio"; // Opções: 'facil', 'medio', 'dificil'
     let currentGameState = null;
     let selectedPiece = null;
     let validMoves = [];
@@ -705,6 +706,18 @@
 
     practiceBtn.addEventListener('click', () => {
         const playerName = nameInput.value.trim() || "Você";
+        
+        // Seleção inteligente dos 3 níveis de treino
+        const escolha = prompt("Escolha o nível de dificuldade:\n1 - Fácil\n2 - Médio\n3 - Difícil", "2");
+        
+        if (escolha === "1") {
+            practiceDifficulty = "facil";
+        } else if (escolha === "3") {
+            practiceDifficulty = "dificil";
+        } else {
+            practiceDifficulty = "medio";
+        }
+
         isPracticeMode = true;
         hasRecordedResult = false;
         playerRole = "p1";
@@ -930,16 +943,21 @@
         isPracticeMode = true;
         toggleChatVisibility.style.display = "block";
         adminPanel.style.display = "none";
+        
+        let robotLabel = "Robô Médio";
+        if (practiceDifficulty === "facil") robotLabel = "Robô Fácil";
+        if (practiceDifficulty === "dificil") robotLabel = "Robô Invencível";
+
         currentGameState = {
             board: getInitialBoard(),
             turn: 1,
             status: "playing",
             p1Name: playerName,
-            p2Name: "Robô Smart",
+            p2Name: robotLabel,
             startTime: Date.now()
         };
 
-        displayRoom.innerText = "TREINO";
+        displayRoom.innerText = `TREINO (${practiceDifficulty.toUpperCase()})`;
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
         
@@ -1151,6 +1169,36 @@
         }
     }
 
+    // Avaliação de peso das casas para a IA avançada
+    function avaliarMovimento(move, board) {
+        let peso = 0;
+        
+        // Regra base: capturas valem muito
+        if (move.capture) {
+            peso += 100;
+        }
+        
+        // Simula o movimento hipoteticamente
+        let peca = board[move.fromR][move.fromC];
+        
+        // Virar dama é excelente estratégia
+        if (peca === 3 && move.toR === 7) {
+            peso += 50;
+        }
+        
+        // Proteger as bordas laterais do tabuleiro (posições defensivas fortes)
+        if (move.toC === 0 || move.toC === 7) {
+            peso += 10;
+        }
+        
+        // Evitar mover peças da última linha defensiva cedo demais
+        if (move.fromR === 0) {
+            peso -= 15;
+        }
+
+        return peso;
+    }
+
     function executeRobotTurn() {
         if (!isPracticeMode || currentGameState.status !== "playing") return;
         
@@ -1164,10 +1212,36 @@
             return;
         }
 
-        const captures = robotMoves.filter(m => m.capture !== null);
-        const selectedMove = captures.length > 0 
-            ? captures[Math.floor(Math.random() * captures.length)]
-            : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+        let selectedMove = null;
+
+        if (practiceDifficulty === "facil") {
+            // NÍVEL FÁCIL: Escolha 100% aleatória (ignora prioridades lógicas complexas)
+            selectedMove = robotMoves[Math.floor(Math.random() * robotMoves.length)];
+            
+        } else if (practiceDifficulty === "medio") {
+            // NÍVEL MÉDIO: Prioriza capturas se houver, se não houver faz movimento aleatório
+            const captures = robotMoves.filter(m => m.capture !== null);
+            selectedMove = captures.length > 0 
+                ? captures[Math.floor(Math.random() * captures.length)]
+                : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+                
+        } else if (practiceDifficulty === "dificil") {
+            // NÍVEL DIFÍCIL (INVENCÍVEL): Avalia pesos táticos de cada movimento e escolhe o melhor
+            let melhorPeso = -Infinity;
+            let melhoresMovimentos = [];
+            
+            robotMoves.forEach(m => {
+                let peso = avaliarMovimento(m, board);
+                if (peso > melhorPeso) {
+                    melhorPeso = peso;
+                    melhoresMovimentos = [m];
+                } else if (peso === melhorPeso) {
+                    melhoresMovimentos.push(m);
+                }
+            });
+            
+            selectedMove = melhoresMovimentos[Math.floor(Math.random() * melhoresMovimentos.length)];
+        }
 
         let nextBoard = board.map(row => row.slice());
         let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
