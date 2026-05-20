@@ -516,7 +516,7 @@
             margin-bottom: 4px;
         }
 
-        /* Estilos do Modal de Confirmação de Reset Administrativo */
+        /* Botões do Modal Customizado de Confirmação */
         .confirm-buttons-box {
             display: flex;
             gap: 15px;
@@ -649,7 +649,7 @@
     </div>
 </div>
 
-<!-- 📦 NOVO MODAL PREMIUM DE CONFIRMAÇÃO DE RESET ADMINISTRATIVO -->
+<!-- 📦 MODAL PREMIUM DE CONFIRMAÇÃO DE RESET ADMINISTRATIVO -->
 <div id="custom-confirm-modal" class="modal">
     <div class="modal-content" style="max-width: 440px; text-align: center;">
         <h2 style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
@@ -669,7 +669,7 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
-            <li><strong>Capturas Múltiplas Oblíquas:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
@@ -888,6 +888,7 @@
         } catch(e) { console.log("Erro ao carregar podium", e); }
     }
 
+    // ⚡ ESTRUTURA ORIGINAL DE AUTENTICAÇÃO RESTAURADA (TRAVA DESFEITA)
     onAuthStateChanged(auth, (user) => {
         if (user) {
             playerId = user.uid; 
@@ -1080,17 +1081,14 @@
         return false;
     }
 
-    // 🎯 RESTRUTURAÇÃO DO RADAR REALTIME: Leitura direta e sem travas de escopo
-    async function ativarPainelMonitoramentoRealtime() {
-        try {
-            const todasSalasRef = ref(db, 'rooms');
-            const snapshot = await get(todasSalasRef);
-            
+    // 🔌 VOLTA DO MONITORAMENTO ESTÁVEL ORIGINAL DE SEGURANÇA MÁXIMA
+    function ativarPainelMonitoramentoRealtime() {
+        const todasSalasRef = ref(db, 'rooms');
+        onValue(todasSalasRef, (snapshot) => {
             if (!snapshot.exists()) {
-                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.8rem;">Nenhuma sala com jogadores ativos no momento.</div>`;
+                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.8rem;">Rastreando atividade nos servidores...</div>`;
                 return;
             }
-            
             const roomsData = snapshot.val();
             adminRoomsDashboardList.innerHTML = "";
             
@@ -1115,9 +1113,7 @@
                 `;
                 adminRoomsDashboardList.appendChild(row);
             });
-        } catch(e) {
-            adminRoomsDashboardList.innerHTML = `<div style="color: #e74c3c; font-size: 0.8rem;">Erro de conexão com o banco de salas.</div>`;
-        }
+        });
     }
 
     async function joinRoom(roomName, playerName, forceSpectator) {
@@ -1270,7 +1266,7 @@
         update(ref(db, 'rooms/' + roomId), { isAuthorized: !currentGameState.isAuthorized });
     });
 
-    // 🛡️ NOVO RESET PREMIUM: Ativação do Modal Customizado sem alertas de links feios
+    // 🛡️ MODAL DE CONFIRMAÇÃO PREMIUM MANTIDO (FIM DA MENSAGEM FEIA DE LINKS NO TOPO)
     adminClearAllBtn.addEventListener('click', () => {
         if (playerRole !== "admin") return;
         document.getElementById('custom-confirm-modal').style.display = 'flex';
@@ -1280,7 +1276,6 @@
         document.getElementById('custom-confirm-modal').style.display = 'none';
         await update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "waiting", startTime: 0, p1Id: "", p1Name: "", p2Id: "", p2Name: "", chat: null });
         exibirAlertaDoSistema("Reset de Sala", "A sala foi completamente limpa e redefinida.");
-        ativarPainelMonitoramentoRealtime(); // Atualiza a lista na tela administrativa na hora
     });
 
     document.getElementById('btn-confirm-reset-no').addEventListener('click', () => {
@@ -1294,7 +1289,7 @@
         lockPieceForMultiCapture = null;
         let robotLabel = "Robô Desafio";
         if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
-        if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 🧠";
+        if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 👑";
 
         currentGameState = { board: getInitialBoard(), turn: 1, status: "playing", p1Name: playerName, p2Name: robotLabel, startTime: Date.now() };
         displayRoom.innerText = `TREINO (${practiceDifficulty.toUpperCase()})`;
@@ -1673,7 +1668,7 @@
                 if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
             }
         }
-        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContador Espectadores = 0;
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContadorEspectadores = 0;
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
