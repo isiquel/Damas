@@ -637,12 +637,11 @@
     let validMoves = [];
     let hasRecordedResult = false;
     let lockPieceForMultiCapture = null;
-    let ultimoContadorEspectadores = 0; // Armazena a quantidade anterior de olheiros
+    let ultimoContadorEspectadores = 0;
     
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
-    // BANCO SÔNICO ATUALIZADO COM OS SONS DE CHAT E ENTRADA DE OLHEIROS
     function reproduzirSomDoJogo(tipo) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -686,7 +685,6 @@
                 osc.start(agora);
                 osc.stop(agora + 0.3);
             } else if (tipo === 'chat') {
-                // 💬 Som rápido de "pop/notificação" estilo chat moderno
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(600, agora);
                 osc.frequency.exponentialRampToValueAtTime(800, agora + 0.08);
@@ -695,7 +693,6 @@
                 osc.start(agora);
                 osc.stop(agora + 0.08);
             } else if (tipo === 'spectator') {
-                // 👁️ Som de entrada suave indicando nova presença na sala
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(330, agora);
                 osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
@@ -989,28 +986,36 @@
         let roomData = snapshot.val();
         const isAdminMode = (playerName === "Isiquel_Admin");
 
-        if (roomData && !roomData.isAuthorized && !isAdminMode && !forceSpectator) {
-            alert("Acesso Negado! Esta sala ainda não foi liberada pelo Administrador.");
-            return;
-        }
-
+        // 🛡️ REVISÃO PROFUNDA DE SEGURANÇA: Bloqueio estrito de salas não autorizadas
         if (!roomData) {
-            playerRole = forceSpectator ? "spectator" : (isAdminMode ? "admin" : "p1");
+            // Se a sala não existe e quem está tentando entrar NÃO é o administrador, barra imediatamente!
+            if (!isAdminMode) {
+                alert("Acesso Negado! Esta sala ainda não existe ou não foi liberada pelo Administrador.");
+                return;
+            }
+            // Se for o administrador criando uma nova sala do painel dele:
+            playerRole = "admin";
             roomData = {
                 id: roomName,
                 board: getInitialBoard(),
                 turn: 1,
                 status: "waiting",
-                p1Id: playerRole === "p1" ? playerId : null,
-                p1Name: playerRole === "p1" ? playerName : "",
+                p1Id: "",
+                p1Name: "",
                 p2Id: null,
                 p2Name: "",
                 startTime: 0,
                 chat: null,
-                isAuthorized: isAdminMode ? true : false 
+                isAuthorized: false // Começa estritamente bloqueada até você clicar no botão do painel
             };
             await set(roomRef, roomData);
         } else {
+            // Se a sala já existe no banco, mas NÃO está autorizada e quem está entrando NÃO é você:
+            if (!roomData.isAuthorized && !isAdminMode) {
+                alert("Acesso Negado! Esta sala está bloqueada e precisa de liberação do Administrador.");
+                return;
+            }
+
             if (isAdminMode) { playerRole = "admin"; } 
             else if (forceSpectator) { playerRole = "spectator"; } 
             else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
@@ -1069,7 +1074,6 @@
                 validMoves = [];
             }
 
-            // 👁️ DETECTOR SÔNICO DE NOVOS ESPECTADORES ENTRANDO NA SALA
             let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
             if (ultimoContadorEspectadores !== 0 && specsCount > ultimoContadorEspectadores) {
                 reproduzirSomDoJogo('spectator');
@@ -1091,7 +1095,6 @@
             checkEndGameConditions(data.board);
         });
 
-        // ESCUTADOR DO CHAT COM PRODUÇÃO DE ÁUDIO DE NOTIFICAÇÃO ONLINE
         let primeiraCargaChat = true;
         const chatRef = ref(db, `rooms/${roomName}/chat`);
         onValue(chatRef, (snap) => {
@@ -1099,8 +1102,6 @@
             const data = snap.val();
             if (data) { 
                 Object.values(data).forEach(msg => appendChatRow(msg.author, msg.text)); 
-                
-                // Só dispara o som de chat se não for o carregamento inicial da página e o chat não estiver ocultado localmente
                 if (!primeiraCargaChat && !isChatMutedLocally) {
                     reproduzirSomDoJogo('chat');
                 }
