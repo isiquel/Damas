@@ -478,7 +478,6 @@
             text-align: center;
         }
 
-        /* Classes Novas da Central de Monitoramento do Administrador */
         .admin-dashboard-box {
             margin-top: 20px;
             background-color: #0f172a;
@@ -597,7 +596,6 @@
                 <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">FORÇAR RESET TOTAL</button>
             </div>
 
-            <!-- 📊 NOVA CENTRAL DE MONITORAMENTO DE TODAS AS SALAS -->
             <div class="admin-dashboard-box">
                 <div class="admin-dashboard-title">📋 Monitoramento Geral de Salas (Realtime)</div>
                 <div id="admin-rooms-dashboard-list">
@@ -646,7 +644,7 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
-            <li><strong>Capturas Múltiplas Oblíquas:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Capturas Múltiplas Oblíquas:</strong> Se ao comer uma peça o seu movemento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
@@ -1048,7 +1046,7 @@
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 let antes = oldBoard[r][c];
-                let depois = newBoard[r][varC = c];
+                let depois = newBoard[r][c]; // 🎯 CORREÇÃO CRUCIAL: Limpo o erro de digitação varC=c que travava o monitoramento
                 if ((antes === 1 && depois === 2) || (antes === 3 && depois === 4)) {
                     return true;
                 }
@@ -1057,7 +1055,6 @@
         return false;
     }
 
-    // 📊 FUNÇÃO DA CENTRAL DE MONITORAMENTO DO ADMINISTRADOR
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1157,7 +1154,7 @@
 
         if (playerRole === "admin") {
             adminPanel.style.display = "block";
-            ativarPainelMonitoramentoRealtime(); // Inicializa o monitoramento de todas as salas
+            ativarPainelMonitoramentoRealtime(); 
         } else {
             adminPanel.style.display = "none";
         }
@@ -1202,7 +1199,6 @@
             }
             ultimoContadorEspectadores = specsCount;
 
-            // 👁️ ESCUTADOR VISUAL DE FIM DE JOGO PARA ESPECTADORES E JOGADORES CONECTADOS
             if (currentGameState && currentGameState.status === "playing" && data.status === "finished") {
                 executarAlertaVisualDeVitoria(data.board);
             }
@@ -1457,7 +1453,6 @@
             renderGameStatus(currentGameState); generateBoardUI(board);
             if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
         } else { 
-            // Se a jogada causar fim de jogo, o próprio checkEndGameConditions disparará a finalização
             currentGameState.board = board;
             currentGameState.turn = nextTurn;
             if (!checkEndGameConditions(board)) {
@@ -1534,7 +1529,6 @@
         checkEndGameConditions(nextBoard);
     }
 
-    // 🏆 NOVA LOGA DE ALERTAS DE VITÓRIA INTEGRADA PARA JOGADORES E OLHEIROS
     function executarAlertaVisualDeVitoria(board) {
         let p1Pieces = 0, p2Pieces = 0;
         for (let r = 0; r < 8; r++) {
@@ -1551,7 +1545,6 @@
             nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
             motivo = "por eliminação completa de todas as peças adversárias!";
         } else {
-            // Se as peças não acabaram, foi por falta de movimentos (bloqueio)
             let p1Venceu = (currentGameState.turn === 2);
             nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
             motivo = "por bloqueio tático! O oponente ficou totalmente encurralado e sem jogadas.";
@@ -1602,7 +1595,6 @@
 
     async function finalizarPartidaOnline(p1Venceu, board) {
         if (isPracticeMode) return;
-        // Grava no Firebase primeiro para disparar o gatilho visual para todos na sala
         await update(ref(db, 'rooms/' + roomId), { board: board, status: "finished" });
         if (playerRole === "p1") updatePlayerRanking(p1Venceu, currentGameState.p1Name);
         if (playerRole === "p2") updatePlayerRanking(!p1Venceu, currentGameState.p2Name);
