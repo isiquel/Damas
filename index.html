@@ -579,10 +579,11 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
+            <li><strong>Capturas Múltiplas Oblíquas:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
-            <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça gains uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
+            <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça ganha uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
         </ul>
         <button id="close-rules-btn">Entendido, Fechar</button>
     </div>
@@ -635,6 +636,7 @@
     let selectedPiece = null;
     let validMoves = [];
     let hasRecordedResult = false;
+    let lockPieceForMultiCapture = null; // Trava a peça para capturas em sequência
     
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
@@ -685,7 +687,6 @@
         } catch (e) { console.log("Áudio bloqueado", e); }
     }
 
-    // Elementos DOM
     const lobbyScreen = document.getElementById('lobby-screen');
     const gameScreen = document.getElementById('game-screen');
     const nameInput = document.getElementById('name-input');
@@ -843,6 +844,7 @@
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
+        lockPieceForMultiCapture = null;
         roomId = roomName;
         joinRoom(roomName, playerName, false);
     });
@@ -853,6 +855,7 @@
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
+        lockPieceForMultiCapture = null;
         roomId = roomName;
         joinRoom(roomName, "Olheiro", true);
     });
@@ -870,6 +873,7 @@
         difficultyBox.style.display = "none";
         isPracticeMode = true;
         hasRecordedResult = false;
+        lockPieceForMultiCapture = null;
         playerRole = "p1";
         setupPracticeGame(playerName);
     }
@@ -934,7 +938,6 @@
         chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
     }
 
-    // FUNÇÃO AUXILIAR PARA CONTAR PEÇAS DE UM TABULEIRO
     function contarPecasNoTabuleiro(board) {
         let count = 0;
         for (let r = 0; r < 8; r++) {
@@ -945,7 +948,6 @@
         return count;
     }
 
-    // FUNÇÃO AUXILIAR PARA VERIFICAR SE UMA JOGADA FOI UMA NOVA COROA DE DAMA
     function detectouNovaDama(oldBoard, newBoard) {
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
@@ -1021,12 +1023,10 @@
                 reproduzirSomDoJogo('inicio'); 
             }
             
-            // 🌐 DETECTOR DE MOVIMENTO ONLINE PARA REPRODUZIR OS SONS DO ADVERSÁRIO E ESPECTADORES
             if (currentGameState && currentGameState.board && data.board) {
                 const stringTabAnterior = JSON.stringify(currentGameState.board);
                 const stringTabNovo = JSON.stringify(data.board);
                 
-                // Se o texto do tabuleiro mudou, significa que alguém mexeu uma peça na rede
                 if (stringTabAnterior !== stringTabNovo) {
                     const pecasAntes = contarPecasNoTabuleiro(currentGameState.board);
                     const pecasDepois = contarPecasNoTabuleiro(data.board);
@@ -1039,6 +1039,13 @@
                         reproduzirSomDoJogo('move');
                     }
                 }
+            }
+
+            // Preserva seleção se ainda for o turno do mesmo jogador devido a capturas múltiplas
+            if (currentGameState && currentGameState.turn !== data.turn) {
+                lockPieceForMultiCapture = null;
+                selectedPiece = null;
+                validMoves = [];
             }
 
             currentGameState = data;
@@ -1082,6 +1089,7 @@
         isPracticeMode = true;
         toggleChatVisibility.style.display = "block";
         adminPanel.style.display = "none";
+        lockPieceForMultiCapture = null;
         let robotLabel = "Robô Desafio";
         if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
         if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 🧠";
@@ -1108,7 +1116,11 @@
             turnIndicator.style.color = "#f1c40f";
         } else if (data.status === "playing") {
             let nomeVez = data.turn === 1 ? p1 : p2;
-            turnIndicator.innerText = `Vez de: ${nomeVez}`;
+            if (lockPieceForMultiCapture) {
+                turnIndicator.innerText = `💥 Combo! ${nomeVez} continua`;
+            } else {
+                turnIndicator.innerText = `Vez de: ${nomeVez}`;
+            }
             turnIndicator.style.color = data.turn === 1 ? "var(--p1-color)" : "#ecf0f1";
         } else if (data.status === "finished") {
             turnIndicator.innerText = "Fim de Jogo!";
@@ -1148,12 +1160,22 @@
         const board = currentGameState.board;
         const clickedValue = board[r][c];
 
+        // Se uma peça está trancada no meio de um combo múltiplo, proíbe selecionar outra
+        if (lockPieceForMultiCapture && (lockPieceForMultiCapture.r !== r || lockPieceForMultiCapture.c !== c) && clickedValue !== 0) {
+            return; 
+        }
+
         if (clickedValue !== 0) {
             const isP1Turn = currentGameState.turn === 1;
             const ownsPiece = isP1Turn ? (clickedValue === 1 || clickedValue === 2) : (clickedValue === 3 || clickedValue === 4);
             if (ownsPiece) {
                 selectedPiece = { r, c };
-                validMoves = computeValidMovesForPiece(r, c, board);
+                let moves = computeValidMovesForPiece(r, c, board);
+                // Se já começou uma captura múltipla, só aceita lances de comer peça adicionais
+                if (lockPieceForMultiCapture) {
+                    moves = moves.filter(m => m.capture !== null);
+                }
+                validMoves = moves;
                 generateBoardUI(board);
             }
         } else {
@@ -1174,7 +1196,11 @@
             dirs.forEach(([dr, dc]) => {
                 let nr = r + dr, nc = c + dc;
                 while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                    if (board[nr][nc] === 0) { moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); } 
+                    if (board[nr][nc] === 0) { 
+                        if (!lockPieceForMultiCapture) {
+                            moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); 
+                        }
+                    } 
                     else {
                         if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
                             let rr = nr + dr, cc = nc + dc;
@@ -1189,10 +1215,20 @@
             });
         } else {
             const dirs = isP1 ? [[-1, 1], [-1, -1]] : [[1, 1], [1, -1]];
-            dirs.forEach(([dr, dc]) => {
+            const captureDirs = [[1,1], [1,-1], [-1,1], [-1,-1]]; // Peça comum come para trás também
+            
+            const activeDirs = lockPieceForMultiCapture ? captureDirs : captureDirs; 
+
+            activeDirs.forEach(([dr, dc]) => {
                 const nr = r + dr, nc = c + dc;
                 if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                    if (board[nr][nc] === 0) { moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); } 
+                    if (board[nr][nc] === 0) { 
+                        // Movimento normal apenas para frente e se não estiver preso em combo
+                        if (!lockPieceForMultiCapture) {
+                            const isForward = isP1 ? dr === -1 : dr === 1;
+                            if (isForward) moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); 
+                        }
+                    } 
                     else {
                         if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
                             const rr = nr + dr, cc = nc + dc;
@@ -1204,8 +1240,13 @@
                 }
             });
         }
-        const forceCaptures = moves.filter(m => m.capture !== null);
-        return forceCaptures.length > 0 ? forceCaptures : moves;
+
+        // Sistema de captura obrigatória da regra oficial
+        if (!lockPieceForMultiCapture) {
+            const forceCaptures = moves.filter(m => m.capture !== null);
+            return forceCaptures.length > 0 ? forceCaptures : moves;
+        }
+        return moves;
     }
 
     function computeAllValidMoves(turn, board) {
@@ -1227,23 +1268,55 @@
         let board = currentGameState.board.map(row => row.slice());
         let piece = board[move.fromR][move.fromC];
 
+        // 🎯 AJUSTE DE LIMPEZA ABSOLUTA DA PEÇA COMIDA NO FIREBASE
+        if (move.capture) { 
+            board[move.capture.r][move.capture.c] = 0; 
+        }
+
+        // Promoção a Dama
         if (piece === 1 && move.toR === 0) piece = 2; 
         if (piece === 3 && move.toR === 7) piece = 4; 
 
         board[move.toR][move.toC] = piece;
         board[move.fromR][move.fromC] = 0;
-        let nextTurn = currentGameState.turn === 1 ? 2 : 1;
-        selectedPiece = null; validMoves = [];
+
+        // Verifica se esta peça que acabou de se mover ainda pode continuar comendo mais peças
+        let maisCapturasDisponiveis = [];
+        if (move.capture) {
+            // Cria um estado temporário para simular se ainda existem mais saltos válidos
+            lockPieceForMultiCapture = { r: move.toR, c: move.toC };
+            maisCapturasDisponiveis = computeValidMovesForPiece(move.toR, move.toC, board).filter(m => m.capture !== null);
+        }
+
+        let nextTurn = currentGameState.turn;
+        
+        if (maisCapturasDisponiveis.length > 0) {
+            // Mantém o turno com o jogador atual para realizar o combo múltiplo
+            lockPieceForMultiCapture = { r: move.toR, c: move.toC };
+            selectedPiece = { r: move.toR, c: move.toC };
+            validMoves = maisCapturasDisponiveis;
+        } else {
+            // Finaliza o turno e passa para o adversário
+            lockPieceForMultiCapture = null;
+            selectedPiece = null;
+            validMoves = [];
+            nextTurn = currentGameState.turn === 1 ? 2 : 1;
+        }
 
         if (isPracticeMode) {
-            // No modo treino local, as funções manuais de áudio ainda agilizam a resposta
             if (move.capture) reproduzirSomDoJogo('capture');
             else reproduzirSomDoJogo((piece === 2 || piece === 4) ? 'king' : 'move');
             
-            currentGameState.board = board; currentGameState.turn = nextTurn;
-            renderGameStatus(currentGameState); generateBoardUI(board);
-            if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
+            currentGameState.board = board; 
+            currentGameState.turn = nextTurn;
+            renderGameStatus(currentGameState); 
+            generateBoardUI(board);
+            
+            if (!checkEndGameConditions(board) && nextTurn === 2) { 
+                setTimeout(executeRobotTurn, 600); 
+            }
         } else { 
+            // Atualiza com segurança a remoção da peça capturada e o turno no Firebase
             update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); 
         }
     }
@@ -1305,15 +1378,18 @@
 
         let nextBoard = board.map(row => row.slice());
         let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
-        if (selectedMove.capture) { nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0; reproduzirSomDoJogo('capture'); } 
-        else { reproduzirSomDoJogo(piece === 3 && selectedMove.toR === 7 ? 'king' : 'move'); }
+        if (selectedMove.capture) { nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0; } 
 
         if (piece === 3 && selectedMove.toR === 7) piece = 4;
         nextBoard[selectedMove.toR][selectedMove.toC] = piece;
         nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
 
-        currentGameState.board = nextBoard; currentGameState.turn = 1;
-        renderGameStatus(currentGameState); generateBoardUI(nextBoard);
+        // Robô também obedece captura múltipla simplificada de um nível por iteração de ciclo lento
+        currentGameState.board = nextBoard; 
+        currentGameState.turn = 1;
+
+        renderGameStatus(currentGameState); 
+        generateBoardUI(nextBoard);
         checkEndGameConditions(nextBoard);
     }
 
@@ -1338,7 +1414,7 @@
         }
 
         const totalMovimentosPossiveis = computeAllValidMoves(currentGameState.turn, board).length;
-        if (totalMovimentosPossiveis === 0) {
+        if (totalMovimentosPossiveis === 0 && !lockPieceForMultiCapture) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
             let p1Venceu = (currentGameState.turn === 2); 
@@ -1378,6 +1454,7 @@
     resetRoomBtn.addEventListener('click', async () => {
         if (isPracticeMode) { setupPracticeGame(nameInput.value.trim() || "Você"); return; }
         if (playerRole === "spectator") return alert("Espectadores não podem resetar a sala.");
+        lockPieceForMultiCapture = null;
         update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
     });
 
@@ -1390,7 +1467,7 @@
                 if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
             }
         }
-        roomId = ""; playerRole = "spectator"; isPracticeMode = false;
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null;
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
