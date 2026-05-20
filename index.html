@@ -599,7 +599,7 @@
             <div class="admin-dashboard-box">
                 <div class="admin-dashboard-title">📋 Monitoramento Geral de Salas (Realtime)</div>
                 <div id="admin-rooms-dashboard-list">
-                    <div style="color: #666; font-style: italic; font-size: 0.8rem;">Rastreando atividade nos servidores...</div>
+                    <div style="color: #666; font-style: italic; font-size: 0.8rem;">Aguardando conexões nos servidores...</div>
                 </div>
             </div>
         </div>
@@ -621,7 +621,7 @@
                 <button id="toggle-chat-visibility" class="toggle-chat-btn" style="display: none;">Desligar Chat</button>
             </div>
             <div id="chat-box-messages" class="chat-messages">
-                <div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>
+                <div style="color: #7f8c8d; font-style: italic;">O chat está active. Seja amigável!</div>
             </div>
             <div id="chat-input-wrapper" class="chat-input-box">
                 <input type="text" id="chat-input-field" placeholder="Escreva sua mensagem..." maxlength="80">
@@ -644,7 +644,7 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
-            <li><strong>Capturas Múltiplas Oblíquas:</strong> Se ao comer uma peça o seu movemento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Capturas Múltiplas Oblíquas:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
@@ -1046,7 +1046,7 @@
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 let antes = oldBoard[r][c];
-                let depois = newBoard[r][c]; // 🎯 CORREÇÃO CRUCIAL: Limpo o erro de digitação varC=c que travava o monitoramento
+                let depois = newBoard[r][c]; 
                 if ((antes === 1 && depois === 2) || (antes === 3 && depois === 4)) {
                     return true;
                 }
@@ -1055,15 +1055,17 @@
         return false;
     }
 
+    // 🛡️ CALIBRAÇÃO E BLINDAGEM DO MONITORAMENTO GERAL
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
-            const roomsData = snapshot.val();
-            if (!roomsData) {
-                adminRoomsDashboardList.innerHTML = `<div style="color: #666; font-style: italic;">Nenhuma sala ativa no sistema no momento.</div>`;
+            if (!snapshot.exists()) {
+                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.8rem;">Nenhuma sala com jogadores ativos no momento.</div>`;
                 return;
             }
+            const roomsData = snapshot.val();
             adminRoomsDashboardList.innerHTML = "";
+            
             Object.keys(roomsData).forEach(idSala => {
                 const sala = roomsData[idSala];
                 const statusTxt = sala.isAuthorized ? "AUTORIZADA" : "BLOQUEADA";
@@ -1071,7 +1073,7 @@
                 
                 let p1 = sala.p1Name || "(Vazio)";
                 let p2 = sala.p2Name || "(Vazio)";
-                let dataUso = sala.lastUsedDate || "Sem registros de data";
+                let dataUso = sala.lastUsedDate || "Sem confrontos gravados hoje";
 
                 const row = document.createElement('div');
                 row.className = `admin-room-row ${classAuth}`;
@@ -1081,7 +1083,7 @@
                         <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'}">${statusTxt}</span>
                     </div>
                     <div>👥 Jogadores: <span style="color: #bbb;">${p1} vs ${p2}</span></div>
-                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 2px;">📅 Data do Confronto: ${dataUso}</div>
+                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">📅 Última Entrada: ${dataUso}</div>
                 `;
                 adminRoomsDashboardList.appendChild(row);
             });
