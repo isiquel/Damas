@@ -234,9 +234,10 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
+        /* Ajustado de 3 para 4 colunas nos botões de controle do jogo */
         .control-box {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             width: 100%;
             max-width: 500px;
@@ -342,7 +343,7 @@
             background-color: var(--panel-bg);
             padding: 25px;
             border-radius: 15px;
-            max-width: 500px;
+            max-width: 520px;
             width: 100%;
             text-align: left;
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
@@ -365,7 +366,7 @@
 
         .modal-content li {
             margin-bottom: 10px;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: #e2e8f0;
             line-height: 1.4;
         }
@@ -436,7 +437,6 @@
             text-align: left;
         }
 
-        /* Estilo da nova caixinha de dificuldades rápida */
         .difficulty-selector-box {
             display: none;
             background-color: #0f172a;
@@ -473,8 +473,6 @@
             .status-panel { font-size: 0.9rem; }
             .king::after { font-size: 0.9rem; }
             .control-box { grid-template-columns: 1fr 1fr; }
-            #rules-btn-game { grid-column: span 2; }
-            .difficulty-buttons-row { flex-direction: column; }
         }
     </style>
 </head>
@@ -507,7 +505,6 @@
             <button id="spectate-btn" class="btn-spectate" disabled>Assistir Jogo (Espectador)</button>
             <button id="practice-btn" class="btn-secondary" disabled>Contra a Máquina (Modo Treino)</button>
             
-            <!-- CAIXINHA DE SELEÇÃO RÁPIDA (Substitui o prompt chato) -->
             <div id="difficulty-box" class="difficulty-selector-box">
                 <div class="difficulty-selector-title">Escolha o Nível para Jogar:</div>
                 <div class="difficulty-buttons-row">
@@ -517,7 +514,7 @@
                 </div>
             </div>
 
-            <button id="rules-btn-lobby" class="btn-info" disabled>Regras e Instruções</button>
+            <button id="rules-btn-lobby" class="btn-info" disabled>Regras Oficiais Detalhadas</button>
             <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Ranking Global</button>
             <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
         </div>
@@ -558,6 +555,7 @@
         <div class="control-box">
             <button id="leave-btn" style="background-color: #555;">Sair</button>
             <button id="reset-room-btn" style="background-color: #d35400;">Resetar</button>
+            <button id="draw-btn" style="background-color: #cca43b;">Empate</button>
             <button id="rules-btn-game" class="btn-info">Regras</button>
         </div>
 
@@ -577,17 +575,18 @@
     </div>
 </div>
 
+<!-- MANUAL COMPLETO E REFORMULADO DE REGRAS OFICIAIS BRASILEIRAS -->
 <div id="rules-modal" class="modal">
     <div class="modal-content">
-        <h2>Como Funciona o Jogo?</h2>
-        <ul>
-            <li><strong>Início da Partida:</strong> O jogo online libera os movimentos quando 2 jogadores entrarem com a mesma sala. O Vermelho inicia jogando.</li>
-            <li><strong>Movimentos:</strong> Suas peças andam apenas 1 casa para frente pelas diagonais escuras.</li>
-            <li><strong>Capturas:</strong> Salte por cima da peça adversária para uma casa vazia atrás dela.</li>
-            <li><strong>Virar Dama (👑):</strong> Ao levar a peça até a última fileira adversária, ela vira Dama e anda livremente por todas as diagonais livres.</li>
-            <li><strong>Modo Treino:</strong> Jogue localmente contra o Robô do sistema com 3 níveis de dificuldade ajustáveis!</li>
+        <h2>Regras Oficiais do Jogo de Damas</h2>
+        <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
+            <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
+            <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
+            <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
+            <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
+            <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça ganha uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
         </ul>
-        <button id="close-rules-btn">Fechar</button>
+        <button id="close-rules-btn">Entendido, Fechar</button>
     </div>
 </div>
 
@@ -647,13 +646,10 @@
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return;
             const ctx = new AudioCtx();
-            
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            
             osc.connect(gain);
             gain.connect(ctx.destination);
-            
             const agora = ctx.currentTime;
             
             if (tipo === 'inicio') {
@@ -664,16 +660,14 @@
                 gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
                 osc.start(agora);
                 osc.stop(agora + 0.3);
-            } 
-            else if (tipo === 'move') {
+            } else if (tipo === 'move') {
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(400, agora);
                 gain.gain.setValueAtTime(0.1, agora);
                 gain.gain.linearRampToValueAtTime(0.01, agora + 0.08);
                 osc.start(agora);
                 osc.stop(agora + 0.08);
-            } 
-            else if (tipo === 'capture') {
+            } else if (tipo === 'capture') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(180, agora);
                 osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
@@ -681,19 +675,7 @@
                 gain.gain.linearRampToValueAtTime(0.01, agora + 0.15);
                 osc.start(agora);
                 osc.stop(agora + 0.15);
-                
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.type = 'triangle';
-                osc2.frequency.setValueAtTime(120, agora + 0.05);
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                gain2.gain.setValueAtTime(0.2, agora + 0.05);
-                gain2.gain.linearRampToValueAtTime(0.01, agora + 0.2);
-                osc2.start(agora + 0.05);
-                osc2.stop(agora + 0.2);
-            } 
-            else if (tipo === 'king') {
+            } else if (tipo === 'king') {
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(587.33, agora); 
                 osc.frequency.setValueAtTime(880.00, agora + 0.1); 
@@ -702,9 +684,7 @@
                 osc.start(agora);
                 osc.stop(agora + 0.3);
             }
-        } catch (e) {
-            console.log("Áudio bloqueado", e);
-        }
+        } catch (e) { console.log("Áudio bloqueado", e); }
     }
 
     // Elementos DOM
@@ -717,6 +697,7 @@
     const practiceBtn = document.getElementById('practice-btn');
     const leaveBtn = document.getElementById('leave-btn');
     const resetRoomBtn = document.getElementById('reset-room-btn');
+    const drawBtn = document.getElementById('draw-btn');
     const displayRoom = document.getElementById('display-room');
     const turnIndicator = document.getElementById('turn-indicator');
     const playersNamesEl = document.getElementById('players-names');
@@ -749,7 +730,6 @@
     const livePodiumContent = document.getElementById('live-podium-content');
     const motivateBox = document.getElementById('motivate-box');
     
-    // Novos elementos do menu de dificuldade nativo
     const difficultyBox = document.getElementById('difficulty-box');
     const btnChooseEasy = document.getElementById('btn-choose-easy');
     const btnChooseMedium = document.getElementById('btn-choose-medium');
@@ -759,20 +739,10 @@
     rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
     closeRulesBtn.addEventListener('click', () => rulesModal.style.display = 'none');
 
-    rankBtnLobby.addEventListener('click', () => {
-        networkLeaderboard();
-    });
-    
-    async function networkLeaderboard() {
-        rankModal.style.display = 'flex';
-        await loadLeaderboard();
-    }
-    
+    rankBtnLobby.addEventListener('click', () => { networkLeaderboard(); });
+    async function networkLeaderboard() { rankModal.style.display = 'flex'; await loadLeaderboard(); }
     closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
-
-    downloadBtnLobby.addEventListener('click', () => {
-        window.location.href = 'jogo.apk';
-    });
+    downloadBtnLobby.addEventListener('click', () => { window.location.href = 'jogo.apk'; });
 
     async function carregarPodiumLobby() {
         try {
@@ -784,31 +754,22 @@
                     motivateBox.innerText = "⚔️ Seja o primeiro a inaugurar o tabuleiro e assumir o topo!";
                     return;
                 }
-
                 const sorted = Object.values(data).sort((a, b) => b.wins - a.wins).slice(0, 3);
                 livePodiumContent.innerHTML = "";
-                
                 let medalhas = ["🥇", "🥈", "🥉"];
                 sorted.forEach((player, idx) => {
                     let isInvict = player.losses === 0 && player.wins > 0;
                     let tagInvict = isInvict ? " <span style='color:#f1c40f; font-size:0.75rem; font-weight:bold;'>🔥 INTACTO</span>" : "";
-                    
                     const row = document.createElement('div');
                     row.className = "podium-row";
-                    row.innerHTML = `
-                        <div>${medalhas[idx]} <strong>${player.name}</strong>${tagInvict}</div>
-                        <div style="color:#2ecc71; font-weight:bold;">${player.wins} Vitórias</div>
-                    `;
+                    row.innerHTML = `<div>${medalhas[idx]} <strong>${player.name}</strong>${tagInvict}</div><div style="color:#2ecc71; font-weight:bold;">${player.wins} Vagas</div>`;
                     livePodiumContent.appendChild(row);
                 });
-
                 if(sorted.length > 0) {
                     motivateBox.innerHTML = `⚔️ Desafie o topo! <strong>${sorted[0].name}</strong> está dominando. Crie uma sala online e marque um confronto direto contra os campeões!`;
                 }
             });
-        } catch(e) {
-            console.log("Erro ao carregar podium", e);
-        }
+        } catch(e) { console.log("Erro ao carregar podium", e); }
     }
 
     onAuthStateChanged(auth, (user) => {
@@ -849,27 +810,17 @@
         const rankRef = ref(db, 'leaderboard');
         const snapshot = await get(rankRef);
         const data = snapshot.val();
-
         if (!data) {
             rankTableBody.innerHTML = "<tr><td colspan='5'>Nenhuma partida registrada ainda!</td></tr>";
             return;
         }
-
         const sortedPlayers = Object.values(data).sort((a, b) => b.wins - a.wins);
         rankTableBody.innerHTML = "";
-
         sortedPlayers.forEach((player, index) => {
             const totalGames = player.wins + player.losses;
             const pct = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0;
-            
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>#${index + 1}</strong></td>
-                <td>${player.name}</td>
-                <td style="color:#2ecc71; font-weight:bold;">${player.wins}</td>
-                <td style="color:#e74c3c;">${player.losses}</td>
-                <td><span class="badge" style="background-color:#34495e;">${pct}%</span></td>
-            `;
+            row.innerHTML = `<td><strong>#${index + 1}</strong></td><td>${player.name}</td><td style="color:#2ecc71; font-weight:bold;">${player.wins}</td><td style="color:#e74c3c;">${player.losses}</td><td><span class="badge" style="background-color:#34495e;">${pct}%</span></td>`;
             rankTableBody.appendChild(row);
         });
     }
@@ -877,11 +828,9 @@
     async function updatePlayerRanking(isWin, winnerName) {
         if (isPracticeMode || hasRecordedResult) return;
         hasRecordedResult = true;
-
         const userRankRef = ref(db, 'leaderboard/' + playerId);
         const snapshot = await get(userRankRef);
         let stats = snapshot.val() || { name: winnerName, wins: 0, losses: 0 };
-        
         stats.name = winnerName;
         if (isWin) stats.wins += 1;
         else stats.losses += 1;
@@ -893,8 +842,7 @@
         const roomName = roomInput.value.trim().toLowerCase();
         if (!playerName) return alert("Por favor, digite seu nome.");
         if (!roomName) return alert("Por favor, digite o código da sala.");
-        
-        difficultyBox.style.display = "none"; // Garante que fecha se estivesse aberto
+        difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
         roomId = roomName;
@@ -904,7 +852,6 @@
     spectateBtn.addEventListener('click', () => {
         const roomName = roomInput.value.trim().toLowerCase();
         if (!roomName) return alert("Por favor, digite o código da sala para assistir.");
-        
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
@@ -912,34 +859,17 @@
         joinRoom(roomName, "Olheiro", true);
     });
 
-    // CLIQUE NO BOTÃO CONTRA A MÁQUINA: Abre ou fecha o menu deslizante
     practiceBtn.addEventListener('click', () => {
-        if (difficultyBox.style.display === "flex") {
-            difficultyBox.style.display = "none";
-        } else {
-            difficultyBox.style.display = "flex";
-        }
+        difficultyBox.style.display = difficultyBox.style.display === "flex" ? "none" : "flex";
     });
 
-    // BOTÕES DE CLIQUE DIRETO NA DIFICULDADE (Super prático!)
-    btnChooseEasy.addEventListener('click', () => {
-        practiceDifficulty = "facil";
-        iniciarTreinoDireto();
-    });
-
-    btnChooseMedium.addEventListener('click', () => {
-        practiceDifficulty = "medio";
-        iniciarTreinoDireto();
-    });
-
-    btnChooseHard.addEventListener('click', () => {
-        practiceDifficulty = "dificil";
-        iniciarTreinoDireto();
-    });
+    btnChooseEasy.addEventListener('click', () => { practiceDifficulty = "facil"; iniciarTreinoDireto(); });
+    btnChooseMedium.addEventListener('click', () => { practiceDifficulty = "medio"; iniciarTreinoDireto(); });
+    btnChooseHard.addEventListener('click', () => { practiceDifficulty = "dificil"; iniciarTreinoDireto(); });
 
     function iniciarTreinoDireto() {
         const playerName = nameInput.value.trim() || "Você";
-        difficultyBox.style.display = "none"; // Oculta o menu pós-escolha
+        difficultyBox.style.display = "none";
         isPracticeMode = true;
         hasRecordedResult = false;
         playerRole = "p1";
@@ -948,12 +878,10 @@
 
     function runLocalTimer(startTimestamp, gameStatus) {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
-        
         if (gameStatus !== "playing" || !startTimestamp) {
             if (gameStatus === "waiting") gameTimerEl.innerText = "⏱️ Aguardando";
             return;
         }
-
         gameTimerInterval = setInterval(() => {
             const totalSeconds = Math.floor((Date.now() - startTimestamp) / 1000);
             if (totalSeconds < 0) return;
@@ -985,38 +913,23 @@
         const text = chatInputField.value.trim();
         if (!text) return;
         const author = nameInput.value.trim() || "Anônimo";
-
-        if (isPracticeMode) {
-            appendChatRow(author, text);
-            chatInputField.value = "";
-            return;
-        }
-
+        if (isPracticeMode) { appendChatRow(author, text); chatInputField.value = ""; return; }
         const msgRef = ref(db, `rooms/${roomId}/chat`);
-        push(msgRef, {
-            author: author,
-            text: text,
-            timestamp: Date.now()
-        });
+        push(msgRef, { author: author, text: text, timestamp: Date.now() });
         chatInputField.value = "";
     }
 
     chatSendBtn.addEventListener('click', pushChatMessage);
-    chatInputField.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') pushChatMessage();
-    });
+    chatInputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') pushChatMessage(); });
 
     function appendChatRow(author, text) {
         const row = document.createElement('div');
         row.className = "chat-msg-row";
-        
         const authorSpan = document.createElement('span');
         authorSpan.className = "msg-author";
         authorSpan.innerText = author + ": ";
-        
         const textSpan = document.createElement('span');
         textSpan.innerText = text;
-        
         row.appendChild(authorSpan);
         row.appendChild(textSpan);
         chatBoxMessages.appendChild(row);
@@ -1027,7 +940,6 @@
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
-
         const isAdminMode = (playerName === "Isiquel_Admin");
 
         if (roomData && !roomData.isAuthorized && !isAdminMode && !forceSpectator) {
@@ -1052,28 +964,17 @@
             };
             await set(roomRef, roomData);
         } else {
-            if (isAdminMode) {
-                playerRole = "admin";
-            } else if (forceSpectator) {
-                playerRole = "spectator";
-            } else if (roomData.p1Id === playerId) {
-                playerRole = "p1";
-            } else if (roomData.p2Id === playerId) {
-                playerRole = "p2";
-            } else if (!roomData.p1Id || roomData.p1Id === "") {
+            if (isAdminMode) { playerRole = "admin"; } 
+            else if (forceSpectator) { playerRole = "spectator"; } 
+            else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
+            else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
+            else if (!roomData.p1Id || roomData.p1Id === "") {
                 playerRole = "p1";
                 await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null });
             } else if (!roomData.p2Id || roomData.p2Id === "") {
                 playerRole = "p2";
-                await update(roomRef, { 
-                    p2Id: playerId, 
-                    p2Name: playerName, 
-                    status: "playing", 
-                    startTime: Date.now() 
-                });
-            } else {
-                playerRole = "spectator";
-            }
+                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now() });
+            } else { playerRole = "spectator"; }
         }
 
         if (playerRole === "spectator") {
@@ -1086,25 +987,13 @@
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
 
-        if (playerRole === "admin") {
-            adminPanel.style.display = "block";
-            toggleChatVisibility.style.display = "block";
-        } else if (playerRole === "p1" || playerRole === "p2") {
-            adminPanel.style.display = "none";
-            toggleChatVisibility.style.display = "block";
-        } else {
-            adminPanel.style.display = "none";
-            toggleChatVisibility.style.display = "none";
-        }
+        adminPanel.style.display = playerRole === "admin" ? "block" : "none";
+        toggleChatVisibility.style.display = (playerRole === "spectator") ? "none" : "block";
 
         onValue(roomRef, (snap) => {
             const data = snap.val();
             if (!data) return;
-            
-            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") {
-                reproduzirSomDoJogo('inicio');
-            }
-            
+            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") { reproduzirSomDoJogo('inicio'); }
             currentGameState = data;
             
             let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
@@ -1112,13 +1001,8 @@
             runLocalTimer(data.startTime, data.status);
             
             if (data.isAuthorized !== undefined) {
-                if (data.isAuthorized) {
-                    adminToggleRoomBtn.innerText = "AUTORIZADA";
-                    adminToggleRoomBtn.style.backgroundColor = "#27ae60";
-                } else {
-                    adminToggleRoomBtn.innerText = "BLOQUEADA";
-                    adminToggleRoomBtn.style.backgroundColor = "#c0392b";
-                }
+                adminToggleRoomBtn.innerText = data.isAuthorized ? "AUTORIZADA" : "BLOQUEADA";
+                adminToggleRoomBtn.style.backgroundColor = data.isAuthorized ? "#27ae60" : "#c0392b";
             }
 
             renderGameStatus(data);
@@ -1130,38 +1014,20 @@
         onValue(chatRef, (snap) => {
             chatBoxMessages.innerHTML = "";
             const data = snap.val();
-            if (data) {
-                Object.values(data).forEach(msg => {
-                    appendChatRow(msg.author, msg.text);
-                });
-            } else {
-                chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>`;
-            }
+            if (data) { Object.values(data).forEach(msg => appendChatRow(msg.author, msg.text)); } 
+            else { chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>`; }
         });
     }
 
     adminToggleRoomBtn.addEventListener('click', async () => {
         if (playerRole !== "admin") return;
-        const roomRef = ref(db, 'rooms/' + roomId);
-        const nextState = !currentGameState.isAuthorized;
-        await update(roomRef, { isAuthorized: nextState });
+        update(ref(db, 'rooms/' + roomId), { isAuthorized: !currentGameState.isAuthorized });
     });
 
     adminClearAllBtn.addEventListener('click', async () => {
         if (playerRole !== "admin") return;
         if (!confirm("Deseja mesmo forçar a limpeza e reiniciar esta sala inteira?")) return;
-        const roomRef = ref(db, 'rooms/' + roomId);
-        await update(roomRef, {
-            board: getInitialBoard(),
-            turn: 1,
-            status: "waiting",
-            startTime: 0,
-            p1Id: "",
-            p1Name: "",
-            p2Id: "",
-            p2Name: "",
-            chat: null
-        });
+        update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "waiting", startTime: 0, p1Id: "", p1Name: "", p2Id: "", p2Name: "", chat: null });
         alert("Sala resetada com sucesso!");
     });
 
@@ -1169,24 +1035,14 @@
         isPracticeMode = true;
         toggleChatVisibility.style.display = "block";
         adminPanel.style.display = "none";
-        
         let robotLabel = "Robô Desafio";
         if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
         if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 🧠";
 
-        currentGameState = {
-            board: getInitialBoard(),
-            turn: 1,
-            status: "playing",
-            p1Name: playerName,
-            p2Name: robotLabel,
-            startTime: Date.now()
-        };
-
+        currentGameState = { board: getInitialBoard(), turn: 1, status: "playing", p1Name: playerName, p2Name: robotLabel, startTime: Date.now() };
         displayRoom.innerText = `TREINO (${practiceDifficulty.toUpperCase()})`;
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
-        
         reproduzirSomDoJogo('inicio'); 
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
@@ -1197,32 +1053,16 @@
         const p1 = data.p1Name || "Aguardando...";
         const p2 = data.p2Name || "Aguardando...";
         playersNamesEl.innerText = `${p1} VS ${p2}`;
-
-        if (playerRole === "p1") {
-            playerBadge.innerText = "Vermelho";
-            playerBadge.className = "badge badge-p1";
-        } else if (playerRole === "p2") {
-            playerBadge.innerText = "Preto";
-            playerBadge.className = "badge badge-p2";
-        } else if (playerRole === "admin") {
-            playerBadge.innerText = "Dono";
-            playerBadge.className = "badge badge-admin";
-        } else {
-            playerBadge.innerText = "Espectador";
-            playerBadge.className = "badge badge-spec";
-        }
+        playerBadge.innerText = playerRole === "p1" ? "Vermelho" : playerRole === "p2" ? "Preto" : playerRole === "admin" ? "Dono" : "Espectador";
+        playerBadge.className = `badge badge-${playerRole === "p1"?"p1":playerRole === "p2"?"p2":playerRole === "admin"?"admin":"spec"}`;
 
         if (data.status === "waiting") {
             turnIndicator.innerText = "Aguardando Rival...";
             turnIndicator.style.color = "#f1c40f";
         } else if (data.status === "playing") {
-            if (data.turn === 1) {
-                turnIndicator.innerText = `Vez de: ${p1}`;
-                turnIndicator.style.color = "var(--p1-color)";
-            } else {
-                turnIndicator.innerText = `Vez de: ${p2}`;
-                turnIndicator.style.color = "#ecf0f1";
-            }
+            let nomeVez = data.turn === 1 ? p1 : p2;
+            turnIndicator.innerText = `Vez de: ${nomeVez}`;
+            turnIndicator.style.color = data.turn === 1 ? "var(--p1-color)" : "#ecf0f1";
         } else if (data.status === "finished") {
             turnIndicator.innerText = "Fim de Jogo!";
             turnIndicator.style.color = "#2ecc71";
@@ -1236,25 +1076,15 @@
             for (let c = 0; c < 8; c++) {
                 const square = document.createElement('div');
                 square.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
-                square.dataset.row = r;
-                square.dataset.col = c;
-
                 const val = board[r][c];
                 if (val !== 0) {
                     const piece = document.createElement('div');
                     piece.className = `piece ${val === 1 || val === 2 ? 'p1-piece' : 'p2-piece'}`;
                     if (val === 2 || val === 4) piece.classList.add('king');
-                    
-                    if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) {
-                        piece.classList.add('selected');
-                    }
+                    if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) piece.classList.add('selected');
                     square.appendChild(piece);
                 }
-
-                if (validMoves.some(m => m.toR === r && m.toC === c)) {
-                    square.classList.add('highlight');
-                }
-
+                if (validMoves.some(m => m.toR === r && m.toC === c)) square.classList.add('highlight');
                 square.addEventListener('click', () => handleSquareInteraction(r, c));
                 boardEl.appendChild(square);
             }
@@ -1263,13 +1093,10 @@
 
     function handleSquareInteraction(r, c) {
         if (!currentGameState || currentGameState.status !== "playing") return;
-        
         if (!isPracticeMode) {
             if (currentGameState.turn === 1 && playerRole !== "p1") return;
             if (currentGameState.turn === 2 && playerRole !== "p2") return;
-        } else {
-            if (currentGameState.turn === 2) return; 
-        }
+        } else { if (currentGameState.turn === 2) return; }
 
         const board = currentGameState.board;
         const clickedValue = board[r][c];
@@ -1277,7 +1104,6 @@
         if (clickedValue !== 0) {
             const isP1Turn = currentGameState.turn === 1;
             const ownsPiece = isP1Turn ? (clickedValue === 1 || clickedValue === 2) : (clickedValue === 3 || clickedValue === 4);
-            
             if (ownsPiece) {
                 selectedPiece = { r, c };
                 validMoves = computeValidMovesForPiece(r, c, board);
@@ -1285,9 +1111,7 @@
             }
         } else {
             const move = validMoves.find(m => m.toR === r && m.toC === c);
-            if (move) {
-                executeGameMove(move);
-            }
+            if (move) executeGameMove(move);
         }
     }
 
@@ -1295,47 +1119,37 @@
         const piece = board[r][c];
         let moves = [];
         if (piece === 0) return moves;
-
         const isKing = piece === 2 || piece === 4;
         const isP1 = piece === 1 || piece === 2;
 
         if (isKing) {
             const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
             dirs.forEach(([dr, dc]) => {
-                let nr = r + dr;
-                let nc = c + dc;
+                let nr = r + dr, nc = c + dc;
                 while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                    if (board[nr][nc] === 0) {
-                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
-                    } else {
-                        const targetP1 = board[nr][nc] === 1 || board[nr][nc] === 2;
-                        if (targetP1 !== isP1) {
-                            let rr = nr + dr;
-                            let cc = nc + dc;
+                    if (board[nr][nc] === 0) { moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); } 
+                    else {
+                        if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
+                            let rr = nr + dr, cc = nc + dc;
                             if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
                                 moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
                             }
                         }
                         break; 
                     }
-                    nr += dr;
-                    nc += dc;
+                    nr += dr; nc += dc;
                 }
             });
         } else {
             const dirs = isP1 ? [[-1, 1], [-1, -1]] : [[1, 1], [1, -1]];
             dirs.forEach(([dr, dc]) => {
-                const nr = r + dr;
-                const nc = c + dc;
+                const nr = r + dr, nc = c + dc;
                 if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                    if (board[nr][nc] === 0) {
-                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
-                    } else {
-                        const targetP1 = board[nr][nc] === 1 || board[nr][nc] === 2;
-                        if (targetP1 !== isP1) {
-                            const rr = nr + dr;
-                            const cc = nc + dc;
-                            if (rr >= 0 && rr < 8 && board[rr][cc] === 0) {
+                    if (board[nr][nc] === 0) { moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); } 
+                    else {
+                        if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
+                            const rr = nr + dr, cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
                                 moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
                             }
                         }
@@ -1343,7 +1157,6 @@
                 }
             });
         }
-
         const forceCaptures = moves.filter(m => m.capture !== null);
         return forceCaptures.length > 0 ? forceCaptures : moves;
     }
@@ -1354,8 +1167,7 @@
             for (let c = 0; c < 8; c++) {
                 const p = board[r][c];
                 if (p === 0) continue;
-                const isP1 = p === 1 || p === 2;
-                if ((turn === 1 && isP1) || (turn === 2 && !isP1)) {
+                if ((turn === 1 && (p === 1 || p === 2)) || (turn === 2 && (p === 3 || p === 4))) {
                     allMoves = allMoves.concat(computeValidMovesForPiece(r, c, board));
                 }
             }
@@ -1368,39 +1180,22 @@
         let board = currentGameState.board.map(row => row.slice());
         let piece = board[move.fromR][move.fromC];
 
-        if (move.capture) {
-            board[move.capture.r][move.capture.c] = 0;
-            reproduzirSomDoJogo('capture'); 
-        } else {
-            if ((piece === 1 && move.toR === 0) || (piece === 3 && move.toR === 7)) {
-                reproduzirSomDoJogo('king'); 
-            } else {
-                reproduzirSomDoJogo('move'); 
-            }
-        }
+        if (move.capture) { board[move.capture.r][move.capture.c] = 0; reproduzirSomDoJogo('capture'); } 
+        else { reproduzirSomDoJogo((piece === 1 && move.toR === 0) || (piece === 3 && move.toR === 7) ? 'king' : 'move'); }
 
         if (piece === 1 && move.toR === 0) piece = 2; 
         if (piece === 3 && move.toR === 7) piece = 4; 
 
         board[move.toR][move.toC] = piece;
         board[move.fromR][move.fromC] = 0;
-
         let nextTurn = currentGameState.turn === 1 ? 2 : 1;
-        selectedPiece = null;
-        validMoves = [];
+        selectedPiece = null; validMoves = [];
 
         if (isPracticeMode) {
-            currentGameState.board = board;
-            currentGameState.turn = nextTurn;
-            renderGameStatus(currentGameState);
-            generateBoardUI(board);
-            if (!checkEndGameConditions(board) && nextTurn === 2) {
-                setTimeout(executeRobotTurn, 600);
-            }
-        } else {
-            const roomRef = ref(db, 'rooms/' + roomId);
-            update(roomRef, { board: board, turn: nextTurn });
-        }
+            currentGameState.board = board; currentGameState.turn = nextTurn;
+            renderGameStatus(currentGameState); generateBoardUI(board);
+            if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
+        } else { update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); }
     }
 
     function avaliarCenarioPosicional(board, m) {
@@ -1411,118 +1206,64 @@
         simBoard[m.toR][m.toC] = (peca === 3 && m.toR === 7) ? 4 : peca;
         simBoard[m.fromR][m.fromC] = 0;
 
-        if (m.capture) {
-            const pecaComida = board[m.capture.r][m.capture.c];
-            pontuacao += (pecaComida === 2) ? 350 : 200;
-        }
-
-        if (peca === 3 && m.toR === 7) {
-            pontuacao += 150;
-        }
-
-        if (m.toC >= 2 && m.toC <= 5) {
-            pontuacao += 25; 
-        } else {
-            pontuacao += 10; 
-        }
+        if (m.capture) pontuacao += (board[m.capture.r][m.capture.c] === 2) ? 350 : 200;
+        if (peca === 3 && m.toR === 7) pontuacao += 150;
+        pontuacao += (m.toC >= 2 && m.toC <= 5) ? 25 : 10;
 
         const dirsOponente = [[-1, 1], [-1, -1]];
         dirsOponente.forEach(([dr, dc]) => {
-            let adjR = m.toR + dr;
-            let adjC = m.toC + dc;
-            let espacoAtrasR = m.toR - dr;
-            let espacoAtrasC = m.toC - dc;
-
+            let adjR = m.toR + dr, adjC = m.toC + dc;
             if (adjR >= 0 && adjR < 8 && adjC >= 0 && adjC < 8) {
-                let pecaInimiga = simBoard[adjR][adjC];
-                if (pecaInimiga === 1 || pecaInimiga === 2) {
-                    if (espacoAtrasR >= 0 && espacoAtrasR < 8 && espacoAtrasC >= 0 && espacoAtrasC < 8) {
-                        if (simBoard[espacoAtrasR][espacoAtrasC] === 0) {
-                            pontuacao -= 220; 
-                        }
-                    }
+                if (simBoard[adjR][adjC] === 1 || simBoard[adjR][adjC] === 2) {
+                    let er = m.toR - dr, ec = m.toC - dc;
+                    if (er >= 0 && er < 8 && ec >= 0 && ec < 8 && simBoard[er][ec] === 0) pontuacao -= 220;
                 }
             }
         });
-
-        if (m.fromR === 0 && (board[0].filter(p => p === 3 || p === 4).length > 2)) {
-            pontuacao -= 40;
-        }
-
         return pontuacao;
     }
 
     function executeRobotTurn() {
         if (!isPracticeMode || currentGameState.status !== "playing") return;
-        
         const board = currentGameState.board;
         const robotMoves = computeAllValidMoves(2, board);
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            
-            const nomeDoHumano = currentGameState.p1Name || "Você";
-            alert(`🏆 PARABÉNS! Vitória de ${nomeDoHumano}! 🎉`);
-            
-            renderGameStatus(currentGameState);
-            return;
+            alert(`🏆 PARABÉNS! Vitória de ${currentGameState.p1Name || "Você"} por bloqueio total do adversário! 🎉`);
+            renderGameStatus(currentGameState); return;
         }
 
         let selectedMove = null;
-
-        if (practiceDifficulty === "facil") {
-            selectedMove = robotMoves[Math.floor(Math.random() * robotMoves.length)];
-        } else if (practiceDifficulty === "medio") {
+        if (practiceDifficulty === "facil") { selectedMove = robotMoves[Math.floor(Math.random() * robotMoves.length)]; } 
+        else if (practiceDifficulty === "medio") {
             const captures = robotMoves.filter(m => m.capture !== null);
-            if (captures.length > 0) {
-                selectedMove = captures[Math.floor(Math.random() * captures.length)];
-            } else {
-                let jogadasSeguras = robotMoves.filter(m => avaliarCenarioPosicional(board, m) > -100);
-                selectedMove = jogadasSeguras.length > 0 
-                    ? jogadasSeguras[Math.floor(Math.random() * jogadasSeguras.length)]
-                    : robotMoves[Math.floor(Math.random() * robotMoves.length)];
+            if (captures.length > 0) { selectedMove = captures[Math.floor(Math.random() * captures.length)]; } 
+            else {
+                let seguras = robotMoves.filter(m => avaliarCenarioPosicional(board, m) > -100);
+                selectedMove = seguras.length > 0 ? seguras[Math.floor(Math.random() * seguras.length)] : robotMoves[Math.floor(Math.random() * robotMoves.length)];
             }
-        } else if (practiceDifficulty === "dificil") {
-            let melhorPeso = -Infinity;
-            let melhoresMovimentos = [];
-            
+        } else {
+            let melhorPeso = -Infinity, melhores = [];
             robotMoves.forEach(m => {
                 let peso = avaliarCenarioPosicional(board, m);
-                if (peso > melhorPeso) {
-                    melhorPeso = peso;
-                    melhoresMovimentos = [m];
-                } else if (peso === melhorPeso) {
-                    melhoresMovimentos.push(m);
-                }
+                if (peso > melhorPeso) { melhorPeso = peso; melhores = [m]; } 
+                else if (peso === melhorPeso) { melhores.push(m); }
             });
-            
-            selectedMove = melhoresMovimentos[Math.floor(Math.random() * melhoresMovimentos.length)];
+            selectedMove = melhores[Math.floor(Math.random() * melhores.length)];
         }
 
         let nextBoard = board.map(row => row.slice());
         let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
-
-        if (selectedMove.capture) {
-            nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0;
-            reproduzirSomDoJogo('capture');
-        } else {
-            if (piece === 3 && selectedMove.toR === 7) {
-                reproduzirSomDoJogo('king');
-            } else {
-                reproduzirSomDoJogo('move');
-            }
-        }
+        if (selectedMove.capture) { nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0; reproduzirSomDoJogo('capture'); } 
+        else { reproduzirSomDoJogo(piece === 3 && selectedMove.toR === 7 ? 'king' : 'move'); }
 
         if (piece === 3 && selectedMove.toR === 7) piece = 4;
-
         nextBoard[selectedMove.toR][selectedMove.toC] = piece;
         nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
 
-        currentGameState.board = nextBoard;
-        currentGameState.turn = 1;
-
-        renderGameStatus(currentGameState);
-        generateBoardUI(nextBoard);
+        currentGameState.board = nextBoard; currentGameState.turn = 1;
+        renderGameStatus(currentGameState); generateBoardUI(nextBoard);
         checkEndGameConditions(nextBoard);
     }
 
@@ -1535,63 +1276,76 @@
             }
         }
 
+        if (currentGameState.status !== "playing") return false;
+
+        // VERIFICAÇÃO 1: FIM DE JOGO POR FALTA DE PEÇAS
         if (p1Pieces === 0 || p2Pieces === 0) {
-            if (currentGameState.status === "playing") {
-                currentGameState.status = "finished";
-                if (gameTimerInterval) clearInterval(gameTimerInterval);
-                
-                let nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-                alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador}! 🎉`);
+            currentGameState.status = "finished";
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+            let nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
+            alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador}! 🎉`);
+            finalizarPartidaOnline(p1Pieces > 0);
+            return true;
+        }
 
-                if (!isPracticeMode) {
-                    const roomRef = ref(db, 'rooms/' + roomId);
-                    update(roomRef, { status: "finished" });
-
-                    if (playerRole === "p1") updatePlayerRanking(p1Pieces > 0, currentGameState.p1Name);
-                    if (playerRole === "p2") updatePlayerRanking(p2Pieces > 0, currentGameState.p2Name);
-                }
-            }
+        // VERIFICAÇÃO 2: DETECÇÃO AUTOMÁTICA DE ENCURRALAMENTO (BLOQUEIO)
+        const totalMovimentosPossiveis = computeAllValidMoves(currentGameState.turn, board).length;
+        if (totalMovimentosPossiveis === 0) {
+            currentGameState.status = "finished";
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+            // Se a vez era do jogador 1 e ele não se mexe, vitória do jogador 2 e vice-versa
+            let p1Venceu = (currentGameState.turn === 2); 
+            let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
+            
+            alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador} por bloqueio total do adversário! 🎉`);
+            finalizarPartidaOnline(p1Venceu);
             return true;
         }
         return false;
     }
 
-    resetRoomBtn.addEventListener('click', async () => {
-        if (isPracticeMode) {
-            setupPracticeGame(nameInput.value.trim() || "Você");
-            return;
-        }
-        if (playerRole === "spectator") return alert("Espectadores não podem resetar a sala.");
+    async function finalizarPartidaOnline(p1Venceu) {
+        if (isPracticeMode) return;
+        update(ref(db, 'rooms/' + roomId), { status: "finished" });
+        if (playerRole === "p1") updatePlayerRanking(p1Venceu, currentGameState.p1Name);
+        if (playerRole === "p2") updatePlayerRanking(!p1Venceu, currentGameState.p2Name);
+    }
+
+    // BOTÃO DE PROPOR EMPATE AMIGÁVEL
+    drawBtn.addEventListener('click', async () => {
+        if (!currentGameState || currentGameState.status !== "playing") return;
+        if (playerRole === "spectator") return alert("Espectadores não podem propor empate.");
         
-        const roomRef = ref(db, 'rooms/' + roomId);
-        await update(roomRef, {
-            board: getInitialBoard(),
-            turn: 1,
-            status: "playing",
-            startTime: Date.now()
-        });
+        if (!confirm("Deseja declarar empate consensual e reiniciar a partida?")) return;
+
+        if (isPracticeMode) {
+            alert("Partida empatada contra a máquina.");
+            setupPracticeGame(nameInput.value.trim() || "Você");
+        } else {
+            const roomRef = ref(db, 'rooms/' + roomId);
+            const msgRef = ref(db, `rooms/${roomId}/chat`);
+            push(msgRef, { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo entre os jogadores.`, timestamp: Date.now() });
+            await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+        }
+    });
+
+    resetRoomBtn.addEventListener('click', async () => {
+        if (isPracticeMode) { setupPracticeGame(nameInput.value.trim() || "Você"); return; }
+        if (playerRole === "spectator") return alert("Espectadores não podem resetar a sala.");
+        update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
     });
 
     leaveBtn.addEventListener('click', async () => {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
-        
         if (!isPracticeMode && roomId) {
-            if (playerRole === "spectator") {
-                const specPresenceRef = ref(db, `rooms/${roomId}/spectators/${playerId}`);
-                await set(specPresenceRef, null);
-            } else if (playerRole !== "admin") {
-                const roomRef = ref(db, 'rooms/' + roomId);
-                if (playerRole === "p1") await update(roomRef, { p1Id: "", p1Name: "", status: "finished" });
-                if (playerRole === "p2") await update(roomRef, { p2Id: "", p2Name: "", status: "finished" });
+            if (playerRole === "spectator") { set(ref(db, `rooms/${roomId}/spectators/${playerId}`), null); } 
+            else if (playerRole !== "admin") {
+                if (playerRole === "p1") await update(ref(db, 'rooms/' + roomId), { p1Id: "", p1Name: "", status: "finished" });
+                if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
             }
         }
-        
-        roomId = "";
-        playerRole = "spectator";
-        isPracticeMode = false;
-        difficultyBox.style.display = "none";
-        gameScreen.style.display = 'none';
-        lobbyScreen.style.display = 'block';
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false;
+        difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
 
