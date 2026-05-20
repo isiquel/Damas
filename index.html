@@ -616,7 +616,7 @@
             </div>
 
             <div class="admin-dashboard-box">
-                <div class="admin-dashboard-title">📋 Salas Ativas nos Servidores (Tempo Real)</div>
+                <div class="admin-dashboard-title">📋 Códigos de Salas no Servidor</div>
                 <div id="admin-rooms-dashboard-list">
                     <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade nos servidores...</div>
                 </div>
@@ -660,16 +660,16 @@
     </div>
 </div>
 
+<!-- MODAL GENÉRICO DE CONFIRMAÇÃO DO SISTEMA -->
 <div id="custom-confirm-modal" class="modal">
     <div class="modal-content" style="max-width: 440px; text-align: center;">
-        <h2 style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
-        <div style="font-size: 1.05rem; line-height: 1.5; margin: 15px 0; color: #e2e8f0;">
-            Deseja forçar o <strong>RESET TOTAL</strong> da sala informada?<br>
-            <small style="color: #aaa;">Isso redefinirá o tabuleiro e desconectará os usuários dela.</small>
+        <h2 id="custom-confirm-title" style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
+        <div id="custom-confirm-text" style="font-size: 1.05rem; line-height: 1.5; margin: 15px 0; color: #e2e8f0;">
+            Mensagem de confirmação...
         </div>
         <div class="confirm-buttons-box">
-            <button id="btn-confirm-reset-yes" class="btn-confirm-yes">Sim, Resetar</button>
-            <button id="btn-confirm-reset-no" class="btn-confirm-no">Cancelar</button>
+            <button id="btn-confirm-yes" class="btn-confirm-yes">Sim, Confirmar</button>
+            <button id="btn-confirm-no" class="btn-confirm-no">Cancelar</button>
         </div>
     </div>
 </div>
@@ -709,6 +709,7 @@
         <button id="close-rank-btn" style="background-color: #555;">Fechar Janela</button>
     </div>
 </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, get, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -749,6 +750,26 @@
     }
     document.getElementById('close-alert-btn').addEventListener('click', () => {
         document.getElementById('custom-alert-modal').style.display = 'none';
+    });
+
+    // SISTEMA GLOBAL DE CONFIRMAÇÃO
+    let acaoConfirmadaCallback = null;
+    function exibirConfirmacao(titulo, texto, callbackSim) {
+        document.getElementById('custom-confirm-title').innerHTML = titulo;
+        document.getElementById('custom-confirm-text').innerHTML = texto;
+        document.getElementById('custom-confirm-modal').style.display = 'flex';
+        acaoConfirmadaCallback = callbackSim;
+    }
+
+    document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+        document.getElementById('custom-confirm-modal').style.display = 'none';
+        if (acaoConfirmadaCallback) acaoConfirmadaCallback();
+        acaoConfirmadaCallback = null;
+    });
+
+    document.getElementById('btn-confirm-no').addEventListener('click', () => {
+        document.getElementById('custom-confirm-modal').style.display = 'none';
+        acaoConfirmadaCallback = null;
     });
 
     function reproduzirSomDoJogo(tipo) {
@@ -1092,7 +1113,7 @@
         return false;
     }
 
-    // 📋 LISTAGEM DE SINAL DIRETO COM A RAIZ DO FIREBASE (DESCONGELADO)
+    // 📋 LISTAGEM DE SINAL DIRETO COM A RAIZ DO FIREBASE - LISTA TODOS OS CÓDIGOS
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1109,30 +1130,24 @@
                 const sala = roomsData[idSala];
                 const statusTxt = sala.isAuthorized ? "LIBERADA" : "BLOQUEADA";
                 
-                let p1 = sala.p1Name || "(Aguardando P1)";
-                let p2 = sala.p2Name || "(Aguardando P2)";
-                let dataUso = sala.lastUsedDate || "Sem horário marcado";
+                let p1 = sala.p1Name || "(Vazio)";
+                let p2 = sala.p2Name || "(Vazio)";
                 
-                let marcadorStatus = "";
-                if (sala.status === "finished") marcadorStatus = ` <span style="color:#cca43b;">[FIM]</span>`;
-                if (sala.status === "playing") marcadorStatus = ` <span style="color:#2ecc71;">[EM JOGO]</span>`;
-
                 const row = document.createElement('div');
                 row.className = 'admin-room-row';
                 row.style.borderLeftColor = sala.isAuthorized ? '#2ecc71' : '#e74c3c';
                 row.innerHTML = `
                     <div class="admin-room-meta">
-                        <strong>SALA: ${idSala.toUpperCase()}${marcadorStatus}</strong>
-                        <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'}">${statusTxt}</span>
+                        <strong style="font-size: 1rem;">CÓDIGO: ${idSala.toUpperCase()}</strong>
+                        <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'}; background: #0f172a; padding: 2px 8px; border-radius: 4px;">${statusTxt}</span>
                     </div>
-                    <div>👥 Jogadores: <span style="color: #bbb;">${p1} vs ${p2}</span></div>
-                    <div style="font-size: 0.78rem; color: #7f8c8d; margin-top: 4px;">📅 Registro: ${dataUso}</div>
+                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">Ocupantes: ${p1} vs ${p2}</div>
                 `;
                 adminRoomsDashboardList.appendChild(row);
             });
 
             if (adminRoomsDashboardList.innerHTML === "") {
-                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador listada.</div>`;
+                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhum código encontrado.</div>`;
             }
         });
     }
@@ -1287,55 +1302,52 @@
         });
     }
 
-    // 🔥 ACIONAMENTO DO MODAL DO RESET DA SALA COPIADA NO TEXTBOX
+    // 🔥 ACIONAMENTO DO MODAL DO RESET DA SALA USANDO SISTEMA DE MODAL
     adminClearAllBtn.addEventListener('click', () => {
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite o código da sala que deseja resetar no campo acima.");
-        document.getElementById('custom-confirm-modal').style.display = 'flex';
-    });
-
-    document.getElementById('btn-confirm-reset-yes').addEventListener('click', async () => {
-        document.getElementById('custom-confirm-modal').style.display = 'none';
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         
-        if (salaAlvo) {
-            // Vai direto na sala digitada e zera tudo nela
-            await set(ref(db, 'rooms/' + salaAlvo), {
-                id: salaAlvo,
-                board: getInitialBoard(),
-                turn: 1,
-                status: "waiting",
-                p1Id: "",
-                p1Name: "",
-                p2Id: "",
-                p2Name: "",
-                startTime: 0,
-                chat: null,
-                isAuthorized: true,
-                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-            });
-            exibirAlertaDoSistema("Sucesso ✓", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi redefinida para o estado original.`);
-            adminTargetRoomInput.value = "";
-        }
+        exibirConfirmacao(
+            "Resetar Sala",
+            `Deseja forçar o <strong>RESET TOTAL</strong> da sala <strong>${salaAlvo.toUpperCase()}</strong>?<br><small style="color: #aaa;">Isso redefinirá o tabuleiro e desconectará os usuários dela.</small>`,
+            async () => {
+                await set(ref(db, 'rooms/' + salaAlvo), {
+                    id: salaAlvo,
+                    board: getInitialBoard(),
+                    turn: 1,
+                    status: "waiting",
+                    p1Id: "",
+                    p1Name: "",
+                    p2Id: "",
+                    p2Name: "",
+                    startTime: 0,
+                    chat: null,
+                    isAuthorized: true,
+                    lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                });
+                exibirAlertaDoSistema("Sucesso ✓", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi redefinida para o estado original.`);
+                adminTargetRoomInput.value = "";
+            }
+        );
     });
 
-    document.getElementById('btn-confirm-reset-no').addEventListener('click', () => {
-        document.getElementById('custom-confirm-modal').style.display = 'none';
-    });
-
-    // 💥 LIMPEZA TÁTICA DO CHAT DA SALA DIGITADA
+    // 💥 LIMPEZA TÁTICA DO CHAT DA SALA USANDO SISTEMA DE MODAL
     adminClearChatBtn.addEventListener('click', async () => {
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite o código da sala para limpar o chat.");
         
-        if (confirm(`Deseja mesmo limpar e apagar o chat da sala ${salaAlvo.toUpperCase()}?`)) {
-            await set(ref(db, `rooms/${salaAlvo}/chat`), null);
-            await push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O histórico do chat foi limpo pelo administrador por segurança.", timestamp: Date.now() });
-            exibirAlertaDoSistema("Chat Moderado", `O chat da sala ${salaAlvo.toUpperCase()} foi limpo com sucesso.`);
-            adminTargetRoomInput.value = "";
-        }
+        exibirConfirmacao(
+            "Limpar Chat",
+            `Deseja mesmo limpar e apagar o chat da sala <strong>${salaAlvo.toUpperCase()}</strong>?`,
+            async () => {
+                await set(ref(db, `rooms/${salaAlvo}/chat`), null);
+                await push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O histórico do chat foi limpo pelo administrador por segurança.", timestamp: Date.now() });
+                exibirAlertaDoSistema("Chat Moderado", `O chat da sala ${salaAlvo.toUpperCase()} foi limpo com sucesso.`);
+                adminTargetRoomInput.value = "";
+            }
+        );
     });
 
     adminExitBtn.addEventListener('click', () => {
@@ -1701,16 +1713,17 @@
     drawBtn.addEventListener('click', async () => {
         if (!currentGameState || currentGameState.status !== "playing") return;
         if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem propor empate.");
-        if (!confirm("Deseja declarar empate consensual e reiniciar a partida?")) return;
-
-        if (isPracticeMode) {
-            exibirAlertaDoSistema("Empate", "Partida terminou em empate amigável contra a máquina.");
-            setupPracticeGame(nameInput.value.trim() || "Você");
-        } else {
-            const roomRef = ref(db, 'rooms/' + roomId);
-            push(ref(db, `rooms/${roomId}/chat`), { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo entre os jogadores.`, timestamp: Date.now() });
-            await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
-        }
+        
+        exibirConfirmacao("Propor Empate", "Deseja declarar empate consensual e reiniciar a partida?", async () => {
+            if (isPracticeMode) {
+                exibirAlertaDoSistema("Empate", "Partida terminou em empate amigável contra a máquina.");
+                setupPracticeGame(nameInput.value.trim() || "Você");
+            } else {
+                const roomRef = ref(db, 'rooms/' + roomId);
+                push(ref(db, `rooms/${roomId}/chat`), { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo entre os jogadores.`, timestamp: Date.now() });
+                await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+            }
+        });
     });
 
     resetRoomBtn.addEventListener('click', async () => {
