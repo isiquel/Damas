@@ -394,7 +394,6 @@
             background-color: rgba(255,255,255,0.05);
         }
 
-        /* Estilo da Caixa de Destaque dos Vencedores no Lobby */
         .live-podium {
             background: linear-gradient(135deg, #1f4068, #16213e);
             border: 1px solid #3498db;
@@ -454,7 +453,6 @@
     <div id="lobby-screen" class="card">
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
         
-        <!-- PÓDIUM DOS GRANDES VENCEDORES EM TEMPO REAL -->
         <div class="live-podium">
             <div class="podium-title">🏆 Top Campeões do Sistema</div>
             <div id="live-podium-content">
@@ -539,7 +537,7 @@
     <div class="modal-content">
         <h2>Como Funciona o Jogo?</h2>
         <ul>
-            <li><strong>Início da Partida:</strong> O jogo online libera os movimentos quando 2 jogadores entrarem com a mesma sala. O Vermelho inicia jugas.</li>
+            <li><strong>Início da Partida:</strong> O jogo online libera os movimentos quando 2 jogadores entrarem com a mesma sala. O Vermelho inicia jogando.</li>
             <li><strong>Movimentos:</strong> Suas peças andam apenas 1 casa para frente pelas diagonais escuras.</li>
             <li><strong>Capturas:</strong> Salte por cima da peça adversária para uma casa vazia atrás dela.</li>
             <li><strong>Virar Dama (👑):</strong> Ao levar a peça até a última fileira adversária, ela vira Dama e anda livremente por todas as diagonais livres.</li>
@@ -726,7 +724,6 @@
         window.location.href = 'jogo.apk';
     });
 
-    // ESCUTADOR DO LOBBY - CARREGA O TOP 3 E AS FRASES ASSIM QUE ABRE
     async function carregarPodiumLobby() {
         try {
             const rankRef = ref(db, 'leaderboard');
@@ -775,7 +772,7 @@
             practiceBtn.disabled = false;
             rulesBtnLobby.disabled = false;
             rankBtnLobby.disabled = false;
-            carregarPodiumLobby(); // Ativa a busca automática do pódio
+            carregarPodiumLobby(); 
         } else {
             signInAnonymously(auth).catch(err => {
                 authStatusEl.innerText = "Erro de conexão segura.";
@@ -827,15 +824,15 @@
         });
     }
 
-    async function updatePlayerRanking(isWin) {
+    async function updatePlayerRanking(isWin, winnerName) {
         if (isPracticeMode || hasRecordedResult) return;
         hasRecordedResult = true;
 
         const userRankRef = ref(db, 'leaderboard/' + playerId);
         const snapshot = await get(userRankRef);
-        let stats = snapshot.val() || { name: nameInput.value.trim(), wins: 0, losses: 0 };
+        let stats = snapshot.val() || { name: winnerName, wins: 0, losses: 0 };
         
-        stats.name = nameInput.value.trim();
+        stats.name = winnerName;
         if (isWin) stats.wins += 1;
         else stats.losses += 1;
         await set(userRankRef, stats);
@@ -1153,11 +1150,12 @@
             turnIndicator.innerText = "Aguardando Rival...";
             turnIndicator.style.color = "#f1c40f";
         } else if (data.status === "playing") {
+            // INTERCALANDO NOMES DOS JOGADORES REAIS CONFORME O TURNO ATUAL
             if (data.turn === 1) {
-                turnIndicator.innerText = "Turno: Vermelho";
+                turnIndicator.innerText = `Vez de: ${p1}`;
                 turnIndicator.style.color = "var(--p1-color)";
             } else {
-                turnIndicator.innerText = "Turno: Preto";
+                turnIndicator.innerText = `Vez de: ${p2}`;
                 turnIndicator.style.color = "#ecf0f1";
             }
         } else if (data.status === "finished") {
@@ -1397,7 +1395,11 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            alert("Parabéns! Você venceu a máquina.");
+            
+            // ALERT DE VITÓRIA COM NOME EM MODO TREINO
+            const nomeDoHumano = currentGameState.p1Name || "Você";
+            alert(`🏆 PARABÉNS! Vitória de ${nomeDoHumano}! 🎉`);
+            
             renderGameStatus(currentGameState);
             return;
         }
@@ -1474,15 +1476,16 @@
                 currentGameState.status = "finished";
                 if (gameTimerInterval) clearInterval(gameTimerInterval);
                 
-                let winnerText = p1Pieces > 0 ? "Jogador Vermelho Venceu!" : "Jogador Preto Venceu!";
-                alert(winnerText);
+                // DETECÇÃO EXATA DO NOME DE QUEM VENCEU PARA O POP-UP FINAL
+                let nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
+                alert(`🏆 PARABÉNS! Vitória de ${nomeDoGanhador}! 🎉`);
 
                 if (!isPracticeMode) {
                     const roomRef = ref(db, 'rooms/' + roomId);
                     update(roomRef, { status: "finished" });
 
-                    if (playerRole === "p1") updatePlayerRanking(p1Pieces > 0);
-                    if (playerRole === "p2") updatePlayerRanking(p2Pieces > 0);
+                    if (playerRole === "p1") updatePlayerRanking(p1Pieces > 0, currentGameState.p1Name);
+                    if (playerRole === "p2") updatePlayerRanking(p2Pieces > 0, currentGameState.p2Name);
                 }
             }
             return true;
