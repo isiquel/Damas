@@ -579,7 +579,8 @@
     </div>
 
     <div id="game-screen">
-        <div class="status-panel">
+        <!-- Escondido no Modo Admin Terminado -->
+        <div id="normal-game-status" class="status-panel">
             <div class="status-row">
                 <div>Sala: <span id="display-room" style="color: var(--accent-color);"></span></div>
                 <div id="game-timer" style="color: #f1c40f; font-family: monospace; font-size: 1.1rem;">⏱️ 00:00</div>
@@ -594,38 +595,46 @@
             </div>
         </div>
 
-        <!-- 🛡️ CENTRAL SUPREMA DE COMANDO ADMINISTRATIVO -->
+        <!-- 🛡️ CENTRAL SUPREMA DE COMANDO ADMINISTRATIVO (dashboard limpo) -->
         <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
-            <div style="font-size: 1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #9b59b6; padding-bottom: 4px; display: flex; justify-content: space-between;">🛡️ Central de Controle Geral <span>Ativo</span></div>
+            <div style="font-size: 1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #9b59b6; padding-bottom: 4px; display: flex; justify-content: space-between;">🛡️ Terminal de Gerenciamento Geral <span>Ativo</span></div>
+            
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
-                <span>Status da Sala 00:</span>
-                <button id="admin-toggle-room-btn" style="background-color: #27ae60; padding: 6px 12px; width: auto; font-size: 0.85rem;">AUTORIZADA</button>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
-                <span>Controle Mestre:</span>
-                <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">FORÇAR RESET TOTAL</button>
+                <span>Controle Mestre de Redefinição:</span>
+                <button id="admin-clear-all-btn" style="background-color: #8e44ad; padding: 6px 12px; width: auto; font-size: 0.85rem;">RESETAR BANCO DE TESTES</button>
             </div>
 
-            <div class="admin-dashboard-box">
-                <div class="admin-dashboard-title">📋 Panorama Geral de Salas Ativas (Realtime)</div>
+            <!-- MODERAÇÃO ADICIONADA: Controle direto do chat global para banir mensagens pesadas -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem;">
+                <span>Moderação e Limpeza de Conversas:</span>
+                <button id="admin-clear-chat-btn" style="background-color: #d35400; padding: 6px 12px; width: auto; font-size: 0.85rem;">APAGAR CHAT COMPLETO</button>
+            </div>
+
+            <div class="admin-dashboard-box" style="max-height: 350px;">
+                <div class="admin-dashboard-title">📋 Painel de Controle de Salas Online (Tempo Real)</div>
                 <div id="admin-rooms-dashboard-list">
                     <div style="color: #666; font-style: italic; font-size: 0.8rem;">Rastreando atividade nos servidores...</div>
                 </div>
             </div>
+            
+            <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 10px;">SAIR DO TERMINAL</button>
         </div>
 
-        <div class="board-wrapper">
+        <!-- Escondido no Modo Admin Terminado -->
+        <div id="normal-board-wrapper" class="board-wrapper">
             <div id="board" class="board"></div>
         </div>
 
-        <div class="control-box">
+        <!-- Escondido no Modo Admin Terminado -->
+        <div id="normal-controls" class="control-box">
             <button id="leave-btn" style="background-color: #555;">Sair</button>
             <button id="reset-room-btn" style="background-color: #d35400;">Resetar</button>
             <button id="draw-btn" style="background-color: #cca43b;">Empate</button>
             <button id="rules-btn-game" class="btn-info">Regras</button>
         </div>
 
-        <div class="chat-container">
+        <!-- Escondido no Modo Admin Terminado -->
+        <div id="normal-chat-wrapper" class="chat-container">
             <div class="chat-header">
                 <span>💬 Chat em Tempo Real</span>
                 <button id="toggle-chat-visibility" class="toggle-chat-btn" style="display: none;">Desligar Chat</button>
@@ -829,9 +838,10 @@
     const chatInputWrapper = document.getElementById('chat-input-wrapper');
 
     const adminPanel = document.getElementById('admin-panel');
-    const adminToggleRoomBtn = document.getElementById('admin-toggle-room-btn');
     const adminClearAllBtn = document.getElementById('admin-clear-all-btn');
+    const adminClearChatBtn = document.getElementById('admin-clear-chat-btn');
     const adminRoomsDashboardList = document.getElementById('admin-rooms-dashboard-list');
+    const adminExitBtn = document.getElementById('admin-exit-btn');
 
     const rulesModal = document.getElementById('rules-modal');
     const rulesBtnLobby = document.getElementById('rules-btn-lobby');
@@ -1079,7 +1089,7 @@
         return false;
     }
 
-    // 🎯 PANORAMA REALTIME ESTÁVEL DA CENTRAL SUPREMA 00
+    // 📋 PANORAMA ADM EM TEMPO REAL ATIVO
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1091,8 +1101,7 @@
             adminRoomsDashboardList.innerHTML = "";
             
             Object.keys(roomsData).forEach(idSala => {
-                // Esconde a própria sala administrativa de comando da visualização geral
-                if (idSala === "00") return;
+                if (idSala === "00") return; // Ignora o terminal de controle da listagem
 
                 const sala = roomsData[idSala];
                 const statusTxt = sala.isAuthorized ? "LIBERADA" : "BLOQUEADA";
@@ -1100,28 +1109,28 @@
                 
                 let p1 = sala.p1Name || "(Vazio)";
                 let p2 = sala.p2Name || "(Vazio)";
-                let dataUso = sala.lastUsedDate || "Nenhum acesso hoje";
+                let dataUso = sala.lastUsedDate || "Nenhum acesso registrado";
                 
                 let vencedorTxt = "";
                 if (sala.status === "finished") {
-                    vencedorTxt = ` <span style="color:#cca43b;">[FIM DE JOGO]</span>`;
+                    vencedorTxt = ` <span style="color:#cca43b;">[PARTIDA FINALIZADA]</span>`;
                 }
 
                 const row = document.createElement('div');
                 row.className = `admin-room-row ${classAuth}`;
                 row.innerHTML = `
                     <div class="admin-room-meta">
-                        <span>SALA: ${idSala.toUpperCase()}${vencedorTxt}</span>
+                        <span>CÓDIGO: ${idSala.toUpperCase()}${vencedorTxt}</span>
                         <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'}">${statusTxt}</span>
                     </div>
-                    <div>👥 Jogadores: <span style="color: #bbb;">${p1} vs ${p2}</span></div>
-                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">📅 Horário da Partida: ${dataUso}</div>
+                    <div>👥 Jogadores Ativos: <span style="color: #bbb;">${p1} vs ${p2}</span></div>
+                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 4px;">📅 Última Movimentação: ${dataUso}</div>
                 `;
                 adminRoomsDashboardList.appendChild(row);
             });
 
             if(adminRoomsDashboardList.innerHTML === "") {
-                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.8rem;">Nenhuma sala de jogador criada no momento.</div>`;
+                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.8rem;">Nenhum histórico de sala online ativo no momento.</div>`;
             }
         });
     }
@@ -1131,7 +1140,7 @@
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
         
-        // Ativação da Central Suprema com base no Código 00 + Nome Isiquel_Admin
+        // Verificação Mestre: Entrada na sala 00 com o nome correto ativa o painel sem travas
         const isAdminMode = (roomName === "00" && playerName === "Isiquel_Admin");
 
         if (!roomData) {
@@ -1147,7 +1156,7 @@
                 id: roomName,
                 board: getInitialBoard(),
                 turn: 1,
-                status: "waiting",
+                status: "admin_dashboard",
                 p1Id: "",
                 p1Name: "Central Suprema",
                 p2Id: null,
@@ -1192,11 +1201,21 @@
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
 
+        // 🧠 AJUSTE TÁTICO VISUAL: Se for admin, desliga os elementos de jogo e foca no painel
         if (playerRole === "admin") {
             adminPanel.style.display = "block";
+            document.getElementById('normal-game-status').style.display = "none";
+            document.getElementById('normal-board-wrapper').style.display = "none";
+            document.getElementById('normal-controls').style.display = "none";
+            document.getElementById('normal-chat-wrapper').style.display = "none";
             ativarPainelMonitoramentoRealtime(); 
+            return; // Interrompe o fluxo para não rodar a lógica comum de jogo
         } else {
             adminPanel.style.display = "none";
+            document.getElementById('normal-game-status').style.display = "flex";
+            document.getElementById('normal-board-wrapper').style.display = "block";
+            document.getElementById('normal-controls').style.display = "grid";
+            document.getElementById('normal-chat-wrapper').style.display = "flex";
         }
         
         toggleChatVisibility.style.display = (playerRole === "spectator") ? "none" : "block";
@@ -1247,11 +1266,6 @@
             
             liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
             runLocalTimer(data.startTime, data.status);
-            
-            if (data.isAuthorized !== undefined) {
-                adminToggleRoomBtn.innerText = data.isAuthorized ? "AUTORIZADA" : "BLOQUEADA";
-                adminToggleRoomBtn.style.backgroundColor = data.isAuthorized ? "#27ae60" : "#c0392b";
-            }
 
             renderGameStatus(data);
             generateBoardUI(data.board);
@@ -1273,11 +1287,6 @@
         });
     }
 
-    adminToggleRoomBtn.addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
-        update(ref(db, 'rooms/' + roomId), { isAuthorized: !currentGameState.isAuthorized });
-    });
-
     adminClearAllBtn.addEventListener('click', () => {
         if (playerRole !== "admin") return;
         document.getElementById('custom-confirm-modal').style.display = 'flex';
@@ -1285,14 +1294,40 @@
 
     document.getElementById('btn-confirm-reset-yes').addEventListener('click', async () => {
         document.getElementById('custom-confirm-modal').style.display = 'none';
-        
-        // O administrador limpa a central ou reinicia o escopo geral de testes
-        await update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "waiting", startTime: 0, p1Id: "", p1Name: "Central Suprema", p2Id: "", p2Name: "", chat: null });
-        exibirAlertaDoSistema("Reset de Sala", "A central de comando foi redefinida com sucesso.");
+        // Redefine a central limpa
+        await update(ref(db, 'rooms/00'), { board: getInitialBoard(), turn: 1, status: "admin_dashboard", startTime: 0, p1Id: "", p1Name: "Central Suprema", p2Id: "", p2Name: "", chat: null });
+        exibirAlertaDoSistema("Reset Concluído", "O banco administrativo local foi redefinido.");
     });
 
     document.getElementById('btn-confirm-reset-no').addEventListener('click', () => {
         document.getElementById('custom-confirm-modal').style.display = 'none';
+    });
+
+    // MODERAÇÃO DE CHAT ATIVA: Varre todas as salas limpando o histórico de conversas se necessário
+    adminClearChatBtn.addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        if (!confirm("Deseja mesmo limpar as conversas do aplicativo para conter abusos de conduta?")) return;
+        
+        try {
+            const todasSalasRef = ref(db, 'rooms');
+            const snapshot = await get(todasSalasRef);
+            if (snapshot.exists()) {
+                const salas = snapshot.val();
+                Object.keys(salas).forEach(async (idSala) => {
+                    await set(ref(db, `rooms/${idSala}/chat`), null);
+                    await push(ref(db, `rooms/${idSala}/chat`), { author: "⚙️ Sistema", text: "O chat foi redefinido e limpo pelo administrador por segurança.", timestamp: Date.now() });
+                });
+                exibirAlertaDoSistema("Moderação Realizada", "Todos os chats ativos foram purificados com sucesso.");
+            }
+        } catch(e) {
+            exibirAlertaDoSistema("Erro", "Falha ao acessar os canais de mensagens.");
+        }
+    });
+
+    // Função de Saída direta do terminal administrativo voltando ao menu
+    adminExitBtn.addEventListener('click', () => {
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false;
+        adminPanel.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 
     function setupPracticeGame(playerName) {
