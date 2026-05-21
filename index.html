@@ -604,7 +604,7 @@
             </div>
 
             <div class="admin-dashboard-box">
-                <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">🔍 Carregando panorama geral...</div>
+                <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando Servidores...</div>
                 <div class="admin-dashboard-title">📋 Lista Geral de Servidores (Salas Ativas e Vazias)</div>
                 <div id="admin-rooms-dashboard-list">
                     <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade nos servidores...</div>
@@ -669,7 +669,7 @@
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
             <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
-            <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado in uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
+            <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
             <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça ganha uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
         </ul>
@@ -1088,7 +1088,7 @@
         return false;
     }
 
-    // 📋 SISTEMA DE LISTAGEM ADMIN REALTIME PERFEITO - INTEGRADO COM CONTADOR PANORÂMICO
+    // 📋 LISTAGEM ADMIN REALTIME REPARADA - OTIMIZADA PARA AS REGRAS DE SEGURANÇA PADRÃO DO FIREBASE
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1118,7 +1118,6 @@
                     const statusText = isAuth ? 'ATIVA / LIBERADA' : 'BLOQUEADA';
                     const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
                     
-                    // Tratamento amigável para salas que foram cadastradas/liberadas e estão totalmente prontas, mas sem jogadores
                     const p1Nome = sala.p1Name ? sala.p1Name : "<span style='color:#cca43b; font-style:italic;'>Aguardando...</span>";
                     const p2Nome = sala.p2Name ? sala.p2Name : "<span style='color:#cca43b; font-style:italic;'>Aguardando...</span>";
                     
@@ -1150,20 +1149,19 @@
                     listEl.appendChild(row);
                 }
 
-                // Renderiza o panorama geral de métricas no topo do painel
-                panoramaEl.innerHTML = `📊 PANORAMA: ${countDeSalasValidas} salas no servidor | <span style="color:#2ecc71;">${salasLiberadas} Liberadas</span> | <span style="color:#e74c3c;">${countDeSalasValidas - salasLiberadas} Bloqueadas</span>`;
+                panoramaEl.innerHTML = `📊 PANORAMA: ${countDeSalasValidas} salas | <span style="color:#2ecc71;">${salasLiberadas} Liberadas</span> | <span style="color:#e74c3c;">${countDeSalasValidas - salasLiberadas} Bloqueadas</span>`;
 
                 if (countDeSalasValidas === 0) {
                     listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
                 }
             } catch(e) {
                 console.error("Erro renderizando dashboard:", e);
-                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
+                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores. Verifique as Regras de leitura do Console.</div>`;
             }
         });
     }
 
-    // 🔥 6 BOTÕES DE CONTROLE SUPREMO DO ADMINISTRADOR 🔥
+    // 🛡️ CONTROLE ADMINISTRATIVO DE CRIAÇÃO E GERENCIAMENTO EM TEMPO REAL
 
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
@@ -1265,17 +1263,24 @@
     // -------------------------------------------------------------------------------------------------------------------------------- //
 
     async function joinRoom(roomName, playerName, forceSpectator) {
-        const roomRef = ref(db, 'rooms/' + roomName);
-        const snapshot = await get(roomRef);
-        let roomData = snapshot.val();
-        
         const isIsiquel = (playerName.toLowerCase() === "isiquel_admin");
         const isTerminal = (roomName === "00");
         const isAdminMode = isIsiquel && isTerminal;
 
+        // 🛡️ CORREÇÃO CIRÚRGICA: Bloqueia qualquer engraçadinho de acessar a sala 00 sem credenciais
+        if (isTerminal && !isIsiquel) {
+            exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é de uso exclusivo do Administrador para manutenção central do sistema.");
+            return;
+        }
+
+        const roomRef = ref(db, 'rooms/' + roomName);
+        const snapshot = await get(roomRef);
+        let roomData = snapshot.val();
+
         if (!roomData) {
+            // Se você for o admin e a sala online digitada ainda não existir, o sistema cria ela na hora automaticamente
             if (!isIsiquel) {
-                exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala precisa da liberação do Administrador <strong>Isiquel Rodrigues</strong>.<br><br>Por favor, entre em contato com o administrador e peça a liberação deste código de sala.");
+                exibirAlertaDoSistema("Sala Inexistente 🛡️", "Esta sala não está ativa. Peça para o Administrador <strong>Isiquel Rodrigues</strong> liberar este código de acesso no painel central.");
                 return;
             }
             
@@ -1295,15 +1300,17 @@
             playerRole = isAdminMode ? "admin" : "spectator";
             
         } else {
+            // Se a sala estiver bloqueada, apenas você com a credencial isiquel_admin consegue passar para inspecionar
             if (!roomData.isAuthorized && !isIsiquel) {
-                exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala está temporariamente trancada.<br><br>Entre em contato com o Administrador <strong>Isiquel Rodrigues</strong> para solicitar a liberação do acesso.");
+                exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala foi temporariamente congelada pelo gerenciador.<br><br>Consulte o Administrador do aplicativo.");
                 return;
             }
 
             if (isAdminMode) { 
                 playerRole = "admin"; 
             } 
-            else if (isIsiquel && !isTerminal) { 
+            else if (isIsiquel) { 
+                // Permite que o Isiquel entre em QUALQUER sala de jogador como Espectador Supremo para auditar a partida
                 playerRole = "spectator"; 
             }
             else if (forceSpectator) { 
