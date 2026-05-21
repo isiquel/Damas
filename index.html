@@ -175,7 +175,7 @@
             width: 100%;
             max-width: 500px;
             margin: 0 auto 20px auto;
-            padding: 24px; /* Espaço exato para as letras e números não esmagarem */
+            padding: 24px;
             background-color: #2c1d11;
             border-radius: 12px;
             box-shadow: 0 12px 35px rgba(0,0,0,0.6);
@@ -197,7 +197,6 @@
             height: 100%;
         }
 
-        /* REVESTIMENTO DE LETRAS E NÚMEROS VIA POSICIONAMENTO LATERAL SEGURO */
         .coord-row-top, .coord-row-bottom {
             position: absolute;
             left: 24px;
@@ -281,6 +280,17 @@
             font-size: 1.2rem;
             color: #f1c40f;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Efeito de alerta piscante para quando o tempo estoura */
+        @keyframes alert-piscante {
+            0% { opacity: 1; text-shadow: 0 0 5px #e74c3c; }
+            50% { opacity: 0.4; text-shadow: none; }
+            100% { opacity: 1; text-shadow: 0 0 5px #e74c3c; }
+        }
+        .tempo-estourado {
+            animation: alert-piscante 1s infinite;
+            color: #e74c3c !important;
         }
 
         .control-box {
@@ -657,6 +667,9 @@
                 <button id="btn-adm-reset" style="background-color: #9b59b6; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
             </div>
 
+            <!-- 🔥 NOVO COMANDO EXCLUSIVO DO TERMINAL DE CONTROLE DE BANCO DE DADOS -->
+            <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ (Limpar do Sistema)</button>
+
             <div class="admin-dashboard-box">
                 <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando Servidores...</div>
                 <div class="admin-dashboard-title">📋 Lista Geral de Servidores (Salas Ativas e Vazias)</div>
@@ -668,15 +681,12 @@
             <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
         </div>
 
-        <!-- MOLDURA DE DIREÇÃO COMPACTA COM REVESTIMENTO EM QUATRO LADOS -->
         <div id="normal-board-wrapper" class="board-outer-container">
-            <!-- Letras de Direção -->
             <div class="coord-row-top">
                 <div class="coord-space">A</div><div class="coord-space">B</div><div class="coord-space">C</div><div class="coord-space">D</div>
                 <div class="coord-space">E</div><div class="coord-space">F</div><div class="coord-space">G</div><div class="coord-space">H</div>
             </div>
             
-            <!-- Números Esquerdos -->
             <div class="coord-col-left">
                 <div class="coord-space">8</div><div class="coord-space">7</div><div class="coord-space">6</div><div class="coord-space">5</div>
                 <div class="coord-space">4</div><div class="coord-space">3</div><div class="coord-space">2</div><div class="coord-space">1</div>
@@ -686,13 +696,11 @@
                 <div id="board" class="board"></div>
             </div>
 
-            <!-- Números Direitos -->
             <div class="coord-col-right">
                 <div class="coord-space">8</div><div class="coord-space">7</div><div class="coord-space">6</div><div class="coord-space">5</div>
                 <div class="coord-space">4</div><div class="coord-space">3</div><div class="coord-space">2</div><div class="coord-space">1</div>
             </div>
 
-            <!-- Letras de Baixo -->
             <div class="coord-row-bottom">
                 <div class="coord-space">A</div><div class="coord-space">B</div><div class="coord-space">C</div><div class="coord-space">D</div>
                 <div class="coord-space">E</div><div class="coord-space">F</div><div class="coord-space">G</div><div class="coord-space">H</div>
@@ -748,7 +756,7 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
-            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movemento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
@@ -781,7 +789,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, get, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, update, get, push, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -812,6 +820,11 @@
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
+    // Monitoramento inteligente do tempo do turno atual do jogador
+    let ultimoTurnoRegistrado = 0;
+    let timestampInicioTurnoAtual = 0;
+    let jaAlertouTurnoDemorado = false;
+
     // SISTEMA DE ALERTAS
     function exibirAlertaDoSistema(titulo, texto) {
         document.getElementById('custom-alert-title').innerText = titulo;
@@ -841,7 +854,7 @@
         acaoConfirmadaCallback = null;
     });
 
-    // SISTEMA DE SOM
+    // SISTEMA DE SOM COM FILTRO DE BIP PARA O REALTIME 10 SEGUNDOS
     function reproduzirSomDoJogo(tipo) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -884,6 +897,23 @@
                 osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
                 gain.gain.setValueAtTime(0.05, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.15);
                 osc.start(agora); osc.stop(agora + 0.15);
+            } else if (tipo === 'bip_aviso') {
+                // DOIS BIPS CURTOS SEQUENCIAIS (Bip-Bip) PARA ALERTAR LENTIDÃO
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, agora);
+                gain.gain.setValueAtTime(0.12, agora);
+                gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
+                osc.start(agora); osc.stop(agora + 0.08);
+
+                setTimeout(() => {
+                    const ctx2 = new AudioCtx();
+                    const osc2 = ctx2.createOscillator();
+                    const gain2 = ctx2.createGain();
+                    osc2.connect(gain2); gain2.connect(ctx2.destination);
+                    osc2.type = 'sine'; osc2.frequency.setValueAtTime(880, ctx2.currentTime);
+                    gain2.gain.setValueAtTime(0.12, ctx2.currentTime); gain2.gain.linearRampToValueAtTime(0.001, ctx2.currentTime + 0.08);
+                    osc2.start(ctx2.currentTime); osc2.stop(ctx2.currentTime + 0.08);
+                }, 140);
             }
         } catch (e) { console.log("Áudio bloqueado", e); }
     }
@@ -1081,6 +1111,7 @@
         setupPracticeGame(playerName);
     }
 
+    // RELÓGIO ADAPTADO PARA FISCALIZAR OS 10 SEGUNDOS SEM MOVIMENTO DO RIVAL
     function runLocalTimer(startTimestamp, gameStatus) {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         if (gameStatus !== "playing" || !startTimestamp) {
@@ -1088,11 +1119,30 @@
             return;
         }
         gameTimerInterval = setInterval(() => {
-            const totalSeconds = Math.floor((Date.now() - startTimestamp) / 1000);
+            const momentoAgora = Date.now();
+            const totalSeconds = Math.floor((momentoAgora - startTimestamp) / 1000);
             if (totalSeconds < 0) return;
             const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
             const secs = String(totalSeconds % 60).padStart(2, '0');
             gameTimerEl.innerText = `⏱️ ${mins}:${secs}`;
+
+            // FISCALIZAÇÃO REALTIME DE TOQUE DE ALERTA DE 10 SEGUNDOS LENTOS
+            if (timestampInicioTurnoAtual > 0) {
+                const segundosNoTurno = Math.floor((momentoAgora - timestampInicioTurnoAtual) / 1000);
+                if (segundosNoTurno >= 10 && !jaAlertouTurnoDemorado) {
+                    jaAlertouTurnoDemorado = true;
+                    
+                    // Só dá o bip no celular de quem é o dono do turno atual!
+                    const seuTurnoE1 = (currentGameState && currentGameState.turn === 1 && playerRole === "p1");
+                    const seuTurnoE2 = (currentGameState && currentGameState.turn === 2 && playerRole === "p2");
+                    const noModoTreinoSuaVez = (isPracticeMode && currentGameState && currentGameState.turn === 1);
+
+                    if (seuTurnoE1 || seuTurnoE2 || noModoTreinoSuaVez) {
+                        reproduzirSomDoJogo('bip_aviso');
+                        turnIndicator.classList.add('tempo-estourado');
+                    }
+                }
+            }
         }, 1000);
     }
 
@@ -1240,6 +1290,21 @@
             }
         });
     }
+
+    // 🛡️ NOVO COMANDO CIRÚRGICO: DELEÇÃO COMPLETA DE NÓS INÚTEIS DO FIREBASE Console
+    document.getElementById('btn-adm-excluir-total').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja banir do sistema.");
+        if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "A sala mestre de manutenção não pode ser apagada.");
+
+        exibirConfirmacao("Excluir Servidor", `Tem certeza absoluta de que quer **DELETAR** permanentemente a sala <strong>${salaAlvo.toUpperCase()}</strong> do banco de dados? Isso limpará os nós fantasmas.`, async () => {
+            const refSala = ref(db, 'rooms/' + salaAlvo);
+            await remove(refSala);
+            exibirAlertaDoSistema("Eliminação Concluída", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi pulverizada e varrida do sistema com sucesso!`);
+            adminTargetRoomInput.value = "";
+        });
+    });
 
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
@@ -1465,7 +1530,13 @@
                 }
             }
 
-            if (currentGameState && currentGameState.turn !== data.turn) {
+            // GESTÃO DO CORRONOMETRO INTERNO DO TURNO PARA ALERTAR OS 10 SEGUNDOS
+            if (!ultimoTurnoRegistrado || ultimoTurnoRegistrado !== data.turn) {
+                ultimoTurnoRegistrado = data.turn;
+                timestampInicioTurnoAtual = Date.now();
+                jaAlertouTurnoDemorado = false;
+                turnIndicator.classList.remove('tempo-estourado');
+                
                 lockPieceForMultiCapture = null;
                 selectedPiece = null;
                 validMoves = [];
@@ -1506,12 +1577,17 @@
         });
     }
 
-    // 💥 FIX EXCLUSIVO DO MODO TREINO (Muda de display: grid para block, ativando o tabuleiro offline)
     function setupPracticeGame(playerName) {
         isPracticeMode = true;
         toggleChatVisibility.style.display = "block";
         adminPanel.style.display = "none";
         lockPieceForMultiCapture = null;
+        
+        // Ativa o cronômetro local do turno para o modo offline também bipar
+        ultimoTurnoRegistrado = 1;
+        timestampInicioTurnoAtual = Date.now();
+        jaAlertouTurnoDemorado = false;
+
         let robotLabel = "Robô Desafio";
         if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
         if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 👑";
@@ -1522,7 +1598,6 @@
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
         
-        // Garante que a árvore do DOM carregue os contêineres de jogo no modo treino offline
         document.getElementById('normal-game-status').style.display = "flex";
         document.getElementById('normal-board-wrapper').style.display = "block";
         document.getElementById('normal-controls').style.display = "grid";
@@ -1551,7 +1626,9 @@
             } else {
                 turnIndicator.innerText = `Vez de: ${nomeVez}`;
             }
-            turnIndicator.style.color = data.turn === 1 ? "var(--p1-color)" : "#ecf0f1";
+            if (!turnIndicator.classList.contains('tempo-estourado')) {
+                turnIndicator.style.color = data.turn === 1 ? "var(--p1-color)" : "#ecf0f1";
+            }
         } else if (data.status === "finished") {
             turnIndicator.innerText = "Fim de Jogo!";
             turnIndicator.style.color = "#2ecc71";
@@ -1719,6 +1796,12 @@
         if (isPracticeMode) {
             if (move.capture) reproduzirSomDoJogo('capture');
             else reproduzirSomDoJogo((piece === 2 || piece === 4) ? 'king' : 'move');
+            
+            // Reinicia contagem do bip local após mover no offline
+            timestampInicioTurnoAtual = Date.now();
+            jaAlertouTurnoDemorado = false;
+            turnIndicator.classList.remove('tempo-estourado');
+
             currentGameState.board = board; currentGameState.turn = nextTurn;
             renderGameStatus(currentGameState); generateBoardUI(board);
             if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
@@ -1793,6 +1876,11 @@
         if (piece === 3 && selectedMove.toR === 7) piece = 4;
         nextBoard[selectedMove.toR][selectedMove.toC] = piece;
         nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
+
+        // Limpa o bíp de estouro quando a máquina assume a jogada
+        timestampInicioTurnoAtual = Date.now();
+        jaAlertouTurnoDemorado = false;
+        turnIndicator.classList.remove('tempo-estourado');
 
         currentGameState.board = nextBoard; currentGameState.turn = 1;
         renderGameStatus(currentGameState); generateBoardUI(nextBoard);
@@ -1872,7 +1960,7 @@
 
     drawBtn.addEventListener('click', async () => {
         if (!currentGameState || currentGameState.status !== "playing") return;
-        if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem propor empate.");
+        if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem escolher empate.");
         
         exibirConfirmacao("Propor Empate", "Deseja declarar empate consensual e reiniciar a partida?", async () => {
             if (isPracticeMode) {
@@ -1903,6 +1991,7 @@
             }
         }
         roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContadorEspectadores = 0;
+        ultimoTurnoRegistrado = 0; timestampInicioTurnoAtual = 0; jaAlertouTurnoDemorado = false;
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
