@@ -291,7 +291,6 @@
             color: #e74c3c !important;
         }
 
-        /* 🔥 ESTILOS DAS NOVAS ANIMAÇÕES (CONTAGEM E VITÓRIA) */
         .countdown-overlay {
             display: none;
             position: fixed;
@@ -618,6 +617,34 @@
             text-align: center;
         }
 
+        /* Área secreta de monitoramento do chat no painel admin */
+        .admin-chat-monitor-box {
+            display: none;
+            margin-top: 15px;
+            background-color: #090d16;
+            border: 1px solid #3498db;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .admin-chat-monitor-title {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #3498db;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            border-bottom: 1px dotted #2c3e50;
+            padding-bottom: 3px;
+        }
+        .admin-chat-monitor-feed {
+            height: 110px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            color: #bdc3c7;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -634,7 +661,6 @@
 </head>
 <body>
 
-<!-- CONTÊINER DA ANIMAÇÃO DE CONTAGEM REGRESSIVA -->
 <div id="countdown-screen" class="countdown-overlay">
     <div id="countdown-num" class="countdown-number">5</div>
     <div id="countdown-txt" class="countdown-text">Aguardando Sincronização...</div>
@@ -716,9 +742,17 @@
             </div>
 
             <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ (Limpar do Sistema)</button>
-            
-            <!-- 🔥 NOVO GERENCIADOR DO RANKING GLOBAL DO PROPRIETÁRIO -->
             <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL (Nova Temporada)</button>
+            
+            <!-- 🔥 NOVO GERENCIADOR DE MONITORAMENTO DOS CHATS DAS PARTIDAS ATIVAS -->
+            <button id="btn-adm-monitorar-chat" style="background-color: #3498db; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 5px;">💬 MONITORAR CHAT DA SALA</button>
+
+            <div id="admin-chat-monitor-container" class="admin-chat-monitor-box">
+                <div id="admin-chat-monitor-title" class="admin-chat-monitor-title">💬 ESCUTA ATIVA: SALA ESPIONADA</div>
+                <div id="admin-chat-monitor-feed" class="admin-chat-monitor-feed">
+                    <div style="color: #666; font-style: italic;">Selecione uma sala ativa acima e clique em monitorar...</div>
+                </div>
+            </div>
 
             <div class="admin-dashboard-box">
                 <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando Servidores...</div>
@@ -874,8 +908,10 @@
     let timestampInicioTurnoAtual = 0;
     let jaAlertouTurnoDemorado = false;
     
-    // Controle interno para travar jogadas durante a contagem
     let emContagemRegressivaAtiva = false;
+    
+    // Variável global para armazenar o listener de chat ativo no painel admin
+    let listenerChatAdminAtivo = null;
 
     // SISTEMA DE ALERTAS
     function exibirAlertaDoSistema(titulo, texto) {
@@ -885,7 +921,7 @@
     }
     document.getElementById('close-alert-btn').addEventListener('click', () => {
         document.getElementById('custom-alert-modal').style.display = 'none';
-        document.body.classList.remove('vitoria-animada'); // Para parar a animação festiva ao fechar
+        document.body.classList.remove('vitoria-animada');
     });
 
     let acaoConfirmadaCallback = null;
@@ -907,7 +943,6 @@
         acaoConfirmadaCallback = null;
     });
 
-    // SISTEMA DE EFEITOS SONOROS AMPLIADO
     function reproduzirSomDoJogo(tipo) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -920,34 +955,28 @@
             const agora = ctx.currentTime;
             
             if (tipo === 'inicio') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(261.63, agora); 
-                osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); 
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(261.63, agora); 
+                osc.frequency.exponentialRampToValueAtTime(523.25, ago + 0.3); 
                 gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
                 osc.start(agora); osc.stop(agora + 0.3);
             } else if (tipo === 'move') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, agora);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, agora);
                 gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.08);
                 osc.start(agora); osc.stop(agora + 0.08);
             } else if (tipo === 'capture') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(180, agora); osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, agora); osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
                 gain.gain.setValueAtTime(0.2, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.15);
                 osc.start(agora); osc.stop(agora + 0.15);
             } else if (tipo === 'king') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, agora); osc.frequency.setValueAtTime(880.00, agora + 0.1); 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, agora); osc.frequency.setValueAtTime(880.00, agora + 0.1); 
                 gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
                 osc.start(agora); osc.stop(agora + 0.3);
             } else if (tipo === 'chat') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, agora); osc.frequency.exponentialRampToValueAtTime(800, agora + 0.08);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, agora); osc.frequency.exponentialRampToValueAtTime(800, agora + 0.08);
                 gain.gain.setValueAtTime(0.08, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
                 osc.start(agora); osc.stop(agora + 0.08);
             } else if (tipo === 'spectator') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
                 gain.gain.setValueAtTime(0.05, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.15);
                 osc.start(agora); osc.stop(agora + 0.15);
             } else if (tipo === 'bip_aviso') {
@@ -960,9 +989,7 @@
                     gain2.gain.setValueAtTime(0.12, ctx2.currentTime); gain2.gain.linearRampToValueAtTime(0.001, ctx2.currentTime + 0.08);
                     osc2.start(ctx2.currentTime); osc2.stop(ctx2.currentTime + 0.08);
                 }, 140);
-            } 
-            // 🔥 NOVOS EFEITOS DE AUDIO DO GAMEPLAY
-            else if (tipo === 'tic_relogio') {
+            } else if (tipo === 'tic_relogio') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(700, agora);
                 gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.05);
                 osc.start(agora); osc.stop(agora + 0.05);
@@ -975,18 +1002,18 @@
                 gain.gain.setValueAtTime(0.2, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.4);
                 osc.start(agora); osc.stop(agora + 0.4);
             } else if (tipo === 'fanfarra_vitoria') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, agora); // Do
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, agora);
                 gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.4);
                 osc.start(agora); osc.stop(agora + 0.4);
                 setTimeout(() => {
                     const cx = new AudioCtx(); const os = cx.createOscillator(); const gn = cx.createGain();
-                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(659.25, cx.currentTime); // Mi
+                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(659.25, cx.currentTime);
                     gn.gain.setValueAtTime(0.15, cx.currentTime); gn.gain.linearRampToValueAtTime(0.01, cx.currentTime + 0.3);
                     os.start(cx.currentTime); os.stop(cx.currentTime + 0.3);
                 }, 150);
                 setTimeout(() => {
                     const cx = new AudioCtx(); const os = cx.createOscillator(); const gn = cx.createGain();
-                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(783.99, cx.currentTime); // Sol
+                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(783.99, cx.currentTime);
                     gn.gain.setValueAtTime(0.2, cx.currentTime); gn.gain.linearRampToValueAtTime(0.01, cx.currentTime + 0.5);
                     os.start(cx.currentTime); os.stop(cx.currentTime + 0.5);
                 }, 300);
@@ -1364,15 +1391,48 @@
         });
     }
 
-    // 🔥 NOVO COMANDO ADMINISTRATIVO DE CONTROLE DO LEADERBOARD GLOBAL
+    // 🔥 NOVO COMANDO CIRÚRGICO: ESCUTA ATIVA DO FEED DE CONVERSAS VIA PAINEL ADMIN
+    document.getElementById('btn-adm-monitorar-chat').addEventListener('click', () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja espionar o chat.");
+        
+        const feedContainer = document.getElementById('admin-chat-monitor-container');
+        const feedDisplay = document.getElementById('admin-chat-monitor-feed');
+        const titleDisplay = document.getElementById('admin-chat-monitor-title');
+        
+        feedContainer.style.display = "block";
+        titleDisplay.innerText = `💬 ESCUTA ATIVA: SALA [${salaAlvo.toUpperCase()}]`;
+        feedDisplay.innerHTML = `<div style="color:#888; font-style:italic;">Sintonizando frequências de conversa...</div>`;
+        
+        // Remove escutas antigas se houver para não encavalar dados
+        if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); }
+        
+        const targetChatRef = ref(db, `rooms/${salaAlvo}/chat`);
+        listenerChatAdminAtivo = onValue(targetChatRef, (snapshot) => {
+            feedDisplay.innerHTML = "";
+            const chats = snapshot.val();
+            if (chats) {
+                Object.values(chats).forEach(msg => {
+                    const row = document.createElement('div');
+                    row.innerHTML = `<strong style="color:#3498db;">${msg.author}:</strong> <span style="color:#eee;">${msg.text}</span>`;
+                    feedDisplay.appendChild(row);
+                });
+                feedDisplay.scrollTop = feedDisplay.scrollHeight;
+            } else {
+                feedDisplay.innerHTML = `<div style="color:#555; font-style:italic;">Nenhuma mensagem trocada nesta sala ainda.</div>`;
+            }
+        });
+    });
+
     document.getElementById('btn-adm-limpar-ranking').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
         exibirConfirmacao(
             "Limpar Ranking Global ⚠️", 
-            "Você tem certeza de que quer **RESETAR COMPLETAMENTE** o placar dos campeões? Todos os jogadores voltarão para 0 vitórias. Use para iniciar novos campeonatos.", 
+            "Você tem certeza de que quer **RESETAR COMPLETAMENTE** o placar dos campeões? Todos os jogadores voltarão para 0 vitórias.", 
             async () => {
                 await set(ref(db, 'leaderboard'), null);
-                exibirAlertaDoSistema("Sucesso", "O Ranking Global foi zerado com total sucesso! Placar limpo para a nova temporada.");
+                exibirAlertaDoSistema("Sucesso", "O Ranking Global foi zerado com total sucesso!");
             }
         );
     });
@@ -1464,12 +1524,13 @@
 
     document.getElementById('admin-exit-btn').addEventListener('click', () => {
         roomId = ""; playerRole = "spectator"; isPracticeMode = false;
+        if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); listenerChatAdminAtivo = null; }
+        document.getElementById('admin-chat-monitor-container').style.display = "none";
         adminPanel.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 
     // -------------------------------------------------------------------------------------------------------------------------------- //
 
-    // 🔥 NOVA ANIMAÇÃO COMPLETA DE CONTAGEM REGRESSIVA VISUAL E SONORA DE CINCO SEGUNDOS
     function dispararAnimaçãoContagemRegressiva(callbackFim) {
         emContagemRegressivaAtiva = true;
         const overlay = document.getElementById('countdown-screen');
@@ -1485,18 +1546,13 @@
                 numEl.innerText = tempoRestante;
                 reproduzirSomDoJogo('tic_relogio');
                 numEl.classList.remove('show');
-                
-                setTimeout(() => {
-                    numEl.classList.add('show');
-                }, 50);
-
+                setTimeout(() => { numEl.classList.add('show'); }, 50);
                 tempoRestante--;
                 setTimeout(rodarPasso, 1000);
             } else {
                 numEl.innerText = "JOGAR!";
                 txtEl.innerText = "Batalha Iniciada!";
                 reproduzirSomDoJogo('gongo_start');
-                
                 setTimeout(() => {
                     overlay.style.display = "none";
                     emContagemRegressivaAtiva = false;
@@ -1544,7 +1600,9 @@
             }
 
             if (isAdminMode) { playerRole = "admin"; } 
-            else if (isIsiquel) { playerRole = "spectator"; }
+            else if (isIsiquel) { 
+                playerRole = "spectator"; // Isiquel entra em salas normais como fantasma supremo
+            }
             else if (forceSpectator) { playerRole = "spectator"; } 
             else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
             else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
@@ -1554,13 +1612,13 @@
             } 
             else if (!roomData.p2Id || roomData.p2Id === "") {
                 playerRole = "p2";
-                // 🔥 Dispara o status de jogo e inicia a contagem
                 await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now() });
             } 
             else { playerRole = "spectator"; }
         }
 
-        if (playerRole === "spectator") {
+        // 🔥 MODIFICAÇÃO CIRÚRGICA DE INVISIBILIDADE: Se você for o Isiquel_admin, o Firebase não adiciona sua presença visual na sala
+        if (playerRole === "spectator" && !isIsiquel) {
             const specPresenceRef = ref(db, `rooms/${roomName}/spectators/${playerId}`);
             set(specPresenceRef, playerName);
             onDisconnect(specPresenceRef).remove();
@@ -1592,14 +1650,10 @@
             const data = snap.val();
             if (!data) return;
             
-            // 🔥 DETECTOR REALTIME DE ENTRADA DO ADVERSÁRIO COM ANIMAÇÃO COMPLETA
             if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") { 
-                dispararAnimaçãoContagemRegressiva(() => {
-                    reproduzirSomDoJogo('inicio');
-                });
+                dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
             }
 
-            // 🔥 DETECTOR REALTIME DE DESISTÊNCIA / ABANDONO DE SALA DO JOGADOR
             if (currentGameState && currentGameState.status === "playing" && data.status === "finished" && (!data.p1Name || !data.p2Name)) {
                 reproduzirSomDoJogo('saida_rival');
                 appendChatRow("🚨 Sistema", "O oponente saiu e abandonou a sala de jogos!");
@@ -1612,7 +1666,6 @@
                 if (stringTabAnterior !== stringTabNovo) {
                     const pecasAntes = contarPecasNoTabuleiro(currentGameState.board);
                     const pecasDepois = contarPecasNoTabuleiro(data.board);
-                    
                     if (pecasDepois < pecasAntes) { reproduzirSomDoJogo('capture'); } 
                     else if (detectouNovaDama(currentGameState.board, data.board)) { reproduzirSomDoJogo('king'); } 
                     else { reproduzirSomDoJogo('move'); }
@@ -1624,7 +1677,6 @@
                 timestampInicioTurnoAtual = Date.now();
                 jaAlertouTurnoDemorado = false;
                 turnIndicator.classList.remove('tempo-estourado');
-                
                 lockPieceForMultiCapture = null;
                 selectedPiece = null;
                 validMoves = [];
@@ -1688,10 +1740,7 @@
         document.getElementById('normal-controls').style.display = "grid";
         document.getElementById('normal-chat-wrapper').style.display = "flex";
 
-        // Modo treino inicia com contagem expressa para valorizar o dinamismo
-        dispararAnimaçãoContagemRegressiva(() => {
-            reproduzirSomDoJogo('inicio');
-        });
+        dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
         
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
@@ -1747,7 +1796,7 @@
     }
 
     function handleSquareInteraction(r, c) {
-        if (emContagemRegressivaAtiva) return; // Trava interações durante a contagem
+        if (emContagemRegressivaAtiva) return;
         if (!currentGameState || currentGameState.status !== "playing") return;
         if (!isPracticeMode) {
             if (currentGameState.turn === 1 && playerRole !== "p1") return;
@@ -1928,7 +1977,12 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            exibirAlertaDoSistema("Fim de Jogo 👑", `🏆 PARABÉNS! Vitória por bloqueio total! 🎉`);
+            
+            // Tratamento exclusivo para o modo offline contra a IA
+            document.body.classList.add('vitoria-animada');
+            reproduzirSomDoJogo('fanfarra_vitoria');
+            exibirAlertaDoSistema("🏆 VITÓRIA SUPREMA DETECTADA! 👑", `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS, VOCÊ GANHOU O JOGO! 🎉</div><p style="color:#fff; font-size:0.95rem;">O robô ficou totalmente encurralado e sem jogadas livres.</p>`);
+            
             renderGameStatus(currentGameState); return;
         }
 
@@ -1967,7 +2021,7 @@
         checkEndGameConditions(nextBoard);
     }
 
-    // 🔥 AMPLIAÇÃO DA ANIMAÇÃO FESTIVA DE VITÓRIA COM FANFARRA DE AUDIO
+    // 🔥 MODIFICAÇÃO CIRÚRGICA: MENSAGEM INDIVIDUALIZADA POR TELA (GANHADOR VS PERDEDOR)
     function executarAlertaVisualDeVitoria(board) {
         let p1Pieces = 0, p2Pieces = 0;
         for (let r = 0; r < 8; r++) {
@@ -1977,26 +2031,46 @@
             }
         }
 
-        let nomeDoGanhador = "";
-        let motivo = "";
-
+        let p1Venceu = false;
         if (p1Pieces === 0 || p2Pieces === 0) {
-            nomeDoGanhador = p1Pieces > 0 ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            motivo = "por eliminação completa de todas as peças adversárias!";
+            p1Venceu = p1Pieces > 0;
         } else {
-            let p1Venceu = (currentGameState.turn === 2);
-            nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            motivo = "por bloqueio tático! O oponente ficou totalmente encurralado.";
+            p1Venceu = (currentGameState.turn === 2);
         }
 
-        // Ativa efeito visual de cortina piscando no fundo da página
-        document.body.classList.add('vitoria-animada');
-        reproduzirSomDoJogo('fanfarra_vitoria');
+        const souJogadorP1 = (playerRole === "p1");
+        const souJogadorP2 = (playerRole === "p2");
+        
+        let voceGanhou = (p1Venceu && souJogadorP1) || (!p1Venceu && souJogadorP2);
+        let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
 
-        exibirAlertaDoSistema(
-            "👑 VITÓRIA SUPREMA DETECTADA! 👑", 
-            `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 ${nomeDoGanhador.toUpperCase()} VENCEU! 🎉</div><p style="color:#fff; font-size:0.95rem;">A soberania do tabuleiro foi decretada ${motivo}</p>`
-        );
+        if (playerRole === "spectator") {
+            // Visão neutra para quem é espectador/admin oculto
+            exibirAlertaDoSistema(
+                "👑 FIM DE PARTIDA 👑", 
+                `<div style="font-size:1.3rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 ${nomeDoGanhador.toUpperCase()} VENCEU! 🎉</div><p style="color:#aaa; font-size:0.9rem;">A soberania tática do tabuleiro foi concluída.</p>`
+            );
+            return;
+        }
+
+        if (voceGanhou) {
+            document.body.classList.add('vitoria-animada');
+            reproduzirSomDoJogo('fanfarra_vitoria');
+            
+            // Pega o nome real digitado no input do lobby
+            const seuNomeReal = nameInput.value.trim() || "Jogador";
+
+            exibirAlertaDoSistema(
+                "👑 VITÓRIA SUPREMA DETECTADA! 👑", 
+                `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS ${seuNomeReal.toUpperCase()}, VOCÊ GANHOU O JOGO! 🎉</div><p style="color:#fff; font-size:0.95rem;">Sua estratégia funcionou perfeitamente. Continue dominando os servidores!</p>`
+            );
+        } else {
+            reproduzirSomDoJogo('saida_rival');
+            exibirAlertaDoSistema(
+                "💔 FIM DE JOGO", 
+                `<div style="font-size:1.3rem; color:#e74c3c; font-weight:bold; margin-bottom:15px;">A VITÓRIA FOI DO SEU OPONENTE!</div><p style="color:#eee; font-size:0.95rem; line-height:1.5;">Não desanime! Vá ao menu inicial, treine contra o **Robô** nos níveis fácil ou médio, ou jogue mais vezes para aprimorar sua tática e buscar a revanche!</p>`
+            );
+        }
     }
 
     function checkEndGameConditions(board) {
@@ -2061,7 +2135,10 @@
     leaveBtn.addEventListener('click', async () => {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         if (!isPracticeMode && roomId) {
-            if (playerRole === "spectator") { set(ref(db, `rooms/${roomId}/spectators/${playerId}`), null); } 
+            if (playerRole === "spectator") { 
+                const isIsiquel = (nameInput.value.trim().toLowerCase() === "isiquel_admin");
+                if (!isIsiquel) { set(ref(db, `rooms/${roomId}/spectators/${playerId}`), null); }
+            } 
             else if (playerRole !== "admin") {
                 if (playerRole === "p1") await update(ref(db, 'rooms/' + roomId), { p1Id: "", p1Name: "", status: "finished" });
                 if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
