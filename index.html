@@ -169,15 +169,42 @@
         .badge-spec { background-color: #7f8c8d; color: #fff; }
         .badge-admin { background-color: #9b59b6; color: #fff; }
 
+        /* 🏆 CONTAINER PROFISSIONAL COM MOLDURA DE COORDENADAS ALGEBRICAS */
+        .board-container-professional {
+            display: grid;
+            grid-template-columns: 24px 1fr 24px;
+            grid-template-rows: 24px 1fr 24px;
+            width: 100%;
+            max-width: 540px;
+            margin: 0 auto 20px auto;
+            background-color: #2c1d11;
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            padding: 4px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .coord-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #d0b49f;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
         .board-wrapper {
+            grid-column: 2;
+            grid-line: 2;
             width: 100%;
             aspect-ratio: 1 / 1;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
-            border-radius: 8px;
             overflow: hidden;
-            border: 4px solid #2c1d11;
+            border: 2px solid #1a100a;
+            border-radius: 4px;
         }
 
         .board {
@@ -523,6 +550,8 @@
             .status-panel { font-size: 0.9rem; }
             .king::after { font-size: 0.9rem; }
             .control-box { grid-template-columns: 1fr 1fr; }
+            .board-container-professional { padding: 2px; grid-template-columns: 18px 1fr 18px; grid-template-rows: 18px 1fr 18px; }
+            .coord-label { font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -604,7 +633,7 @@
             </div>
 
             <div class="admin-dashboard-box">
-                <div class="admin-dashboard-title">📋 Salas Ativas nos Servidores (Tempo Real)</div>
+                <div class="admin-dashboard-title">📋 Controle Geral de Servidores e Salas Liberadas</div>
                 <div id="admin-rooms-dashboard-list">
                     <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade nos servidores...</div>
                 </div>
@@ -613,8 +642,28 @@
             <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
         </div>
 
-        <div id="normal-board-wrapper" class="board-wrapper">
-            <div id="board" class="board"></div>
+        <!-- MOLDURA DE DIREÇÃO PROFISSIONAL (NOTACÃO ALGEBRICA) -->
+        <div id="normal-board-wrapper" class="board-container-professional">
+            <!-- Linha Superior de Coordenadas (A-H) -->
+            <div></div><div class="coord-label">A</div><div class="coord-label">B</div><div class="coord-label">C</div><div class="coord-label">D</div><div class="coord-label">E</div><div class="coord-label">F</div><div class="coord-label">G</div><div class="coord-label">H</div><div></div>
+            
+            <!-- Linhas do Tabuleiro (8 a 1 de cima para baixo) com Numeração Lateral -->
+            <div class="coord-label">8</div>
+            <div class="board-wrapper">
+                <div id="board" class="board"></div>
+            </div>
+            <div class="coord-label">8</div>
+            
+            <div class="coord-label">7</div><div></div><div class="coord-label">7</div>
+            <div class="coord-label">6</div><div></div><div class="coord-label">6</div>
+            <div class="coord-label">5</div><div></div><div class="coord-label">5</div>
+            <div class="coord-label">4</div><div></div><div class="coord-label">4</div>
+            <div class="coord-label">3</div><div></div><div class="coord-label">3</div>
+            <div class="coord-label">2</div><div></div><div class="coord-label">2</div>
+            <div class="coord-label">1</div><div></div><div class="coord-label">1</div>
+
+            <!-- Linha Inferior de Coordenadas (A-H) -->
+            <div></div><div class="coord-label">A</div><div class="coord-label">B</div><div class="coord-label">C</div><div class="coord-label">D</div><div class="coord-label">E</div><div class="coord-label">F</div><div class="coord-label">G</div><div class="coord-label">H</div><div></div>
         </div>
 
         <div id="normal-controls" class="control-box">
@@ -871,7 +920,7 @@
                     livePodiumContent.innerHTML = "<div style='font-size:0.85rem; color:#aaa; padding:5px 0;'>Nenhuma batalha online registrada ainda!</div>";
                     motivateBox.innerText = "⚔️ Seja o primeiro a inaugurar o tabuleiro e assumir o topo!";
                     return;
-                }
+                </div>
                 const sorted = Object.values(data).sort((a, b) => b.wins - a.wins).slice(0, 3);
                 livePodiumContent.innerHTML = "";
                 let medalhas = ["🥇", "🥈", "🥉"];
@@ -953,6 +1002,14 @@
         if (isWin) stats.wins += 1;
         else stats.losses += 1;
         await set(userRankRef, stats);
+    }
+
+    // MAPEAMENTO DA NOTACÃO PROFISSIONAL (DE LINHAS/COLUNAS DO ARRAY PARA A GAVETA ALGEBRICA)
+    const colunaParaLetra = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    function converterIndicesParaCoordenada(r, c) {
+        const letra = colunaParaLetra[c];
+        const numero = 8 - r;
+        return `${letra}${numero}`;
     }
 
     joinBtn.addEventListener('click', () => {
@@ -1087,14 +1144,14 @@
         return false;
     }
 
-    // 📋 SISTEMA DE LISTAGEM CONSERTADO COM FUNÇÃO DE CLIQUE RÁPIDO
+    // 📋 SISTEMA DE LISTAGEM REALTIME - ATUALIZADO PARA EXIBIR TODAS AS SALAS LIBERADAS
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
             const listEl = document.getElementById('admin-rooms-dashboard-list');
             try {
                 if (!snapshot.exists()) {
-                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala cadastrada nos servidores.</div>`;
                     return;
                 }
                 
@@ -1107,15 +1164,26 @@
                     countDeSalasValidas++;
 
                     const sala = roomsData[idSala];
+                    
+                    // Verificação precisa do status de autorização no Firebase
                     const isAuth = sala.isAuthorized !== false; 
                     const statusColor = isAuth ? '#2ecc71' : '#e74c3c';
-                    const statusText = isAuth ? 'ATIVA / LIBERADA' : 'BLOQUEADA';
+                    const statusText = isAuth ? 'LIBERADA / DISPONÍVEL' : 'BLOQUEADA';
+                    
                     const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
                     
+                    // Tratamento dinâmico para salas vazias mas que foram criadas/liberadas pela administração
+                    const p1Label = sala.p1Name ? sala.p1Name : "<span style='color:#666; font-style:italic;'>Aguardando</span>";
+                    const p2Label = sala.p2Name ? sala.p2Name : "<span style='color:#666; font-style:italic;'>Aguardando</span>";
+                    
+                    let ocupacaoTexto = `${p1Label} vs ${p2Label}`;
+                    if (!sala.p1Name && !sala.p2Name) {
+                        ocupacaoTexto = "<span style='color:#3498db; font-size:0.75rem;'>Pronta (Aguardando Jogadores entrar)</span>";
+                    }
+
                     const row = document.createElement('div');
                     row.style.cssText = `background-color: #16213e; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid ${statusColor}; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s;`;
                     
-                    // AÇÃO DE CLIQUE: Preenche o input automaticamente!
                     row.onclick = () => {
                         document.getElementById('admin-target-room').value = idSala;
                         row.style.backgroundColor = '#1f3a5f';
@@ -1124,8 +1192,8 @@
                     
                     row.innerHTML = `
                         <div>
-                            <strong style="font-size: 1rem;">${idSala.toUpperCase()}</strong>
-                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 3px;">Ocupantes: ${sala.p1Name || '(Vazio)'} vs ${sala.p2Name || '(Vazio)'} ${chatTrancado}</div>
+                            <strong style="font-size: 1rem; color: #fff;">${idSala.toUpperCase()}</strong>
+                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 3px;">Status: ${ocupacaoTexto} ${chatTrancado}</div>
                         </div>
                         <div style="color: ${statusColor}; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
                             <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${statusColor};"></span>
@@ -1137,11 +1205,11 @@
                 }
 
                 if (countDeSalasValidas === 0) {
-                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala cadastrada além do terminal básico.</div>`;
                 }
             } catch(e) {
-                console.error("Erro renderizando dashboard:", e);
-                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
+                console.error("Erro renderizando dashboard de controle:", e);
+                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores de monitoramento.</div>`;
             }
         });
     }
@@ -1158,6 +1226,7 @@
         const snap = await get(refSala);
         
         if (!snap.exists()) {
+            // Garante que ao criar uma sala vazia ela já suba estruturada para persistir no painel
             await set(refSala, {
                 id: salaAlvo, board: getInitialBoard(), turn: 1, status: "waiting",
                 p1Id: "", p1Name: "", p2Id: "", p2Name: "", startTime: 0, chat: null,
@@ -1338,7 +1407,7 @@
         } else {
             adminPanel.style.display = "none";
             document.getElementById('normal-game-status').style.display = "flex";
-            document.getElementById('normal-board-wrapper').style.display = "block";
+            document.getElementById('normal-board-wrapper').style.display = "grid";
             document.getElementById('normal-controls').style.display = "grid";
             document.getElementById('normal-chat-wrapper').style.display = "flex";
         }
