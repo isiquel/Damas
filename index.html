@@ -169,21 +169,70 @@
         .badge-spec { background-color: #7f8c8d; color: #fff; }
         .badge-admin { background-color: #9b59b6; color: #fff; }
 
+        /* MOLDURA PROFISSIONAL EXTERNA COM ENCAIXE PERFEITO */
+        .board-outer-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            padding: 24px; /* Espaço exato para as letras e números não esmagarem */
+            background-color: #2c1d11;
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+        }
+
         .board-wrapper {
             width: 100%;
             aspect-ratio: 1 / 1;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
-            border-radius: 8px;
             overflow: hidden;
-            border: 4px solid #2c1d11;
+            border-radius: 4px;
+            border: 2px solid #1a100a;
         }
 
         .board {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
+            width: 100%;
+            height: 100%;
+        }
+
+        /* REVESTIMENTO DE LETRAS E NÚMEROS VIA POSICIONAMENTO LATERAL SEGURO */
+        .coord-row-top, .coord-row-bottom {
+            position: absolute;
+            left: 24px;
+            right: 24px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #d0b49f;
+            user-select: none;
+        }
+        .coord-row-top { top: 4px; }
+        .coord-row-bottom { bottom: 4px; }
+
+        .coord-col-left, .coord-col-right {
+            position: absolute;
+            top: 24px;
+            bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #d0b49f;
+            user-select: none;
+            width: 16px;
+            text-align: center;
+        }
+        .coord-col-left { left: 4px; }
+        .coord-col-right { right: 4px; }
+
+        .coord-space {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
             height: 100%;
         }
@@ -523,6 +572,11 @@
             .status-panel { font-size: 0.9rem; }
             .king::after { font-size: 0.9rem; }
             .control-box { grid-template-columns: 1fr 1fr; }
+            .board-outer-container { padding: 16px; }
+            .coord-row-top, .coord-row-bottom { left: 16px; right: 16px; font-size: 0.7rem; }
+            .coord-col-left, .coord-col-right { top: 16px; bottom: 16px; font-size: 0.7rem; width: 12px; }
+            .coord-row-top { top: 2px; } .coord-row-bottom { bottom: 2px; }
+            .coord-col-left { left: 2px; } .coord-col-right { right: 2px; }
         }
     </style>
 </head>
@@ -614,8 +668,35 @@
             <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
         </div>
 
-        <div id="normal-board-wrapper" class="board-wrapper">
-            <div id="board" class="board"></div>
+        <!-- MOLDURA DE DIREÇÃO COMPACTA COM REVESTIMENTO EM QUATRO LADOS -->
+        <div id="normal-board-wrapper" class="board-outer-container">
+            <!-- Letras de Direção -->
+            <div class="coord-row-top">
+                <div class="coord-space">A</div><div class="coord-space">B</div><div class="coord-space">C</div><div class="coord-space">D</div>
+                <div class="coord-space">E</div><div class="coord-space">F</div><div class="coord-space">G</div><div class="coord-space">H</div>
+            </div>
+            
+            <!-- Números Esquerdos -->
+            <div class="coord-col-left">
+                <div class="coord-space">8</div><div class="coord-space">7</div><div class="coord-space">6</div><div class="coord-space">5</div>
+                <div class="coord-space">4</div><div class="coord-space">3</div><div class="coord-space">2</div><div class="coord-space">1</div>
+            </div>
+
+            <div class="board-wrapper">
+                <div id="board" class="board"></div>
+            </div>
+
+            <!-- Números Direitos -->
+            <div class="coord-col-right">
+                <div class="coord-space">8</div><div class="coord-space">7</div><div class="coord-space">6</div><div class="coord-space">5</div>
+                <div class="coord-space">4</div><div class="coord-space">3</div><div class="coord-space">2</div><div class="coord-space">1</div>
+            </div>
+
+            <!-- Letras de Baixo -->
+            <div class="coord-row-bottom">
+                <div class="coord-space">A</div><div class="coord-space">B</div><div class="coord-space">C</div><div class="coord-space">D</div>
+                <div class="coord-space">E</div><div class="coord-space">F</div><div class="coord-space">G</div><div class="coord-space">H</div>
+            </div>
         </div>
 
         <div id="normal-controls" class="control-box">
@@ -667,7 +748,7 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
-            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movemento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
@@ -1088,7 +1169,6 @@
         return false;
     }
 
-    // 📋 LISTAGEM ADMIN REALTIME REPARADA - OTIMIZADA PARA AS REGRAS DE SEGURANÇA PADRÃO DO FIREBASE
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1156,12 +1236,10 @@
                 }
             } catch(e) {
                 console.error("Erro renderizando dashboard:", e);
-                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores. Verifique as Regras de leitura do Console.</div>`;
+                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
             }
         });
     }
-
-    // 🛡️ CONTROLE ADMINISTRATIVO DE CRIAÇÃO E GERENCIAMENTO EM TEMPO REAL
 
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
@@ -1267,7 +1345,6 @@
         const isTerminal = (roomName === "00");
         const isAdminMode = isIsiquel && isTerminal;
 
-        // 🛡️ CORREÇÃO CIRÚRGICA: Bloqueia qualquer engraçadinho de acessar a sala 00 sem credenciais
         if (isTerminal && !isIsiquel) {
             exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é de uso exclusivo do Administrador para manutenção central do sistema.");
             return;
@@ -1278,7 +1355,6 @@
         let roomData = snapshot.val();
 
         if (!roomData) {
-            // Se você for o admin e a sala online digitada ainda não existir, o sistema cria ela na hora automaticamente
             if (!isIsiquel) {
                 exibirAlertaDoSistema("Sala Inexistente 🛡️", "Esta sala não está ativa. Peça para o Administrador <strong>Isiquel Rodrigues</strong> liberar este código de acesso no painel central.");
                 return;
@@ -1300,7 +1376,6 @@
             playerRole = isAdminMode ? "admin" : "spectator";
             
         } else {
-            // Se a sala estiver bloqueada, apenas você com a credencial isiquel_admin consegue passar para inspecionar
             if (!roomData.isAuthorized && !isIsiquel) {
                 exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala foi temporariamente congelada pelo gerenciador.<br><br>Consulte o Administrador do aplicativo.");
                 return;
@@ -1310,7 +1385,6 @@
                 playerRole = "admin"; 
             } 
             else if (isIsiquel) { 
-                // Permite que o Isiquel entre em QUALQUER sala de jogador como Espectador Supremo para auditar a partida
                 playerRole = "spectator"; 
             }
             else if (forceSpectator) { 
@@ -1432,6 +1506,7 @@
         });
     }
 
+    // 💥 FIX EXCLUSIVO DO MODO TREINO (Muda de display: grid para block, ativando o tabuleiro offline)
     function setupPracticeGame(playerName) {
         isPracticeMode = true;
         toggleChatVisibility.style.display = "block";
@@ -1443,8 +1518,16 @@
 
         currentGameState = { board: getInitialBoard(), turn: 1, status: "playing", p1Name: playerName, p2Name: robotLabel, startTime: Date.now() };
         displayRoom.innerText = `TREINO (${practiceDifficulty.toUpperCase()})`;
+        
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
+        
+        // Garante que a árvore do DOM carregue os contêineres de jogo no modo treino offline
+        document.getElementById('normal-game-status').style.display = "flex";
+        document.getElementById('normal-board-wrapper').style.display = "block";
+        document.getElementById('normal-controls').style.display = "grid";
+        document.getElementById('normal-chat-wrapper').style.display = "flex";
+
         reproduzirSomDoJogo('inicio'); 
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
