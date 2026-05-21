@@ -169,7 +169,6 @@
         .badge-spec { background-color: #7f8c8d; color: #fff; }
         .badge-admin { background-color: #9b59b6; color: #fff; }
 
-        /* MOLDURA PROFISSIONAL EXTERNA COM ENCAIXE PERFEITO */
         .board-outer-container {
             position: relative;
             width: 100%;
@@ -282,7 +281,6 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* Efeito de alerta piscante para quando o tempo estoura */
         @keyframes alert-piscante {
             0% { opacity: 1; text-shadow: 0 0 5px #e74c3c; }
             50% { opacity: 0.4; text-shadow: none; }
@@ -291,6 +289,50 @@
         .tempo-estourado {
             animation: alert-piscante 1s infinite;
             color: #e74c3c !important;
+        }
+
+        /* 🔥 ESTILOS DAS NOVAS ANIMAÇÕES (CONTAGEM E VITÓRIA) */
+        .countdown-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(10, 10, 25, 0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .countdown-number {
+            font-size: 8rem;
+            font-weight: 900;
+            color: var(--accent-color);
+            text-shadow: 0 0 30px var(--accent-color);
+            transform: scale(0.5);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+        }
+
+        .countdown-number.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .countdown-text {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #3498db;
+            margin-top: 20px;
+        }
+
+        @keyframes vitoria-efeito {
+            0% { background-color: rgba(233, 69, 96, 0.2); }
+            50% { background-color: rgba(46, 204, 113, 0.2); }
+            100% { background-color: rgba(233, 69, 96, 0.2); }
+        }
+        .vitoria-animada {
+            animation: vitoria-efeito 0.6s infinite ease-in-out;
         }
 
         .control-box {
@@ -592,6 +634,12 @@
 </head>
 <body>
 
+<!-- CONTÊINER DA ANIMAÇÃO DE CONTAGEM REGRESSIVA -->
+<div id="countdown-screen" class="countdown-overlay">
+    <div id="countdown-num" class="countdown-number">5</div>
+    <div id="countdown-txt" class="countdown-text">Aguardando Sincronização...</div>
+</div>
+
 <div class="container">
     <h1>Isiquel & Amigos</h1>
 
@@ -667,8 +715,10 @@
                 <button id="btn-adm-reset" style="background-color: #9b59b6; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
             </div>
 
-            <!-- 🔥 NOVO COMANDO EXCLUSIVO DO TERMINAL DE CONTROLE DE BANCO DE DADOS -->
             <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ (Limpar do Sistema)</button>
+            
+            <!-- 🔥 NOVO GERENCIADOR DO RANKING GLOBAL DO PROPRIETÁRIO -->
+            <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL (Nova Temporada)</button>
 
             <div class="admin-dashboard-box">
                 <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando Servidores...</div>
@@ -820,10 +870,12 @@
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
-    // Monitoramento inteligente do tempo do turno atual do jogador
     let ultimoTurnoRegistrado = 0;
     let timestampInicioTurnoAtual = 0;
     let jaAlertouTurnoDemorado = false;
+    
+    // Controle interno para travar jogadas durante a contagem
+    let emContagemRegressivaAtiva = false;
 
     // SISTEMA DE ALERTAS
     function exibirAlertaDoSistema(titulo, texto) {
@@ -833,6 +885,7 @@
     }
     document.getElementById('close-alert-btn').addEventListener('click', () => {
         document.getElementById('custom-alert-modal').style.display = 'none';
+        document.body.classList.remove('vitoria-animada'); // Para parar a animação festiva ao fechar
     });
 
     let acaoConfirmadaCallback = null;
@@ -854,7 +907,7 @@
         acaoConfirmadaCallback = null;
     });
 
-    // SISTEMA DE SOM COM FILTRO DE BIP PARA O REALTIME 10 SEGUNDOS
+    // SISTEMA DE EFEITOS SONOROS AMPLIADO
     function reproduzirSomDoJogo(tipo) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -898,22 +951,45 @@
                 gain.gain.setValueAtTime(0.05, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.15);
                 osc.start(agora); osc.stop(agora + 0.15);
             } else if (tipo === 'bip_aviso') {
-                // DOIS BIPS CURTOS SEQUENCIAIS (Bip-Bip) PARA ALERTAR LENTIDÃO
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, agora);
-                gain.gain.setValueAtTime(0.12, agora);
-                gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(880, agora);
+                gain.gain.setValueAtTime(0.12, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
                 osc.start(agora); osc.stop(agora + 0.08);
-
                 setTimeout(() => {
-                    const ctx2 = new AudioCtx();
-                    const osc2 = ctx2.createOscillator();
-                    const gain2 = ctx2.createGain();
-                    osc2.connect(gain2); gain2.connect(ctx2.destination);
-                    osc2.type = 'sine'; osc2.frequency.setValueAtTime(880, ctx2.currentTime);
+                    const ctx2 = new AudioCtx(); const osc2 = ctx2.createOscillator(); const gain2 = ctx2.createGain();
+                    osc2.connect(gain2); gain2.connect(ctx2.destination); osc2.type = 'sine'; osc2.frequency.setValueAtTime(880, ctx2.currentTime);
                     gain2.gain.setValueAtTime(0.12, ctx2.currentTime); gain2.gain.linearRampToValueAtTime(0.001, ctx2.currentTime + 0.08);
                     osc2.start(ctx2.currentTime); osc2.stop(ctx2.currentTime + 0.08);
                 }, 140);
+            } 
+            // 🔥 NOVOS EFEITOS DE AUDIO DO GAMEPLAY
+            else if (tipo === 'tic_relogio') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(700, agora);
+                gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.05);
+                osc.start(agora); osc.stop(agora + 0.05);
+            } else if (tipo === 'gongo_start') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(150, agora + 0.5);
+                gain.gain.setValueAtTime(0.25, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.5);
+                osc.start(agora); osc.stop(agora + 0.5);
+            } else if (tipo === 'saida_rival') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(290, agora); osc.frequency.linearRampToValueAtTime(120, agora + 0.4);
+                gain.gain.setValueAtTime(0.2, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.4);
+                osc.start(agora); osc.stop(agora + 0.4);
+            } else if (tipo === 'fanfarra_vitoria') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, agora); // Do
+                gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.4);
+                osc.start(agora); osc.stop(agora + 0.4);
+                setTimeout(() => {
+                    const cx = new AudioCtx(); const os = cx.createOscillator(); const gn = cx.createGain();
+                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(659.25, cx.currentTime); // Mi
+                    gn.gain.setValueAtTime(0.15, cx.currentTime); gn.gain.linearRampToValueAtTime(0.01, cx.currentTime + 0.3);
+                    os.start(cx.currentTime); os.stop(cx.currentTime + 0.3);
+                }, 150);
+                setTimeout(() => {
+                    const cx = new AudioCtx(); const os = cx.createOscillator(); const gn = cx.createGain();
+                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(783.99, cx.currentTime); // Sol
+                    gn.gain.setValueAtTime(0.2, cx.currentTime); gn.gain.linearRampToValueAtTime(0.01, cx.currentTime + 0.5);
+                    os.start(cx.currentTime); os.stop(cx.currentTime + 0.5);
+                }, 300);
             }
         } catch (e) { console.log("Áudio bloqueado", e); }
     }
@@ -1111,7 +1187,6 @@
         setupPracticeGame(playerName);
     }
 
-    // RELÓGIO ADAPTADO PARA FISCALIZAR OS 10 SEGUNDOS SEM MOVIMENTO DO RIVAL
     function runLocalTimer(startTimestamp, gameStatus) {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         if (gameStatus !== "playing" || !startTimestamp) {
@@ -1126,13 +1201,11 @@
             const secs = String(totalSeconds % 60).padStart(2, '0');
             gameTimerEl.innerText = `⏱️ ${mins}:${secs}`;
 
-            // FISCALIZAÇÃO REALTIME DE TOQUE DE ALERTA DE 10 SEGUNDOS LENTOS
             if (timestampInicioTurnoAtual > 0) {
                 const segundosNoTurno = Math.floor((momentoAgora - timestampInicioTurnoAtual) / 1000);
                 if (segundosNoTurno >= 10 && !jaAlertouTurnoDemorado) {
                     jaAlertouTurnoDemorado = true;
                     
-                    // Só dá o bip no celular de quem é o dono do turno atual!
                     const seuTurnoE1 = (currentGameState && currentGameState.turn === 1 && playerRole === "p1");
                     const seuTurnoE2 = (currentGameState && currentGameState.turn === 2 && playerRole === "p2");
                     const noModoTreinoSuaVez = (isPracticeMode && currentGameState && currentGameState.turn === 1);
@@ -1291,17 +1364,29 @@
         });
     }
 
-    // 🛡️ NOVO COMANDO CIRÚRGICO: DELEÇÃO COMPLETA DE NÓS INÚTEIS DO FIREBASE Console
+    // 🔥 NOVO COMANDO ADMINISTRATIVO DE CONTROLE DO LEADERBOARD GLOBAL
+    document.getElementById('btn-adm-limpar-ranking').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        exibirConfirmacao(
+            "Limpar Ranking Global ⚠️", 
+            "Você tem certeza de que quer **RESETAR COMPLETAMENTE** o placar dos campeões? Todos os jogadores voltarão para 0 vitórias. Use para iniciar novos campeonatos.", 
+            async () => {
+                await set(ref(db, 'leaderboard'), null);
+                exibirAlertaDoSistema("Sucesso", "O Ranking Global foi zerado com total sucesso! Placar limpo para a nova temporada.");
+            }
+        );
+    });
+
     document.getElementById('btn-adm-excluir-total').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja banir do sistema.");
         if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "A sala mestre de manutenção não pode ser apagada.");
 
-        exibirConfirmacao("Excluir Servidor", `Tem certeza absoluta de que quer **DELETAR** permanentemente a sala <strong>${salaAlvo.toUpperCase()}</strong> do banco de dados? Isso limpará os nós fantasmas.`, async () => {
+        exibirConfirmacao("Excluir Servidor", `Tem certeza absoluta de que quer **DELETAR** permanentemente a sala <strong>${salaAlvo.toUpperCase()}</strong> do banco de dados?`, async () => {
             const refSala = ref(db, 'rooms/' + salaAlvo);
             await remove(refSala);
-            exibirAlertaDoSistema("Eliminação Concluída", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi pulverizada e varrida do sistema com sucesso!`);
+            exibirAlertaDoSistema("Eliminação Concluída", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi pulverizada.`);
             adminTargetRoomInput.value = "";
         });
     });
@@ -1335,7 +1420,7 @@
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         await update(ref(db, 'rooms/' + salaAlvo), { isAuthorized: false });
-        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Ninguém novo consegue entrar.`);
+        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>.`);
         adminTargetRoomInput.value = "";
     });
 
@@ -1346,16 +1431,7 @@
         
         const snap = await get(ref(db, 'rooms/' + salaAlvo + '/chatBlocked'));
         const estadoAtual = snap.val() || false;
-        
         await update(ref(db, 'rooms/' + salaAlvo), { chatBlocked: !estadoAtual });
-        
-        if (!estadoAtual) {
-            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O Administrador bloqueou o chat temporariamente.", timestamp: Date.now() });
-            exibirAlertaDoSistema("Chat Travado", `O chat da sala ${salaAlvo.toUpperCase()} foi desativado.`);
-        } else {
-            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O chat foi liberado pelo Administrador.", timestamp: Date.now() });
-            exibirAlertaDoSistema("Chat Liberado", `O chat da sala ${salaAlvo.toUpperCase()} está ativo novamente.`);
-        }
         adminTargetRoomInput.value = "";
     });
 
@@ -1366,8 +1442,6 @@
         
         exibirConfirmacao("Expulsar Todos", `Deseja remover todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> agora?`, async () => {
             await update(ref(db, 'rooms/' + salaAlvo), { p1Id: "", p1Name: "", p2Id: "", p2Name: "", status: "waiting" });
-            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O Administrador expulsou os jogadores da partida.", timestamp: Date.now() });
-            exibirAlertaDoSistema("Jogadores Expulsos", `A sala ${salaAlvo.toUpperCase()} agora está vazia.`);
             adminTargetRoomInput.value = "";
         });
     });
@@ -1376,26 +1450,16 @@
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        
-        exibirConfirmacao("Limpar Chat", `Apagar todas as mensagens da sala <strong>${salaAlvo.toUpperCase()}</strong>?`, async () => {
-            await set(ref(db, `rooms/${salaAlvo}/chat`), null);
-            await push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O histórico do chat foi limpo pelo administrador.", timestamp: Date.now() });
-            exibirAlertaDoSistema("Chat Limpo", `O chat da sala ${salaAlvo.toUpperCase()} foi zerado.`);
-            adminTargetRoomInput.value = "";
-        });
+        await set(ref(db, `rooms/${salaAlvo}/chat`), null);
+        adminTargetRoomInput.value = "";
     });
 
     document.getElementById('btn-adm-reset').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        
-        exibirConfirmacao("Resetar Tabuleiro", `Zerar a partida na sala <strong>${salaAlvo.toUpperCase()}</strong>?`, async () => {
-            await update(ref(db, 'rooms/' + salaAlvo), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
-            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O Administrador reiniciou a partida.", timestamp: Date.now() });
-            exibirAlertaDoSistema("Sucesso", `O tabuleiro da sala ${salaAlvo.toUpperCase()} foi resetado.`);
-            adminTargetRoomInput.value = "";
-        });
+        await update(ref(db, 'rooms/' + salaAlvo), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+        adminTargetRoomInput.value = "";
     });
 
     document.getElementById('admin-exit-btn').addEventListener('click', () => {
@@ -1405,13 +1469,51 @@
 
     // -------------------------------------------------------------------------------------------------------------------------------- //
 
+    // 🔥 NOVA ANIMAÇÃO COMPLETA DE CONTAGEM REGRESSIVA VISUAL E SONORA DE CINCO SEGUNDOS
+    function dispararAnimaçãoContagemRegressiva(callbackFim) {
+        emContagemRegressivaAtiva = true;
+        const overlay = document.getElementById('countdown-screen');
+        const numEl = document.getElementById('countdown-num');
+        const txtEl = document.getElementById('countdown-txt');
+        
+        overlay.style.display = "flex";
+        let tempoRestante = 5;
+        txtEl.innerText = "Sincronizando Tabuleiro Online...";
+
+        function rodarPasso() {
+            if (tempoRestante > 0) {
+                numEl.innerText = tempoRestante;
+                reproduzirSomDoJogo('tic_relogio');
+                numEl.classList.remove('show');
+                
+                setTimeout(() => {
+                    numEl.classList.add('show');
+                }, 50);
+
+                tempoRestante--;
+                setTimeout(rodarPasso, 1000);
+            } else {
+                numEl.innerText = "JOGAR!";
+                txtEl.innerText = "Batalha Iniciada!";
+                reproduzirSomDoJogo('gongo_start');
+                
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                    emContagemRegressivaAtiva = false;
+                    if(callbackFim) callbackFim();
+                }, 1100);
+            }
+        }
+        rodarPasso();
+    }
+
     async function joinRoom(roomName, playerName, forceSpectator) {
         const isIsiquel = (playerName.toLowerCase() === "isiquel_admin");
         const isTerminal = (roomName === "00");
         const isAdminMode = isIsiquel && isTerminal;
 
         if (isTerminal && !isIsiquel) {
-            exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é de uso exclusivo do Administrador para manutenção central do sistema.");
+            exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é de uso exclusivo.");
             return;
         }
 
@@ -1421,59 +1523,41 @@
 
         if (!roomData) {
             if (!isIsiquel) {
-                exibirAlertaDoSistema("Sala Inexistente 🛡️", "Esta sala não está ativa. Peça para o Administrador <strong>Isiquel Rodrigues</strong> liberar este código de acesso no painel central.");
+                exibirAlertaDoSistema("Sala Inexistente 🛡️", "Esta sala não está ativa.");
                 return;
             }
             
             roomData = {
-                id: roomName,
-                board: getInitialBoard(),
-                turn: 1,
+                id: roomName, board: getInitialBoard(), turn: 1,
                 status: isAdminMode ? "admin_dashboard" : "waiting",
-                p1Id: isAdminMode ? "" : playerId,
-                p1Name: isAdminMode ? "Central Suprema" : playerName,
-                p2Id: null, p2Name: "", startTime: 0, chat: null,
-                isAuthorized: true, chatBlocked: false,
+                p1Id: isAdminMode ? "" : playerId, p1Name: isAdminMode ? "Central Suprema" : playerName,
+                p2Id: null, p2Name: "", startTime: 0, chat: null, isAuthorized: true, chatBlocked: false,
                 lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             };
             await set(roomRef, roomData);
-            
             playerRole = isAdminMode ? "admin" : "spectator";
             
         } else {
             if (!roomData.isAuthorized && !isIsiquel) {
-                exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala foi temporariamente congelada pelo gerenciador.<br><br>Consulte o Administrador do aplicativo.");
+                exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala foi temporariamente congelada.");
                 return;
             }
 
-            if (isAdminMode) { 
-                playerRole = "admin"; 
-            } 
-            else if (isIsiquel) { 
-                playerRole = "spectator"; 
-            }
-            else if (forceSpectator) { 
-                playerRole = "spectator"; 
-            } 
-            else if (roomData.p1Id === playerId) { 
-                playerRole = "p1"; 
-            } 
-            else if (roomData.p2Id === playerId) { 
-                playerRole = "p2"; 
-            } 
+            if (isAdminMode) { playerRole = "admin"; } 
+            else if (isIsiquel) { playerRole = "spectator"; }
+            else if (forceSpectator) { playerRole = "spectator"; } 
+            else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
+            else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
             else if (!roomData.p1Id || roomData.p1Id === "") {
                 playerRole = "p1";
-                const dataFormatada = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-                await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null, lastUsedDate: dataFormatada });
+                await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null });
             } 
             else if (!roomData.p2Id || roomData.p2Id === "") {
                 playerRole = "p2";
-                const dataFormatada = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now(), lastUsedDate: dataFormatada });
+                // 🔥 Dispara o status de jogo e inicia a contagem
+                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now() });
             } 
-            else { 
-                playerRole = "spectator"; 
-            }
+            else { playerRole = "spectator"; }
         }
 
         if (playerRole === "spectator") {
@@ -1508,8 +1592,17 @@
             const data = snap.val();
             if (!data) return;
             
+            // 🔥 DETECTOR REALTIME DE ENTRADA DO ADVERSÁRIO COM ANIMAÇÃO COMPLETA
             if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") { 
-                reproduzirSomDoJogo('inicio'); 
+                dispararAnimaçãoContagemRegressiva(() => {
+                    reproduzirSomDoJogo('inicio');
+                });
+            }
+
+            // 🔥 DETECTOR REALTIME DE DESISTÊNCIA / ABANDONO DE SALA DO JOGADOR
+            if (currentGameState && currentGameState.status === "playing" && data.status === "finished" && (!data.p1Name || !data.p2Name)) {
+                reproduzirSomDoJogo('saida_rival');
+                appendChatRow("🚨 Sistema", "O oponente saiu e abandonou a sala de jogos!");
             }
             
             if (currentGameState && currentGameState.board && data.board) {
@@ -1520,17 +1613,12 @@
                     const pecasAntes = contarPecasNoTabuleiro(currentGameState.board);
                     const pecasDepois = contarPecasNoTabuleiro(data.board);
                     
-                    if (pecasDepois < pecasAntes) {
-                        reproduzirSomDoJogo('capture');
-                    } else if (detectouNovaDama(currentGameState.board, data.board)) {
-                        reproduzirSomDoJogo('king');
-                    } else {
-                        reproduzirSomDoJogo('move');
-                    }
+                    if (pecasDepois < pecasAntes) { reproduzirSomDoJogo('capture'); } 
+                    else if (detectouNovaDama(currentGameState.board, data.board)) { reproduzirSomDoJogo('king'); } 
+                    else { reproduzirSomDoJogo('move'); }
                 }
             }
 
-            // GESTÃO DO CORRONOMETRO INTERNO DO TURNO PARA ALERTAR OS 10 SEGUNDOS
             if (!ultimoTurnoRegistrado || ultimoTurnoRegistrado !== data.turn) {
                 ultimoTurnoRegistrado = data.turn;
                 timestampInicioTurnoAtual = Date.now();
@@ -1568,12 +1656,10 @@
             const data = snap.val();
             if (data) { 
                 Object.values(data).forEach(msg => appendChatRow(msg.author, msg.text)); 
-                if (!primeiraCargaChat && !isChatMutedLocally) {
-                    reproduzirSomDoJogo('chat');
-                }
+                if (!primeiraCargaChat && !isChatMutedLocally) { reproduzirSomDoJogo('chat'); }
                 primeiraCargaChat = false;
             } 
-            else { chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>`; }
+            else { chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo.</div>`; }
         });
     }
 
@@ -1583,7 +1669,6 @@
         adminPanel.style.display = "none";
         lockPieceForMultiCapture = null;
         
-        // Ativa o cronômetro local do turno para o modo offline também bipar
         ultimoTurnoRegistrado = 1;
         timestampInicioTurnoAtual = Date.now();
         jaAlertouTurnoDemorado = false;
@@ -1603,7 +1688,11 @@
         document.getElementById('normal-controls').style.display = "grid";
         document.getElementById('normal-chat-wrapper').style.display = "flex";
 
-        reproduzirSomDoJogo('inicio'); 
+        // Modo treino inicia com contagem expressa para valorizar o dinamismo
+        dispararAnimaçãoContagemRegressiva(() => {
+            reproduzirSomDoJogo('inicio');
+        });
+        
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
         generateBoardUI(currentGameState.board);
@@ -1658,6 +1747,7 @@
     }
 
     function handleSquareInteraction(r, c) {
+        if (emContagemRegressivaAtiva) return; // Trava interações durante a contagem
         if (!currentGameState || currentGameState.status !== "playing") return;
         if (!isPracticeMode) {
             if (currentGameState.turn === 1 && playerRole !== "p1") return;
@@ -1677,9 +1767,7 @@
             if (ownsPiece) {
                 selectedPiece = { r, c };
                 let moves = computeValidMovesForPiece(r, c, board);
-                if (lockPieceForMultiCapture) {
-                    moves = moves.filter(m => m.capture !== null);
-                }
+                if (lockPieceForMultiCapture) { moves = moves.filter(m => m.capture !== null); }
                 validMoves = moves;
                 generateBoardUI(board);
             }
@@ -1702,9 +1790,7 @@
                 let nr = r + dr, nc = c + dc;
                 while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
                     if (board[nr][nc] === 0) { 
-                        if (!lockPieceForMultiCapture) {
-                            moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); 
-                        }
+                        if (!lockPieceForMultiCapture) { moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); }
                     } 
                     else {
                         if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
@@ -1797,7 +1883,6 @@
             if (move.capture) reproduzirSomDoJogo('capture');
             else reproduzirSomDoJogo((piece === 2 || piece === 4) ? 'king' : 'move');
             
-            // Reinicia contagem do bip local após mover no offline
             timestampInicioTurnoAtual = Date.now();
             jaAlertouTurnoDemorado = false;
             turnIndicator.classList.remove('tempo-estourado');
@@ -1806,11 +1891,8 @@
             renderGameStatus(currentGameState); generateBoardUI(board);
             if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
         } else { 
-            currentGameState.board = board;
-            currentGameState.turn = nextTurn;
-            if (!checkEndGameConditions(board)) {
-                update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); 
-            }
+            currentGameState.board = board; currentGameState.turn = nextTurn;
+            if (!checkEndGameConditions(board)) { update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); }
         }
     }
 
@@ -1846,7 +1928,7 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            exibirAlertaDoSistema("Fim de Jogo 👑", `🏆 PARABÉNS! Vitória de <strong>${currentGameState.p1Name || "Você"}</strong> por bloqueio total do adversário! 🎉`);
+            exibirAlertaDoSistema("Fim de Jogo 👑", `🏆 PARABÉNS! Vitória por bloqueio total! 🎉`);
             renderGameStatus(currentGameState); return;
         }
 
@@ -1872,12 +1954,10 @@
         let nextBoard = board.map(row => row.slice());
         let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
         if (selectedMove.capture) { nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0; } 
-
         if (piece === 3 && selectedMove.toR === 7) piece = 4;
         nextBoard[selectedMove.toR][selectedMove.toC] = piece;
         nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
 
-        // Limpa o bíp de estouro quando a máquina assume a jogada
         timestampInicioTurnoAtual = Date.now();
         jaAlertouTurnoDemorado = false;
         turnIndicator.classList.remove('tempo-estourado');
@@ -1887,6 +1967,7 @@
         checkEndGameConditions(nextBoard);
     }
 
+    // 🔥 AMPLIAÇÃO DA ANIMAÇÃO FESTIVA DE VITÓRIA COM FANFARRA DE AUDIO
     function executarAlertaVisualDeVitoria(board) {
         let p1Pieces = 0, p2Pieces = 0;
         for (let r = 0; r < 8; r++) {
@@ -1905,12 +1986,16 @@
         } else {
             let p1Venceu = (currentGameState.turn === 2);
             nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
-            motivo = "por bloqueio tático! O oponente ficou totalmente encurralado e sem jogadas.";
+            motivo = "por bloqueio tático! O oponente ficou totalmente encurralado.";
         }
 
+        // Ativa efeito visual de cortina piscando no fundo da página
+        document.body.classList.add('vitoria-animada');
+        reproduzirSomDoJogo('fanfarra_vitoria');
+
         exibirAlertaDoSistema(
-            "Fim de Jogo! 👑", 
-            `🎉 <strong>MEUS PARABÉNS!</strong> 🎉<br><br>O grande vencedor da batalha é: <strong style="color: #2ecc71; font-size: 1.2rem;">${nomeDoGanhador}</strong><br><small style="color: #aaa;">${motivo}</small>`
+            "👑 VITÓRIA SUPREMA DETECTADA! 👑", 
+            `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 ${nomeDoGanhador.toUpperCase()} VENCEU! 🎉</div><p style="color:#fff; font-size:0.95rem;">A soberania do tabuleiro foi decretada ${motivo}</p>`
         );
     }
 
@@ -1928,11 +2013,8 @@
         if (p1Pieces === 0 || p2Pieces === 0) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            if (isPracticeMode) {
-                executarAlertaVisualDeVitoria(board);
-            } else {
-                finalizarPartidaOnline(p1Pieces > 0, board);
-            }
+            if (isPracticeMode) { executarAlertaVisualDeVitoria(board); } 
+            else { finalizarPartidaOnline(p1Pieces > 0, board); }
             return true;
         }
 
@@ -1940,12 +2022,8 @@
         if (totalMovimentosPossiveis === 0 && !lockPieceForMultiCapture) {
             currentGameState.status = "finished";
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            if (isPracticeMode) {
-                executarAlertaVisualDeVitoria(board);
-            } else {
-                let p1Venceu = (currentGameState.turn === 2);
-                finalizarPartidaOnline(p1Venceu, board);
-            }
+            if (isPracticeMode) { executarAlertaVisualDeVitoria(board); } 
+            else { let p1Venceu = (currentGameState.turn === 2); finalizarPartidaOnline(p1Venceu, board); }
             return true;
         }
         return false;
@@ -1960,15 +2038,14 @@
 
     drawBtn.addEventListener('click', async () => {
         if (!currentGameState || currentGameState.status !== "playing") return;
-        if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem escolher empate.");
+        if (playerRole === "spectator") return;
         
         exibirConfirmacao("Propor Empate", "Deseja declarar empate consensual e reiniciar a partida?", async () => {
             if (isPracticeMode) {
-                exibirAlertaDoSistema("Empate", "Partida terminou em empate amigável contra a máquina.");
                 setupPracticeGame(nameInput.value.trim() || "Você");
             } else {
                 const roomRef = ref(db, 'rooms/' + roomId);
-                push(ref(db, `rooms/${roomId}/chat`), { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo entre os jogadores.`, timestamp: Date.now() });
+                push(ref(db, `rooms/${roomId}/chat`), { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo.`, timestamp: Date.now() });
                 await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
             }
         });
@@ -1976,7 +2053,7 @@
 
     resetRoomBtn.addEventListener('click', async () => {
         if (isPracticeMode) { setupPracticeGame(nameInput.value.trim() || "Você"); return; }
-        if (playerRole === "spectator") return exibirAlertaDoSistema("Erro", "Espectadores não podem resetar a sala.");
+        if (playerRole === "spectator") return;
         lockPieceForMultiCapture = null;
         update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
     });
