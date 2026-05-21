@@ -169,18 +169,18 @@
         .badge-spec { background-color: #7f8c8d; color: #fff; }
         .badge-admin { background-color: #9b59b6; color: #fff; }
 
-        /* 🏆 CONTAINER PROFISSIONAL CORRIGIDO COM GRID ALINHADO */
+        /* MOLDURA PROFISSIONAL DE COORDENADAS (LETRA E NÚMERO) */
         .board-container-professional {
             display: grid;
             grid-template-columns: 24px 1fr 24px;
             grid-template-rows: 24px 1fr 24px;
             width: 100%;
-            max-width: 540px;
+            max-width: 500px;
             margin: 0 auto 20px auto;
             background-color: #2c1d11;
-            border-radius: 12px;
+            border-radius: 8px;
             box-shadow: 0 12px 35px rgba(0,0,0,0.6);
-            padding: 4px;
+            border: 4px solid #2c1d11;
             align-items: center;
             justify-items: center;
         }
@@ -203,8 +203,6 @@
             width: 100%;
             aspect-ratio: 1 / 1;
             overflow: hidden;
-            border: 2px solid #1a100a;
-            border-radius: 4px;
         }
 
         .board {
@@ -550,7 +548,7 @@
             .status-panel { font-size: 0.9rem; }
             .king::after { font-size: 0.9rem; }
             .control-box { grid-template-columns: 1fr 1fr; }
-            .board-container-professional { padding: 2px; grid-template-columns: 18px 1fr 18px; grid-template-rows: 18px 1fr 18px; }
+            .board-container-professional { grid-template-columns: 16px 1fr 16px; grid-template-rows: 16px 1fr 16px; }
             .coord-label { font-size: 0.7rem; }
         }
     </style>
@@ -633,7 +631,7 @@
             </div>
 
             <div class="admin-dashboard-box">
-                <div class="admin-dashboard-title">📋 Controle Geral de Servidores e Salas Liberadas</div>
+                <div class="admin-dashboard-title">📋 Salas Ativas e Liberadas nos Servidores (Tempo Real)</div>
                 <div id="admin-rooms-dashboard-list">
                     <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade nos servidores...</div>
                 </div>
@@ -642,7 +640,7 @@
             <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
         </div>
 
-        <!-- MOLDURA DE DIREÇÃO PROFISSIONAL (NOTACÃO ALGEBRICA) -->
+        <!-- REVESTIMENTO COMPLETO COM NOTAÇÃO ALGEBRICA PROFISSIONAL -->
         <div id="normal-board-wrapper" class="board-container-professional">
             <div></div><div class="coord-label">A</div><div class="coord-label">B</div><div class="coord-label">C</div><div class="coord-label">D</div><div class="coord-label">E</div><div class="coord-label">F</div><div class="coord-label">G</div><div class="coord-label">H</div><div></div>
             
@@ -712,7 +710,7 @@
         <h2>Regras Oficiais do Jogo de Damas</h2>
         <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
-            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar in um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
             <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
@@ -908,12 +906,6 @@
     closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
     downloadBtnLobby.addEventListener('click', () => { window.location.href = 'jogo.apk'; });
 
-    // LIBERAÇÃO PREVENTIVA DO ACESSO LOCAL (Evita travamentos caso o Firebase demore a responder)
-    nameInput.disabled = false;
-    roomInput.disabled = false;
-    practiceBtn.disabled = false;
-    rulesBtnLobby.disabled = false;
-
     async function carregarPodiumLobby() {
         try {
             const rankRef = ref(db, 'leaderboard');
@@ -946,8 +938,12 @@
         if (user) {
             playerId = user.uid; 
             authStatusEl.innerText = "Conexão Segura Ativa ✓";
+            nameInput.disabled = false;
+            roomInput.disabled = false;
             joinBtn.disabled = false;
             spectateBtn.disabled = false;
+            practiceBtn.disabled = false;
+            rulesBtnLobby.disabled = false;
             rankBtnLobby.disabled = false;
             carregarPodiumLobby(); 
         } else {
@@ -1001,13 +997,6 @@
         if (isWin) stats.wins += 1;
         else stats.losses += 1;
         await set(userRankRef, stats);
-    }
-
-    const colunaParaLetra = ["A", "B", "C", "D", "E", "F", "G", "H"];
-    function converterIndicesParaCoordenada(r, c) {
-        const letra = colunaParaLetra[c];
-        const numero = 8 - r;
-        return `${letra}${numero}`;
     }
 
     joinBtn.addEventListener('click', () => {
@@ -1142,13 +1131,14 @@
         return false;
     }
 
+    // LISTAGEM ADMIN REALTIME CORRIGIDA - EXIBE TODAS AS SALAS REGISTRADAS NO NÓ
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
             const listEl = document.getElementById('admin-rooms-dashboard-list');
             try {
                 if (!snapshot.exists()) {
-                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala cadastrada nos servidores.</div>`;
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
                     return;
                 }
                 
@@ -1161,21 +1151,15 @@
                     countDeSalasValidas++;
 
                     const sala = roomsData[idSala];
-                    
                     const isAuth = sala.isAuthorized !== false; 
                     const statusColor = isAuth ? '#2ecc71' : '#e74c3c';
-                    const statusText = isAuth ? 'LIBERADA / DISPONÍVEL' : 'BLOQUEADA';
-                    
+                    const statusText = isAuth ? 'ATIVA / LIBERADA' : 'BLOQUEADA';
                     const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
                     
-                    const p1Label = sala.p1Name ? sala.p1Name : "<span style='color:#666; font-style:italic;'>Aguardando</span>";
-                    const p2Label = sala.p2Name ? sala.p2Name : "<span style='color:#666; font-style:italic;'>Aguardando</span>";
+                    // Tratamento amigável para exibir as salas que você liberou mas ainda estão vazias
+                    const p1Exibicao = sala.p1Name ? sala.p1Name : "<span style='color:#666; font-style:italic;'>Vazio</span>";
+                    const p2Exibicao = sala.p2Name ? sala.p2Name : "<span style='color:#666; font-style:italic;'>Vazio</span>";
                     
-                    let ocupacaoTexto = `${p1Label} vs ${p2Label}`;
-                    if (!sala.p1Name && !sala.p2Name) {
-                        ocupacaoTexto = "<span style='color:#3498db; font-size:0.75rem;'>Pronta (Aguardando Jogadores entrar)</span>";
-                    }
-
                     const row = document.createElement('div');
                     row.style.cssText = `background-color: #16213e; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid ${statusColor}; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s;`;
                     
@@ -1187,8 +1171,8 @@
                     
                     row.innerHTML = `
                         <div>
-                            <strong style="font-size: 1rem; color: #fff;">${idSala.toUpperCase()}</strong>
-                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 3px;">Status: ${ocupacaoTexto} ${chatTrancado}</div>
+                            <strong style="font-size: 1rem;">${idSala.toUpperCase()}</strong>
+                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 3px;">Ocupantes: ${p1Exibicao} vs ${p2Exibicao} ${chatTrancado}</div>
                         </div>
                         <div style="color: ${statusColor}; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
                             <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${statusColor};"></span>
@@ -1200,14 +1184,16 @@
                 }
 
                 if (countDeSalasValidas === 0) {
-                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala cadastrada além do terminal básico.</div>`;
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
                 }
             } catch(e) {
-                console.error("Erro renderizando dashboard de controle:", e);
-                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores de monitoramento.</div>`;
+                console.error("Erro renderizando dashboard:", e);
+                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
             }
         });
     }
+
+    // 🔥 6 BOTÕES DE CONTROLE SUPREMO DO ADMINISTRADOR 🔥
 
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
@@ -1238,7 +1224,7 @@
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         await update(ref(db, 'rooms/' + salaAlvo), { isAuthorized: false });
-        exibirAlertaDoSistema("Sala Trancada", `Acesso blocked para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Ninguém novo consegue entrar.`);
+        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Ninguém novo consegue entrar.`);
         adminTargetRoomInput.value = "";
     });
 
@@ -1578,7 +1564,7 @@
             dirs.forEach(([dr, dc]) => {
                 let nr = r + dr, nc = c + dc;
                 while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                    if (board[nr][nr] === 0) { 
+                    if (board[nr][nc] === 0) { 
                         if (!lockPieceForMultiCapture) {
                             moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); 
                         }
@@ -1856,7 +1842,7 @@
                 if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
             }
         }
-        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContador Espectadores = 0;
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContadorEspectadores = 0;
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
