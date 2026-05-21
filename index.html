@@ -496,24 +496,6 @@
             border-bottom: 1px dashed #333;
             padding-bottom: 4px;
         }
-        .admin-room-row {
-            display: flex;
-            flex-direction: column;
-            background-color: #16213e;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            text-align: left;
-            border-left: 4px solid #2ecc71;
-        }
-        .admin-room-meta {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            margin-bottom: 4px;
-            align-items: center;
-        }
 
         .confirm-buttons-box {
             display: flex;
@@ -604,23 +586,21 @@
             </div>
         </div>
 
-        <!-- 🛡️ CENTRAL SUPREMA DE COMANDO ADMINISTRATIVO -->
         <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
             <div style="font-size: 1.1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #9b59b6; padding-bottom: 6px;">🛡️ Painel de Controle de Salas</div>
             
             <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Código da Sala que deseja gerenciar:</label>
             <input type="text" id="admin-target-room" class="admin-input-control" placeholder="Digite o código da sala (ex: sala10)">
 
-            <!-- CONTROLES MÁXIMOS -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
                 <button id="btn-adm-liberar" style="background-color: #2ecc71; font-size: 0.75rem; padding: 12px 5px;">LIBERAR / CRIAR SALA</button>
                 <button id="btn-adm-bloquear" style="background-color: #e74c3c; font-size: 0.75rem; padding: 12px 5px;">BLOQUEAR SALA</button>
 
-                <button id="btn-adm-travar-chat" style="background-color: #c0392b; font-size: 0.75rem; padding: 12px 5px;">TRAVAR / DESTRAVAR CHAT</button>
-                <button id="btn-adm-expulsar" style="background-color: #f39c12; font-size: 0.75rem; padding: 12px 5px;">EXPULSAR JOGADORES</button>
+                <button id="btn-adm-travar-chat" style="background-color: #e67e22; font-size: 0.75rem; padding: 12px 5px;">TRAVAR / DESTRAVAR CHAT</button>
+                <button id="btn-adm-expulsar" style="background-color: #f1c40f; color: #111; font-size: 0.75rem; padding: 12px 5px;">EXPULSAR JOGADORES</button>
                 
                 <button id="btn-adm-limpar-chat" style="background-color: #d35400; font-size: 0.75rem; padding: 12px 5px;">LIMPAR MENSAGENS</button>
-                <button id="btn-adm-reset" style="background-color: #8e44ad; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
+                <button id="btn-adm-reset" style="background-color: #9b59b6; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
             </div>
 
             <div class="admin-dashboard-box">
@@ -660,7 +640,6 @@
     </div>
 </div>
 
-<!-- MODAL GENÉRICO DE AVISO -->
 <div id="custom-alert-modal" class="modal">
     <div class="modal-content" style="max-width: 420px; text-align: center;">
         <h2 id="custom-alert-title" class="custom-alert-title">Aviso do Sistema</h2>
@@ -669,7 +648,6 @@
     </div>
 </div>
 
-<!-- MODAL DE CONFIRMAÇÃO DE SEGURANÇA -->
 <div id="custom-confirm-modal" class="modal">
     <div class="modal-content" style="max-width: 440px; text-align: center;">
         <h2 id="custom-confirm-title" style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
@@ -1109,18 +1087,19 @@
         return false;
     }
 
-    // 📋 SISTEMA DE LISTAGEM ROBUSTO - CONSERTADO PARA NÃO TRAVAR
+    // 📋 SISTEMA DE LISTAGEM CONSERTADO COM FUNÇÃO DE CLIQUE RÁPIDO
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
+            const listEl = document.getElementById('admin-rooms-dashboard-list');
             try {
                 if (!snapshot.exists()) {
-                    adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
                     return;
                 }
                 
                 const roomsData = snapshot.val();
-                adminRoomsDashboardList.innerHTML = "";
+                listEl.innerHTML = "";
                 let countDeSalasValidas = 0;
                 
                 for (const idSala in roomsData) {
@@ -1128,46 +1107,41 @@
                     countDeSalasValidas++;
 
                     const sala = roomsData[idSala];
-                    const isAuth = sala.isAuthorized !== false; // Padrão é true
-                    const statusTxt = isAuth ? "LIBERADA" : "BLOQUEADA";
+                    const isAuth = sala.isAuthorized !== false; 
+                    const statusColor = isAuth ? '#2ecc71' : '#e74c3c';
+                    const statusText = isAuth ? 'ATIVA / LIBERADA' : 'BLOQUEADA';
                     const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
                     
-                    let p1 = sala.p1Name || "(Vazio)";
-                    let p2 = sala.p2Name || "(Vazio)";
-                    
                     const row = document.createElement('div');
-                    row.className = 'admin-room-row';
-                    row.style.borderLeftColor = isAuth ? '#2ecc71' : '#e74c3c';
+                    row.style.cssText = `background-color: #16213e; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid ${statusColor}; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s;`;
                     
-                    const divHeader = document.createElement('div');
-                    divHeader.className = 'admin-room-meta';
-                    divHeader.innerHTML = `<strong style="font-size: 1rem;">CÓDIGO: ${idSala.toUpperCase()}</strong>`;
-                    
-                    // Botão rápido direto na lista
-                    const btnToggle = document.createElement('button');
-                    btnToggle.style.cssText = `width: auto; padding: 4px 10px; font-size: 0.75rem; margin: 0; background-color: ${isAuth ? '#e74c3c' : '#2ecc71'}; border-radius: 4px;`;
-                    btnToggle.innerText = isAuth ? 'BLOQUEAR' : 'LIBERAR';
-                    btnToggle.onclick = () => {
-                        update(ref(db, 'rooms/' + idSala), { isAuthorized: !isAuth });
+                    // AÇÃO DE CLIQUE: Preenche o input automaticamente!
+                    row.onclick = () => {
+                        document.getElementById('admin-target-room').value = idSala;
+                        row.style.backgroundColor = '#1f3a5f';
+                        setTimeout(() => { row.style.backgroundColor = '#16213e'; }, 200);
                     };
                     
-                    divHeader.appendChild(btnToggle);
-                    row.appendChild(divHeader);
+                    row.innerHTML = `
+                        <div>
+                            <strong style="font-size: 1rem;">${idSala.toUpperCase()}</strong>
+                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 3px;">Ocupantes: ${sala.p1Name || '(Vazio)'} vs ${sala.p2Name || '(Vazio)'} ${chatTrancado}</div>
+                        </div>
+                        <div style="color: ${statusColor}; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${statusColor};"></span>
+                            ${statusText}
+                        </div>
+                    `;
                     
-                    const divDetalhes = document.createElement('div');
-                    divDetalhes.style.cssText = "font-size: 0.8rem; color: #aaa; margin-top: 5px;";
-                    divDetalhes.innerHTML = `Ocupantes: ${p1} vs ${p2} ${chatTrancado}<br><span style="color: ${isAuth ? '#2ecc71':'#e74c3c'}; font-size: 0.75rem;">Status: ${statusTxt}</span>`;
-                    
-                    row.appendChild(divDetalhes);
-                    adminRoomsDashboardList.appendChild(row);
+                    listEl.appendChild(row);
                 }
 
                 if (countDeSalasValidas === 0) {
-                    adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
                 }
             } catch(e) {
                 console.error("Erro renderizando dashboard:", e);
-                adminRoomsDashboardList.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
+                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
             }
         });
     }
@@ -1278,7 +1252,8 @@
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
         
-        const isIsiquel = (playerName === "Isiquel_Admin" || playerName === "Isiquel_admin");
+        // Identificação do Administrador
+        const isIsiquel = (playerName.toLowerCase() === "isiquel_admin");
         const isTerminal = (roomName === "00");
         const isAdminMode = isIsiquel && isTerminal;
 
@@ -1301,26 +1276,45 @@
                 lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             };
             await set(roomRef, roomData);
-            playerRole = isAdminMode ? "admin" : "p1";
+            
+            // Se for o Isiquel numa sala nova que NÃO É o terminal 00, ele entra como Espectador
+            playerRole = isAdminMode ? "admin" : "spectator";
+            
         } else {
             if (!roomData.isAuthorized && !isIsiquel) {
                 exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala está temporariamente trancada.<br><br>Entre em contato com o Administrador <strong>Isiquel Rodrigues</strong> para solicitar a liberação do acesso.");
                 return;
             }
 
-            if (isAdminMode) { playerRole = "admin"; } 
-            else if (forceSpectator) { playerRole = "spectator"; } 
-            else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
-            else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
+            if (isAdminMode) { 
+                playerRole = "admin"; 
+            } 
+            else if (isIsiquel && !isTerminal) { 
+                // REGRA NOVA: Isiquel entrando em qualquer outra sala entra SEMPRE como Espectador
+                playerRole = "spectator"; 
+            }
+            else if (forceSpectator) { 
+                playerRole = "spectator"; 
+            } 
+            else if (roomData.p1Id === playerId) { 
+                playerRole = "p1"; 
+            } 
+            else if (roomData.p2Id === playerId) { 
+                playerRole = "p2"; 
+            } 
             else if (!roomData.p1Id || roomData.p1Id === "") {
                 playerRole = "p1";
                 const dataFormatada = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
                 await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null, lastUsedDate: dataFormatada });
-            } else if (!roomData.p2Id || roomData.p2Id === "") {
+            } 
+            else if (!roomData.p2Id || roomData.p2Id === "") {
                 playerRole = "p2";
                 const dataFormatada = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
                 await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now(), lastUsedDate: dataFormatada });
-            } else { playerRole = "spectator"; }
+            } 
+            else { 
+                playerRole = "spectator"; 
+            }
         }
 
         if (playerRole === "spectator") {
