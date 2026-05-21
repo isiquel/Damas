@@ -130,6 +130,9 @@
         .btn-download { background-color: #2c3e50; border: 1px solid #34495e; }
         .btn-download:hover { background-color: #34495e; }
 
+        .btn-whatsapp { background-color: #25d366; margin-top: 15px; }
+        .btn-whatsapp:hover { background-color: #20ba5a; }
+
         #game-screen {
             display: none;
             flex-direction: column;
@@ -617,7 +620,6 @@
             text-align: center;
         }
 
-        /* Área secreta de monitoramento do chat no painel admin */
         .admin-chat-monitor-box {
             display: none;
             margin-top: 15px;
@@ -643,6 +645,44 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+        }
+
+        /* 🔥 NOVO PAINEL DE FEEDBACK PREMIUM CYBERPUNK NO LOBBY */
+        .feedback-panel {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 25px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .feedback-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .feedback-desc {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .feedback-input-group {
+            display: flex;
+            gap: 8px;
+        }
+        .feedback-input {
+            margin: 0;
+            padding: 10px;
+            font-size: 0.85rem;
+            text-align: left;
+            border-radius: 6px;
+            background-color: #020617;
+            border: 1px solid #334155;
         }
 
         @media (max-width: 480px) {
@@ -706,6 +746,16 @@
             <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Ranking Global</button>
             <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
         </div>
+
+        <!-- 🔥 NOVA CENTRAL DE FEEDBACK DIRETO PARA O SEU WHATSAPP -->
+        <div class="feedback-panel">
+            <div class="feedback-title">📣 Sugestões & Feedback</div>
+            <div class="feedback-desc">Gostou do jogo? Tem alguma ideia nova ou quer sugerir alguma mudança? Deixe seu comentário abaixo!</div>
+            <div class="feedback-input-group">
+                <input type="text" id="feedback-text-input" class="feedback-input" placeholder="Ex: O jogo tá ótimo, seria massa ter pecinhas neon...">
+                <button id="btn-submit-feedback" style="width: auto; padding: 0 15px; font-size: 0.85rem; background-color: #3498db;">Enviar</button>
+            </div>
+        </div>
     </div>
 
     <div id="game-screen">
@@ -744,7 +794,6 @@
             <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ (Limpar do Sistema)</button>
             <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL (Nova Temporada)</button>
             
-            <!-- 🔥 NOVO GERENCIADOR DE MONITORAMENTO DOS CHATS DAS PARTIDAS ATIVAS -->
             <button id="btn-adm-monitorar-chat" style="background-color: #3498db; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 5px;">💬 MONITORAR CHAT DA SALA</button>
 
             <div id="admin-chat-monitor-container" class="admin-chat-monitor-box">
@@ -842,7 +891,7 @@
             <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
             <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
             <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
-            <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma posição repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
+            <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma position repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
             <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
             <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça ganha uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
         </ul>
@@ -909,11 +958,8 @@
     let jaAlertouTurnoDemorado = false;
     
     let emContagemRegressivaAtiva = false;
-    
-    // Variável global para armazenar o listener de chat ativo no painel admin
     let listenerChatAdminAtivo = null;
 
-    // SISTEMA DE ALERTAS
     function exibirAlertaDoSistema(titulo, texto) {
         document.getElementById('custom-alert-title').innerText = titulo;
         document.getElementById('custom-alert-text').innerHTML = texto;
@@ -943,6 +989,17 @@
         acaoConfirmadaCallback = null;
     });
 
+    // 🔥 NOVO DISPARADOR DE COMPARTILHAMENTO DE SUGESTÕES PARA O WHATSAPP DO ISIQUEI
+    document.getElementById('btn-submit-feedback').addEventListener('click', () => {
+        const txtFeedback = document.getElementById('feedback-text-input').value.trim();
+        if (!txtFeedback) return exibirAlertaDoSistema("Aviso", "Por favor, digite sua sugestão ou comentário antes de enviar.");
+        const nomeUsuario = document.getElementById('name-input').value.trim() || "Jogador Anônimo";
+        
+        const msgFormatada = encodeURIComponent(`Olá Isiquel! Me chamo ${nomeUsuario} e tenho uma sugestão para o jogo de Damas: ${txtFeedback}`);
+        window.open(`https://wa.me/5544991711936?text=${msgFormatada}`, '_blank');
+        document.getElementById('feedback-text-input').value = "";
+    });
+
     function reproduzirSomDoJogo(tipo) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -950,13 +1007,12 @@
             const ctx = new AudioCtx();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
+            osc.connect(gain); gain.connect(ctx.destination);
             const agora = ctx.currentTime;
             
             if (tipo === 'inicio') {
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(261.63, agora); 
-                osc.frequency.exponentialRampToValueAtTime(523.25, ago + 0.3); 
+                osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); 
                 gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
                 osc.start(agora); osc.stop(agora + 0.3);
             } else if (tipo === 'move') {
@@ -983,12 +1039,6 @@
                 osc.type = 'sine'; osc.frequency.setValueAtTime(880, agora);
                 gain.gain.setValueAtTime(0.12, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
                 osc.start(agora); osc.stop(agora + 0.08);
-                setTimeout(() => {
-                    const ctx2 = new AudioCtx(); const osc2 = ctx2.createOscillator(); const gain2 = ctx2.createGain();
-                    osc2.connect(gain2); gain2.connect(ctx2.destination); osc2.type = 'sine'; osc2.frequency.setValueAtTime(880, ctx2.currentTime);
-                    gain2.gain.setValueAtTime(0.12, ctx2.currentTime); gain2.gain.linearRampToValueAtTime(0.001, ctx2.currentTime + 0.08);
-                    osc2.start(ctx2.currentTime); osc2.stop(ctx2.currentTime + 0.08);
-                }, 140);
             } else if (tipo === 'tic_relogio') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(700, agora);
                 gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.05);
@@ -1005,18 +1055,6 @@
                 osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, agora);
                 gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.4);
                 osc.start(agora); osc.stop(agora + 0.4);
-                setTimeout(() => {
-                    const cx = new AudioCtx(); const os = cx.createOscillator(); const gn = cx.createGain();
-                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(659.25, cx.currentTime);
-                    gn.gain.setValueAtTime(0.15, cx.currentTime); gn.gain.linearRampToValueAtTime(0.01, cx.currentTime + 0.3);
-                    os.start(cx.currentTime); os.stop(cx.currentTime + 0.3);
-                }, 150);
-                setTimeout(() => {
-                    const cx = new AudioCtx(); const os = cx.createOscillator(); const gn = cx.createGain();
-                    os.connect(gn); gn.connect(cx.destination); os.frequency.setValueAtTime(783.99, cx.currentTime);
-                    gn.gain.setValueAtTime(0.2, cx.currentTime); gn.gain.linearRampToValueAtTime(0.01, cx.currentTime + 0.5);
-                    os.start(cx.currentTime); os.stop(cx.currentTime + 0.5);
-                }, 300);
             }
         } catch (e) { console.log("Áudio bloqueado", e); }
     }
@@ -1391,7 +1429,6 @@
         });
     }
 
-    // 🔥 NOVO COMANDO CIRÚRGICO: ESCUTA ATIVA DO FEED DE CONVERSAS VIA PAINEL ADMIN
     document.getElementById('btn-adm-monitorar-chat').addEventListener('click', () => {
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
@@ -1405,7 +1442,6 @@
         titleDisplay.innerText = `💬 ESCUTA ATIVA: SALA [${salaAlvo.toUpperCase()}]`;
         feedDisplay.innerHTML = `<div style="color:#888; font-style:italic;">Sintonizando frequências de conversa...</div>`;
         
-        // Remove escutas antigas se houver para não encavalar dados
         if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); }
         
         const targetChatRef = ref(db, `rooms/${salaAlvo}/chat`);
@@ -1579,7 +1615,15 @@
 
         if (!roomData) {
             if (!isIsiquel) {
-                exibirAlertaDoSistema("Sala Inexistente 🛡️", "Esta sala não está ativa.");
+                // 🔥 MODIFICAÇÃO CIRÚRGICA: Alerta inteligente com botão integrado para falar diretamente com o seu WhatsApp
+                const msgSuporte = encodeURIComponent(`Olá Isiquel! Tentei entrar na sala "${roomName}" no jogo de Damas, mas ela consta como inexistente. Poderia liberar meu acesso?`);
+                
+                exibirAlertaDoSistema(
+                    "Sala Inexistente 🛡️", 
+                    `<p style="margin-bottom:15px;">Esta sala não está ativa no servidor.</p>
+                     <p style="font-size:0.92rem; color:#aaa; margin-bottom:15px;">Fale com o administrador **Isiquel** para criar ou liberar esta sala de jogos agora.</p>
+                     <button onclick="window.open('https://wa.me/5544991711936?text=${msgSuporte}', '_blank')" class="btn-whatsapp">💬 Chamar Isiquel no WhatsApp</button>`
+                );
                 return;
             }
             
@@ -1595,14 +1639,19 @@
             
         } else {
             if (!roomData.isAuthorized && !isIsiquel) {
-                exibirAlertaDoSistema("Sala Bloqueada 🛡️", "Esta sala foi temporariamente congelada.");
+                // 🔥 MODIFICAÇÃO CIRÚRGICA: Tratamento completo e visual também para salas que existem mas estão congeladas/bloqueadas
+                const msgBloqueio = encodeURIComponent(`Olá Isiquel! A minha sala "${roomName}" está bloqueada no painel de controle das Damas. Poderia verificar?`);
+                
+                exibirAlertaDoSistema(
+                    "Sala Bloqueada 🛡️", 
+                    `<p style="margin-bottom:15px;">Esta sala foi temporariamente congelada pelo sistema.</p>
+                     <button onclick="window.open('https://wa.me/5544991711936?text=${msgBloqueio}', '_blank')" class="btn-whatsapp">💬 Solicitar Liberação ao Isiquel</button>`
+                );
                 return;
             }
 
             if (isAdminMode) { playerRole = "admin"; } 
-            else if (isIsiquel) { 
-                playerRole = "spectator"; // Isiquel entra em salas normais como fantasma supremo
-            }
+            else if (isIsiquel) { playerRole = "spectator"; }
             else if (forceSpectator) { playerRole = "spectator"; } 
             else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
             else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
@@ -1617,7 +1666,6 @@
             else { playerRole = "spectator"; }
         }
 
-        // 🔥 MODIFICAÇÃO CIRÚRGICA DE INVISIBILIDADE: Se você for o Isiquel_admin, o Firebase não adiciona sua presença visual na sala
         if (playerRole === "spectator" && !isIsiquel) {
             const specPresenceRef = ref(db, `rooms/${roomName}/spectators/${playerId}`);
             set(specPresenceRef, playerName);
@@ -1977,12 +2025,9 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            
-            // Tratamento exclusivo para o modo offline contra a IA
             document.body.classList.add('vitoria-animada');
             reproduzirSomDoJogo('fanfarra_vitoria');
             exibirAlertaDoSistema("🏆 VITÓRIA SUPREMA DETECTADA! 👑", `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS, VOCÊ GANHOU O JOGO! 🎉</div><p style="color:#fff; font-size:0.95rem;">O robô ficou totalmente encurralado e sem jogadas livres.</p>`);
-            
             renderGameStatus(currentGameState); return;
         }
 
@@ -2021,8 +2066,7 @@
         checkEndGameConditions(nextBoard);
     }
 
-    // 🔥 MODIFICAÇÃO CIRÚRGICA: MENSAGEM INDIVIDUALIZADA POR TELA (GANHADOR VS PERDEDOR)
-    function executarAlertaVisualDeVitoria(board) {
+    function ejecutarAlertaVisualDeVitoria(board) {
         let p1Pieces = 0, p2Pieces = 0;
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
@@ -2032,20 +2076,15 @@
         }
 
         let p1Venceu = false;
-        if (p1Pieces === 0 || p2Pieces === 0) {
-            p1Venceu = p1Pieces > 0;
-        } else {
-            p1Venceu = (currentGameState.turn === 2);
-        }
+        if (p1Pieces === 0 || p2Pieces === 0) { p1Venceu = p1Pieces > 0; } 
+        else { p1Venceu = (currentGameState.turn === 2); }
 
         const souJogadorP1 = (playerRole === "p1");
         const souJogadorP2 = (playerRole === "p2");
-        
         let voceGanhou = (p1Venceu && souJogadorP1) || (!p1Venceu && souJogadorP2);
         let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
 
         if (playerRole === "spectator") {
-            // Visão neutra para quem é espectador/admin oculto
             exibirAlertaDoSistema(
                 "👑 FIM DE PARTIDA 👑", 
                 `<div style="font-size:1.3rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 ${nomeDoGanhador.toUpperCase()} VENCEU! 🎉</div><p style="color:#aaa; font-size:0.9rem;">A soberania tática do tabuleiro foi concluída.</p>`
@@ -2056,10 +2095,7 @@
         if (voceGanhou) {
             document.body.classList.add('vitoria-animada');
             reproduzirSomDoJogo('fanfarra_vitoria');
-            
-            // Pega o nome real digitado no input do lobby
             const seuNomeReal = nameInput.value.trim() || "Jogador";
-
             exibirAlertaDoSistema(
                 "👑 VITÓRIA SUPREMA DETECTADA! 👑", 
                 `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS ${seuNomeReal.toUpperCase()}, VOCÊ GANHOU O JOGO! 🎉</div><p style="color:#fff; font-size:0.95rem;">Sua estratégia funcionou perfeitamente. Continue dominando os servidores!</p>`
