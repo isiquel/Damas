@@ -169,7 +169,7 @@
         .badge-spec { background-color: #7f8c8d; color: #fff; }
         .badge-admin { background-color: #9b59b6; color: #fff; }
 
-        /* 🏆 CONTAINER PROFISSIONAL COM MOLDURA DE COORDENADAS ALGEBRICAS */
+        /* 🏆 CONTAINER PROFISSIONAL CORRIGIDO COM GRID ALINHADO */
         .board-container-professional {
             display: grid;
             grid-template-columns: 24px 1fr 24px;
@@ -199,7 +199,7 @@
 
         .board-wrapper {
             grid-column: 2;
-            grid-line: 2;
+            grid-row: 2;
             width: 100%;
             aspect-ratio: 1 / 1;
             overflow: hidden;
@@ -644,10 +644,8 @@
 
         <!-- MOLDURA DE DIREÇÃO PROFISSIONAL (NOTACÃO ALGEBRICA) -->
         <div id="normal-board-wrapper" class="board-container-professional">
-            <!-- Linha Superior de Coordenadas (A-H) -->
             <div></div><div class="coord-label">A</div><div class="coord-label">B</div><div class="coord-label">C</div><div class="coord-label">D</div><div class="coord-label">E</div><div class="coord-label">F</div><div class="coord-label">G</div><div class="coord-label">H</div><div></div>
             
-            <!-- Linhas do Tabuleiro (8 a 1 de cima para baixo) com Numeração Lateral -->
             <div class="coord-label">8</div>
             <div class="board-wrapper">
                 <div id="board" class="board"></div>
@@ -662,7 +660,6 @@
             <div class="coord-label">2</div><div></div><div class="coord-label">2</div>
             <div class="coord-label">1</div><div></div><div class="coord-label">1</div>
 
-            <!-- Linha Inferior de Coordenadas (A-H) -->
             <div></div><div class="coord-label">A</div><div class="coord-label">B</div><div class="coord-label">C</div><div class="coord-label">D</div><div class="coord-label">E</div><div class="coord-label">F</div><div class="coord-label">G</div><div class="coord-label">H</div><div></div>
         </div>
 
@@ -911,6 +908,12 @@
     closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
     downloadBtnLobby.addEventListener('click', () => { window.location.href = 'jogo.apk'; });
 
+    // LIBERAÇÃO PREVENTIVA DO ACESSO LOCAL (Evita travamentos caso o Firebase demore a responder)
+    nameInput.disabled = false;
+    roomInput.disabled = false;
+    practiceBtn.disabled = false;
+    rulesBtnLobby.disabled = false;
+
     async function carregarPodiumLobby() {
         try {
             const rankRef = ref(db, 'leaderboard');
@@ -920,7 +923,7 @@
                     livePodiumContent.innerHTML = "<div style='font-size:0.85rem; color:#aaa; padding:5px 0;'>Nenhuma batalha online registrada ainda!</div>";
                     motivateBox.innerText = "⚔️ Seja o primeiro a inaugurar o tabuleiro e assumir o topo!";
                     return;
-                </div>
+                }
                 const sorted = Object.values(data).sort((a, b) => b.wins - a.wins).slice(0, 3);
                 livePodiumContent.innerHTML = "";
                 let medalhas = ["🥇", "🥈", "🥉"];
@@ -943,12 +946,8 @@
         if (user) {
             playerId = user.uid; 
             authStatusEl.innerText = "Conexão Segura Ativa ✓";
-            nameInput.disabled = false;
-            roomInput.disabled = false;
             joinBtn.disabled = false;
             spectateBtn.disabled = false;
-            practiceBtn.disabled = false;
-            rulesBtnLobby.disabled = false;
             rankBtnLobby.disabled = false;
             carregarPodiumLobby(); 
         } else {
@@ -1004,7 +1003,6 @@
         await set(userRankRef, stats);
     }
 
-    // MAPEAMENTO DA NOTACÃO PROFISSIONAL (DE LINHAS/COLUNAS DO ARRAY PARA A GAVETA ALGEBRICA)
     const colunaParaLetra = ["A", "B", "C", "D", "E", "F", "G", "H"];
     function converterIndicesParaCoordenada(r, c) {
         const letra = colunaParaLetra[c];
@@ -1144,7 +1142,6 @@
         return false;
     }
 
-    // 📋 SISTEMA DE LISTAGEM REALTIME - ATUALIZADO PARA EXIBIR TODAS AS SALAS LIBERADAS
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
@@ -1165,14 +1162,12 @@
 
                     const sala = roomsData[idSala];
                     
-                    // Verificação precisa do status de autorização no Firebase
                     const isAuth = sala.isAuthorized !== false; 
                     const statusColor = isAuth ? '#2ecc71' : '#e74c3c';
                     const statusText = isAuth ? 'LIBERADA / DISPONÍVEL' : 'BLOQUEADA';
                     
                     const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
                     
-                    // Tratamento dinâmico para salas vazias mas que foram criadas/liberadas pela administração
                     const p1Label = sala.p1Name ? sala.p1Name : "<span style='color:#666; font-style:italic;'>Aguardando</span>";
                     const p2Label = sala.p2Name ? sala.p2Name : "<span style='color:#666; font-style:italic;'>Aguardando</span>";
                     
@@ -1214,8 +1209,6 @@
         });
     }
 
-    // 🔥 6 BOTÕES DE CONTROLE SUPREMO DO ADMINISTRADOR 🔥
-
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
@@ -1226,7 +1219,6 @@
         const snap = await get(refSala);
         
         if (!snap.exists()) {
-            // Garante que ao criar uma sala vazia ela já suba estruturada para persistir no painel
             await set(refSala, {
                 id: salaAlvo, board: getInitialBoard(), turn: 1, status: "waiting",
                 p1Id: "", p1Name: "", p2Id: "", p2Name: "", startTime: 0, chat: null,
@@ -1246,7 +1238,7 @@
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         await update(ref(db, 'rooms/' + salaAlvo), { isAuthorized: false });
-        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Ninguém novo consegue entrar.`);
+        exibirAlertaDoSistema("Sala Trancada", `Acesso blocked para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Ninguém novo consegue entrar.`);
         adminTargetRoomInput.value = "";
     });
 
@@ -1321,7 +1313,6 @@
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
         
-        // Identificação do Administrador
         const isIsiquel = (playerName.toLowerCase() === "isiquel_admin");
         const isTerminal = (roomName === "00");
         const isAdminMode = isIsiquel && isTerminal;
@@ -1332,7 +1323,6 @@
                 return;
             }
             
-            // Se o Admin entrar com um código novo que não seja 00, o sistema já cria direto.
             roomData = {
                 id: roomName,
                 board: getInitialBoard(),
@@ -1346,7 +1336,6 @@
             };
             await set(roomRef, roomData);
             
-            // Se for o Isiquel numa sala nova que NÃO É o terminal 00, ele entra como Espectador
             playerRole = isAdminMode ? "admin" : "spectator";
             
         } else {
@@ -1359,7 +1348,6 @@
                 playerRole = "admin"; 
             } 
             else if (isIsiquel && !isTerminal) { 
-                // REGRA NOVA: Isiquel entrando em qualquer outra sala entra SEMPRE como Espectador
                 playerRole = "spectator"; 
             }
             else if (forceSpectator) { 
@@ -1590,7 +1578,7 @@
             dirs.forEach(([dr, dc]) => {
                 let nr = r + dr, nc = c + dc;
                 while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                    if (board[nr][nc] === 0) { 
+                    if (board[nr][nr] === 0) { 
                         if (!lockPieceForMultiCapture) {
                             moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); 
                         }
@@ -1868,7 +1856,7 @@
                 if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
             }
         }
-        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContadorEspectadores = 0;
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContador Espectadores = 0;
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
