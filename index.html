@@ -604,23 +604,23 @@
             </div>
         </div>
 
-        <!-- 🛡️ CENTRAL SUPREMA DE COMANDO ADMINISTRATIVO REESTRUTURADA -->
+        <!-- 🛡️ CENTRAL SUPREMA DE COMANDO ADMINISTRATIVO -->
         <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
-            <div style="font-size: 1.1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #9b59b6; padding-bottom: 6px;">🛡️ Terminal de Controle Geral</div>
+            <div style="font-size: 1.1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #9b59b6; padding-bottom: 6px;">🛡️ Painel de Controle de Salas</div>
             
-            <!-- ✨ NOVO: CRIADOR DE SALAS DENTRO DO TERMINAL -->
-            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Criar / Liberar Nova Sala:</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                <input type="text" id="admin-new-room-input" class="admin-input-control" style="margin-bottom: 0;" placeholder="Ex: torneio">
-                <button id="admin-create-room-btn" style="background-color: #2ecc71; width: auto; padding: 10px 15px; margin: 0; font-size: 0.85rem;">CRIAR</button>
-            </div>
+            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Código da Sala que deseja gerenciar:</label>
+            <input type="text" id="admin-target-room" class="admin-input-control" placeholder="Digite o código da sala (ex: sala10)">
 
-            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Gerenciar Sala Específica (Reset/Limpar):</label>
-            <input type="text" id="admin-target-room" class="admin-input-control" placeholder="Digite o código (ex: pai)">
+            <!-- CONTROLES MÁXIMOS -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+                <button id="btn-adm-liberar" style="background-color: #2ecc71; font-size: 0.75rem; padding: 12px 5px;">LIBERAR / CRIAR SALA</button>
+                <button id="btn-adm-bloquear" style="background-color: #e74c3c; font-size: 0.75rem; padding: 12px 5px;">BLOQUEAR SALA</button>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                <button id="admin-clear-all-btn" style="background-color: #8e44ad; font-size: 0.85rem; padding: 12px 5px;">RESETAR ESSA SALA</button>
-                <button id="admin-clear-chat-btn" style="background-color: #d35400; font-size: 0.85rem; padding: 12px 5px;">LIMPAR CHAT DA SALA</button>
+                <button id="btn-adm-travar-chat" style="background-color: #c0392b; font-size: 0.75rem; padding: 12px 5px;">TRAVAR / DESTRAVAR CHAT</button>
+                <button id="btn-adm-expulsar" style="background-color: #f39c12; font-size: 0.75rem; padding: 12px 5px;">EXPULSAR JOGADORES</button>
+                
+                <button id="btn-adm-limpar-chat" style="background-color: #d35400; font-size: 0.75rem; padding: 12px 5px;">LIMPAR MENSAGENS</button>
+                <button id="btn-adm-reset" style="background-color: #8e44ad; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
             </div>
 
             <div class="admin-dashboard-box">
@@ -660,6 +660,7 @@
     </div>
 </div>
 
+<!-- MODAL GENÉRICO DE AVISO -->
 <div id="custom-alert-modal" class="modal">
     <div class="modal-content" style="max-width: 420px; text-align: center;">
         <h2 id="custom-alert-title" class="custom-alert-title">Aviso do Sistema</h2>
@@ -668,6 +669,7 @@
     </div>
 </div>
 
+<!-- MODAL DE CONFIRMAÇÃO DE SEGURANÇA -->
 <div id="custom-confirm-modal" class="modal">
     <div class="modal-content" style="max-width: 440px; text-align: center;">
         <h2 id="custom-confirm-title" style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
@@ -716,6 +718,7 @@
         <button id="close-rank-btn" style="background-color: #555;">Fechar Janela</button>
     </div>
 </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, get, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -749,6 +752,7 @@
     let gameTimerInterval = null;
     let isChatMutedLocally = false;
 
+    // SISTEMA DE ALERTAS
     function exibirAlertaDoSistema(titulo, texto) {
         document.getElementById('custom-alert-title').innerText = titulo;
         document.getElementById('custom-alert-text').innerHTML = texto;
@@ -777,6 +781,7 @@
         acaoConfirmadaCallback = null;
     });
 
+    // SISTEMA DE SOM
     function reproduzirSomDoJogo(tipo) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -792,49 +797,33 @@
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(261.63, agora); 
                 osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); 
-                gain.gain.setValueAtTime(0.15, agora);
-                gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
-                osc.start(agora);
-                osc.stop(agora + 0.3);
+                gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora); osc.stop(agora + 0.3);
             } else if (tipo === 'move') {
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(400, agora);
-                gain.gain.setValueAtTime(0.1, agora);
-                gain.gain.linearRampToValueAtTime(0.01, agora + 0.08);
-                osc.start(agora);
-                osc.stop(agora + 0.08);
+                gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.08);
+                osc.start(agora); osc.stop(agora + 0.08);
             } else if (tipo === 'capture') {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(180, agora);
-                osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
-                gain.gain.setValueAtTime(0.2, agora);
-                gain.gain.linearRampToValueAtTime(0.01, agora + 0.15);
-                osc.start(agora);
-                osc.stop(agora + 0.15);
+                osc.frequency.setValueAtTime(180, agora); osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
+                gain.gain.setValueAtTime(0.2, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.15);
+                osc.start(agora); osc.stop(agora + 0.15);
             } else if (tipo === 'king') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, agora); 
-                osc.frequency.setValueAtTime(880.00, agora + 0.1); 
-                gain.gain.setValueAtTime(0.15, agora);
-                gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
-                osc.start(agora);
-                osc.stop(agora + 0.3);
+                osc.frequency.setValueAtTime(587.33, agora); osc.frequency.setValueAtTime(880.00, agora + 0.1); 
+                gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora); osc.stop(agora + 0.3);
             } else if (tipo === 'chat') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, agora);
-                osc.frequency.exponentialRampToValueAtTime(800, agora + 0.08);
-                gain.gain.setValueAtTime(0.08, agora);
-                gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
-                osc.start(agora);
-                osc.stop(agora + 0.08);
+                osc.frequency.setValueAtTime(600, agora); osc.frequency.exponentialRampToValueAtTime(800, agora + 0.08);
+                gain.gain.setValueAtTime(0.08, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
+                osc.start(agora); osc.stop(agora + 0.08);
             } else if (tipo === 'spectator') {
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(330, agora);
-                osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
-                gain.gain.setValueAtTime(0.05, agora);
-                gain.gain.linearRampToValueAtTime(0.001, agora + 0.15);
-                osc.start(agora);
-                osc.stop(agora + 0.15);
+                osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
+                gain.gain.setValueAtTime(0.05, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.15);
+                osc.start(agora); osc.stop(agora + 0.15);
             }
         } catch (e) { console.log("Áudio bloqueado", e); }
     }
@@ -866,13 +855,8 @@
     const chatInputWrapper = document.getElementById('chat-input-wrapper');
 
     const adminPanel = document.getElementById('admin-panel');
-    const adminClearAllBtn = document.getElementById('admin-clear-all-btn');
-    const adminClearChatBtn = document.getElementById('admin-clear-chat-btn');
     const adminRoomsDashboardList = document.getElementById('admin-rooms-dashboard-list');
-    const adminExitBtn = document.getElementById('admin-exit-btn');
     const adminTargetRoomInput = document.getElementById('admin-target-room');
-    const adminNewRoomInput = document.getElementById('admin-new-room-input');
-    const adminCreateRoomBtn = document.getElementById('admin-create-room-btn');
 
     const rulesModal = document.getElementById('rules-modal');
     const rulesBtnLobby = document.getElementById('rules-btn-lobby');
@@ -1071,6 +1055,11 @@
     });
 
     function pushChatMessage() {
+        if (currentGameState && currentGameState.chatBlocked) {
+            exibirAlertaDoSistema("Chat Trancado", "O Administrador desativou o envio de mensagens nesta sala.");
+            return;
+        }
+
         const text = chatInputField.value.trim();
         if (!text) return;
         const author = nameInput.value.trim() || "Anônimo";
@@ -1120,87 +1109,175 @@
         return false;
     }
 
-    // 📋 LISTAGEM REVISADA COM BOTÕES DE BLOQUEIO/DESBLOQUEIO
+    // 📋 SISTEMA DE LISTAGEM ROBUSTO - CONSERTADO PARA NÃO TRAVAR
     function ativarPainelMonitoramentoRealtime() {
         const todasSalasRef = ref(db, 'rooms');
         onValue(todasSalasRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
-                return;
-            }
-            
-            const roomsData = snapshot.val();
-            adminRoomsDashboardList.innerHTML = "";
-            let countDeSalasValidas = 0;
-            
-            Object.keys(roomsData).forEach(idSala => {
-                if (idSala === "00") return; // Oculta o terminal em si
-                countDeSalasValidas++;
-
-                const sala = roomsData[idSala];
-                const statusTxt = sala.isAuthorized ? "LIBERADA" : "BLOQUEADA";
-                let p1 = sala.p1Name || "(Vazio)";
-                let p2 = sala.p2Name || "(Vazio)";
+            try {
+                if (!snapshot.exists()) {
+                    adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
+                    return;
+                }
                 
-                const row = document.createElement('div');
-                row.className = 'admin-room-row';
-                row.style.borderLeftColor = sala.isAuthorized ? '#2ecc71' : '#e74c3c';
-                row.innerHTML = `
-                    <div class="admin-room-meta">
-                        <strong style="font-size: 1rem;">CÓDIGO: ${idSala.toUpperCase()}</strong>
-                        <button class="btn-toggle-room" data-room="${idSala}" data-status="${sala.isAuthorized}" style="width: auto; padding: 4px 10px; font-size: 0.75rem; margin: 0; background-color: ${sala.isAuthorized ? '#e74c3c' : '#2ecc71'}; border-radius: 4px;">
-                            ${sala.isAuthorized ? 'BLOQUEAR' : 'LIBERAR'}
-                        </button>
-                    </div>
-                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">Ocupantes: ${p1} vs ${p2}</div>
-                    <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 3px;">Status de Acesso: <span style="color: ${sala.isAuthorized ? '#2ecc71':'#e74c3c'};">${statusTxt}</span></div>
-                `;
-                adminRoomsDashboardList.appendChild(row);
-            });
+                const roomsData = snapshot.val();
+                adminRoomsDashboardList.innerHTML = "";
+                let countDeSalasValidas = 0;
+                
+                for (const idSala in roomsData) {
+                    if (idSala === "00") continue; 
+                    countDeSalasValidas++;
 
-            if (countDeSalasValidas === 0) {
-                adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
+                    const sala = roomsData[idSala];
+                    const isAuth = sala.isAuthorized !== false; // Padrão é true
+                    const statusTxt = isAuth ? "LIBERADA" : "BLOQUEADA";
+                    const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
+                    
+                    let p1 = sala.p1Name || "(Vazio)";
+                    let p2 = sala.p2Name || "(Vazio)";
+                    
+                    const row = document.createElement('div');
+                    row.className = 'admin-room-row';
+                    row.style.borderLeftColor = isAuth ? '#2ecc71' : '#e74c3c';
+                    
+                    const divHeader = document.createElement('div');
+                    divHeader.className = 'admin-room-meta';
+                    divHeader.innerHTML = `<strong style="font-size: 1rem;">CÓDIGO: ${idSala.toUpperCase()}</strong>`;
+                    
+                    // Botão rápido direto na lista
+                    const btnToggle = document.createElement('button');
+                    btnToggle.style.cssText = `width: auto; padding: 4px 10px; font-size: 0.75rem; margin: 0; background-color: ${isAuth ? '#e74c3c' : '#2ecc71'}; border-radius: 4px;`;
+                    btnToggle.innerText = isAuth ? 'BLOQUEAR' : 'LIBERAR';
+                    btnToggle.onclick = () => {
+                        update(ref(db, 'rooms/' + idSala), { isAuthorized: !isAuth });
+                    };
+                    
+                    divHeader.appendChild(btnToggle);
+                    row.appendChild(divHeader);
+                    
+                    const divDetalhes = document.createElement('div');
+                    divDetalhes.style.cssText = "font-size: 0.8rem; color: #aaa; margin-top: 5px;";
+                    divDetalhes.innerHTML = `Ocupantes: ${p1} vs ${p2} ${chatTrancado}<br><span style="color: ${isAuth ? '#2ecc71':'#e74c3c'}; font-size: 0.75rem;">Status: ${statusTxt}</span>`;
+                    
+                    row.appendChild(divDetalhes);
+                    adminRoomsDashboardList.appendChild(row);
+                }
+
+                if (countDeSalasValidas === 0) {
+                    adminRoomsDashboardList.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
+                }
+            } catch(e) {
+                console.error("Erro renderizando dashboard:", e);
+                adminRoomsDashboardList.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
             }
-
-            // Ativando os botões internos da lista
-            document.querySelectorAll('.btn-toggle-room').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const roomCode = e.target.getAttribute('data-room');
-                    const isAuth = e.target.getAttribute('data-status') === 'true';
-                    await update(ref(db, 'rooms/' + roomCode), { isAuthorized: !isAuth });
-                });
-            });
         });
     }
 
-    // ✨ NOVO: CRIAR SALA DE DENTRO DO TERMINAL
-    adminCreateRoomBtn.addEventListener('click', async () => {
+    // 🔥 6 BOTÕES DE CONTROLE SUPREMO DO ADMINISTRADOR 🔥
+
+    document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (playerRole !== "admin") return;
-        const novaSala = adminNewRoomInput.value.trim().toLowerCase();
-        if (!novaSala) return exibirAlertaDoSistema("Aviso", "Digite o código da nova sala para criar/liberar.");
-        if (novaSala === "00") return exibirAlertaDoSistema("Aviso", "Este código é reservado pelo sistema.");
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "Código restrito.");
+
+        const refSala = ref(db, 'rooms/' + salaAlvo);
+        const snap = await get(refSala);
         
-        await set(ref(db, 'rooms/' + novaSala), {
-            id: novaSala,
-            board: getInitialBoard(),
-            turn: 1,
-            status: "waiting",
-            p1Id: "", p1Name: "", p2Id: "", p2Name: "",
-            startTime: 0, chat: null,
-            isAuthorized: true,
-            lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-        });
-        
-        exibirAlertaDoSistema("Sala Liberada ✓", `A sala <strong>${novaSala.toUpperCase()}</strong> foi criada com sucesso e já está liberada!`);
-        adminNewRoomInput.value = "";
+        if (!snap.exists()) {
+            await set(refSala, {
+                id: salaAlvo, board: getInitialBoard(), turn: 1, status: "waiting",
+                p1Id: "", p1Name: "", p2Id: "", p2Name: "", startTime: 0, chat: null,
+                isAuthorized: true, chatBlocked: false,
+                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+            });
+            exibirAlertaDoSistema("Sucesso", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi criada e já está liberada!`);
+        } else {
+            await update(refSala, { isAuthorized: true });
+            exibirAlertaDoSistema("Sucesso", `Acesso liberado para a sala <strong>${salaAlvo.toUpperCase()}</strong>.`);
+        }
+        adminTargetRoomInput.value = "";
     });
+
+    document.getElementById('btn-adm-bloquear').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        await update(ref(db, 'rooms/' + salaAlvo), { isAuthorized: false });
+        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Ninguém novo consegue entrar.`);
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('btn-adm-travar-chat').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        
+        const snap = await get(ref(db, 'rooms/' + salaAlvo + '/chatBlocked'));
+        const estadoAtual = snap.val() || false;
+        
+        await update(ref(db, 'rooms/' + salaAlvo), { chatBlocked: !estadoAtual });
+        
+        if (!estadoAtual) {
+            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O Administrador bloqueou o chat temporariamente.", timestamp: Date.now() });
+            exibirAlertaDoSistema("Chat Travado", `O chat da sala ${salaAlvo.toUpperCase()} foi desativado.`);
+        } else {
+            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O chat foi liberado pelo Administrador.", timestamp: Date.now() });
+            exibirAlertaDoSistema("Chat Liberado", `O chat da sala ${salaAlvo.toUpperCase()} está ativo novamente.`);
+        }
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('btn-adm-expulsar').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        
+        exibirConfirmacao("Expulsar Todos", `Deseja remover todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> agora?`, async () => {
+            await update(ref(db, 'rooms/' + salaAlvo), { p1Id: "", p1Name: "", p2Id: "", p2Name: "", status: "waiting" });
+            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O Administrador expulsou os jogadores da partida.", timestamp: Date.now() });
+            exibirAlertaDoSistema("Jogadores Expulsos", `A sala ${salaAlvo.toUpperCase()} agora está vazia.`);
+            adminTargetRoomInput.value = "";
+        });
+    });
+
+    document.getElementById('btn-adm-limpar-chat').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        
+        exibirConfirmacao("Limpar Chat", `Apagar todas as mensagens da sala <strong>${salaAlvo.toUpperCase()}</strong>?`, async () => {
+            await set(ref(db, `rooms/${salaAlvo}/chat`), null);
+            await push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O histórico do chat foi limpo pelo administrador.", timestamp: Date.now() });
+            exibirAlertaDoSistema("Chat Limpo", `O chat da sala ${salaAlvo.toUpperCase()} foi zerado.`);
+            adminTargetRoomInput.value = "";
+        });
+    });
+
+    document.getElementById('btn-adm-reset').addEventListener('click', async () => {
+        if (playerRole !== "admin") return;
+        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        
+        exibirConfirmacao("Resetar Tabuleiro", `Zerar a partida na sala <strong>${salaAlvo.toUpperCase()}</strong>?`, async () => {
+            await update(ref(db, 'rooms/' + salaAlvo), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+            push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O Administrador reiniciou a partida.", timestamp: Date.now() });
+            exibirAlertaDoSistema("Sucesso", `O tabuleiro da sala ${salaAlvo.toUpperCase()} foi resetado.`);
+            adminTargetRoomInput.value = "";
+        });
+    });
+
+    document.getElementById('admin-exit-btn').addEventListener('click', () => {
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false;
+        adminPanel.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
+    });
+
+    // -------------------------------------------------------------------------------------------------------------------------------- //
 
     async function joinRoom(roomName, playerName, forceSpectator) {
         const roomRef = ref(db, 'rooms/' + roomName);
         const snapshot = await get(roomRef);
         let roomData = snapshot.val();
         
-        // ✨ CORREÇÃO: O Administrador agora passa livremente por bloqueios
         const isIsiquel = (playerName === "Isiquel_Admin" || playerName === "Isiquel_admin");
         const isTerminal = (roomName === "00");
         const isAdminMode = isIsiquel && isTerminal;
@@ -1211,7 +1288,7 @@
                 return;
             }
             
-            // Se for o Isiquel que quer entrar em uma sala vazia/nova, o sistema CRIA pra ele na hora!
+            // Se o Admin entrar com um código novo que não seja 00, o sistema já cria direto.
             roomData = {
                 id: roomName,
                 board: getInitialBoard(),
@@ -1219,11 +1296,8 @@
                 status: isAdminMode ? "admin_dashboard" : "waiting",
                 p1Id: isAdminMode ? "" : playerId,
                 p1Name: isAdminMode ? "Central Suprema" : playerName,
-                p2Id: null,
-                p2Name: "",
-                startTime: 0,
-                chat: null,
-                isAuthorized: true,
+                p2Id: null, p2Name: "", startTime: 0, chat: null,
+                isAuthorized: true, chatBlocked: false,
                 lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             };
             await set(roomRef, roomData);
@@ -1343,57 +1417,6 @@
             else { chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>`; }
         });
     }
-
-    adminClearAllBtn.addEventListener('click', () => {
-        if (playerRole !== "admin") return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite o código da sala que deseja resetar no campo acima.");
-        
-        exibirConfirmacao(
-            "Resetar Sala",
-            `Deseja forçar o <strong>RESET TOTAL</strong> da sala <strong>${salaAlvo.toUpperCase()}</strong>?<br><small style="color: #aaa;">Isso redefinirá o tabuleiro e desconectará os usuários dela.</small>`,
-            async () => {
-                await set(ref(db, 'rooms/' + salaAlvo), {
-                    id: salaAlvo,
-                    board: getInitialBoard(),
-                    turn: 1,
-                    status: "waiting",
-                    p1Id: "",
-                    p1Name: "",
-                    p2Id: "",
-                    p2Name: "",
-                    startTime: 0,
-                    chat: null,
-                    isAuthorized: true,
-                    lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-                });
-                exibirAlertaDoSistema("Sucesso ✓", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi redefinida para o estado original.`);
-                adminTargetRoomInput.value = "";
-            }
-        );
-    });
-
-    adminClearChatBtn.addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite o código da sala para limpar o chat.");
-        
-        exibirConfirmacao(
-            "Limpar Chat",
-            `Deseja mesmo limpar e apagar o chat da sala <strong>${salaAlvo.toUpperCase()}</strong>?`,
-            async () => {
-                await set(ref(db, `rooms/${salaAlvo}/chat`), null);
-                await push(ref(db, `rooms/${salaAlvo}/chat`), { author: "⚙️ Sistema", text: "O histórico do chat foi limpo pelo administrador por segurança.", timestamp: Date.now() });
-                exibirAlertaDoSistema("Chat Moderado", `O chat da sala ${salaAlvo.toUpperCase()} foi limpo com sucesso.`);
-                adminTargetRoomInput.value = "";
-            }
-        );
-    });
-
-    adminExitBtn.addEventListener('click', () => {
-        roomId = ""; playerRole = "spectator"; isPracticeMode = false;
-        adminPanel.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
-    });
 
     function setupPracticeGame(playerName) {
         isPracticeMode = true;
