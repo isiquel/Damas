@@ -2211,9 +2211,9 @@
         timestampInicioTurnoAtual = Date.now();
         jaAlertouTurnoDemorado = false;
 
-        let robotLabel = "Robô Desafio";
+        let robotLabel = "Robô Estrategista";
         if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
-        if (practiceDifficulty === "dificil") robotLabel = "Robô Mestre 👑";
+        if (practiceDifficulty === "dificil") robotLabel = "Mestre das Damas 👑";
 
         currentGameState = { board: getInitialBoard(), turn: 1, status: "playing", p1Name: playerName, p2Name: robotLabel, startTime: Date.now() };
         displayRoom.innerText = `TREINO (${practiceDifficulty.toUpperCase()})`;
@@ -2431,35 +2431,302 @@
         }
     }
 
-    function avaliarCenarioPosicional(board, m) {
-        let pontuacao = 0;
-        let simBoard = board.map(row => row.slice());
-        let peca = simBoard[m.fromR][m.fromC];
-        if (m.capture) simBoard[m.capture.r][m.capture.c] = 0;
-        simBoard[m.toR][m.toC] = (peca === 3 && m.toR === 7) ? 4 : peca;
-        simBoard[m.fromR][m.fromC] = 0;
+    function clonarTabuleiro(board) {
+        return board.map(row => row.slice());
+    }
 
-        if (m.capture) pontuacao += (board[m.capture.r][m.capture.c] === 2) ? 350 : 200;
-        if (peca === 3 && m.toR === 7) pontuacao += 150;
-        pontuacao += (m.toC >= 2 && m.toC <= 5) ? 25 : 10;
+    function donoDaPecaEngine(piece) {
+        if (piece === 1 || piece === 2) return 1;
+        if (piece === 3 || piece === 4) return 2;
+        return 0;
+    }
 
-        const dirsOponente = [[-1, 1], [-1, -1]];
-        dirsOponente.forEach(([dr, dc]) => {
-            let adjR = m.toR + dr, adjC = m.toC + dc;
-            if (adjR >= 0 && adjR < 8 && adjC >= 0 && adjC < 8) {
-                if (simBoard[adjR][adjC] === 1 || simBoard[adjR][adjC] === 2) {
-                    let er = m.toR - dr, ec = m.toC - dc;
-                    if (er >= 0 && er < 8 && ec >= 0 && ec < 8 && simBoard[er][ec] === 0) pontuacao -= 220;
+    function computeValidMovesForPieceEngine(r, c, board, somenteCapturas = false) {
+        const piece = board[r][c];
+        let moves = [];
+        if (piece === 0) return moves;
+
+        const isKing = piece === 2 || piece === 4;
+        const owner = donoDaPecaEngine(piece);
+        const isP1 = owner === 1;
+
+        if (isKing) {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                let nr = r + dr, nc = c + dc;
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) {
+                        if (!somenteCapturas) moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    } else {
+                        if (donoDaPecaEngine(board[nr][nc]) !== owner) {
+                            let rr = nr + dr, cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                        break;
+                    }
+                    nr += dr;
+                    nc += dc;
+                }
+            });
+        } else {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) return;
+
+                if (board[nr][nc] === 0) {
+                    const isForward = isP1 ? dr === -1 : dr === 1;
+                    if (!somenteCapturas && isForward) {
+                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    }
+                } else if (donoDaPecaEngine(board[nr][nc]) !== owner) {
+                    const rr = nr + dr, cc = nc + dc;
+                    if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                        moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                    }
+                }
+            });
+        }
+
+        if (somenteCapturas) return moves.filter(m => m.capture !== null);
+        const captures = moves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : moves;
+    }
+
+    function computeAllValidMovesEngine(turn, board, pecaObrigatoria = null) {
+        let allMoves = [];
+
+        if (pecaObrigatoria) {
+            return computeValidMovesForPieceEngine(pecaObrigatoria.r, pecaObrigatoria.c, board, true);
+        }
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (donoDaPecaEngine(board[r][c]) === turn) {
+                    allMoves = allMoves.concat(computeValidMovesForPieceEngine(r, c, board, false));
                 }
             }
+        }
+
+        const captures = allMoves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : allMoves;
+    }
+
+    function aplicarMovimentoEngine(board, move) {
+        const nextBoard = clonarTabuleiro(board);
+        let piece = nextBoard[move.fromR][move.fromC];
+        let capturedPiece = 0;
+
+        if (move.capture) {
+            capturedPiece = nextBoard[move.capture.r][move.capture.c];
+            nextBoard[move.capture.r][move.capture.c] = 0;
+        }
+
+        let promoted = false;
+        if (piece === 1 && move.toR === 0) { piece = 2; promoted = true; }
+        if (piece === 3 && move.toR === 7) { piece = 4; promoted = true; }
+
+        nextBoard[move.toR][move.toC] = piece;
+        nextBoard[move.fromR][move.fromC] = 0;
+
+        return { board: nextBoard, piece, capturedPiece, promoted, toR: move.toR, toC: move.toC };
+    }
+
+    function contarPecasPorLadoEngine(board) {
+        let p1 = 0, p2 = 0, p1Kings = 0, p2Kings = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p === 1) p1++;
+                if (p === 2) { p1++; p1Kings++; }
+                if (p === 3) p2++;
+                if (p === 4) { p2++; p2Kings++; }
+            }
+        }
+        return { p1, p2, p1Kings, p2Kings };
+    }
+
+    function avaliarTabuleiroParaRobo(board) {
+        const counts = contarPecasPorLadoEngine(board);
+        if (counts.p2 === 0) return -100000;
+        if (counts.p1 === 0) return 100000;
+
+        let score = 0;
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p === 0) continue;
+
+                const owner = donoDaPecaEngine(p);
+                const isRobot = owner === 2;
+                const sign = isRobot ? 1 : -1;
+                const isKing = p === 2 || p === 4;
+
+                score += sign * (isKing ? 320 : 115);
+
+                // Controle do centro: peças no centro têm mais mobilidade e menos chance de ficarem presas.
+                if (c >= 2 && c <= 5 && r >= 2 && r <= 5) score += sign * 18;
+
+                // Avanço: o robô valoriza chegar perto de virar dama; o jogador também é considerado.
+                if (!isKing) {
+                    if (isRobot) score += r * 13;       // robô desce rumo à linha 7
+                    else score -= (7 - r) * 13;        // jogador sobe rumo à linha 0
+                }
+
+                // Proteção lateral e fundo: evita entregar peças soltas.
+                if (c === 0 || c === 7) score += sign * 10;
+                if (isRobot && r === 0) score += 8;
+                if (!isRobot && r === 7) score -= 8;
+            }
+        }
+
+        const robotMoves = computeAllValidMovesEngine(2, board).length;
+        const humanMoves = computeAllValidMovesEngine(1, board).length;
+        score += (robotMoves - humanMoves) * 8;
+
+        // Capturas disponíveis no próximo lance valem bastante.
+        score += computeAllValidMovesEngine(2, board).filter(m => m.capture).length * 45;
+        score -= computeAllValidMovesEngine(1, board).filter(m => m.capture).length * 65;
+
+        return score;
+    }
+
+    function ordenarMovimentosParaBusca(board, moves, turn) {
+        return moves.slice().sort((a, b) => {
+            const pa = pontuarMovimentoRapido(board, a, turn);
+            const pb = pontuarMovimentoRapido(board, b, turn);
+            return pb - pa;
         });
-        return pontuacao;
+    }
+
+    function pontuarMovimentoRapido(board, move, turn) {
+        const piece = board[move.fromR][move.fromC];
+        let s = 0;
+        if (move.capture) {
+            const captured = board[move.capture.r][move.capture.c];
+            s += (captured === 2 || captured === 4) ? 600 : 380;
+        }
+        if ((piece === 3 && move.toR === 7) || (piece === 1 && move.toR === 0)) s += 500;
+        if ((piece === 4 || piece === 2)) s += 40;
+        if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) s += 25;
+        return turn === 2 ? s : -s;
+    }
+
+    function minimaxRobo(board, depth, turn, alpha, beta, pecaObrigatoria = null) {
+        const counts = contarPecasPorLadoEngine(board);
+        if (depth <= 0 || counts.p1 === 0 || counts.p2 === 0) {
+            return avaliarTabuleiroParaRobo(board);
+        }
+
+        let moves = computeAllValidMovesEngine(turn, board, pecaObrigatoria);
+        if (moves.length === 0) {
+            return turn === 2 ? -90000 - depth : 90000 + depth;
+        }
+
+        // Evita travamento em celulares quando há muitas damas com muitas casas disponíveis.
+        moves = ordenarMovimentosParaBusca(board, moves, turn).slice(0, 16);
+
+        if (turn === 2) {
+            let best = -Infinity;
+            for (const move of moves) {
+                const applied = aplicarMovimentoEngine(board, move);
+                let nextTurn = 1;
+                let nextForced = null;
+
+                if (move.capture) {
+                    const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                    if (novasCapturas.length > 0) {
+                        nextTurn = 2;
+                        nextForced = { r: applied.toR, c: applied.toC };
+                    }
+                }
+
+                const value = minimaxRobo(applied.board, depth - 1, nextTurn, alpha, beta, nextForced);
+                best = Math.max(best, value);
+                alpha = Math.max(alpha, value);
+                if (beta <= alpha) break;
+            }
+            return best;
+        } else {
+            let best = Infinity;
+            for (const move of moves) {
+                const applied = aplicarMovimentoEngine(board, move);
+                let nextTurn = 2;
+                let nextForced = null;
+
+                if (move.capture) {
+                    const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                    if (novasCapturas.length > 0) {
+                        nextTurn = 1;
+                        nextForced = { r: applied.toR, c: applied.toC };
+                    }
+                }
+
+                const value = minimaxRobo(applied.board, depth - 1, nextTurn, alpha, beta, nextForced);
+                best = Math.min(best, value);
+                beta = Math.min(beta, value);
+                if (beta <= alpha) break;
+            }
+            return best;
+        }
+    }
+
+    function escolherMovimentoDoRobo(board, moves) {
+        if (practiceDifficulty === "facil") {
+            // Fácil ainda erra, mas não ignora capturas obrigatórias.
+            const capturas = moves.filter(m => m.capture !== null);
+            if (capturas.length > 0 && Math.random() < 0.75) {
+                return capturas[Math.floor(Math.random() * capturas.length)];
+            }
+            return moves[Math.floor(Math.random() * moves.length)];
+        }
+
+        const depth = practiceDifficulty === "dificil" ? 5 : 3;
+        const candidatos = ordenarMovimentosParaBusca(board, moves, 2).slice(0, practiceDifficulty === "dificil" ? 16 : 10);
+        let melhorPeso = -Infinity;
+        let melhores = [];
+
+        candidatos.forEach(move => {
+            const applied = aplicarMovimentoEngine(board, move);
+            let nextTurn = 1;
+            let nextForced = null;
+
+            if (move.capture) {
+                const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                if (novasCapturas.length > 0) {
+                    nextTurn = 2;
+                    nextForced = { r: applied.toR, c: applied.toC };
+                }
+            }
+
+            let peso = minimaxRobo(applied.board, depth - 1, nextTurn, -Infinity, Infinity, nextForced);
+
+            // No médio, um pouco de humanidade: ele pode escolher entre boas jogadas, não sempre a perfeita.
+            if (practiceDifficulty === "medio") peso += Math.random() * 35;
+
+            if (peso > melhorPeso) {
+                melhorPeso = peso;
+                melhores = [move];
+            } else if (Math.abs(peso - melhorPeso) < 0.001) {
+                melhores.push(move);
+            }
+        });
+
+        return melhores[Math.floor(Math.random() * melhores.length)] || moves[0];
+    }
+
+    function avaliarCenarioPosicional(board, m) {
+        const applied = aplicarMovimentoEngine(board, m);
+        return avaliarTabuleiroParaRobo(applied.board);
     }
 
     function executeRobotTurn() {
         if (!isPracticeMode || currentGameState.status !== "playing") return;
         const board = currentGameState.board;
-        const robotMoves = computeAllValidMoves(2, board);
+        const robotMoves = computeAllValidMovesEngine(2, board, lockPieceForMultiCapture);
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
@@ -2475,39 +2742,43 @@
             return;
         }
 
-        let selectedMove = null;
-        if (practiceDifficulty === "facil") { selectedMove = robotMoves[Math.floor(Math.random() * robotMoves.length)]; } 
-        else if (practiceDifficulty === "medio") {
-            const captures = robotMoves.filter(m => m.capture !== null);
-            if (captures.length > 0) { selectedMove = captures[Math.floor(Math.random() * captures.length)]; } 
-            else {
-                let seguras = robotMoves.filter(m => avaliarCenarioPosicional(board, m) > -100);
-                selectedMove = seguras.length > 0 ? seguras[Math.floor(Math.random() * seguras.length)] : robotMoves[Math.floor(Math.random() * robotMoves.length)];
-            }
-        } else {
-            let melhorPeso = -Infinity, melhores = [];
-            robotMoves.forEach(m => {
-                let peso = avaliarCenarioPosicional(board, m);
-                if (peso > melhorPeso) { melhorPeso = peso; melhores = [m]; } 
-                else if (peso === melhorPeso) { melhores.push(m); }
-            });
-            selectedMove = melhores[Math.floor(Math.random() * melhores.length)];
-        }
+        const nomeRobo = currentGameState.p2Name || "Robô";
+        turnIndicator.innerText = `${nomeRobo} analisando a melhor jogada...`;
+        turnIndicator.style.color = "#f1c40f";
 
-        let nextBoard = board.map(row => row.slice());
-        let piece = nextBoard[selectedMove.fromR][selectedMove.fromC];
-        if (selectedMove.capture) { nextBoard[selectedMove.capture.r][selectedMove.capture.c] = 0; } 
-        if (piece === 3 && selectedMove.toR === 7) piece = 4;
-        nextBoard[selectedMove.toR][selectedMove.toC] = piece;
-        nextBoard[selectedMove.fromR][selectedMove.fromC] = 0;
+        const selectedMove = escolherMovimentoDoRobo(board, robotMoves);
+        const applied = aplicarMovimentoEngine(board, selectedMove);
+        let nextTurn = 1;
+
+        if (selectedMove.capture) reproduzirSomDoJogo('capture');
+        else reproduzirSomDoJogo((applied.piece === 2 || applied.piece === 4) ? 'king' : 'move');
+
+        lockPieceForMultiCapture = null;
+        selectedPiece = null;
+        validMoves = [];
+
+        if (selectedMove.capture) {
+            const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+            if (novasCapturas.length > 0) {
+                nextTurn = 2;
+                lockPieceForMultiCapture = { r: applied.toR, c: applied.toC };
+            }
+        }
 
         timestampInicioTurnoAtual = Date.now();
         jaAlertouTurnoDemorado = false;
         turnIndicator.classList.remove('tempo-estourado');
 
-        currentGameState.board = nextBoard; currentGameState.turn = 1;
-        renderGameStatus(currentGameState); generateBoardUI(nextBoard);
-        checkEndGameConditions(nextBoard);
+        currentGameState.board = applied.board;
+        currentGameState.turn = nextTurn;
+        renderGameStatus(currentGameState);
+        generateBoardUI(applied.board);
+
+        if (checkEndGameConditions(applied.board)) return;
+
+        if (nextTurn === 2) {
+            setTimeout(executeRobotTurn, 550);
+        }
     }
 
     function executarAlertaVisualDeVitoria(gameDataOrBoard) {
