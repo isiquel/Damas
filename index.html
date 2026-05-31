@@ -685,6 +685,46 @@
             border: 1px solid #334155;
         }
 
+        .practice-ranking-panel {
+            background: linear-gradient(135deg, #092f2c, #0f172a);
+            border: 1px solid rgba(46, 204, 113, 0.35);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 18px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.22);
+        }
+        .practice-ranking-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #2ecc71;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .practice-ranking-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.86rem;
+            color: #e2e8f0;
+        }
+        .practice-ranking-row:last-child { border-bottom: none; }
+        .practice-ranking-score {
+            color: #f1c40f;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .btn-practice-ranking {
+            background-color: #0f766e;
+            margin-top: 10px;
+            padding: 11px 14px;
+            font-size: 0.82rem;
+        }
+        .btn-practice-ranking:hover:not(:disabled) { background-color: #0d9488; }
+
 
 
         .admin-login-panel {
@@ -766,6 +806,14 @@
             <div class="call-to-arms" id="motivate-box">
                 ⚔️ Carregando convocação de batalha...
             </div>
+        </div>
+
+        <div class="practice-ranking-panel">
+            <div class="practice-ranking-title">🤖 Ranking Contra a Máquina</div>
+            <div id="practice-podium-content">
+                <div style="font-size:0.85rem; color:#aaa; padding:5px 0;">Carregando guerreiros do modo treino...</div>
+            </div>
+            <button id="practice-rank-btn-lobby" class="btn-practice-ranking" disabled>Ver Ranking do Treino</button>
         </div>
 
         <label for="name-input">Seu Nome:</label>
@@ -977,6 +1025,32 @@
             </tbody>
         </table>
         <button id="close-rank-btn" style="background-color: #555;">Fechar Janela</button>
+    </div>
+</div>
+
+
+<div id="practice-rank-modal" class="modal">
+    <div class="modal-content" style="max-width: 610px;">
+        <h2>Ranking Contra a Máquina</h2>
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Jogador</th>
+                    <th>Vitórias</th>
+                    <th>Derrotas</th>
+                    <th>Melhor nível</th>
+                    <th>Pontos</th>
+                </tr>
+            </thead>
+            <tbody id="practice-rank-table-body">
+                <tr><td colspan="6">Carregando ranking do treino...</td></tr>
+            </tbody>
+        </table>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px; line-height:1.4;">
+            Pontuação: vitória no Fácil vale 1 ponto, no Médio vale 3 pontos e no Difícil vale 6 pontos. Derrotas ficam registradas para mostrar o aproveitamento real.
+        </div>
+        <button id="close-practice-rank-btn" style="background-color: #555;">Fechar Janela</button>
     </div>
 </div>
 
@@ -1357,6 +1431,11 @@
     const rankBtnLobby = document.getElementById('rank-btn-lobby');
     const closeRankBtn = document.getElementById('close-rank-btn');
     const rankTableBody = document.getElementById('rank-table-body');
+    const practiceRankModal = document.getElementById('practice-rank-modal');
+    const practiceRankBtnLobby = document.getElementById('practice-rank-btn-lobby');
+    const closePracticeRankBtn = document.getElementById('close-practice-rank-btn');
+    const practiceRankTableBody = document.getElementById('practice-rank-table-body');
+    const practicePodiumContent = document.getElementById('practice-podium-content');
     const livePodiumContent = document.getElementById('live-podium-content');
     const motivateBox = document.getElementById('motivate-box');
     
@@ -1443,6 +1522,11 @@
     rankBtnLobby.addEventListener('click', () => { networkLeaderboard(); });
     async function networkLeaderboard() { rankModal.style.display = 'flex'; await loadLeaderboard(); }
     closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
+
+    practiceRankBtnLobby.addEventListener('click', () => { networkPracticeLeaderboard(); });
+    async function networkPracticeLeaderboard() { practiceRankModal.style.display = 'flex'; await loadPracticeLeaderboard(); }
+    closePracticeRankBtn.addEventListener('click', () => practiceRankModal.style.display = 'none');
+
     downloadBtnLobby.addEventListener('click', () => { window.location.href = 'jogo.apk'; });
 
     async function carregarPodiumLobby() {
@@ -1499,6 +1583,7 @@
         practiceBtn.disabled = false;
         rulesBtnLobby.disabled = false;
         rankBtnLobby.disabled = modoLimitado;
+        practiceRankBtnLobby.disabled = false;
         joinBtn.disabled = modoLimitado;
         spectateBtn.disabled = modoLimitado;
     }
@@ -1536,7 +1621,8 @@
                 }
             }
 
-            carregarPodiumLobby(); 
+            carregarPodiumLobby();
+            carregarPodiumTreinoLobby(); 
         } else {
             iniciarAutenticacaoAnonima();
         }
@@ -1564,6 +1650,177 @@
             }
         }
         return board;
+    }
+
+    function chaveRankingTreino(nome) {
+        const base = String(nome || "Jogador")
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9_-]/g, "_")
+            .replace(/_+/g, "_")
+            .replace(/^_+|_+$/g, "")
+            .slice(0, 30);
+        return base || "jogador";
+    }
+
+    function calcularPontosTreino(stats) {
+        const d = stats?.difficulty || {};
+        const facil = numeroSeguro(d.facil?.wins);
+        const medio = numeroSeguro(d.medio?.wins);
+        const dificil = numeroSeguro(d.dificil?.wins);
+        return facil + (medio * 3) + (dificil * 6);
+    }
+
+    function melhorNivelTreino(stats) {
+        const d = stats?.difficulty || {};
+        if (numeroSeguro(d.dificil?.wins) > 0) return "Difícil";
+        if (numeroSeguro(d.medio?.wins) > 0) return "Médio";
+        if (numeroSeguro(d.facil?.wins) > 0) return "Fácil";
+        return "—";
+    }
+
+    function ordenarRankingTreino(data) {
+        return Object.values(data || {})
+            .map(p => {
+                const wins = numeroSeguro(p.wins);
+                const losses = numeroSeguro(p.losses);
+                const games = wins + losses;
+                const pontos = numeroSeguro(p.score, calcularPontosTreino(p));
+                return {
+                    ...p,
+                    name: nomeSeguro(p.name || "Jogador"),
+                    wins,
+                    losses,
+                    games,
+                    score: pontos,
+                    bestLevel: p.bestLevel || melhorNivelTreino(p),
+                    pct: games > 0 ? Math.round((wins / games) * 100) : 0
+                };
+            })
+            .sort((a, b) => (b.score - a.score) || (b.wins - a.wins) || (a.losses - b.losses));
+    }
+
+    async function registrarResultadoTreino(jogadorGanhou) {
+        if (!isPracticeMode || hasRecordedResult) return;
+        hasRecordedResult = true;
+
+        const nomeJogador = nomeSeguro(currentGameState?.p1Name || nameInput.value || "Jogador");
+        const dificuldade = ["facil", "medio", "dificil"].includes(practiceDifficulty) ? practiceDifficulty : "medio";
+        const chave = chaveRankingTreino(nomeJogador);
+        const rankRef = ref(db, `practiceLeaderboard/${chave}`);
+
+        try {
+            await runTransaction(rankRef, (atual) => {
+                const stats = atual || {
+                    name: nomeJogador,
+                    wins: 0,
+                    losses: 0,
+                    games: 0,
+                    score: 0,
+                    bestLevel: "—",
+                    difficulty: {
+                        facil: { wins: 0, losses: 0 },
+                        medio: { wins: 0, losses: 0 },
+                        dificil: { wins: 0, losses: 0 }
+                    }
+                };
+                stats.name = nomeJogador;
+                stats.wins = numeroSeguro(stats.wins);
+                stats.losses = numeroSeguro(stats.losses);
+                stats.games = numeroSeguro(stats.games);
+                stats.difficulty = stats.difficulty || {};
+                stats.difficulty.facil = stats.difficulty.facil || { wins: 0, losses: 0 };
+                stats.difficulty.medio = stats.difficulty.medio || { wins: 0, losses: 0 };
+                stats.difficulty.dificil = stats.difficulty.dificil || { wins: 0, losses: 0 };
+                stats.difficulty[dificuldade].wins = numeroSeguro(stats.difficulty[dificuldade].wins);
+                stats.difficulty[dificuldade].losses = numeroSeguro(stats.difficulty[dificuldade].losses);
+
+                if (jogadorGanhou) {
+                    stats.wins += 1;
+                    stats.difficulty[dificuldade].wins += 1;
+                } else {
+                    stats.losses += 1;
+                    stats.difficulty[dificuldade].losses += 1;
+                }
+
+                stats.games = stats.wins + stats.losses;
+                stats.score = calcularPontosTreino(stats);
+                stats.bestLevel = melhorNivelTreino(stats);
+                stats.lastDifficulty = dificuldade;
+                stats.lastResult = jogadorGanhou ? "win" : "loss";
+                stats.updatedAt = Date.now();
+                return stats;
+            });
+        } catch (e) {
+            console.warn("Não foi possível registrar ranking do treino no Firebase:", e);
+            try {
+                const localKey = `practiceLeaderboardBackup:${chave}`;
+                const atual = JSON.parse(localStorage.getItem(localKey) || "{}");
+                atual.name = nomeJogador;
+                atual.wins = numeroSeguro(atual.wins) + (jogadorGanhou ? 1 : 0);
+                atual.losses = numeroSeguro(atual.losses) + (jogadorGanhou ? 0 : 1);
+                atual.games = atual.wins + atual.losses;
+                atual.updatedAt = Date.now();
+                localStorage.setItem(localKey, JSON.stringify(atual));
+            } catch(_) {}
+        }
+    }
+
+    async function loadPracticeLeaderboard() {
+        practiceRankTableBody.innerHTML = "<tr><td colspan='6'>Buscando ranking do treino...</td></tr>";
+        try {
+            const snapshot = await get(ref(db, 'practiceLeaderboard'));
+            const data = snapshot.val();
+            if (!data) {
+                practiceRankTableBody.innerHTML = "<tr><td colspan='6'>Nenhuma partida contra a máquina registrada ainda!</td></tr>";
+                return;
+            }
+            const sorted = ordenarRankingTreino(data);
+            limparElemento(practiceRankTableBody);
+            sorted.forEach((player, index) => {
+                const row = document.createElement('tr');
+                const pos = document.createElement('td'); pos.innerHTML = `<strong>#${index + 1}</strong>`;
+                const name = criarTexto('td', player.name);
+                const wins = criarTexto('td', player.wins); wins.style.cssText = 'color:#2ecc71; font-weight:bold;';
+                const losses = criarTexto('td', player.losses); losses.style.cssText = 'color:#e74c3c;';
+                const best = criarTexto('td', player.bestLevel);
+                const score = criarTexto('td', `${player.score} pts`); score.style.cssText = 'color:#f1c40f; font-weight:bold;';
+                row.append(pos, name, wins, losses, best, score);
+                practiceRankTableBody.appendChild(row);
+            });
+        } catch(e) {
+            console.error("Erro ao carregar ranking do treino:", e);
+            practiceRankTableBody.innerHTML = "<tr><td colspan='6'>Não foi possível carregar o ranking do treino agora.</td></tr>";
+        }
+    }
+
+    function carregarPodiumTreinoLobby() {
+        try {
+            const rankRef = ref(db, 'practiceLeaderboard');
+            onValue(rankRef, (snapshot) => {
+                const data = snapshot.val();
+                limparElemento(practicePodiumContent);
+                if (!data) {
+                    const vazio = document.createElement('div');
+                    vazio.style.cssText = 'font-size:0.85rem; color:#aaa; padding:5px 0;';
+                    vazio.innerText = 'Ainda não há vitórias contra a máquina. Seja o primeiro a vencer o robô!';
+                    practicePodiumContent.appendChild(vazio);
+                    return;
+                }
+                const sorted = ordenarRankingTreino(data).slice(0, 3);
+                const medalhas = ["🥇", "🥈", "🥉"];
+                sorted.forEach((player, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'practice-ranking-row';
+                    const left = criarTexto('div', `${medalhas[idx]} ${player.name} • ${player.bestLevel}`);
+                    const right = criarTexto('div', `${player.score} pts`, 'practice-ranking-score');
+                    row.append(left, right);
+                    practicePodiumContent.appendChild(row);
+                });
+            });
+        } catch(e) {
+            console.warn("Erro ao carregar pódio do treino:", e);
+        }
     }
 
     async function loadLeaderboard() {
@@ -2815,7 +3072,7 @@
         const voceGanhou = (winnerRole === "p1" && souJogadorP1) || (winnerRole === "p2" && souJogadorP2);
         const vocePerdeu = (souJogadorP1 || souJogadorP2) && !voceGanhou;
         const textoRanking = isPracticeMode
-            ? "Essa foi uma vitória no modo treino. Continue praticando para ficar ainda mais forte no online."
+            ? "Essa partida foi registrada no Ranking Contra a Máquina. Continue somando pontos e tente vencer no nível Difícil."
             : "Sua vitória entra para a caminhada no ranking global dos campeões.";
 
         if (playerRole === "spectator") {
@@ -2873,6 +3130,7 @@
             currentGameState.finishedAt = Date.now();
             if (gameTimerInterval) clearInterval(gameTimerInterval);
             if (isPracticeMode) {
+                registrarResultadoTreino(p1Venceu);
                 if (!alertaFimPartidaMostrado) {
                     alertaFimPartidaMostrado = true;
                     executarAlertaVisualDeVitoria(currentGameState);
@@ -2891,6 +3149,7 @@
             currentGameState.finishedAt = Date.now();
             if (gameTimerInterval) clearInterval(gameTimerInterval);
             if (isPracticeMode) {
+                registrarResultadoTreino(p1Venceu);
                 if (!alertaFimPartidaMostrado) {
                     alertaFimPartidaMostrado = true;
                     executarAlertaVisualDeVitoria(currentGameState);
@@ -2977,6 +3236,12 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
     "adminLogs": {
       ".read": "root.child('admins').child(auth.uid).val() === true",
       ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+    "practiceLeaderboard": {
+      ".read": true,
+      "$playerKey": {
+        ".write": "auth != null"
+      }
     },
     "leaderboard": {
       ".read": "auth != null",
