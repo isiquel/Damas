@@ -685,6 +685,52 @@
             border: 1px solid #334155;
         }
 
+
+
+        .admin-login-panel {
+            background: linear-gradient(135deg, #150f2b, #1e1b4b);
+            border: 1px solid rgba(155, 89, 182, 0.55);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 18px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        }
+        .admin-login-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #c084fc;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .admin-login-desc {
+            font-size: 0.78rem;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            line-height: 1.35;
+        }
+        .admin-login-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        .admin-login-panel input {
+            margin: 0;
+            text-align: left;
+            background-color: #020617;
+            border: 1px solid #3b2f64;
+        }
+        .btn-admin-login { background-color: #7c3aed; margin-top: 8px; }
+        .btn-admin-login:hover:not(:disabled) { background-color: #6d28d9; }
+        .btn-admin-logout { background-color: #475569; margin-top: 8px; }
+        .admin-login-status {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.35;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -745,6 +791,20 @@
             <button id="rules-btn-lobby" class="btn-info" disabled>Regras Oficiais Detalhadas</button>
             <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Ranking Global</button>
             <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
+        </div>
+
+
+
+        <div class="admin-login-panel">
+            <div class="admin-login-title">🛡️ Entrada do Administrador</div>
+            <div class="admin-login-desc">Área exclusiva do dono do jogo. Entre com o e-mail e a senha cadastrados no Firebase para abrir o painel de controle.</div>
+            <div class="admin-login-row">
+                <input type="email" id="admin-email-input" placeholder="E-mail do administrador" autocomplete="username">
+                <input type="password" id="admin-password-input" placeholder="Senha do administrador" autocomplete="current-password">
+            </div>
+            <button id="admin-login-btn" class="btn-admin-login" type="button">Entrar no Painel Admin</button>
+            <button id="admin-logout-btn" class="btn-admin-logout" type="button" style="display:none;">Sair do Admin</button>
+            <div id="admin-login-status" class="admin-login-status">Jogadores comuns não usam esta área.</div>
         </div>
 
         <!-- 🔥 NOVA CENTRAL DE FEEDBACK DIRETO PARA O SEU WHATSAPP -->
@@ -922,8 +982,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, get, push, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, set, onValue, update, get, push, onDisconnect, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAyjusKD0t6DOtI93bxYbWRSiSHe0jvStA",
@@ -959,6 +1019,200 @@
     
     let emContagemRegressivaAtiva = false;
     let listenerChatAdminAtivo = null;
+    let alertaFimPartidaMostrado = false;
+
+
+    // ================================================================
+    // 🔐 CAMADA DE SEGURANÇA E HIGIENIZAÇÃO - v Segurança Premium
+    // Mantém o jogo igual, mas reduz brechas no admin, sala, chat e ranking.
+    // IMPORTANTE: para blindagem real, publique também as regras do Firebase
+    // que estão no final deste arquivo como comentário.
+    // ================================================================
+    const ADMIN_ROOM_CODE = "00";
+    const LEGACY_FIRST_ADMIN_NAME = "isiquel_admin";
+    const WHATSAPP_SUPORTE = "5544991711936";
+    const ADMIN_EMAIL_AUTORIZADO = "isiquelcamilanatan@gmail.com";
+    let usuarioAdminConfirmado = false;
+    let usuarioLogadoPorSenha = false;
+    let emailAdministradorAtual = "";
+
+    function somenteTextoSeguro(valor, limite = 80) {
+        return String(valor ?? "")
+            .replace(/[<>`]/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, limite);
+    }
+
+    function nomeSeguro(valor) {
+        return somenteTextoSeguro(valor || "Jogador", 15) || "Jogador";
+    }
+
+    function salaSegura(valor) {
+        return String(valor ?? "")
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9_-]/g, "")
+            .slice(0, 15);
+    }
+
+    function numeroSeguro(valor, padrao = 0) {
+        const n = Number(valor);
+        return Number.isFinite(n) ? n : padrao;
+    }
+
+    function limparElemento(el) {
+        while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function criarTexto(tag, texto, className = "") {
+        const el = document.createElement(tag);
+        if (className) el.className = className;
+        el.innerText = String(texto ?? "");
+        return el;
+    }
+
+    function criarMensagemSistema(container, texto) {
+        limparElemento(container);
+        const div = document.createElement('div');
+        div.style.cssText = "color:#7f8c8d; font-style:italic;";
+        div.innerText = texto;
+        container.appendChild(div);
+    }
+
+    function comTempoLimite(promise, ms, mensagem = "Tempo esgotado") {
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error(mensagem)), ms))
+        ]);
+    }
+
+    async function usuarioEhAdminSeguro() {
+        const user = auth.currentUser;
+        const emailAtual = String(user?.email || "").trim().toLowerCase();
+
+        // ✅ Caminho principal: login e senha do dono cadastrado no Firebase Auth.
+        // Assim o painel não fica preso se /admins estiver vazio, antigo ou bloqueado por regra.
+        if (user && !user.isAnonymous && emailAtual === ADMIN_EMAIL_AUTORIZADO) {
+            usuarioAdminConfirmado = true;
+            return true;
+        }
+
+        if (!playerId) return false;
+        try {
+            const snap = await get(ref(db, `admins/${playerId}`));
+            usuarioAdminConfirmado = snap.exists() && snap.val() === true;
+            return usuarioAdminConfirmado;
+        } catch (e) {
+            console.warn("Não foi possível validar admin:", e);
+            return false;
+        }
+    }
+
+    async function existeAlgumAdminCadastrado() {
+        try {
+            const snap = await get(ref(db, 'admins'));
+            return snap.exists();
+        } catch (e) {
+            return true;
+        }
+    }
+
+    async function tentarConfigurarPrimeiroAdmin(playerName, roomName) {
+        const nomeDigitado = String(playerName || "").toLowerCase().trim();
+        if (roomName !== ADMIN_ROOM_CODE || nomeDigitado !== LEGACY_FIRST_ADMIN_NAME || !playerId) return false;
+
+        if (await usuarioEhAdminSeguro()) return true;
+
+        const jaExisteAdmin = await existeAlgumAdminCadastrado();
+        if (jaExisteAdmin) return false;
+
+        await set(ref(db, `admins/${playerId}`), true);
+        await push(ref(db, 'adminLogs'), {
+            acao: 'primeiro_admin_configurado',
+            adminUid: playerId,
+            data: Date.now(),
+            aviso: 'Configure as Rules do Firebase e remova o acesso legado se desejar blindagem máxima.'
+        });
+        usuarioAdminConfirmado = true;
+        return true;
+    }
+
+
+    async function configurarAdminPorLoginEmail(user) {
+        if (!user || user.isAnonymous) return false;
+        playerId = user.uid;
+        usuarioLogadoPorSenha = true;
+        emailAdministradorAtual = user.email || "";
+
+        const emailAtual = String(user.email || "").trim().toLowerCase();
+
+        // ✅ Login oficial do dono: se o e-mail for o autorizado, entra no painel.
+        // Também tenta registrar o UID em /admins, mas não trava o painel se a regra do banco impedir.
+        if (emailAtual === ADMIN_EMAIL_AUTORIZADO) {
+            usuarioAdminConfirmado = true;
+            try {
+                await set(ref(db, `admins/${user.uid}`), true);
+                await push(ref(db, 'adminLogs'), {
+                    acao: 'admin_login_email_autorizado',
+                    adminUid: user.uid,
+                    email: user.email || '',
+                    data: Date.now(),
+                    aviso: 'Administrador reconhecido pelo e-mail autorizado.'
+                });
+            } catch(e) {
+                console.warn('Admin autorizado pelo e-mail, mas não foi possível gravar /admins:', e);
+            }
+            return true;
+        }
+
+        if (await usuarioEhAdminSeguro()) return true;
+
+        const jaExisteAdmin = await existeAlgumAdminCadastrado();
+        if (!jaExisteAdmin) {
+            await set(ref(db, `admins/${user.uid}`), true);
+            await push(ref(db, 'adminLogs'), {
+                acao: 'primeiro_admin_por_email_configurado',
+                adminUid: user.uid,
+                email: user.email || '',
+                data: Date.now(),
+                aviso: 'Primeiro administrador cadastrado por login com e-mail e senha.'
+            });
+            usuarioAdminConfirmado = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    async function podeEntrarComoAdmin(playerName, roomName) {
+        if (roomName !== ADMIN_ROOM_CODE) return false;
+        if (await usuarioEhAdminSeguro()) return true;
+        return await tentarConfigurarPrimeiroAdmin(playerName, roomName);
+    }
+
+    async function exigirAdminSeguro() {
+        const ok = playerRole === "admin" && await usuarioEhAdminSeguro();
+        if (!ok) {
+            exibirAlertaDoSistema("Acesso negado 🛡️", "Esta ação exige login de administrador autorizado.");
+            return false;
+        }
+        return true;
+    }
+
+    async function registrarLogAdmin(acao, sala = "", extra = {}) {
+        try {
+            await push(ref(db, 'adminLogs'), {
+                acao,
+                sala: salaSegura(sala),
+                adminUid: playerId || "sem_uid",
+                data: Date.now(),
+                ...extra
+            });
+        } catch (e) {
+            console.warn("Não foi possível registrar log admin:", e);
+        }
+    }
 
     function exibirAlertaDoSistema(titulo, texto) {
         document.getElementById('custom-alert-title').innerText = titulo;
@@ -991,12 +1245,12 @@
 
     // 🔥 NOVO DISPARADOR DE COMPARTILHAMENTO DE SUGESTÕES PARA O WHATSAPP DO ISIQUEI
     document.getElementById('btn-submit-feedback').addEventListener('click', () => {
-        const txtFeedback = document.getElementById('feedback-text-input').value.trim();
+        const txtFeedback = somenteTextoSeguro(document.getElementById('feedback-text-input').value, 180);
         if (!txtFeedback) return exibirAlertaDoSistema("Aviso", "Por favor, digite sua sugestão ou comentário antes de enviar.");
-        const nomeUsuario = document.getElementById('name-input').value.trim() || "Jogador Anônimo";
+        const nomeUsuario = nomeSeguro(document.getElementById('name-input').value || "Jogador Anônimo");
         
         const msgFormatada = encodeURIComponent(`Olá Isiquel! Me chamo ${nomeUsuario} e tenho uma sugestão para o jogo de Damas: ${txtFeedback}`);
-        window.open(`https://wa.me/5544991711936?text=${msgFormatada}`, '_blank');
+        window.open(`https://wa.me/${WHATSAPP_SUPORTE}?text=${msgFormatada}`, '_blank');
         document.getElementById('feedback-text-input').value = "";
     });
 
@@ -1076,6 +1330,11 @@
     const boardEl = document.getElementById('board');
     const authStatusEl = document.getElementById('auth-status');
     const downloadBtnLobby = document.getElementById('download-btn-lobby');
+    const adminEmailInput = document.getElementById('admin-email-input');
+    const adminPasswordInput = document.getElementById('admin-password-input');
+    const adminLoginBtn = document.getElementById('admin-login-btn');
+    const adminLogoutBtn = document.getElementById('admin-logout-btn');
+    const adminLoginStatus = document.getElementById('admin-login-status');
     
     const gameTimerEl = document.getElementById('game-timer');
     const liveSpectatorsEl = document.getElementById('live-spectators');
@@ -1106,6 +1365,77 @@
     const btnChooseMedium = document.getElementById('btn-choose-medium');
     const btnChooseHard = document.getElementById('btn-choose-hard');
 
+
+    adminLoginBtn.addEventListener('click', async () => {
+        const email = String(adminEmailInput.value || '').trim();
+        const senha = String(adminPasswordInput.value || '');
+        if (!email || !senha) {
+            exibirAlertaDoSistema("Login do Administrador", "Digite o e-mail e a senha do administrador.");
+            return;
+        }
+
+        adminLoginBtn.disabled = true;
+        adminLoginBtn.innerText = "Entrando...";
+        adminLoginStatus.innerText = "Validando login do administrador...";
+
+        try {
+            const cred = await comTempoLimite(signInWithEmailAndPassword(auth, email, senha), 12000, "O login demorou demais. Confira a internet, o Firebase Auth e se o usuário foi criado.");
+            const ok = await configurarAdminPorLoginEmail(cred.user);
+            if (!ok) {
+                adminLoginStatus.innerText = "Login feito, mas este usuário ainda não está autorizado como admin.";
+                exibirAlertaDoSistema(
+                    "Admin não autorizado",
+                    "O e-mail e senha estão corretos, mas este usuário ainda não está cadastrado em <strong>/admins</strong>. Cadastre o UID deste usuário no Firebase ou apague /admins para transformar este primeiro login no dono."
+                );
+                return;
+            }
+
+            usuarioAdminConfirmado = true;
+            playerRole = "admin";
+            nameInput.value = "Administrador";
+            roomInput.value = ADMIN_ROOM_CODE;
+            adminPasswordInput.value = "";
+            adminLoginBtn.style.display = "none";
+            adminLogoutBtn.style.display = "block";
+            adminLoginStatus.innerText = `Admin conectado: ${cred.user.email || 'usuário autorizado'}`;
+            await joinRoom(ADMIN_ROOM_CODE, "Administrador", false);
+        } catch (e) {
+            console.error("Erro no login admin:", e);
+            let msg = "Não foi possível entrar. Confira o e-mail, a senha e se o login Email/Senha está ativado no Firebase Authentication.";
+            if (e && e.code === 'auth/invalid-credential') msg = "E-mail ou senha inválidos. Confirme se esse usuário foi criado em Authentication > Usuários.";
+            if (e && e.code === 'auth/user-not-found') msg = "Esse e-mail ainda não foi criado em Authentication > Usuários.";
+            if (e && e.code === 'auth/wrong-password') msg = "Senha incorreta.";
+            if (e && e.code === 'auth/too-many-requests') msg = "Muitas tentativas. Aguarde um pouco e tente novamente.";
+            if (e && e.message && e.message.includes('demorou demais')) msg = e.message;
+            adminLoginStatus.innerText = msg;
+            exibirAlertaDoSistema("Falha no Login", msg);
+        } finally {
+            adminLoginBtn.disabled = false;
+            adminLoginBtn.innerText = "Entrar no Painel Admin";
+        }
+    });
+
+    adminPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') adminLoginBtn.click();
+    });
+
+    adminLogoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+        } catch(e) { console.warn("Erro ao sair do admin:", e); }
+        usuarioAdminConfirmado = false;
+        usuarioLogadoPorSenha = false;
+        emailAdministradorAtual = "";
+        playerRole = "spectator";
+        adminLoginBtn.style.display = "block";
+        adminLogoutBtn.style.display = "none";
+        adminLoginStatus.innerText = "Admin desconectado. Jogadores comuns não usam esta área.";
+        adminPanel.style.display = "none";
+        gameScreen.style.display = 'none';
+        lobbyScreen.style.display = 'block';
+        iniciarAutenticacaoAnonima();
+    });
+
     rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
     rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
     closeRulesBtn.addEventListener('click', () => rulesModal.style.display = 'none');
@@ -1120,48 +1450,108 @@
             const rankRef = ref(db, 'leaderboard');
             onValue(rankRef, (snapshot) => {
                 const data = snapshot.val();
+                limparElemento(livePodiumContent);
                 if (!data) {
-                    livePodiumContent.innerHTML = "<div style='font-size:0.85rem; color:#aaa; padding:5px 0;'>Nenhuma batalha online registrada ainda!</div>";
+                    const vazio = document.createElement('div');
+                    vazio.style.cssText = 'font-size:0.85rem; color:#aaa; padding:5px 0;';
+                    vazio.innerText = 'Nenhuma batalha online registrada ainda!';
+                    livePodiumContent.appendChild(vazio);
                     motivateBox.innerText = "⚔️ Seja o primeiro a inaugurar o tabuleiro e assumir o topo!";
                     return;
                 }
-                const sorted = Object.values(data).sort((a, b) => b.wins - a.wins).slice(0, 3);
-                livePodiumContent.innerHTML = "";
+                const sorted = Object.values(data)
+                    .map(p => ({ name: nomeSeguro(p.name || 'Jogador'), wins: numeroSeguro(p.wins), losses: numeroSeguro(p.losses) }))
+                    .sort((a, b) => b.wins - a.wins)
+                    .slice(0, 3);
                 let medalhas = ["🥇", "🥈", "🥉"];
                 sorted.forEach((player, idx) => {
-                    let isInvict = player.losses === 0 && player.wins > 0;
-                    let tagInvict = isInvict ? " <span style='color:#f1c40f; font-size:0.75rem; font-weight:bold;'>🔥 INTACTO</span>" : "";
                     const row = document.createElement('div');
                     row.className = "podium-row";
-                    row.innerHTML = `<div>${medalhas[idx]} <strong>${player.name}</strong>${tagInvict}</div><div style="color:#2ecc71; font-weight:bold;">${player.wins} Vitórias</div>`;
+
+                    const left = document.createElement('div');
+                    const strong = document.createElement('strong');
+                    strong.innerText = player.name;
+                    left.append(document.createTextNode(`${medalhas[idx]} `), strong);
+                    if (player.losses === 0 && player.wins > 0) {
+                        const invicto = document.createElement('span');
+                        invicto.style.cssText = 'color:#f1c40f; font-size:0.75rem; font-weight:bold;';
+                        invicto.innerText = ' 🔥 INTACTO';
+                        left.appendChild(invicto);
+                    }
+
+                    const right = document.createElement('div');
+                    right.style.cssText = 'color:#2ecc71; font-weight:bold;';
+                    right.innerText = `${player.wins} Vitórias`;
+                    row.append(left, right);
                     livePodiumContent.appendChild(row);
                 });
-                if(sorted.length > 0) {
-                    motivateBox.innerHTML = `⚔️ Desafie o topo! <strong>${sorted[0].name}</strong> está dominando. Crie uma sala online e marque um confronto direto contra os campeões!`;
+                if (sorted.length > 0) {
+                    motivateBox.innerText = `⚔️ Desafie o topo! ${sorted[0].name} está dominando. Crie uma sala online e marque um confronto direto contra os campeões!`;
                 }
             });
         } catch(e) { console.log("Erro ao carregar podium", e); }
     }
 
-    onAuthStateChanged(auth, (user) => {
+    function liberarLobbyBasico(mensagem, modoLimitado = false) {
+        authStatusEl.innerText = mensagem;
+        nameInput.disabled = false;
+        roomInput.disabled = false;
+        practiceBtn.disabled = false;
+        rulesBtnLobby.disabled = false;
+        rankBtnLobby.disabled = modoLimitado;
+        joinBtn.disabled = modoLimitado;
+        spectateBtn.disabled = modoLimitado;
+    }
+
+    let tentativaAuthEmAndamento = false;
+    function iniciarAutenticacaoAnonima() {
+        if (auth.currentUser && !auth.currentUser.isAnonymous) return;
+        if (tentativaAuthEmAndamento) return;
+        tentativaAuthEmAndamento = true;
+        signInAnonymously(auth)
+            .catch(err => {
+                console.warn("Falha na autenticação anônima:", err);
+                authStatusEl.style.color = "#f1c40f";
+                liberarLobbyBasico("Modo treino liberado • Online aguardando Firebase", true);
+            })
+            .finally(() => { tentativaAuthEmAndamento = false; });
+    }
+
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            playerId = user.uid; 
-            authStatusEl.innerText = "Conexão Segura Ativa ✓";
-            nameInput.disabled = false;
-            roomInput.disabled = false;
-            joinBtn.disabled = false;
-            spectateBtn.disabled = false;
-            practiceBtn.disabled = false;
-            rulesBtnLobby.disabled = false;
-            rankBtnLobby.disabled = false;
+            playerId = user.uid;
+            authStatusEl.style.color = "#2ecc71";
+            liberarLobbyBasico("Conexão Segura Ativa ✓", false);
+
+            if (!user.isAnonymous) {
+                usuarioLogadoPorSenha = true;
+                emailAdministradorAtual = user.email || "";
+                const okAdmin = await usuarioEhAdminSeguro();
+                if (okAdmin) {
+                    adminLoginBtn.style.display = "none";
+                    adminLogoutBtn.style.display = "block";
+                    adminLoginStatus.innerText = `Admin conectado: ${user.email || 'usuário autorizado'}`;
+                } else {
+                    adminLoginStatus.innerText = "Usuário logado por e-mail, mas ainda não autorizado como administrador.";
+                }
+            }
+
             carregarPodiumLobby(); 
         } else {
-            signInAnonymously(auth).catch(err => {
-                authStatusEl.innerText = "Erro de conexão segura.";
-                authStatusEl.style.color = "var(--accent-color)";
-            });
+            iniciarAutenticacaoAnonima();
         }
     });
+
+    // Se o Firebase demorar ou ficar pendurado, o modo treino não pode ficar travado.
+    setTimeout(() => {
+        if (!playerId) {
+            authStatusEl.style.color = "#f1c40f";
+            liberarLobbyBasico("Modo treino liberado • Autenticação online demorando", true);
+        }
+    }, 2500);
+
+    // Dispara a autenticação logo no carregamento, sem esperar o primeiro retorno do listener.
+    iniciarAutenticacaoAnonima();
 
     function getInitialBoard() {
         let board = Array(8).fill(null).map(() => Array(8).fill(0));
@@ -1185,13 +1575,23 @@
             rankTableBody.innerHTML = "<tr><td colspan='5'>Nenhuma partida registrada ainda!</td></tr>";
             return;
         }
-        const sortedPlayers = Object.values(data).sort((a, b) => b.wins - a.wins);
-        rankTableBody.innerHTML = "";
+        const sortedPlayers = Object.values(data)
+            .map(p => ({ name: nomeSeguro(p.name || 'Jogador'), wins: numeroSeguro(p.wins), losses: numeroSeguro(p.losses) }))
+            .sort((a, b) => b.wins - a.wins);
+        limparElemento(rankTableBody);
         sortedPlayers.forEach((player, index) => {
             const totalGames = player.wins + player.losses;
             const pct = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0;
             const row = document.createElement('tr');
-            row.innerHTML = `<td><strong>#${index + 1}</strong></td><td>${player.name}</td><td style="color:#2ecc71; font-weight:bold;">${player.wins}</td><td style="color:#e74c3c;">${player.losses}</td><td><span class="badge" style="background-color:#34495e;">${pct}%</span></td>`;
+            const pos = document.createElement('td'); pos.innerHTML = `<strong>#${index + 1}</strong>`;
+            const name = criarTexto('td', player.name);
+            const wins = criarTexto('td', player.wins); wins.style.cssText = 'color:#2ecc71; font-weight:bold;';
+            const losses = criarTexto('td', player.losses); losses.style.cssText = 'color:#e74c3c;';
+            const aproveitamento = document.createElement('td');
+            const badge = criarTexto('span', `${pct}%`, 'badge');
+            badge.style.backgroundColor = '#34495e';
+            aproveitamento.appendChild(badge);
+            row.append(pos, name, wins, losses, aproveitamento);
             rankTableBody.appendChild(row);
         });
     }
@@ -1201,21 +1601,24 @@
         hasRecordedResult = true;
         const userRankRef = ref(db, 'leaderboard/' + playerId);
         const snapshot = await get(userRankRef);
-        let stats = snapshot.val() || { name: winnerName, wins: 0, losses: 0 };
-        stats.name = winnerName;
+        let stats = snapshot.val() || { name: nomeSeguro(winnerName), wins: 0, losses: 0 };
+        stats.name = nomeSeguro(winnerName);
+        stats.wins = numeroSeguro(stats.wins);
+        stats.losses = numeroSeguro(stats.losses);
         if (isWin) stats.wins += 1;
         else stats.losses += 1;
         await set(userRankRef, stats);
     }
 
     joinBtn.addEventListener('click', () => {
-        const playerName = nameInput.value.trim();
-        const roomName = roomInput.value.trim().toLowerCase();
+        const playerName = nomeSeguro(nameInput.value);
+        const roomName = salaSegura(roomInput.value);
         if (!playerName) return exibirAlertaDoSistema("Identificação", "Por favor, digite seu nome para continuar.");
         if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe o código da sala para conectar.");
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
+        alertaFimPartidaMostrado = false;
         lockPieceForMultiCapture = null;
         ultimoContadorEspectadores = 0;
         roomId = roomName;
@@ -1223,11 +1626,12 @@
     });
 
     spectateBtn.addEventListener('click', () => {
-        const roomName = roomInput.value.trim().toLowerCase();
+        const roomName = salaSegura(roomInput.value);
         if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe o código da sala para assistir.");
         difficultyBox.style.display = "none";
         isPracticeMode = false;
         hasRecordedResult = false;
+        alertaFimPartidaMostrado = false;
         lockPieceForMultiCapture = null;
         ultimoContadorEspectadores = 0;
         roomId = roomName;
@@ -1247,6 +1651,7 @@
         difficultyBox.style.display = "none";
         isPracticeMode = true;
         hasRecordedResult = false;
+        alertaFimPartidaMostrado = false;
         lockPieceForMultiCapture = null;
         playerRole = "p1";
         setupPracticeGame(playerName);
@@ -1308,9 +1713,9 @@
             return;
         }
 
-        const text = chatInputField.value.trim();
+        const text = somenteTextoSeguro(chatInputField.value, 80);
         if (!text) return;
-        const author = nameInput.value.trim() || "Anônimo";
+        const author = nomeSeguro(nameInput.value || "Anônimo");
         if (isPracticeMode) { appendChatRow(author, text); chatInputField.value = ""; return; }
         const msgRef = ref(db, `rooms/${roomId}/chat`);
         push(msgRef, { author: author, text: text, timestamp: Date.now() });
@@ -1429,9 +1834,9 @@
         });
     }
 
-    document.getElementById('btn-adm-monitorar-chat').addEventListener('click', () => {
-        if (playerRole !== "admin") return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+    document.getElementById('btn-adm-monitorar-chat').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const salaAlvo = salaSegura(adminTargetRoomInput.value);
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja espionar o chat.");
         
         const feedContainer = document.getElementById('admin-chat-monitor-container');
@@ -1451,7 +1856,13 @@
             if (chats) {
                 Object.values(chats).forEach(msg => {
                     const row = document.createElement('div');
-                    row.innerHTML = `<strong style="color:#3498db;">${msg.author}:</strong> <span style="color:#eee;">${msg.text}</span>`;
+                    const strong = document.createElement('strong');
+                    strong.style.color = '#3498db';
+                    strong.innerText = `${nomeSeguro(msg.author || 'Anônimo')}: `;
+                    const span = document.createElement('span');
+                    span.style.color = '#eee';
+                    span.innerText = somenteTextoSeguro(msg.text || '', 80);
+                    row.append(strong, span);
                     feedDisplay.appendChild(row);
                 });
                 feedDisplay.scrollTop = feedDisplay.scrollHeight;
@@ -1462,7 +1873,7 @@
     });
 
     document.getElementById('btn-adm-limpar-ranking').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         exibirConfirmacao(
             "Limpar Ranking Global ⚠️", 
             "Você tem certeza de que quer **RESETAR COMPLETAMENTE** o placar dos campeões? Todos os jogadores voltarão para 0 vitórias.", 
@@ -1474,7 +1885,7 @@
     });
 
     document.getElementById('btn-adm-excluir-total').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja banir do sistema.");
         if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "A sala mestre de manutenção não pode ser apagada.");
@@ -1488,8 +1899,8 @@
     });
 
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
+        if (!(await exigirAdminSeguro())) return;
+        const salaAlvo = salaSegura(adminTargetRoomInput.value);
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "Código restrito.");
 
@@ -1501,9 +1912,11 @@
                 id: salaAlvo, board: getInitialBoard(), turn: 1, status: "waiting",
                 p1Id: "", p1Name: "", p2Id: "", p2Name: "", startTime: 0, chat: null,
                 isAuthorized: true, chatBlocked: false,
+                winnerRole: null, winnerName: null, finishReason: null, finishedAt: null,
+                createdByAdminUid: playerId,
                 lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             });
-            exibirAlertaDoSistema("Sucesso", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi criada e já está liberada!`);
+            exibirAlertaDoSistema("Sucesso", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi criada pelo administrador e já está liberada!`);
         } else {
             await update(refSala, { isAuthorized: true });
             exibirAlertaDoSistema("Sucesso", `Acesso liberado para a sala <strong>${salaAlvo.toUpperCase()}</strong>.`);
@@ -1512,7 +1925,7 @@
     });
 
     document.getElementById('btn-adm-bloquear').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         await update(ref(db, 'rooms/' + salaAlvo), { isAuthorized: false });
@@ -1521,7 +1934,7 @@
     });
 
     document.getElementById('btn-adm-travar-chat').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         
@@ -1532,7 +1945,7 @@
     });
 
     document.getElementById('btn-adm-expulsar').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         
@@ -1543,7 +1956,7 @@
     });
 
     document.getElementById('btn-adm-limpar-chat').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         await set(ref(db, `rooms/${salaAlvo}/chat`), null);
@@ -1551,7 +1964,7 @@
     });
 
     document.getElementById('btn-adm-reset').addEventListener('click', async () => {
-        if (playerRole !== "admin") return;
+        if (!(await exigirAdminSeguro())) return;
         const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
         if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
         await update(ref(db, 'rooms/' + salaAlvo), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
@@ -1600,12 +2013,16 @@
     }
 
     async function joinRoom(roomName, playerName, forceSpectator) {
-        const isIsiquel = (playerName.toLowerCase() === "isiquel_admin");
-        const isTerminal = (roomName === "00");
-        const isAdminMode = isIsiquel && isTerminal;
+        playerName = nomeSeguro(playerName);
+        roomName = salaSegura(roomName);
+        if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe um código de sala válido.");
 
-        if (isTerminal && !isIsiquel) {
-            exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é de uso exclusivo.");
+        alertaFimPartidaMostrado = false;
+        const isTerminal = (roomName === ADMIN_ROOM_CODE);
+        const isAdminMode = await podeEntrarComoAdmin(playerName, roomName);
+
+        if (isTerminal && !isAdminMode) {
+            exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é exclusivo do administrador. Use a área <strong>Entrada do Administrador</strong> com e-mail e senha.");
             return;
         }
 
@@ -1614,61 +2031,83 @@
         let roomData = snapshot.val();
 
         if (!roomData) {
-            if (!isIsiquel) {
-                // 🔥 MODIFICAÇÃO CIRÚRGICA: Alerta inteligente com botão integrado para falar diretamente com o seu WhatsApp
-                const msgSuporte = encodeURIComponent(`Olá Isiquel! Tentei entrar na sala "${roomName}" no jogo de Damas, mas ela consta como inexistente. Poderia liberar meu acesso?`);
-                
+            if (isAdminMode) {
+                roomData = {
+                    id: roomName,
+                    board: getInitialBoard(),
+                    turn: 1,
+                    status: "admin_dashboard",
+                    p1Id: "",
+                    p1Name: "Central Suprema",
+                    p2Id: null,
+                    p2Name: "",
+                    startTime: 0,
+                    chat: null,
+                    isAuthorized: true,
+                    chatBlocked: false,
+                    createdByAdminUid: playerId,
+                    lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                };
+                await set(roomRef, roomData);
+                await registrarLogAdmin('criou_terminal_admin', roomName);
+                playerRole = "admin";
+            } else {
+                const msgLiberacao = encodeURIComponent(`Olá Isiquel! Tentei entrar na sala "${roomName}", mas ela ainda não foi liberada no painel administrativo.`);
                 exibirAlertaDoSistema(
-                    "Sala Inexistente 🛡️", 
-                    `<p style="margin-bottom:15px;">Esta sala não está ativa no servidor.</p>
-                     <p style="font-size:0.92rem; color:#aaa; margin-bottom:15px;">Fale com o administrador **Isiquel** para criar ou liberar esta sala de jogos agora.</p>
-                     <button onclick="window.open('https://wa.me/5544991711936?text=${msgSuporte}', '_blank')" class="btn-whatsapp">💬 Chamar Isiquel no WhatsApp</button>`
+                    "Sala não liberada 🛡️",
+                    `<p style="margin-bottom:15px;">Esta sala ainda não foi criada/liberada pelo administrador do jogo.</p>
+                     <p style="margin-bottom:15px; color:#cbd5e1;">Somente o dono do aplicativo pode criar e liberar salas pelo painel administrativo.</p>
+                     <button onclick="window.open('https://wa.me/${WHATSAPP_SUPORTE}?text=${msgLiberacao}', '_blank')" class="btn-whatsapp">💬 Pedir liberação da sala</button>`
                 );
                 return;
             }
-            
-            roomData = {
-                id: roomName, board: getInitialBoard(), turn: 1,
-                status: isAdminMode ? "admin_dashboard" : "waiting",
-                p1Id: isAdminMode ? "" : playerId, p1Name: isAdminMode ? "Central Suprema" : playerName,
-                p2Id: null, p2Name: "", startTime: 0, chat: null, isAuthorized: true, chatBlocked: false,
-                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-            };
-            await set(roomRef, roomData);
-            playerRole = isAdminMode ? "admin" : "spectator";
-            
         } else {
-            if (!roomData.isAuthorized && !isIsiquel) {
-                // 🔥 MODIFICAÇÃO CIRÚRGICA: Tratamento completo e visual também para salas que existem mas estão congeladas/bloqueadas
+            if (roomData.isAuthorized === false && !isAdminMode) {
                 const msgBloqueio = encodeURIComponent(`Olá Isiquel! A minha sala "${roomName}" está bloqueada no painel de controle das Damas. Poderia verificar?`);
-                
                 exibirAlertaDoSistema(
-                    "Sala Bloqueada 🛡️", 
+                    "Sala Bloqueada 🛡️",
                     `<p style="margin-bottom:15px;">Esta sala foi temporariamente congelada pelo sistema.</p>
-                     <button onclick="window.open('https://wa.me/5544991711936?text=${msgBloqueio}', '_blank')" class="btn-whatsapp">💬 Solicitar Liberação ao Isiquel</button>`
+                     <button onclick="window.open('https://wa.me/${WHATSAPP_SUPORTE}?text=${msgBloqueio}', '_blank')" class="btn-whatsapp">💬 Solicitar Liberação ao Isiquel</button>`
                 );
                 return;
             }
 
-            if (isAdminMode) { playerRole = "admin"; } 
-            else if (isIsiquel) { playerRole = "spectator"; }
-            else if (forceSpectator) { playerRole = "spectator"; } 
-            else if (roomData.p1Id === playerId) { playerRole = "p1"; } 
-            else if (roomData.p2Id === playerId) { playerRole = "p2"; } 
-            else if (!roomData.p1Id || roomData.p1Id === "") {
-                playerRole = "p1";
-                await update(roomRef, { p1Id: playerId, p1Name: playerName, chat: null });
-            } 
-            else if (!roomData.p2Id || roomData.p2Id === "") {
-                playerRole = "p2";
-                await update(roomRef, { p2Id: playerId, p2Name: playerName, status: "playing", startTime: Date.now() });
-            } 
-            else { playerRole = "spectator"; }
+            if (isAdminMode) {
+                playerRole = "admin";
+            } else if (forceSpectator) {
+                playerRole = "spectator";
+            } else {
+                const tx = await runTransaction(roomRef, (sala) => {
+                    if (!sala || sala.isAuthorized === false) return sala;
+                    if (sala.p1Id === playerId || sala.p2Id === playerId) return sala;
+                    if (!sala.p1Id || sala.p1Id === "") {
+                        sala.p1Id = playerId;
+                        sala.p1Name = playerName;
+                        sala.chat = null;
+                        if (!sala.status || sala.status === "finished") sala.status = "waiting";
+                    } else if (!sala.p2Id || sala.p2Id === "") {
+                        sala.p2Id = playerId;
+                        sala.p2Name = playerName;
+                        sala.status = "playing";
+                        sala.startTime = Date.now();
+                        sala.winnerRole = null;
+                        sala.winnerName = null;
+                        sala.finishReason = null;
+                        sala.finishedAt = null;
+                    }
+                    sala.lastUsedDate = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+                    return sala;
+                });
+                roomData = tx.snapshot.val();
+                if (roomData?.p1Id === playerId) playerRole = "p1";
+                else if (roomData?.p2Id === playerId) playerRole = "p2";
+                else playerRole = "spectator";
+            }
         }
 
-        if (playerRole === "spectator" && !isIsiquel) {
+        if (playerRole === "spectator" && !isAdminMode) {
             const specPresenceRef = ref(db, `rooms/${roomName}/spectators/${playerId}`);
-            set(specPresenceRef, playerName);
+            set(specPresenceRef, nomeSeguro(playerName));
             onDisconnect(specPresenceRef).remove();
         }
 
@@ -1682,8 +2121,8 @@
             document.getElementById('normal-board-wrapper').style.display = "none";
             document.getElementById('normal-controls').style.display = "none";
             document.getElementById('normal-chat-wrapper').style.display = "none";
-            ativarPainelMonitoramentoRealtime(); 
-            return; 
+            ativarPainelMonitoramentoRealtime();
+            return;
         } else {
             adminPanel.style.display = "none";
             document.getElementById('normal-game-status').style.display = "flex";
@@ -1698,7 +2137,7 @@
             const data = snap.val();
             if (!data) return;
             
-            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") { 
+            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") {
                 dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
             }
 
@@ -1714,8 +2153,8 @@
                 if (stringTabAnterior !== stringTabNovo) {
                     const pecasAntes = contarPecasNoTabuleiro(currentGameState.board);
                     const pecasDepois = contarPecasNoTabuleiro(data.board);
-                    if (pecasDepois < pecasAntes) { reproduzirSomDoJogo('capture'); } 
-                    else if (detectouNovaDama(currentGameState.board, data.board)) { reproduzirSomDoJogo('king'); } 
+                    if (pecasDepois < pecasAntes) { reproduzirSomDoJogo('capture'); }
+                    else if (detectouNovaDama(currentGameState.board, data.board)) { reproduzirSomDoJogo('king'); }
                     else { reproduzirSomDoJogo('move'); }
                 }
             }
@@ -1731,20 +2170,17 @@
             }
 
             let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
-            if (ultimoContadorEspectadores !== 0 && specsCount > ultimoContadorEspectadores) {
-                reproduzirSomDoJogo('spectator');
-            }
+            if (ultimoContadorEspectadores !== 0 && specsCount > ultimoContadorEspectadores) reproduzirSomDoJogo('spectator');
             ultimoContadorEspectadores = specsCount;
 
-            if (currentGameState && currentGameState.status === "playing" && data.status === "finished") {
-                executarAlertaVisualDeVitoria(data.board);
+            if (currentGameState && currentGameState.status === "playing" && data.status === "finished" && !alertaFimPartidaMostrado) {
+                alertaFimPartidaMostrado = true;
+                executarAlertaVisualDeVitoria(data);
             }
 
             currentGameState = data;
-            
             liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
             runLocalTimer(data.startTime, data.status);
-
             renderGameStatus(data);
             generateBoardUI(data.board);
         });
@@ -1752,19 +2188,21 @@
         let primeiraCargaChat = true;
         const chatRef = ref(db, `rooms/${roomName}/chat`);
         onValue(chatRef, (snap) => {
-            chatBoxMessages.innerHTML = "";
+            limparElemento(chatBoxMessages);
             const data = snap.val();
-            if (data) { 
-                Object.values(data).forEach(msg => appendChatRow(msg.author, msg.text)); 
-                if (!primeiraCargaChat && !isChatMutedLocally) { reproduzirSomDoJogo('chat'); }
+            if (data) {
+                Object.values(data).forEach(msg => appendChatRow(msg.author, msg.text));
+                if (!primeiraCargaChat && !isChatMutedLocally) reproduzirSomDoJogo('chat');
                 primeiraCargaChat = false;
-            } 
-            else { chatBoxMessages.innerHTML = `<div style="color: #7f8c8d; font-style: italic;">O chat está ativo.</div>`; }
+            } else {
+                criarMensagemSistema(chatBoxMessages, "O chat está ativo.");
+            }
         });
     }
 
     function setupPracticeGame(playerName) {
         isPracticeMode = true;
+        alertaFimPartidaMostrado = false;
         toggleChatVisibility.style.display = "block";
         adminPanel.style.display = "none";
         lockPieceForMultiCapture = null;
@@ -2025,10 +2463,16 @@
 
         if (robotMoves.length === 0) {
             currentGameState.status = "finished";
-            document.body.classList.add('vitoria-animada');
-            reproduzirSomDoJogo('fanfarra_vitoria');
-            exibirAlertaDoSistema("🏆 VITÓRIA SUPREMA DETECTADA! 👑", `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS, VOCÊ GANHOU O JOGO! 🎉</div><p style="color:#fff; font-size:0.95rem;">O robô ficou totalmente encurralado e sem jogadas livres.</p>`);
-            renderGameStatus(currentGameState); return;
+            currentGameState.winnerRole = "p1";
+            currentGameState.winnerName = currentGameState.p1Name || "Você";
+            currentGameState.finishReason = "sem_movimentos";
+            currentGameState.finishedAt = Date.now();
+            if (!alertaFimPartidaMostrado) {
+                alertaFimPartidaMostrado = true;
+                executarAlertaVisualDeVitoria(currentGameState);
+            }
+            renderGameStatus(currentGameState);
+            return;
         }
 
         let selectedMove = null;
@@ -2066,7 +2510,13 @@
         checkEndGameConditions(nextBoard);
     }
 
-    function ejecutarAlertaVisualDeVitoria(board) {
+    function executarAlertaVisualDeVitoria(gameDataOrBoard) {
+        const gameData = Array.isArray(gameDataOrBoard)
+            ? { ...(currentGameState || {}), board: gameDataOrBoard }
+            : (gameDataOrBoard || currentGameState || {});
+        const board = gameData.board || gameDataOrBoard;
+        if (!board) return;
+
         let p1Pieces = 0, p2Pieces = 0;
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
@@ -2075,19 +2525,34 @@
             }
         }
 
-        let p1Venceu = false;
-        if (p1Pieces === 0 || p2Pieces === 0) { p1Venceu = p1Pieces > 0; } 
-        else { p1Venceu = (currentGameState.turn === 2); }
+        let winnerRole = gameData.winnerRole || "";
+        if (!winnerRole) {
+            if (p1Pieces === 0 || p2Pieces === 0) {
+                winnerRole = p1Pieces > 0 ? "p1" : "p2";
+            } else {
+                winnerRole = gameData.turn === 2 ? "p1" : "p2";
+            }
+        }
+
+        const nomeP1 = nomeSeguro(gameData.p1Name || currentGameState?.p1Name || "Vermelho");
+        const nomeP2 = nomeSeguro(gameData.p2Name || currentGameState?.p2Name || "Preto");
+        const nomeDoGanhador = nomeSeguro(gameData.winnerName || (winnerRole === "p1" ? nomeP1 : nomeP2));
+        const nomeDoPerdedor = nomeSeguro(winnerRole === "p1" ? nomeP2 : nomeP1);
 
         const souJogadorP1 = (playerRole === "p1");
         const souJogadorP2 = (playerRole === "p2");
-        let voceGanhou = (p1Venceu && souJogadorP1) || (!p1Venceu && souJogadorP2);
-        let nomeDoGanhador = p1Venceu ? (currentGameState.p1Name || "Vermelho") : (currentGameState.p2Name || "Preto");
+        const voceGanhou = (winnerRole === "p1" && souJogadorP1) || (winnerRole === "p2" && souJogadorP2);
+        const vocePerdeu = (souJogadorP1 || souJogadorP2) && !voceGanhou;
+        const textoRanking = isPracticeMode
+            ? "Essa foi uma vitória no modo treino. Continue praticando para ficar ainda mais forte no online."
+            : "Sua vitória entra para a caminhada no ranking global dos campeões.";
 
         if (playerRole === "spectator") {
+            reproduzirSomDoJogo('fanfarra_vitoria');
             exibirAlertaDoSistema(
-                "👑 FIM DE PARTIDA 👑", 
-                `<div style="font-size:1.3rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 ${nomeDoGanhador.toUpperCase()} VENCEU! 🎉</div><p style="color:#aaa; font-size:0.9rem;">A soberania tática do tabuleiro foi concluída.</p>`
+                "👑 PARTIDA TERMINADA 👑",
+                `<div style="font-size:1.35rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 VITÓRIA DE ${nomeDoGanhador.toUpperCase()}! 🎉</div>
+                 <p style="color:#e2e8f0; font-size:0.95rem; line-height:1.5;">O duelo terminou no tabuleiro. Parabéns ao vencedor e honra aos dois jogadores pela batalha!</p>`
             );
             return;
         }
@@ -2095,16 +2560,24 @@
         if (voceGanhou) {
             document.body.classList.add('vitoria-animada');
             reproduzirSomDoJogo('fanfarra_vitoria');
-            const seuNomeReal = nameInput.value.trim() || "Jogador";
             exibirAlertaDoSistema(
-                "👑 VITÓRIA SUPREMA DETECTADA! 👑", 
-                `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS ${seuNomeReal.toUpperCase()}, VOCÊ GANHOU O JOGO! 🎉</div><p style="color:#fff; font-size:0.95rem;">Sua estratégia funcionou perfeitamente. Continue dominando os servidores!</p>`
+                "🏆 VOCÊ GANHOU! 👑",
+                `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS, ${nomeDoGanhador.toUpperCase()}! 🎉</div>
+                 <p style="color:#fff; font-size:0.98rem; line-height:1.5;">Você venceu a partida com estratégia e domínio do tabuleiro.</p>
+                 <p style="color:#f1c40f; font-size:0.92rem; margin-top:10px;">${textoRanking}</p>`
             );
-        } else {
+        } else if (vocePerdeu) {
             reproduzirSomDoJogo('saida_rival');
             exibirAlertaDoSistema(
-                "💔 FIM DE JOGO", 
-                `<div style="font-size:1.3rem; color:#e74c3c; font-weight:bold; margin-bottom:15px;">A VITÓRIA FOI DO SEU OPONENTE!</div><p style="color:#eee; font-size:0.95rem; line-height:1.5;">Não desanime! Vá ao menu inicial, treine contra o **Robô** nos níveis fácil ou médio, ou jogue mais vezes para aprimorar sua tática e buscar a revanche!</p>`
+                "💔 PARTIDA TERMINADA",
+                `<div style="font-size:1.3rem; color:#e74c3c; font-weight:bold; margin-bottom:15px;">VITÓRIA DE ${nomeDoGanhador.toUpperCase()}!</div>
+                 <p style="color:#eee; font-size:0.96rem; line-height:1.5;">${nomeDoPerdedor}, não fique triste. Continue treinando, observe suas jogadas e volte para a revanche mais preparado.</p>
+                 <p style="color:#94a3b8; font-size:0.9rem; margin-top:10px;">Dica: use o modo contra a máquina para treinar captura obrigatória, defesa e movimentação da dama.</p>`
+            );
+        } else {
+            exibirAlertaDoSistema(
+                "👑 PARTIDA TERMINADA 👑",
+                `<div style="font-size:1.3rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 VITÓRIA DE ${nomeDoGanhador.toUpperCase()}! 🎉</div>`
             );
         }
     }
@@ -2121,27 +2594,54 @@
         if (currentGameState.status !== "playing") return false;
 
         if (p1Pieces === 0 || p2Pieces === 0) {
+            const p1Venceu = p1Pieces > 0;
             currentGameState.status = "finished";
+            currentGameState.winnerRole = p1Venceu ? "p1" : "p2";
+            currentGameState.winnerName = p1Venceu ? currentGameState.p1Name : currentGameState.p2Name;
+            currentGameState.finishReason = "sem_pecas";
+            currentGameState.finishedAt = Date.now();
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            if (isPracticeMode) { executarAlertaVisualDeVitoria(board); } 
-            else { finalizarPartidaOnline(p1Pieces > 0, board); }
+            if (isPracticeMode) {
+                if (!alertaFimPartidaMostrado) {
+                    alertaFimPartidaMostrado = true;
+                    executarAlertaVisualDeVitoria(currentGameState);
+                }
+            } else { finalizarPartidaOnline(p1Venceu, board, "sem_pecas"); }
             return true;
         }
 
         const totalMovimentosPossiveis = computeAllValidMoves(currentGameState.turn, board).length;
         if (totalMovimentosPossiveis === 0 && !lockPieceForMultiCapture) {
+            const p1Venceu = (currentGameState.turn === 2);
             currentGameState.status = "finished";
+            currentGameState.winnerRole = p1Venceu ? "p1" : "p2";
+            currentGameState.winnerName = p1Venceu ? currentGameState.p1Name : currentGameState.p2Name;
+            currentGameState.finishReason = "sem_movimentos";
+            currentGameState.finishedAt = Date.now();
             if (gameTimerInterval) clearInterval(gameTimerInterval);
-            if (isPracticeMode) { executarAlertaVisualDeVitoria(board); } 
-            else { let p1Venceu = (currentGameState.turn === 2); finalizarPartidaOnline(p1Venceu, board); }
+            if (isPracticeMode) {
+                if (!alertaFimPartidaMostrado) {
+                    alertaFimPartidaMostrado = true;
+                    executarAlertaVisualDeVitoria(currentGameState);
+                }
+            } else { finalizarPartidaOnline(p1Venceu, board, "sem_movimentos"); }
             return true;
         }
         return false;
     }
 
-    async function finalizarPartidaOnline(p1Venceu, board) {
+    async function finalizarPartidaOnline(p1Venceu, board, motivo = "fim_de_jogo") {
         if (isPracticeMode) return;
-        await update(ref(db, 'rooms/' + roomId), { board: board, status: "finished" });
+        const winnerRole = p1Venceu ? "p1" : "p2";
+        const winnerName = nomeSeguro(p1Venceu ? currentGameState.p1Name : currentGameState.p2Name);
+        await update(ref(db, 'rooms/' + roomId), {
+            board: board,
+            status: "finished",
+            winnerRole: winnerRole,
+            winnerName: winnerName,
+            finishReason: motivo,
+            finishedAt: Date.now()
+        });
         if (playerRole === "p1") updatePlayerRanking(p1Venceu, currentGameState.p1Name);
         if (playerRole === "p2") updatePlayerRanking(!p1Venceu, currentGameState.p2Name);
     }
@@ -2156,7 +2656,8 @@
             } else {
                 const roomRef = ref(db, 'rooms/' + roomId);
                 push(ref(db, `rooms/${roomId}/chat`), { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo.`, timestamp: Date.now() });
-                await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+                alertaFimPartidaMostrado = false;
+                await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now(), winnerRole: null, winnerName: null, finishReason: null, finishedAt: null });
             }
         });
     });
@@ -2165,15 +2666,15 @@
         if (isPracticeMode) { setupPracticeGame(nameInput.value.trim() || "Você"); return; }
         if (playerRole === "spectator") return;
         lockPieceForMultiCapture = null;
-        update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+        alertaFimPartidaMostrado = false;
+        update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now(), winnerRole: null, winnerName: null, finishReason: null, finishedAt: null });
     });
 
     leaveBtn.addEventListener('click', async () => {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         if (!isPracticeMode && roomId) {
-            if (playerRole === "spectator") { 
-                const isIsiquel = (nameInput.value.trim().toLowerCase() === "isiquel_admin");
-                if (!isIsiquel) { set(ref(db, `rooms/${roomId}/spectators/${playerId}`), null); }
+            if (playerRole === "spectator") {
+                if (!usuarioAdminConfirmado) { set(ref(db, `rooms/${roomId}/spectators/${playerId}`), null); }
             } 
             else if (playerRole !== "admin") {
                 if (playerRole === "p1") await update(ref(db, 'rooms/' + roomId), { p1Id: "", p1Name: "", status: "finished" });
@@ -2185,6 +2686,44 @@
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
 </script>
+
+
+<!--
+============================================================
+REGRAS SUGERIDAS PARA FIREBASE REALTIME DATABASE
+Cole no console do Firebase > Realtime Database > Rules.
+Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
+============================================================
+{
+  "rules": {
+    ".read": "auth != null",
+    "admins": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (!root.child('admins').exists() || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "adminLogs": {
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+    "leaderboard": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "rooms": {
+      ".read": "auth != null",
+      "$room": {
+        ".write": "auth != null",
+        "isAuthorized": { ".write": "root.child('admins').child(auth.uid).val() === true" },
+        "chatBlocked": { ".write": "root.child('admins').child(auth.uid).val() === true" }
+      }
+    }
+  }
+}
+-->
 
 </body>
 </html>
