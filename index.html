@@ -771,6 +771,65 @@
             line-height: 1.35;
         }
 
+
+
+        /* 🎓 MODO APRENDER - DICAS VISUAIS NO TABULEIRO */
+        .learning-coach-box {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 12px auto;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 1px solid rgba(46, 204, 113, 0.55);
+            border-left: 5px solid #2ecc71;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: left;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+        }
+        .learning-coach-title {
+            color: #2ecc71;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.86rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .learning-coach-text {
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .learning-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .learning-actions button {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 0.76rem;
+            text-transform: none;
+            background-color: #475569;
+        }
+        .square.learn-from::after, .square.learn-to::after, .square.learn-danger::after {
+            content: '';
+            position: absolute;
+            inset: 8%;
+            border-radius: 10px;
+            pointer-events: none;
+            animation: learnPulse 1s infinite;
+            z-index: 1;
+        }
+        .square.learn-from::after { border: 4px solid #f1c40f; box-shadow: inset 0 0 16px rgba(241,196,15,0.85), 0 0 15px rgba(241,196,15,0.75); }
+        .square.learn-to::after { border: 4px solid #2ecc71; box-shadow: inset 0 0 16px rgba(46,204,113,0.85), 0 0 15px rgba(46,204,113,0.75); }
+        .square.learn-danger::after { border: 4px solid #e74c3c; box-shadow: inset 0 0 16px rgba(231,76,60,0.85), 0 0 15px rgba(231,76,60,0.75); }
+        @keyframes learnPulse {
+            0% { opacity: 0.35; transform: scale(0.92); }
+            50% { opacity: 1; transform: scale(1.03); }
+            100% { opacity: 0.35; transform: scale(0.92); }
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -833,6 +892,7 @@
                     <button class="btn-diff-select" id="btn-choose-easy" style="background-color: #3498db;">Fácil</button>
                     <button class="btn-diff-select" id="btn-choose-medium" style="background-color: #f39c12;">Médio</button>
                     <button class="btn-diff-select" id="btn-choose-hard" style="background-color: #e74c3c;">Difícil</button>
+                    <button class="btn-diff-select" id="btn-choose-learn" style="background-color: #9b59b6;">Aprender</button>
                 </div>
             </div>
 
@@ -920,6 +980,15 @@
             </div>
             
             <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
+        </div>
+
+        <div id="learning-coach-box" class="learning-coach-box">
+            <div class="learning-coach-title">🎓 Professor de Damas</div>
+            <div id="learning-coach-text" class="learning-coach-text">Quando for sua vez, eu vou destacar uma boa jogada e explicar a lógica dela.</div>
+            <div class="learning-actions">
+                <button id="btn-learning-refresh" type="button">Mostrar melhor dica</button>
+                <button id="btn-learning-toggle" type="button">Ocultar dicas</button>
+            </div>
         </div>
 
         <div id="normal-board-wrapper" class="board-outer-container">
@@ -1076,7 +1145,10 @@
     let roomId = "";
     let playerRole = "spectator"; 
     let isPracticeMode = false;
-    let practiceDifficulty = "medio"; 
+    let practiceDifficulty = "medio";
+    let isLearningMode = false;
+    let currentLearningHint = null;
+    let learningTipsVisible = true; 
     let currentGameState = null;
     let selectedPiece = null;
     let validMoves = [];
@@ -1443,6 +1515,11 @@
     const btnChooseEasy = document.getElementById('btn-choose-easy');
     const btnChooseMedium = document.getElementById('btn-choose-medium');
     const btnChooseHard = document.getElementById('btn-choose-hard');
+    const btnChooseLearn = document.getElementById('btn-choose-learn');
+    const learningCoachBox = document.getElementById('learning-coach-box');
+    const learningCoachText = document.getElementById('learning-coach-text');
+    const btnLearningRefresh = document.getElementById('btn-learning-refresh');
+    const btnLearningToggle = document.getElementById('btn-learning-toggle');
 
 
     adminLoginBtn.addEventListener('click', async () => {
@@ -1702,6 +1779,7 @@
 
     async function registrarResultadoTreino(jogadorGanhou) {
         if (!isPracticeMode || hasRecordedResult) return;
+        if (practiceDifficulty === "aprender") return;
         hasRecordedResult = true;
 
         const nomeJogador = nomeSeguro(currentGameState?.p1Name || nameInput.value || "Jogador");
@@ -1899,9 +1977,21 @@
         difficultyBox.style.display = difficultyBox.style.display === "flex" ? "none" : "flex";
     });
 
-    btnChooseEasy.addEventListener('click', () => { practiceDifficulty = "facil"; iniciarTreinoDireto(); });
-    btnChooseMedium.addEventListener('click', () => { practiceDifficulty = "medio"; iniciarTreinoDireto(); });
-    btnChooseHard.addEventListener('click', () => { practiceDifficulty = "dificil"; iniciarTreinoDireto(); });
+    btnChooseEasy.addEventListener('click', () => { isLearningMode = false; practiceDifficulty = "facil"; iniciarTreinoDireto(); });
+    btnChooseMedium.addEventListener('click', () => { isLearningMode = false; practiceDifficulty = "medio"; iniciarTreinoDireto(); });
+    btnChooseHard.addEventListener('click', () => { isLearningMode = false; practiceDifficulty = "dificil"; iniciarTreinoDireto(); });
+    btnChooseLearn.addEventListener('click', () => { isLearningMode = true; practiceDifficulty = "aprender"; learningTipsVisible = true; iniciarTreinoDireto(); });
+
+    btnLearningRefresh.addEventListener('click', () => {
+        if (!isLearningMode || !currentGameState || currentGameState.status !== "playing" || currentGameState.turn !== 1) return;
+        atualizarDicaAprendizado(true);
+    });
+
+    btnLearningToggle.addEventListener('click', () => {
+        learningTipsVisible = !learningTipsVisible;
+        btnLearningToggle.innerText = learningTipsVisible ? "Ocultar dicas" : "Mostrar dicas";
+        atualizarDicaAprendizado(true);
+    });
 
     function iniciarTreinoDireto() {
         const playerName = nameInput.value.trim() || "Você";
@@ -2471,9 +2561,10 @@
         let robotLabel = "Robô Estrategista";
         if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
         if (practiceDifficulty === "dificil") robotLabel = "Mestre das Damas 👑";
+        if (practiceDifficulty === "aprender") robotLabel = "Professor Robô 🎓";
 
         currentGameState = { board: getInitialBoard(), turn: 1, status: "playing", p1Name: playerName, p2Name: robotLabel, startTime: Date.now() };
-        displayRoom.innerText = `TREINO (${practiceDifficulty.toUpperCase()})`;
+        displayRoom.innerText = isLearningMode ? "TREINO (APRENDER)" : `TREINO (${practiceDifficulty.toUpperCase()})`;
         
         lobbyScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
@@ -2482,11 +2573,14 @@
         document.getElementById('normal-board-wrapper').style.display = "block";
         document.getElementById('normal-controls').style.display = "grid";
         document.getElementById('normal-chat-wrapper').style.display = "flex";
+        learningCoachBox.style.display = isLearningMode ? "block" : "none";
+        currentLearningHint = null;
 
         dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
         
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
+        if (isLearningMode) atualizarDicaAprendizado(true);
         generateBoardUI(currentGameState.board);
     }
 
@@ -2532,6 +2626,11 @@
                     square.appendChild(piece);
                 }
                 if (validMoves.some(m => m.toR === r && m.toC === c)) square.classList.add('highlight');
+                if (isLearningMode && learningTipsVisible && currentLearningHint && currentGameState?.turn === 1) {
+                    if (currentLearningHint.move && currentLearningHint.move.fromR === r && currentLearningHint.move.fromC === c) square.classList.add('learn-from');
+                    if (currentLearningHint.move && currentLearningHint.move.toR === r && currentLearningHint.move.toC === c) square.classList.add('learn-to');
+                    if (currentLearningHint.danger && currentLearningHint.danger.r === r && currentLearningHint.danger.c === c) square.classList.add('learn-danger');
+                }
                 square.addEventListener('click', () => handleSquareInteraction(r, c));
                 boardEl.appendChild(square);
             }
@@ -2680,7 +2779,10 @@
             turnIndicator.classList.remove('tempo-estourado');
 
             currentGameState.board = board; currentGameState.turn = nextTurn;
-            renderGameStatus(currentGameState); generateBoardUI(board);
+            renderGameStatus(currentGameState);
+            if (isLearningMode && nextTurn === 1) atualizarDicaAprendizado(true);
+            else currentLearningHint = null;
+            generateBoardUI(board);
             if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
         } else { 
             currentGameState.board = board; currentGameState.turn = nextTurn;
@@ -2980,6 +3082,113 @@
         return avaliarTabuleiroParaRobo(applied.board);
     }
 
+    function movimentoCoord(move) {
+        const letras = "ABCDEFGH";
+        return `${letras[move.fromC]}${8 - move.fromR} → ${letras[move.toC]}${8 - move.toR}`;
+    }
+
+    function jogadaEntregaCaptura(boardDepois) {
+        const respostas = computeAllValidMovesEngine(2, boardDepois);
+        const capturas = respostas.filter(m => m.capture);
+        if (capturas.length === 0) return null;
+        return capturas[0].capture;
+    }
+
+    function explicarJogadaAprendizado(board, move, score) {
+        const piece = board[move.fromR][move.fromC];
+        const applied = aplicarMovimentoEngine(board, move);
+        const partes = [];
+        const coord = movimentoCoord(move);
+        if (move.capture) {
+            partes.push(`Essa jogada em <strong>${coord}</strong> é forte porque captura uma peça do robô. Na dama, quando existe captura, ela é obrigatória — então o caminho certo é aproveitar a tomada.`);
+        } else {
+            partes.push(`Uma boa jogada agora é <strong>${coord}</strong>. Ela mantém sua peça em movimento e melhora sua posição no tabuleiro.`);
+        }
+
+        if (piece === 1 && move.toR <= 2) partes.push("Ela também aproxima sua peça da última linha, aumentando a chance de virar dama.");
+        if (piece === 2) partes.push("Como essa peça já é dama, ela tem mais alcance. Use-a para controlar diagonais longas e pressionar o robô.");
+        if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) partes.push("Ela ocupa uma região central, onde sua peça costuma ter mais opções de ataque e defesa.");
+        if (move.toC === 0 || move.toC === 7) partes.push("Ela encosta na lateral, o que reduz alguns riscos de captura por um dos lados.");
+
+        const perigo = jogadaEntregaCaptura(applied.board);
+        if (perigo) {
+            partes.push("⚠️ Atenção: mesmo sendo uma opção possível, depois dela o robô pode ter uma captura. Observe a casa marcada em vermelho antes de confirmar.");
+        } else {
+            partes.push("✅ O ponto positivo é que ela não deixa uma captura imediata fácil para o robô.");
+        }
+
+        return { texto: partes.join(" "), danger: perigo, score };
+    }
+
+    function analisarMelhorJogadaDoAluno(board) {
+        let moves = computeAllValidMovesEngine(1, board, lockPieceForMultiCapture);
+        if (!moves.length) return null;
+        const candidatos = ordenarMovimentosParaBusca(board, moves, 1).slice(0, 14);
+        let melhor = null;
+        let melhorScore = -Infinity;
+
+        candidatos.forEach(move => {
+            const applied = aplicarMovimentoEngine(board, move);
+            let nextTurn = 2;
+            let nextForced = null;
+
+            if (move.capture) {
+                const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                if (novasCapturas.length > 0) {
+                    nextTurn = 1;
+                    nextForced = { r: applied.toR, c: applied.toC };
+                }
+            }
+
+            // Como a avaliação original mede vantagem do robô, invertemos o sinal para sugerir a melhor jogada do aluno.
+            let score = -minimaxRobo(applied.board, 3, nextTurn, -Infinity, Infinity, nextForced);
+            if (move.capture) score += 120;
+            if (board[move.fromR][move.fromC] === 1 && move.toR === 0) score += 220;
+            if (!jogadaEntregaCaptura(applied.board)) score += 55;
+
+            if (score > melhorScore) {
+                melhorScore = score;
+                melhor = move;
+            }
+        });
+
+        if (!melhor) melhor = moves[0];
+        const explicacao = explicarJogadaAprendizado(board, melhor, melhorScore);
+        return { move: melhor, text: explicacao.texto, danger: explicacao.danger, score: melhorScore };
+    }
+
+    function atualizarDicaAprendizado(forcarNova = false) {
+        if (!isLearningMode || !learningCoachBox || !learningCoachText) return;
+        learningCoachBox.style.display = "block";
+
+        if (!learningTipsVisible) {
+            currentLearningHint = null;
+            learningCoachText.innerHTML = "Dicas ocultas. Clique em <strong>Mostrar dicas</strong> para o Professor de Damas voltar a orientar suas jogadas.";
+            generateBoardUI(currentGameState?.board || []);
+            return;
+        }
+
+        if (!currentGameState || currentGameState.status !== "playing") {
+            currentLearningHint = null;
+            learningCoachText.innerText = "A partida terminou. Comece outra rodada para continuar aprendendo.";
+            return;
+        }
+
+        if (currentGameState.turn !== 1) {
+            currentLearningHint = null;
+            learningCoachText.innerText = "Agora observe o robô. Repare como ele tenta capturar, proteger peças e dominar as diagonais.";
+            return;
+        }
+
+        if (!currentLearningHint || forcarNova) currentLearningHint = analisarMelhorJogadaDoAluno(currentGameState.board);
+        if (!currentLearningHint) {
+            learningCoachText.innerText = "Não encontrei jogadas disponíveis. Isso geralmente significa bloqueio total ou fim de partida.";
+            return;
+        }
+
+        learningCoachText.innerHTML = `<strong>Dica do professor:</strong> ${currentLearningHint.text}<br><span style="display:block; margin-top:6px; color:#94a3b8;">Casa amarela = peça sugerida. Casa verde = destino sugerido. Casa vermelha = possível perigo.</span>`;
+    }
+
     function executeRobotTurn() {
         if (!isPracticeMode || currentGameState.status !== "playing") return;
         const board = currentGameState.board;
@@ -3029,6 +3238,8 @@
         currentGameState.board = applied.board;
         currentGameState.turn = nextTurn;
         renderGameStatus(currentGameState);
+        if (isLearningMode && nextTurn === 1) atualizarDicaAprendizado(true);
+        else currentLearningHint = null;
         generateBoardUI(applied.board);
 
         if (checkEndGameConditions(applied.board)) return;
