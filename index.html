@@ -830,6 +830,87 @@
             100% { opacity: 0.35; transform: scale(0.92); }
         }
 
+
+        /* 🏆 MODO TORNEIO E COMUNIDADE */
+        .community-panel, .tournament-lobby-panel {
+            background: linear-gradient(135deg, #0f172a, #172554);
+            border: 1px solid rgba(52, 152, 219, 0.35);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 18px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        }
+        .community-title, .tournament-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #38bdf8;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .community-desc, .tournament-desc {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+        .phone-consent-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+            text-align: left;
+            margin: -5px 0 10px 0;
+            line-height: 1.35;
+        }
+        .phone-consent-row input { width: auto; margin: 2px 0 0 0; }
+        .tournament-card, .live-game-card, .participant-card {
+            background-color: #020617;
+            border: 1px solid #1e293b;
+            border-left: 4px solid #38bdf8;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        .tournament-card strong, .live-game-card strong, .participant-card strong { color: #fff; }
+        .tiny-muted { color: #94a3b8; font-size: 0.78rem; line-height: 1.35; margin-top: 3px; }
+        .mini-action-btn {
+            width: auto;
+            padding: 7px 10px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            text-transform: none;
+            border-radius: 6px;
+            background-color: #2563eb;
+        }
+        .admin-tournament-box {
+            margin-top: 15px;
+            background-color: #0f172a;
+            border: 1px solid #38bdf8;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .admin-tournament-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #38bdf8;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #334155;
+            padding-bottom: 4px;
+        }
+        .admin-small-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .admin-full { grid-column: 1 / -1; }
+        @media (max-width: 480px) {
+            .admin-small-grid { grid-template-columns: 1fr; }
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -880,6 +961,13 @@
 
         <label for="room-input">Código da Sala:</label>
         <input type="text" id="room-input" placeholder="Ex: pai" maxlength="15" disabled>
+
+        <label for="whatsapp-input">WhatsApp para avisos de torneio:</label>
+        <input type="tel" id="whatsapp-input" placeholder="Ex: 44991711936" maxlength="16" disabled>
+        <label class="phone-consent-row">
+            <input type="checkbox" id="whatsapp-consent" disabled>
+            <span>Aceito receber avisos manuais no WhatsApp sobre torneios, salas liberadas e partidas ao vivo. Posso pedir para sair da lista quando quiser.</span>
+        </label>
         
         <div class="btn-group">
             <button id="join-btn" disabled>Jogar Online (Multiplayer)</button>
@@ -901,7 +989,21 @@
             <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
         </div>
 
+        <div class="tournament-lobby-panel">
+            <div class="tournament-title">🏆 Torneios Abertos</div>
+            <div class="tournament-desc">Veja campeonatos marcados pelo administrador e acompanhe as salas oficiais.</div>
+            <div id="tournament-lobby-list">
+                <div class="tiny-muted">Carregando torneios...</div>
+            </div>
+        </div>
 
+        <div class="community-panel">
+            <div class="community-title">🔥 Partidas Ao Vivo</div>
+            <div class="community-desc">Quando uma sala liberada estiver em jogo, ela aparece aqui para você assistir como espectador.</div>
+            <div id="live-games-lobby-list">
+                <div class="tiny-muted">Nenhuma partida ao vivo no momento.</div>
+            </div>
+        </div>
 
         <div class="admin-login-panel">
             <div class="admin-login-title">🛡️ Entrada do Administrador</div>
@@ -963,6 +1065,22 @@
             <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL (Nova Temporada)</button>
             
             <button id="btn-adm-monitorar-chat" style="background-color: #3498db; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 5px;">💬 MONITORAR CHAT DA SALA</button>
+
+            <div class="admin-tournament-box">
+                <div class="admin-tournament-title">🏆 Central de Torneios e Avisos</div>
+                <div class="admin-small-grid">
+                    <input type="text" id="tournament-name-input" class="admin-input-control admin-full" placeholder="Nome do torneio. Ex: Torneio de Sábado">
+                    <input type="datetime-local" id="tournament-date-input" class="admin-input-control">
+                    <input type="text" id="tournament-room-input" class="admin-input-control" placeholder="Sala principal. Ex: final10">
+                    <textarea id="tournament-message-input" class="admin-input-control admin-full" rows="3" placeholder="Mensagem do aviso para WhatsApp"></textarea>
+                </div>
+                <button id="btn-adm-criar-torneio" style="background-color:#2563eb; font-size:0.82rem; padding:12px; width:100%; margin-bottom:8px;">CRIAR / PUBLICAR TORNEIO</button>
+                <button id="btn-adm-listar-participantes" style="background-color:#25d366; font-size:0.82rem; padding:12px; width:100%; margin-bottom:8px;">📲 GERAR AVISOS NO WHATSAPP</button>
+                <div id="admin-tournament-list" style="margin-top:8px; max-height:180px; overflow-y:auto;">
+                    <div class="tiny-muted">Torneios criados aparecerão aqui.</div>
+                </div>
+                <div id="admin-whatsapp-participants" style="margin-top:8px; max-height:220px; overflow-y:auto;"></div>
+            </div>
 
             <div id="admin-chat-monitor-container" class="admin-chat-monitor-box">
                 <div id="admin-chat-monitor-title" class="admin-chat-monitor-title">💬 ESCUTA ATIVA: SALA ESPIONADA</div>
@@ -1216,6 +1334,223 @@
         if (className) el.className = className;
         el.innerText = String(texto ?? "");
         return el;
+    }
+
+
+    function telefoneSeguro(valor) {
+        let n = String(valor ?? "").replace(/\D/g, "");
+        if (!n) return "";
+        if (n.length === 10 || n.length === 11) n = "55" + n;
+        return n.slice(0, 14);
+    }
+
+    function textoAvisoSeguro(valor, limite = 220) {
+        return somenteTextoSeguro(valor || "", limite);
+    }
+
+    async function registrarJogadorComunidade(nomeBase) {
+        if (!playerId || !db) return;
+        const nome = nomeSeguro(nomeBase || nameInput?.value || "Jogador");
+        const whatsapp = telefoneSeguro(document.getElementById('whatsapp-input')?.value || "");
+        const consentiu = !!document.getElementById('whatsapp-consent')?.checked;
+        try {
+            await update(ref(db, `players/${playerId}`), {
+                name: nome,
+                whatsapp: whatsapp,
+                whatsappConsent: consentiu && !!whatsapp,
+                lastSeen: Date.now()
+            });
+        } catch (e) {
+            console.warn("Não foi possível salvar cadastro do jogador:", e);
+        }
+    }
+
+    function formatarDataTorneio(valor) {
+        if (!valor) return "Data a definir";
+        try {
+            const d = new Date(valor);
+            if (Number.isNaN(d.getTime())) return String(valor);
+            return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+        } catch (_) { return String(valor); }
+    }
+
+    function criarCardTorneio(torneio, id) {
+        const card = document.createElement('div');
+        card.className = 'tournament-card';
+        const titulo = document.createElement('strong');
+        titulo.innerText = `🏆 ${somenteTextoSeguro(torneio.name || 'Torneio de Damas', 60)}`;
+        const meta = criarTexto('div', `📅 ${formatarDataTorneio(torneio.date)} • Sala: ${(torneio.room || 'a definir').toUpperCase()} • Status: ${torneio.status || 'aberto'}`, 'tiny-muted');
+        const msg = criarTexto('div', textoAvisoSeguro(torneio.message || 'Participe do torneio e acompanhe as partidas no app.', 180), 'tiny-muted');
+        card.append(titulo, meta, msg);
+        if (torneio.room) {
+            const btn = document.createElement('button');
+            btn.className = 'mini-action-btn';
+            btn.innerText = 'Assistir sala do torneio';
+            btn.onclick = () => {
+                roomInput.value = salaSegura(torneio.room);
+                spectateBtn.click();
+            };
+            card.appendChild(btn);
+        }
+        return card;
+    }
+
+    function carregarTorneiosLobby() {
+        const list = document.getElementById('tournament-lobby-list');
+        if (!list) return;
+        onValue(ref(db, 'tournaments'), (snapshot) => {
+            limparElemento(list);
+            const data = snapshot.val();
+            if (!data) {
+                list.appendChild(criarTexto('div', 'Nenhum torneio publicado ainda.', 'tiny-muted'));
+                return;
+            }
+            const torneios = Object.entries(data)
+                .map(([id, t]) => [id, t || {}])
+                .filter(([_, t]) => t.status !== 'encerrado')
+                .sort((a, b) => numeroSeguro(b[1].createdAt) - numeroSeguro(a[1].createdAt))
+                .slice(0, 5);
+            if (!torneios.length) {
+                list.appendChild(criarTexto('div', 'Nenhum torneio aberto no momento.', 'tiny-muted'));
+                return;
+            }
+            torneios.forEach(([id, t]) => list.appendChild(criarCardTorneio(t, id)));
+        });
+    }
+
+    function carregarPartidasAoVivoLobby() {
+        const list = document.getElementById('live-games-lobby-list');
+        if (!list) return;
+        onValue(ref(db, 'liveGames'), (snapshot) => {
+            limparElemento(list);
+            const data = snapshot.val();
+            if (!data) {
+                list.appendChild(criarTexto('div', 'Nenhuma partida ao vivo no momento.', 'tiny-muted'));
+                return;
+            }
+            const jogos = Object.entries(data)
+                .filter(([_, g]) => g && g.status === 'playing')
+                .sort((a, b) => numeroSeguro(b[1].updatedAt) - numeroSeguro(a[1].updatedAt))
+                .slice(0, 6);
+            if (!jogos.length) {
+                list.appendChild(criarTexto('div', 'Nenhuma partida ao vivo no momento.', 'tiny-muted'));
+                return;
+            }
+            jogos.forEach(([id, g]) => {
+                const card = document.createElement('div');
+                card.className = 'live-game-card';
+                const title = document.createElement('strong');
+                title.innerText = `🔥 Sala ${id.toUpperCase()}`;
+                const info = criarTexto('div', `${nomeSeguro(g.p1Name || 'Jogador 1')} vs ${nomeSeguro(g.p2Name || 'Jogador 2')}`, 'tiny-muted');
+                const btn = document.createElement('button');
+                btn.className = 'mini-action-btn';
+                btn.innerText = 'Assistir como espectador';
+                btn.onclick = () => { roomInput.value = salaSegura(id); spectateBtn.click(); };
+                card.append(title, info, btn);
+                list.appendChild(card);
+            });
+        });
+    }
+
+    async function atualizarPartidaAoVivo(roomName, data) {
+        if (!roomName || isPracticeMode || playerRole === 'admin') return;
+        try {
+            if (data.status === 'playing' && data.p1Name && data.p2Name) {
+                await update(ref(db, `liveGames/${roomName}`), {
+                    status: 'playing',
+                    p1Name: nomeSeguro(data.p1Name),
+                    p2Name: nomeSeguro(data.p2Name),
+                    updatedAt: Date.now()
+                });
+            } else if (data.status === 'finished') {
+                await update(ref(db, `liveGames/${roomName}`), { status: 'finished', updatedAt: Date.now() });
+            }
+        } catch (e) { console.warn('Não foi possível atualizar partidas ao vivo:', e); }
+    }
+
+    async function criarTorneioAdmin() {
+        if (!(await exigirAdminSeguro())) return;
+        const nome = somenteTextoSeguro(document.getElementById('tournament-name-input')?.value || '', 60);
+        const data = document.getElementById('tournament-date-input')?.value || '';
+        const sala = salaSegura(document.getElementById('tournament-room-input')?.value || '');
+        const mensagem = textoAvisoSeguro(document.getElementById('tournament-message-input')?.value || '', 220);
+        if (!nome) return exibirAlertaDoSistema('Torneio', 'Digite o nome do torneio.');
+        const novoRef = push(ref(db, 'tournaments'));
+        await set(novoRef, {
+            name: nome,
+            date: data,
+            room: sala,
+            message: mensagem || `Novo torneio de damas: ${nome}. Entre no app para participar!`,
+            status: 'aberto',
+            createdAt: Date.now(),
+            createdBy: playerId
+        });
+        await registrarLogAdmin('criou_torneio', sala || nome);
+        exibirAlertaDoSistema('Torneio Publicado 🏆', `O torneio <strong>${nome}</strong> foi publicado no lobby.`);
+    }
+
+    function carregarTorneiosAdmin() {
+        const list = document.getElementById('admin-tournament-list');
+        if (!list) return;
+        onValue(ref(db, 'tournaments'), (snapshot) => {
+            limparElemento(list);
+            const data = snapshot.val();
+            if (!data) {
+                list.appendChild(criarTexto('div', 'Nenhum torneio criado.', 'tiny-muted'));
+                return;
+            }
+            Object.entries(data)
+                .sort((a, b) => numeroSeguro(b[1]?.createdAt) - numeroSeguro(a[1]?.createdAt))
+                .slice(0, 8)
+                .forEach(([id, t]) => {
+                    const card = criarCardTorneio(t || {}, id);
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'mini-action-btn';
+                    closeBtn.style.backgroundColor = '#991b1b';
+                    closeBtn.innerText = 'Encerrar';
+                    closeBtn.onclick = async () => {
+                        if (!(await exigirAdminSeguro())) return;
+                        await update(ref(db, `tournaments/${id}`), { status: 'encerrado', closedAt: Date.now() });
+                    };
+                    card.appendChild(closeBtn);
+                    list.appendChild(card);
+                });
+        });
+    }
+
+    async function gerarAvisosWhatsApp() {
+        if (!(await exigirAdminSeguro())) return;
+        const box = document.getElementById('admin-whatsapp-participants');
+        if (!box) return;
+        limparElemento(box);
+        const snap = await get(ref(db, 'players'));
+        const players = snap.val() || {};
+        const sala = salaSegura(document.getElementById('tournament-room-input')?.value || adminTargetRoomInput?.value || '');
+        const nomeTorneio = somenteTextoSeguro(document.getElementById('tournament-name-input')?.value || 'Torneio de Damas', 60);
+        const mensagemBase = textoAvisoSeguro(document.getElementById('tournament-message-input')?.value || `Olá! Está acontecendo um aviso do jogo de Damas: ${nomeTorneio}. ${sala ? 'Sala: ' + sala.toUpperCase() : 'Entre no app para participar.'}`, 240);
+        const autorizados = Object.values(players).filter(p => p && p.whatsappConsent && p.whatsapp);
+        if (!autorizados.length) {
+            box.appendChild(criarTexto('div', 'Nenhum jogador com WhatsApp autorizado ainda.', 'tiny-muted'));
+            return;
+        }
+        const aviso = criarTexto('div', `Encontrados ${autorizados.length} jogadores autorizados. Clique em cada botão para abrir o WhatsApp com a mensagem pronta.`, 'tiny-muted');
+        box.appendChild(aviso);
+        autorizados.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'participant-card';
+            const title = document.createElement('strong');
+            title.innerText = `${nomeSeguro(p.name || 'Jogador')} • ${telefoneSeguro(p.whatsapp)}`;
+            const btn = document.createElement('button');
+            btn.className = 'mini-action-btn';
+            btn.style.backgroundColor = '#25d366';
+            btn.innerText = 'Abrir WhatsApp';
+            btn.onclick = () => {
+                const msg = encodeURIComponent(mensagemBase);
+                window.open(`https://wa.me/${telefoneSeguro(p.whatsapp)}?text=${msg}`, '_blank');
+            };
+            card.append(title, btn);
+            box.appendChild(card);
+        });
     }
 
     function criarMensagemSistema(container, texto) {
@@ -1657,6 +1992,10 @@
         authStatusEl.innerText = mensagem;
         nameInput.disabled = false;
         roomInput.disabled = false;
+        const whatsappInputEl = document.getElementById('whatsapp-input');
+        const whatsappConsentEl = document.getElementById('whatsapp-consent');
+        if (whatsappInputEl) whatsappInputEl.disabled = false;
+        if (whatsappConsentEl) whatsappConsentEl.disabled = false;
         practiceBtn.disabled = false;
         rulesBtnLobby.disabled = false;
         rankBtnLobby.disabled = modoLimitado;
@@ -1699,7 +2038,9 @@
             }
 
             carregarPodiumLobby();
-            carregarPodiumTreinoLobby(); 
+            carregarPodiumTreinoLobby();
+            carregarTorneiosLobby();
+            carregarPartidasAoVivoLobby(); 
         } else {
             iniciarAutenticacaoAnonima();
         }
@@ -1957,6 +2298,7 @@
         lockPieceForMultiCapture = null;
         ultimoContadorEspectadores = 0;
         roomId = roomName;
+        registrarJogadorComunidade(playerName);
         joinRoom(roomName, playerName, false);
     });
 
@@ -1970,6 +2312,7 @@
         lockPieceForMultiCapture = null;
         ultimoContadorEspectadores = 0;
         roomId = roomName;
+        registrarJogadorComunidade(nameInput.value || "Olheiro");
         joinRoom(roomName, "Olheiro", true);
     });
 
@@ -2001,6 +2344,7 @@
         alertaFimPartidaMostrado = false;
         lockPieceForMultiCapture = null;
         playerRole = "p1";
+        registrarJogadorComunidade(playerName);
         setupPracticeGame(playerName);
     }
 
@@ -2180,6 +2524,9 @@
             }
         });
     }
+
+    document.getElementById('btn-adm-criar-torneio')?.addEventListener('click', criarTorneioAdmin);
+    document.getElementById('btn-adm-listar-participantes')?.addEventListener('click', gerarAvisosWhatsApp);
 
     document.getElementById('btn-adm-monitorar-chat').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
@@ -2469,6 +2816,7 @@
             document.getElementById('normal-controls').style.display = "none";
             document.getElementById('normal-chat-wrapper').style.display = "none";
             ativarPainelMonitoramentoRealtime();
+            carregarTorneiosAdmin();
             return;
         } else {
             adminPanel.style.display = "none";
@@ -2525,6 +2873,7 @@
                 executarAlertaVisualDeVitoria(data);
             }
 
+            atualizarPartidaAoVivo(roomName, data);
             currentGameState = data;
             liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
             runLocalTimer(data.startTime, data.status);
