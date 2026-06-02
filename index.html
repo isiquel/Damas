@@ -911,6 +911,106 @@
             .admin-small-grid { grid-template-columns: 1fr; }
         }
 
+        /* 📹 CHAMADA DE VÍDEO/ÁUDIO NATIVA (WEBRTC + FIREBASE) */
+        .call-panel {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            background: linear-gradient(135deg, #020617, #111827);
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            border-radius: 14px;
+            padding: 12px;
+            margin: 0 auto 14px auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+            text-align: left;
+        }
+
+        .call-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 8px;
+        }
+
+        .call-title {
+            color: #38bdf8;
+            font-weight: 900;
+            font-size: 0.86rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .call-status {
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            text-align: right;
+            line-height: 1.3;
+        }
+
+        .call-videos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .video-tile {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            aspect-ratio: 4 / 3;
+        }
+
+        .video-tile video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #020617;
+        }
+
+        .video-label {
+            position: absolute;
+            left: 7px;
+            bottom: 7px;
+            background: rgba(0,0,0,0.62);
+            color: #fff;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .call-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+        }
+
+        .call-controls button {
+            padding: 9px 7px;
+            font-size: 0.72rem;
+            text-transform: none;
+            border-radius: 8px;
+        }
+
+        .btn-call-start { background-color: #0284c7; }
+        .btn-call-start:hover:not(:disabled) { background-color: #0369a1; }
+        .btn-call-end { background-color: #dc2626; }
+        .btn-call-end:hover:not(:disabled) { background-color: #b91c1c; }
+        .btn-call-muted { background-color: #475569 !important; }
+
+        @media (max-width: 480px) {
+            .call-videos { grid-template-columns: 1fr; }
+            .call-controls { grid-template-columns: 1fr 1fr; }
+        }
+
+
         @media (max-width: 480px) {
             h1 { font-size: 1.8rem; }
             .card { padding: 20px; }
@@ -1041,6 +1141,29 @@
                     <span id="live-spectators" style="color: #3498db;">👁️ 0 assistindo</span>
                     <div>Você é: <span id="player-badge" class="badge">Espectador</span></div>
                 </div>
+            </div>
+        </div>
+
+        <div id="voice-video-call-panel" class="call-panel">
+            <div class="call-header">
+                <div class="call-title">📹 Chamada de vídeo e áudio</div>
+                <div id="call-status-text" class="call-status">Disponível para os dois jogadores da sala.</div>
+            </div>
+            <div class="call-videos">
+                <div class="video-tile">
+                    <video id="local-video" autoplay muted playsinline></video>
+                    <div class="video-label">Você</div>
+                </div>
+                <div class="video-tile">
+                    <video id="remote-video" autoplay playsinline></video>
+                    <div class="video-label">Oponente</div>
+                </div>
+            </div>
+            <div class="call-controls">
+                <button id="start-call-btn" class="btn-call-start" type="button">Iniciar chamada</button>
+                <button id="toggle-mic-btn" type="button">🎙️ Microfone</button>
+                <button id="toggle-camera-btn" type="button">📷 Câmera</button>
+                <button id="end-call-btn" class="btn-call-end" type="button">Encerrar</button>
             </div>
         </div>
 
@@ -1284,6 +1407,16 @@
     let emContagemRegressivaAtiva = false;
     let listenerChatAdminAtivo = null;
     let alertaFimPartidaMostrado = false;
+
+    let callPeer = null;
+    let localCallStream = null;
+    let callUnsubscribers = [];
+    let processedRemoteCandidates = new Set();
+    let callStartedByUser = false;
+    let remoteDescriptionApplied = false;
+    let localMicEnabled = true;
+    let localCameraEnabled = true;
+
 
 
     // ================================================================
@@ -1824,6 +1957,16 @@
     const chatSendBtn = document.getElementById('chat-send-btn');
     const toggleChatVisibility = document.getElementById('toggle-chat-visibility');
     const chatInputWrapper = document.getElementById('chat-input-wrapper');
+
+    const voiceVideoCallPanel = document.getElementById('voice-video-call-panel');
+    const startCallBtn = document.getElementById('start-call-btn');
+    const endCallBtn = document.getElementById('end-call-btn');
+    const toggleMicBtn = document.getElementById('toggle-mic-btn');
+    const toggleCameraBtn = document.getElementById('toggle-camera-btn');
+    const localVideoEl = document.getElementById('local-video');
+    const remoteVideoEl = document.getElementById('remote-video');
+    const callStatusText = document.getElementById('call-status-text');
+
 
     const adminPanel = document.getElementById('admin-panel');
     const adminRoomsDashboardList = document.getElementById('admin-rooms-dashboard-list');
@@ -2430,6 +2573,287 @@
         chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
     }
 
+
+    // ================================================================
+    // 📹 CHAMADA DE VÍDEO E ÁUDIO GRÁTIS - WEBRTC + FIREBASE
+    // O Firebase não transmite vídeo; ele só combina a conexão.
+    // O áudio/vídeo vai direto entre os navegadores via WebRTC.
+    // ================================================================
+    const rtcConfigGratis = {
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" }
+        ]
+    };
+
+    function atualizarStatusChamada(texto) {
+        if (callStatusText) callStatusText.innerText = texto;
+    }
+
+    function podeUsarChamadaAgora() {
+        return !isPracticeMode && roomId && (playerRole === "p1" || playerRole === "p2");
+    }
+
+    function atualizarPainelChamada() {
+        if (!voiceVideoCallPanel) return;
+        if (podeUsarChamadaAgora()) {
+            voiceVideoCallPanel.style.display = "block";
+            startCallBtn.disabled = !!localCallStream;
+            endCallBtn.disabled = !localCallStream;
+            toggleMicBtn.disabled = !localCallStream;
+            toggleCameraBtn.disabled = !localCallStream;
+            atualizarStatusChamada(localCallStream ? "Chamada ativa nesta sala." : "Disponível para os dois jogadores da sala.");
+        } else {
+            voiceVideoCallPanel.style.display = "none";
+        }
+    }
+
+    async function prepararMidiaLocal() {
+        if (localCallStream) return localCallStream;
+        try {
+            localCallStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (erroVideo) {
+            try {
+                localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                exibirAlertaDoSistema("Chamada por áudio", "A câmera não foi liberada, então a chamada começou somente com áudio.");
+            } catch (erroAudio) {
+                throw new Error("Não foi possível acessar câmera ou microfone. Verifique as permissões do navegador.");
+            }
+        }
+
+        localMicEnabled = true;
+        localCameraEnabled = localCallStream.getVideoTracks().some(t => t.enabled);
+        localVideoEl.srcObject = localCallStream;
+        toggleMicBtn.innerText = "🎙️ Microfone";
+        toggleCameraBtn.innerText = localCameraEnabled ? "📷 Câmera" : "📷 Sem câmera";
+        return localCallStream;
+    }
+
+    function criarPeerChamada() {
+        if (callPeer) return callPeer;
+        callPeer = new RTCPeerConnection(rtcConfigGratis);
+
+        callPeer.ontrack = (event) => {
+            const [remoteStream] = event.streams;
+            if (remoteStream) {
+                remoteVideoEl.srcObject = remoteStream;
+                atualizarStatusChamada("Conectado com o oponente.");
+            }
+        };
+
+        callPeer.onicecandidate = async (event) => {
+            if (!event.candidate || !roomId || !playerId) return;
+            try {
+                await push(ref(db, `rooms/${roomId}/call/candidates/${playerId}`), event.candidate.toJSON());
+            } catch (e) {
+                console.warn("Falha ao enviar candidato ICE:", e);
+            }
+        };
+
+        callPeer.onconnectionstatechange = () => {
+            const estado = callPeer?.connectionState || "novo";
+            if (estado === "connected") atualizarStatusChamada("Chamada conectada ✅");
+            if (estado === "connecting") atualizarStatusChamada("Conectando chamada...");
+            if (estado === "disconnected") atualizarStatusChamada("Conexão instável. Tentando reconectar...");
+            if (estado === "failed") atualizarStatusChamada("Não foi possível fechar a conexão direta nesta rede.");
+        };
+
+        if (localCallStream) {
+            localCallStream.getTracks().forEach(track => callPeer.addTrack(track, localCallStream));
+        }
+
+        return callPeer;
+    }
+
+    function limparListenersChamada() {
+        callUnsubscribers.forEach(unsub => {
+            try { if (typeof unsub === "function") unsub(); } catch (_) {}
+        });
+        callUnsubscribers = [];
+    }
+
+    async function iniciarChamadaWebRTC() {
+        if (!podeUsarChamadaAgora()) {
+            exibirAlertaDoSistema("Chamada indisponível", "A chamada de vídeo e áudio funciona apenas para os dois jogadores da sala online.");
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            exibirAlertaDoSistema("Navegador incompatível", "Este navegador não liberou câmera/microfone para chamada. Use Chrome, Edge ou navegador atualizado.");
+            return;
+        }
+
+        callStartedByUser = true;
+        processedRemoteCandidates = new Set();
+        remoteDescriptionApplied = false;
+        atualizarStatusChamada("Pedindo permissão da câmera e microfone...");
+
+        try {
+            await prepararMidiaLocal();
+            criarPeerChamada();
+
+            await update(ref(db, `rooms/${roomId}/call/participants/${playerId}`), {
+                role: playerRole,
+                name: nomeSeguro(nameInput.value || playerRole),
+                joinedAt: Date.now()
+            });
+            onDisconnect(ref(db, `rooms/${roomId}/call/participants/${playerId}`)).remove();
+
+            escutarSinalizacaoChamada();
+            atualizarPainelChamada();
+            atualizarStatusChamada(playerRole === "p1" ? "Aguardando o jogador preto entrar na chamada..." : "Aguardando sinal do jogador vermelho...");
+        } catch (e) {
+            encerrarChamadaWebRTC(false);
+            exibirAlertaDoSistema("Erro na chamada", somenteTextoSeguro(e.message || "Não foi possível iniciar a chamada.", 180));
+        }
+    }
+
+    function escutarSinalizacaoChamada() {
+        limparListenersChamada();
+
+        const callRef = ref(db, `rooms/${roomId}/call`);
+        const unsubCall = onValue(callRef, async (snap) => {
+            const callData = snap.val() || {};
+            if (callData.status === "ended" && localCallStream) {
+                encerrarChamadaWebRTC(false);
+                atualizarStatusChamada("A chamada foi encerrada.");
+                return;
+            }
+
+            const participants = callData.participants || {};
+            const temP1 = Object.values(participants).some(p => p?.role === "p1");
+            const temP2 = Object.values(participants).some(p => p?.role === "p2");
+
+            if (localCallStream && playerRole === "p1" && temP1 && temP2 && !callData.offers?.[playerId]) {
+                try {
+                    const pc = criarPeerChamada();
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    await set(ref(db, `rooms/${roomId}/call/offers/${playerId}`), {
+                        type: offer.type,
+                        sdp: offer.sdp,
+                        fromRole: playerRole,
+                        createdAt: Date.now()
+                    });
+                    atualizarStatusChamada("Convite enviado. Esperando resposta do oponente...");
+                } catch (e) {
+                    console.warn("Erro criando oferta WebRTC:", e);
+                }
+            }
+
+            if (localCallStream && playerRole === "p2" && callData.offers) {
+                const offerEntry = Object.entries(callData.offers).find(([uid, off]) => uid !== playerId && off?.sdp);
+                if (offerEntry && !remoteDescriptionApplied) {
+                    try {
+                        const [offerUid, offer] = offerEntry;
+                        const pc = criarPeerChamada();
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: offer.type, sdp: offer.sdp }));
+                        remoteDescriptionApplied = true;
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        await set(ref(db, `rooms/${roomId}/call/answers/${playerId}`), {
+                            type: answer.type,
+                            sdp: answer.sdp,
+                            to: offerUid,
+                            fromRole: playerRole,
+                            createdAt: Date.now()
+                        });
+                        atualizarStatusChamada("Resposta enviada. Conectando...");
+                    } catch (e) {
+                        console.warn("Erro respondendo chamada WebRTC:", e);
+                    }
+                }
+            }
+
+            if (localCallStream && playerRole === "p1" && callData.answers) {
+                const answerEntry = Object.entries(callData.answers).find(([uid, ans]) => uid !== playerId && ans?.sdp);
+                if (answerEntry && !remoteDescriptionApplied) {
+                    try {
+                        const [, answer] = answerEntry;
+                        const pc = criarPeerChamada();
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: answer.type, sdp: answer.sdp }));
+                        remoteDescriptionApplied = true;
+                        atualizarStatusChamada("Resposta recebida. Conectando...");
+                    } catch (e) {
+                        console.warn("Erro aplicando resposta WebRTC:", e);
+                    }
+                }
+            }
+
+            if (localCallStream && callData.candidates) {
+                for (const [uid, lista] of Object.entries(callData.candidates)) {
+                    if (uid === playerId || !lista) continue;
+                    for (const [candId, cand] of Object.entries(lista)) {
+                        const chave = `${uid}_${candId}`;
+                        if (processedRemoteCandidates.has(chave)) continue;
+                        processedRemoteCandidates.add(chave);
+                        try {
+                            const pc = criarPeerChamada();
+                            if (pc.remoteDescription && cand) await pc.addIceCandidate(new RTCIceCandidate(cand));
+                        } catch (e) {
+                            console.warn("Candidato ICE ignorado:", e);
+                        }
+                    }
+                }
+            }
+        });
+
+        callUnsubscribers.push(unsubCall);
+    }
+
+    async function encerrarChamadaWebRTC(avisarFirebase = true) {
+        limparListenersChamada();
+
+        if (callPeer) {
+            try { callPeer.close(); } catch (_) {}
+            callPeer = null;
+        }
+
+        if (localCallStream) {
+            localCallStream.getTracks().forEach(track => track.stop());
+            localCallStream = null;
+        }
+
+        if (localVideoEl) localVideoEl.srcObject = null;
+        if (remoteVideoEl) remoteVideoEl.srcObject = null;
+
+        processedRemoteCandidates = new Set();
+        remoteDescriptionApplied = false;
+        callStartedByUser = false;
+
+        if (avisarFirebase && roomId && playerId && !isPracticeMode) {
+            try {
+                await update(ref(db, `rooms/${roomId}/call`), { status: "ended", endedAt: Date.now(), endedBy: playerId });
+                await remove(ref(db, `rooms/${roomId}/call/participants/${playerId}`));
+            } catch (e) {
+                console.warn("Não foi possível limpar chamada no Firebase:", e);
+            }
+        }
+
+        atualizarPainelChamada();
+        atualizarStatusChamada("Chamada encerrada.");
+    }
+
+    startCallBtn.addEventListener('click', iniciarChamadaWebRTC);
+    endCallBtn.addEventListener('click', () => encerrarChamadaWebRTC(true));
+
+    toggleMicBtn.addEventListener('click', () => {
+        if (!localCallStream) return;
+        localMicEnabled = !localMicEnabled;
+        localCallStream.getAudioTracks().forEach(track => track.enabled = localMicEnabled);
+        toggleMicBtn.innerText = localMicEnabled ? "🎙️ Microfone" : "🔇 Mutado";
+        toggleMicBtn.classList.toggle("btn-call-muted", !localMicEnabled);
+    });
+
+    toggleCameraBtn.addEventListener('click', () => {
+        if (!localCallStream) return;
+        const videoTracks = localCallStream.getVideoTracks();
+        if (!videoTracks.length) return exibirAlertaDoSistema("Sem câmera", "Esta chamada foi iniciada apenas com áudio.");
+        localCameraEnabled = !localCameraEnabled;
+        videoTracks.forEach(track => track.enabled = localCameraEnabled);
+        toggleCameraBtn.innerText = localCameraEnabled ? "📷 Câmera" : "🚫 Câmera";
+        toggleCameraBtn.classList.toggle("btn-call-muted", !localCameraEnabled);
+    });
+
     function contarPecasNoTabuleiro(board) {
         let count = 0;
         for (let r = 0; r < 8; r++) {
@@ -2815,6 +3239,7 @@
             document.getElementById('normal-board-wrapper').style.display = "none";
             document.getElementById('normal-controls').style.display = "none";
             document.getElementById('normal-chat-wrapper').style.display = "none";
+            voiceVideoCallPanel.style.display = "none";
             ativarPainelMonitoramentoRealtime();
             carregarTorneiosAdmin();
             return;
@@ -2827,6 +3252,7 @@
         }
         
         toggleChatVisibility.style.display = (playerRole === "spectator") ? "none" : "block";
+        atualizarPainelChamada();
 
         onValue(roomRef, (snap) => {
             const data = snap.val();
@@ -2897,6 +3323,7 @@
     }
 
     function setupPracticeGame(playerName) {
+        encerrarChamadaWebRTC(false);
         isPracticeMode = true;
         alertaFimPartidaMostrado = false;
         toggleChatVisibility.style.display = "block";
@@ -2923,6 +3350,7 @@
         document.getElementById('normal-controls').style.display = "grid";
         document.getElementById('normal-chat-wrapper').style.display = "flex";
         learningCoachBox.style.display = isLearningMode ? "block" : "none";
+        voiceVideoCallPanel.style.display = "none";
         currentLearningHint = null;
 
         dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
@@ -3761,6 +4189,7 @@
     });
 
     leaveBtn.addEventListener('click', async () => {
+        await encerrarChamadaWebRTC(true);
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         if (!isPracticeMode && roomId) {
             if (playerRole === "spectator") {
