@@ -912,8 +912,8 @@
         }
 
         /* 📹 CHAMADA DE VÍDEO/ÁUDIO NATIVA (WEBRTC + FIREBASE)
-           Versão organizada: chamada ativa vira uma janelinha flutuante,
-           mostrando somente o oponente para não atrapalhar o tabuleiro. */
+           Versão premium: quando ativa vira uma janelinha flutuante,
+           dividida entre oponente e você, podendo arrastar e aumentar/diminuir. */
         .call-panel {
             display: none;
             width: 100%;
@@ -978,6 +978,10 @@
             background: #020617;
         }
 
+        #local-video {
+            transform: scaleX(-1);
+        }
+
         .video-label {
             position: absolute;
             left: 7px;
@@ -1008,36 +1012,52 @@
         .btn-call-end { background-color: #dc2626; }
         .btn-call-end:hover:not(:disabled) { background-color: #b91c1c; }
         .btn-call-muted { background-color: #475569 !important; }
+        .btn-call-size { background-color: #334155; }
+        .btn-call-size:hover:not(:disabled) { background-color: #475569; }
 
-        /* Quando a chamada está ativa, ela vira picture-in-picture fixo.
-           Assim dá para ver o tabuleiro e a cara do oponente ao mesmo tempo. */
+        /* Chamada ativa: janelinha livre, arrastável e redimensionável. */
         .call-panel.call-active {
             position: fixed;
-            top: 86px;
+            top: 92px;
             right: 8px;
-            width: 156px;
-            max-width: 42vw;
+            width: 190px;
+            max-width: 72vw;
             margin: 0;
             padding: 6px;
             z-index: 950;
             border-radius: 14px;
-            border: 1px solid rgba(56, 189, 248, 0.75);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.65);
+            border: 1px solid rgba(56, 189, 248, 0.85);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.72);
             text-align: center;
             backdrop-filter: blur(8px);
+            user-select: none;
         }
 
         .call-panel.call-active .call-header {
             margin-bottom: 5px;
-            padding-bottom: 4px;
-            border-bottom: none;
+            padding: 4px 5px 5px 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             justify-content: center;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .call-panel.call-active .call-header:active {
+            cursor: grabbing;
         }
 
         .call-panel.call-active .call-title {
-            font-size: 0.62rem;
-            line-height: 1.1;
-            letter-spacing: 0.2px;
+            font-size: 0.6rem;
+            line-height: 1.15;
+            letter-spacing: 0.25px;
+        }
+
+        .call-panel.call-active .call-title::after {
+            content: ' • arraste';
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: none;
+            letter-spacing: 0;
         }
 
         .call-panel.call-active .call-status {
@@ -1045,17 +1065,24 @@
         }
 
         .call-panel.call-active .call-videos {
-            display: block;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
             margin-bottom: 5px;
         }
 
         .call-panel.call-active .video-tile:first-child {
-            display: none;
+            display: block;
+            order: 2;
+        }
+
+        .call-panel.call-active .video-tile:nth-child(2) {
+            order: 1;
         }
 
         .call-panel.call-active .video-tile {
-            aspect-ratio: 3 / 4;
-            border-radius: 12px;
+            aspect-ratio: 16 / 9;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.18);
             background: #020617;
         }
@@ -1064,11 +1091,11 @@
             left: 5px;
             bottom: 5px;
             padding: 2px 7px;
-            font-size: 0.62rem;
+            font-size: 0.58rem;
         }
 
         .call-panel.call-active .call-controls {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 4px;
         }
 
@@ -1079,10 +1106,12 @@
 
         .call-panel.call-active #toggle-mic-btn,
         .call-panel.call-active #toggle-camera-btn,
+        .call-panel.call-active #call-size-minus-btn,
+        .call-panel.call-active #call-size-plus-btn,
         .call-panel.call-active #end-call-btn {
             display: block;
             padding: 6px 4px;
-            font-size: 0.58rem;
+            font-size: 0.56rem;
             line-height: 1.1;
         }
 
@@ -1095,10 +1124,10 @@
             .video-tile { aspect-ratio: 1 / 1; }
             .call-controls { grid-template-columns: 1fr 1fr; }
             .call-panel.call-active {
-                top: 78px;
+                top: 86px;
                 right: 6px;
-                width: 138px;
-                max-width: 40vw;
+                width: 176px;
+                max-width: 68vw;
             }
         }
 
@@ -1256,6 +1285,8 @@
                 <button id="start-audio-call-btn" class="btn-call-start" type="button">Somente áudio</button>
                 <button id="toggle-mic-btn" type="button">🎙️ Microfone</button>
                 <button id="toggle-camera-btn" type="button">📷 Câmera</button>
+                <button id="call-size-minus-btn" class="btn-call-size" type="button">➖ Menor</button>
+                <button id="call-size-plus-btn" class="btn-call-size" type="button">➕ Maior</button>
                 <button id="end-call-btn" class="btn-call-end" type="button">Encerrar</button>
             </div>
         </div>
@@ -2057,6 +2088,8 @@
     const endCallBtn = document.getElementById('end-call-btn');
     const toggleMicBtn = document.getElementById('toggle-mic-btn');
     const toggleCameraBtn = document.getElementById('toggle-camera-btn');
+    const callSizeMinusBtn = document.getElementById('call-size-minus-btn');
+    const callSizePlusBtn = document.getElementById('call-size-plus-btn');
     const localVideoEl = document.getElementById('local-video');
     const remoteVideoEl = document.getElementById('remote-video');
     const callStatusText = document.getElementById('call-status-text');
@@ -2701,6 +2734,7 @@
         if (podeUsarChamadaAgora()) {
             voiceVideoCallPanel.style.display = "block";
             voiceVideoCallPanel.classList.toggle("call-active", !!localCallStream);
+            if (localCallStream) restaurarPosicaoChamadaFlutuante();
 
             if (startCallBtn) startCallBtn.disabled = !!localCallStream;
             if (startAudioCallBtn) startAudioCallBtn.disabled = !!localCallStream;
@@ -2759,7 +2793,10 @@
         localMicEnabled = true;
         localCameraEnabled = localCallStream.getVideoTracks().some(t => t.enabled);
         if (localVideoEl) localVideoEl.srcObject = localCallStream;
-        if (voiceVideoCallPanel) voiceVideoCallPanel.classList.add("call-active");
+        if (voiceVideoCallPanel) {
+            voiceVideoCallPanel.classList.add("call-active");
+            restaurarPosicaoChamadaFlutuante();
+        }
         if (toggleMicBtn) {
             toggleMicBtn.innerText = "🎙️ Mic";
             toggleMicBtn.classList.remove("btn-call-muted");
@@ -2781,7 +2818,10 @@
             if (remoteStream && remoteVideoEl) {
                 remoteVideoEl.srcObject = remoteStream;
                 atualizarStatusChamada("Conectado ✅");
-                if (voiceVideoCallPanel) voiceVideoCallPanel.classList.add("call-active");
+                if (voiceVideoCallPanel) {
+                    voiceVideoCallPanel.classList.add("call-active");
+                    restaurarPosicaoChamadaFlutuante();
+                }
             }
         };
 
@@ -3015,6 +3055,115 @@
         atualizarPainelChamada();
         atualizarStatusChamada("Chamada encerrada.");
     }
+
+
+    // 🖼️ Controles da janelinha flutuante da chamada: arrastar + maior/menor.
+    let callFloatingWidth = Number(localStorage.getItem('damas_call_floating_width') || 176);
+    callFloatingWidth = Math.max(140, Math.min(270, callFloatingWidth));
+
+    function aplicarTamanhoChamadaFlutuante() {
+        if (!voiceVideoCallPanel) return;
+        if (voiceVideoCallPanel.classList.contains('call-active')) {
+            voiceVideoCallPanel.style.width = `${callFloatingWidth}px`;
+        }
+        localStorage.setItem('damas_call_floating_width', String(callFloatingWidth));
+    }
+
+    function redimensionarChamadaFlutuante(delta) {
+        callFloatingWidth = Math.max(140, Math.min(270, callFloatingWidth + delta));
+        aplicarTamanhoChamadaFlutuante();
+        manterChamadaDentroDaTela();
+    }
+
+    function manterChamadaDentroDaTela() {
+        if (!voiceVideoCallPanel || !voiceVideoCallPanel.classList.contains('call-active')) return;
+        const rect = voiceVideoCallPanel.getBoundingClientRect();
+        const margem = 6;
+        let left = rect.left;
+        let top = rect.top;
+        if (rect.right > window.innerWidth - margem) left -= rect.right - (window.innerWidth - margem);
+        if (rect.left < margem) left = margem;
+        if (rect.bottom > window.innerHeight - margem) top -= rect.bottom - (window.innerHeight - margem);
+        if (rect.top < margem) top = margem;
+        voiceVideoCallPanel.style.left = `${Math.round(left)}px`;
+        voiceVideoCallPanel.style.top = `${Math.round(top)}px`;
+        voiceVideoCallPanel.style.right = 'auto';
+    }
+
+    function restaurarPosicaoChamadaFlutuante() {
+        if (!voiceVideoCallPanel || !voiceVideoCallPanel.classList.contains('call-active')) return;
+        aplicarTamanhoChamadaFlutuante();
+        const salvo = localStorage.getItem('damas_call_floating_pos');
+        if (salvo) {
+            try {
+                const pos = JSON.parse(salvo);
+                if (Number.isFinite(pos.left) && Number.isFinite(pos.top)) {
+                    voiceVideoCallPanel.style.left = `${pos.left}px`;
+                    voiceVideoCallPanel.style.top = `${pos.top}px`;
+                    voiceVideoCallPanel.style.right = 'auto';
+                }
+            } catch (_) {}
+        }
+        setTimeout(manterChamadaDentroDaTela, 80);
+    }
+
+    function ativarArrastarChamadaFlutuante() {
+        if (!voiceVideoCallPanel) return;
+        const header = voiceVideoCallPanel.querySelector('.call-header');
+        if (!header || header.dataset.dragReady === '1') return;
+        header.dataset.dragReady = '1';
+
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startLeft = 0;
+        let startTop = 0;
+
+        header.addEventListener('pointerdown', (ev) => {
+            if (!voiceVideoCallPanel.classList.contains('call-active')) return;
+            dragging = true;
+            const rect = voiceVideoCallPanel.getBoundingClientRect();
+            startX = ev.clientX;
+            startY = ev.clientY;
+            startLeft = rect.left;
+            startTop = rect.top;
+            voiceVideoCallPanel.style.left = `${rect.left}px`;
+            voiceVideoCallPanel.style.top = `${rect.top}px`;
+            voiceVideoCallPanel.style.right = 'auto';
+            try { header.setPointerCapture(ev.pointerId); } catch (_) {}
+            ev.preventDefault();
+        });
+
+        header.addEventListener('pointermove', (ev) => {
+            if (!dragging) return;
+            const rect = voiceVideoCallPanel.getBoundingClientRect();
+            const margem = 6;
+            let nextLeft = startLeft + (ev.clientX - startX);
+            let nextTop = startTop + (ev.clientY - startY);
+            nextLeft = Math.max(margem, Math.min(window.innerWidth - rect.width - margem, nextLeft));
+            nextTop = Math.max(margem, Math.min(window.innerHeight - rect.height - margem, nextTop));
+            voiceVideoCallPanel.style.left = `${Math.round(nextLeft)}px`;
+            voiceVideoCallPanel.style.top = `${Math.round(nextTop)}px`;
+            voiceVideoCallPanel.style.right = 'auto';
+        });
+
+        const pararArrasto = () => {
+            if (!dragging) return;
+            dragging = false;
+            const rect = voiceVideoCallPanel.getBoundingClientRect();
+            localStorage.setItem('damas_call_floating_pos', JSON.stringify({
+                left: Math.round(rect.left),
+                top: Math.round(rect.top)
+            }));
+        };
+        header.addEventListener('pointerup', pararArrasto);
+        header.addEventListener('pointercancel', pararArrasto);
+        window.addEventListener('resize', manterChamadaDentroDaTela);
+    }
+
+    ativarArrastarChamadaFlutuante();
+    if (callSizeMinusBtn) callSizeMinusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(-18));
+    if (callSizePlusBtn) callSizePlusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(18));
 
     if (startCallBtn) startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
     if (startAudioCallBtn) startAudioCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(true));
