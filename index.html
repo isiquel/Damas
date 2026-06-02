@@ -2670,8 +2670,9 @@
 
     // ================================================================
     // 📹 CHAMADA DE VÍDEO E ÁUDIO GRÁTIS - WEBRTC + FIREBASE
-    // O Firebase não transmite vídeo; ele só combina a conexão.
-    // O áudio/vídeo vai direto entre os navegadores via WebRTC.
+    // Versão corrigida: janelinha flutuante + sinalização por função
+    // p1 sempre cria o convite e p2 sempre responde. Isso evita a tela
+    // ficar presa em "aguardando jogador" quando os dois já entraram.
     // ================================================================
     const rtcConfigGratis = {
         iceServers: [
@@ -2679,6 +2680,8 @@
             { urls: "stun:stun1.l.google.com:19302" }
         ]
     };
+
+    let callSessionId = "";
 
     function atualizarStatusChamada(texto) {
         if (callStatusText) callStatusText.innerText = texto;
@@ -2688,30 +2691,40 @@
         return !isPracticeMode && roomId && (playerRole === "p1" || playerRole === "p2");
     }
 
+    function oponenteDaChamada() {
+        return playerRole === "p1" ? "p2" : "p1";
+    }
+
     function atualizarPainelChamada() {
         if (!voiceVideoCallPanel) return;
+
         if (podeUsarChamadaAgora()) {
             voiceVideoCallPanel.style.display = "block";
             voiceVideoCallPanel.classList.toggle("call-active", !!localCallStream);
-            startCallBtn.disabled = !!localCallStream;
+
+            if (startCallBtn) startCallBtn.disabled = !!localCallStream;
             if (startAudioCallBtn) startAudioCallBtn.disabled = !!localCallStream;
-            endCallBtn.disabled = !localCallStream;
-            toggleMicBtn.disabled = !localCallStream;
-            toggleCameraBtn.disabled = !localCallStream;
-            atualizarStatusChamada(localCallStream ? "Chamada ativa nesta sala." : "Disponível para os dois jogadores da sala.");
+            if (endCallBtn) endCallBtn.disabled = !localCallStream;
+            if (toggleMicBtn) toggleMicBtn.disabled = !localCallStream;
+            if (toggleCameraBtn) toggleCameraBtn.disabled = !localCallStream;
+
+            if (!localCallStream) {
+                atualizarStatusChamada("Toque em iniciar para chamar o oponente.");
+            }
         } else {
             voiceVideoCallPanel.classList.remove("call-active");
             voiceVideoCallPanel.style.display = "none";
+            atualizarStatusChamada("Disponível apenas para os dois jogadores da sala.");
         }
     }
 
     function explicarErroMidia(erro) {
-        const nomeErro = String(erro?.name || "");
-        if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-            return "A câmera e o microfone só funcionam em site seguro. Publique na Vercel e acesse pelo link HTTPS, não abrindo o arquivo direto.";
+        const nomeErro = erro?.name || "";
+        if (location.protocol !== "https:" && location.hostname !== "localhost") {
+            return "A chamada precisa abrir em link HTTPS. Publique na Vercel ou GitHub Pages e abra pelo navegador.";
         }
         if (nomeErro === "NotAllowedError" || nomeErro === "PermissionDeniedError") {
-            return "A permissão foi bloqueada. No celular, toque no cadeado ao lado do endereço do site, entre em Permissões e libere Câmera e Microfone. Depois atualize a página.";
+            return "Câmera ou microfone bloqueados. Abra as permissões do navegador e libere Câmera e Microfone para este site.";
         }
         if (nomeErro === "NotFoundError" || nomeErro === "DevicesNotFoundError") {
             return "O navegador não encontrou câmera ou microfone disponível neste aparelho.";
@@ -2724,12 +2737,16 @@
 
     async function prepararMidiaLocal(somenteAudio = false) {
         if (localCallStream) return localCallStream;
+
         try {
             if (somenteAudio) {
                 localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
             } else {
                 try {
-                    localCallStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+                    localCallStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } },
+                        audio: true
+                    });
                 } catch (erroVideo) {
                     localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
                     exibirAlertaDoSistema("Chamada por áudio", "A câmera não foi liberada, então a chamada começou somente com áudio.");
@@ -2743,27 +2760,39 @@
         localCameraEnabled = localCallStream.getVideoTracks().some(t => t.enabled);
         if (localVideoEl) localVideoEl.srcObject = localCallStream;
         if (voiceVideoCallPanel) voiceVideoCallPanel.classList.add("call-active");
-        toggleMicBtn.innerText = "🎙️ Microfone";
-        toggleCameraBtn.innerText = localCameraEnabled ? "📷 Câmera" : "📷 Sem câmera";
+        if (toggleMicBtn) {
+            toggleMicBtn.innerText = "🎙️ Mic";
+            toggleMicBtn.classList.remove("btn-call-muted");
+        }
+        if (toggleCameraBtn) {
+            toggleCameraBtn.innerText = localCameraEnabled ? "📷 Cam" : "📷 Sem cam";
+            toggleCameraBtn.classList.toggle("btn-call-muted", !localCameraEnabled);
+        }
         return localCallStream;
     }
 
     function criarPeerChamada() {
         if (callPeer) return callPeer;
+
         callPeer = new RTCPeerConnection(rtcConfigGratis);
 
         callPeer.ontrack = (event) => {
-            const [remoteStream] = event.streams;
-            if (remoteStream) {
+            const remoteStream = event.streams && event.streams[0];
+            if (remoteStream && remoteVideoEl) {
                 remoteVideoEl.srcObject = remoteStream;
-                atualizarStatusChamada("Conectado com o oponente.");
+                atualizarStatusChamada("Conectado ✅");
+                if (voiceVideoCallPanel) voiceVideoCallPanel.classList.add("call-active");
             }
         };
 
         callPeer.onicecandidate = async (event) => {
-            if (!event.candidate || !roomId || !playerId) return;
+            if (!event.candidate || !roomId || !playerRole || !playerId) return;
             try {
-                await push(ref(db, `rooms/${roomId}/call/candidates/${playerId}`), event.candidate.toJSON());
+                await push(ref(db, `rooms/${roomId}/call/candidates/${playerRole}`), {
+                    ...event.candidate.toJSON(),
+                    sessionId: callSessionId,
+                    createdAt: Date.now()
+                });
             } catch (e) {
                 console.warn("Falha ao enviar candidato ICE:", e);
             }
@@ -2771,10 +2800,12 @@
 
         callPeer.onconnectionstatechange = () => {
             const estado = callPeer?.connectionState || "novo";
-            if (estado === "connected") atualizarStatusChamada("Chamada conectada ✅");
+            if (estado === "new") atualizarStatusChamada("Preparando conexão...");
             if (estado === "connecting") atualizarStatusChamada("Conectando chamada...");
+            if (estado === "connected") atualizarStatusChamada("Conectado ✅");
             if (estado === "disconnected") atualizarStatusChamada("Conexão instável. Tentando reconectar...");
-            if (estado === "failed") atualizarStatusChamada("Não foi possível fechar a conexão direta nesta rede.");
+            if (estado === "failed") atualizarStatusChamada("A rede bloqueou a conexão direta. Tente trocar de internet ou usar somente áudio.");
+            if (estado === "closed") atualizarStatusChamada("Chamada encerrada.");
         };
 
         if (localCallStream) {
@@ -2802,24 +2833,44 @@
         }
 
         callStartedByUser = true;
+        callSessionId = `${Date.now()}_${playerRole}_${playerId}`;
         processedRemoteCandidates = new Set();
         remoteDescriptionApplied = false;
         atualizarStatusChamada("Pedindo permissão da câmera e microfone...");
 
         try {
             await prepararMidiaLocal(somenteAudio);
-            criarPeerChamada();
+
+            // Remove sinalização velha sem apagar o participante que já entrou.
+            // Isso resolve o caso em que ficou oferta/resposta antiga no Firebase.
+            if (playerRole === "p1") {
+                await remove(ref(db, `rooms/${roomId}/call/offer`));
+                await remove(ref(db, `rooms/${roomId}/call/answer`));
+                await remove(ref(db, `rooms/${roomId}/call/candidates`));
+            } else {
+                await remove(ref(db, `rooms/${roomId}/call/candidates/${playerRole}`));
+            }
+
+            await update(ref(db, `rooms/${roomId}/call`), {
+                status: "active",
+                updatedAt: Date.now()
+            });
 
             await update(ref(db, `rooms/${roomId}/call/participants/${playerId}`), {
                 role: playerRole,
                 name: nomeSeguro(nameInput.value || playerRole),
+                sessionId: callSessionId,
                 joinedAt: Date.now()
             });
             onDisconnect(ref(db, `rooms/${roomId}/call/participants/${playerId}`)).remove();
 
+            criarPeerChamada();
             escutarSinalizacaoChamada();
             atualizarPainelChamada();
-            atualizarStatusChamada(playerRole === "p1" ? "Aguardando o jogador preto entrar na chamada..." : "Aguardando sinal do jogador vermelho...");
+
+            atualizarStatusChamada(playerRole === "p1"
+                ? "Esperando o jogador preto tocar em iniciar..."
+                : "Esperando o jogador vermelho enviar o convite...");
         } catch (e) {
             encerrarChamadaWebRTC(false);
             exibirAlertaDoSistema("Erro na chamada", somenteTextoSeguro(e.message || "Não foi possível iniciar a chamada.", 180));
@@ -2832,9 +2883,10 @@
         const callRef = ref(db, `rooms/${roomId}/call`);
         const unsubCall = onValue(callRef, async (snap) => {
             const callData = snap.val() || {};
-            if (callData.status === "ended" && localCallStream) {
+
+            if (callData.status === "ended" && callData.endedBy !== playerId && localCallStream) {
                 encerrarChamadaWebRTC(false);
-                atualizarStatusChamada("A chamada foi encerrada.");
+                atualizarStatusChamada("O oponente encerrou a chamada.");
                 return;
             }
 
@@ -2842,75 +2894,82 @@
             const temP1 = Object.values(participants).some(p => p?.role === "p1");
             const temP2 = Object.values(participants).some(p => p?.role === "p2");
 
-            if (localCallStream && playerRole === "p1" && temP1 && temP2 && !callData.offers?.[playerId]) {
+            // Jogador vermelho cria a oferta somente quando os dois já estão na chamada.
+            if (localCallStream && playerRole === "p1" && temP1 && temP2 && !callData.offer?.sdp) {
                 try {
                     const pc = criarPeerChamada();
-                    const offer = await pc.createOffer();
+                    const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
                     await pc.setLocalDescription(offer);
-                    await set(ref(db, `rooms/${roomId}/call/offers/${playerId}`), {
+                    await set(ref(db, `rooms/${roomId}/call/offer`), {
                         type: offer.type,
                         sdp: offer.sdp,
-                        fromRole: playerRole,
+                        fromRole: "p1",
+                        sessionId: callSessionId,
                         createdAt: Date.now()
                     });
-                    atualizarStatusChamada("Convite enviado. Esperando resposta do oponente...");
+                    atualizarStatusChamada("Convite enviado. Esperando resposta...");
                 } catch (e) {
                     console.warn("Erro criando oferta WebRTC:", e);
+                    atualizarStatusChamada("Falha ao criar convite da chamada.");
                 }
             }
 
-            if (localCallStream && playerRole === "p2" && callData.offers) {
-                const offerEntry = Object.entries(callData.offers).find(([uid, off]) => uid !== playerId && off?.sdp);
-                if (offerEntry && !remoteDescriptionApplied) {
-                    try {
-                        const [offerUid, offer] = offerEntry;
-                        const pc = criarPeerChamada();
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: offer.type, sdp: offer.sdp }));
-                        remoteDescriptionApplied = true;
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        await set(ref(db, `rooms/${roomId}/call/answers/${playerId}`), {
-                            type: answer.type,
-                            sdp: answer.sdp,
-                            to: offerUid,
-                            fromRole: playerRole,
-                            createdAt: Date.now()
-                        });
-                        atualizarStatusChamada("Resposta enviada. Conectando...");
-                    } catch (e) {
-                        console.warn("Erro respondendo chamada WebRTC:", e);
-                    }
+            // Jogador preto recebe a oferta e responde.
+            if (localCallStream && playerRole === "p2" && callData.offer?.sdp && !remoteDescriptionApplied) {
+                try {
+                    const pc = criarPeerChamada();
+                    await pc.setRemoteDescription(new RTCSessionDescription({
+                        type: callData.offer.type,
+                        sdp: callData.offer.sdp
+                    }));
+                    remoteDescriptionApplied = true;
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    await set(ref(db, `rooms/${roomId}/call/answer`), {
+                        type: answer.type,
+                        sdp: answer.sdp,
+                        fromRole: "p2",
+                        sessionId: callSessionId,
+                        createdAt: Date.now()
+                    });
+                    atualizarStatusChamada("Resposta enviada. Conectando...");
+                } catch (e) {
+                    console.warn("Erro respondendo chamada WebRTC:", e);
+                    atualizarStatusChamada("Falha ao responder chamada.");
                 }
             }
 
-            if (localCallStream && playerRole === "p1" && callData.answers) {
-                const answerEntry = Object.entries(callData.answers).find(([uid, ans]) => uid !== playerId && ans?.sdp);
-                if (answerEntry && !remoteDescriptionApplied) {
-                    try {
-                        const [, answer] = answerEntry;
-                        const pc = criarPeerChamada();
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: answer.type, sdp: answer.sdp }));
-                        remoteDescriptionApplied = true;
-                        atualizarStatusChamada("Resposta recebida. Conectando...");
-                    } catch (e) {
-                        console.warn("Erro aplicando resposta WebRTC:", e);
-                    }
+            // Jogador vermelho recebe a resposta.
+            if (localCallStream && playerRole === "p1" && callData.answer?.sdp && !remoteDescriptionApplied) {
+                try {
+                    const pc = criarPeerChamada();
+                    await pc.setRemoteDescription(new RTCSessionDescription({
+                        type: callData.answer.type,
+                        sdp: callData.answer.sdp
+                    }));
+                    remoteDescriptionApplied = true;
+                    atualizarStatusChamada("Resposta recebida. Conectando...");
+                } catch (e) {
+                    console.warn("Erro aplicando resposta WebRTC:", e);
+                    atualizarStatusChamada("Falha ao aplicar resposta da chamada.");
                 }
             }
 
+            // Troca de candidatos ICE por função: p1 lê p2, p2 lê p1.
             if (localCallStream && callData.candidates) {
-                for (const [uid, lista] of Object.entries(callData.candidates)) {
-                    if (uid === playerId || !lista) continue;
-                    for (const [candId, cand] of Object.entries(lista)) {
-                        const chave = `${uid}_${candId}`;
-                        if (processedRemoteCandidates.has(chave)) continue;
-                        processedRemoteCandidates.add(chave);
-                        try {
-                            const pc = criarPeerChamada();
-                            if (pc.remoteDescription && cand) await pc.addIceCandidate(new RTCIceCandidate(cand));
-                        } catch (e) {
-                            console.warn("Candidato ICE ignorado:", e);
+                const outroRole = oponenteDaChamada();
+                const lista = callData.candidates[outroRole] || {};
+                for (const [candId, cand] of Object.entries(lista)) {
+                    const chave = `${outroRole}_${candId}`;
+                    if (processedRemoteCandidates.has(chave)) continue;
+                    processedRemoteCandidates.add(chave);
+                    try {
+                        const pc = criarPeerChamada();
+                        if (pc.remoteDescription && cand) {
+                            await pc.addIceCandidate(new RTCIceCandidate(cand));
                         }
+                    } catch (e) {
+                        console.warn("Candidato ICE ignorado:", e);
                     }
                 }
             }
@@ -2942,8 +3001,12 @@
 
         if (avisarFirebase && roomId && playerId && !isPracticeMode) {
             try {
-                await update(ref(db, `rooms/${roomId}/call`), { status: "ended", endedAt: Date.now(), endedBy: playerId });
                 await remove(ref(db, `rooms/${roomId}/call/participants/${playerId}`));
+                await update(ref(db, `rooms/${roomId}/call`), {
+                    status: "ended",
+                    endedAt: Date.now(),
+                    endedBy: playerId
+                });
             } catch (e) {
                 console.warn("Não foi possível limpar chamada no Firebase:", e);
             }
@@ -2953,25 +3016,25 @@
         atualizarStatusChamada("Chamada encerrada.");
     }
 
-    startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
+    if (startCallBtn) startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
     if (startAudioCallBtn) startAudioCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(true));
-    endCallBtn.addEventListener('click', () => encerrarChamadaWebRTC(true));
+    if (endCallBtn) endCallBtn.addEventListener('click', () => encerrarChamadaWebRTC(true));
 
-    toggleMicBtn.addEventListener('click', () => {
+    if (toggleMicBtn) toggleMicBtn.addEventListener('click', () => {
         if (!localCallStream) return;
         localMicEnabled = !localMicEnabled;
         localCallStream.getAudioTracks().forEach(track => track.enabled = localMicEnabled);
-        toggleMicBtn.innerText = localMicEnabled ? "🎙️ Microfone" : "🔇 Mutado";
+        toggleMicBtn.innerText = localMicEnabled ? "🎙️ Mic" : "🔇 Mutado";
         toggleMicBtn.classList.toggle("btn-call-muted", !localMicEnabled);
     });
 
-    toggleCameraBtn.addEventListener('click', () => {
+    if (toggleCameraBtn) toggleCameraBtn.addEventListener('click', () => {
         if (!localCallStream) return;
         const videoTracks = localCallStream.getVideoTracks();
         if (!videoTracks.length) return exibirAlertaDoSistema("Sem câmera", "Esta chamada foi iniciada apenas com áudio.");
         localCameraEnabled = !localCameraEnabled;
         videoTracks.forEach(track => track.enabled = localCameraEnabled);
-        toggleCameraBtn.innerText = localCameraEnabled ? "📷 Câmera" : "🚫 Câmera";
+        toggleCameraBtn.innerText = localCameraEnabled ? "📷 Cam" : "🚫 Cam";
         toggleCameraBtn.classList.toggle("btn-call-muted", !localCameraEnabled);
     });
 
