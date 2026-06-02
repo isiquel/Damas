@@ -1015,13 +1015,16 @@
         .btn-call-size { background-color: #334155; }
         .btn-call-size:hover:not(:disabled) { background-color: #475569; }
 
-        /* Chamada ativa: janelinha livre, arrastável e redimensionável. */
+        /* Chamada ativa: janelinha livre, arrastável, redimensionável e deitada. */
         .call-panel.call-active {
             position: fixed;
-            top: 92px;
-            right: 8px;
-            width: 190px;
-            max-width: 72vw;
+            left: 50%;
+            bottom: 10px;
+            top: auto;
+            right: auto;
+            transform: translateX(-50%);
+            width: 330px;
+            max-width: 94vw;
             margin: 0;
             padding: 6px;
             z-index: 950;
@@ -1066,8 +1069,8 @@
 
         .call-panel.call-active .call-videos {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 4px;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
             margin-bottom: 5px;
         }
 
@@ -1081,7 +1084,7 @@
         }
 
         .call-panel.call-active .video-tile {
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 16 / 10;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.18);
             background: #020617;
@@ -1095,7 +1098,7 @@
         }
 
         .call-panel.call-active .call-controls {
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 4px;
         }
 
@@ -1117,7 +1120,7 @@
         }
 
         .call-panel.call-active #end-call-btn {
-            grid-column: 1 / -1;
+            grid-column: span 2;
         }
 
         @media (max-width: 480px) {
@@ -1125,10 +1128,19 @@
             .video-tile { aspect-ratio: 1 / 1; }
             .call-controls { grid-template-columns: 1fr 1fr; }
             .call-panel.call-active {
-                top: 86px;
-                right: 6px;
-                width: 176px;
-                max-width: 68vw;
+                left: 50%;
+                right: auto;
+                top: auto;
+                bottom: 8px;
+                transform: translateX(-50%);
+                width: 330px;
+                max-width: 94vw;
+            }
+            .call-panel.call-active .call-controls {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .call-panel.call-active #end-call-btn {
+                grid-column: 1 / -1;
             }
         }
 
@@ -3094,19 +3106,19 @@
 
 
     // 🖼️ Controles da janelinha flutuante da chamada: arrastar + maior/menor.
-    let callFloatingWidth = Number(localStorage.getItem('damas_call_floating_width') || 176);
-    callFloatingWidth = Math.max(140, Math.min(270, callFloatingWidth));
+    let callFloatingWidth = Number(localStorage.getItem('damas_call_floating_width_landscape') || 330);
+    callFloatingWidth = Math.max(260, Math.min(420, callFloatingWidth));
 
     function aplicarTamanhoChamadaFlutuante() {
         if (!voiceVideoCallPanel) return;
         if (voiceVideoCallPanel.classList.contains('call-active')) {
             voiceVideoCallPanel.style.width = `${callFloatingWidth}px`;
         }
-        localStorage.setItem('damas_call_floating_width', String(callFloatingWidth));
+        localStorage.setItem('damas_call_floating_width_landscape', String(callFloatingWidth));
     }
 
     function redimensionarChamadaFlutuante(delta) {
-        callFloatingWidth = Math.max(140, Math.min(270, callFloatingWidth + delta));
+        callFloatingWidth = Math.max(260, Math.min(420, callFloatingWidth + delta));
         aplicarTamanhoChamadaFlutuante();
         manterChamadaDentroDaTela();
     }
@@ -3124,12 +3136,14 @@
         voiceVideoCallPanel.style.left = `${Math.round(left)}px`;
         voiceVideoCallPanel.style.top = `${Math.round(top)}px`;
         voiceVideoCallPanel.style.right = 'auto';
+        voiceVideoCallPanel.style.bottom = 'auto';
+        voiceVideoCallPanel.style.transform = 'none';
     }
 
     function restaurarPosicaoChamadaFlutuante() {
         if (!voiceVideoCallPanel || !voiceVideoCallPanel.classList.contains('call-active')) return;
         aplicarTamanhoChamadaFlutuante();
-        const salvo = localStorage.getItem('damas_call_floating_pos');
+        const salvo = localStorage.getItem('damas_call_floating_pos_landscape');
         if (salvo) {
             try {
                 const pos = JSON.parse(salvo);
@@ -3137,6 +3151,8 @@
                     voiceVideoCallPanel.style.left = `${pos.left}px`;
                     voiceVideoCallPanel.style.top = `${pos.top}px`;
                     voiceVideoCallPanel.style.right = 'auto';
+                    voiceVideoCallPanel.style.bottom = 'auto';
+                    voiceVideoCallPanel.style.transform = 'none';
                 }
             } catch (_) {}
         }
@@ -3166,6 +3182,8 @@
             voiceVideoCallPanel.style.left = `${rect.left}px`;
             voiceVideoCallPanel.style.top = `${rect.top}px`;
             voiceVideoCallPanel.style.right = 'auto';
+            voiceVideoCallPanel.style.bottom = 'auto';
+            voiceVideoCallPanel.style.transform = 'none';
             try { header.setPointerCapture(ev.pointerId); } catch (_) {}
             ev.preventDefault();
         });
@@ -3181,13 +3199,15 @@
             voiceVideoCallPanel.style.left = `${Math.round(nextLeft)}px`;
             voiceVideoCallPanel.style.top = `${Math.round(nextTop)}px`;
             voiceVideoCallPanel.style.right = 'auto';
+            voiceVideoCallPanel.style.bottom = 'auto';
+            voiceVideoCallPanel.style.transform = 'none';
         });
 
         const pararArrasto = () => {
             if (!dragging) return;
             dragging = false;
             const rect = voiceVideoCallPanel.getBoundingClientRect();
-            localStorage.setItem('damas_call_floating_pos', JSON.stringify({
+            localStorage.setItem('damas_call_floating_pos_landscape', JSON.stringify({
                 left: Math.round(rect.left),
                 top: Math.round(rect.top)
             }));
@@ -3198,8 +3218,8 @@
     }
 
     ativarArrastarChamadaFlutuante();
-    if (callSizeMinusBtn) callSizeMinusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(-18));
-    if (callSizePlusBtn) callSizePlusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(18));
+    if (callSizeMinusBtn) callSizeMinusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(-24));
+    if (callSizePlusBtn) callSizePlusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(24));
 
 
     function liberarSomDoOponente() {
