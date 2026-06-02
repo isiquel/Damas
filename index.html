@@ -911,7 +911,9 @@
             .admin-small-grid { grid-template-columns: 1fr; }
         }
 
-        /* 📹 CHAMADA DE VÍDEO/ÁUDIO NATIVA (WEBRTC + FIREBASE) */
+        /* 📹 CHAMADA DE VÍDEO/ÁUDIO NATIVA (WEBRTC + FIREBASE)
+           Versão organizada: chamada ativa vira uma janelinha flutuante,
+           mostrando somente o oponente para não atrapalhar o tabuleiro. */
         .call-panel {
             display: none;
             width: 100%;
@@ -923,7 +925,7 @@
             margin: 0 auto 14px auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.45);
             text-align: left;
-            order: 6;
+            order: 1;
         }
 
         .call-header {
@@ -1007,10 +1009,97 @@
         .btn-call-end:hover:not(:disabled) { background-color: #b91c1c; }
         .btn-call-muted { background-color: #475569 !important; }
 
+        /* Quando a chamada está ativa, ela vira picture-in-picture fixo.
+           Assim dá para ver o tabuleiro e a cara do oponente ao mesmo tempo. */
+        .call-panel.call-active {
+            position: fixed;
+            top: 86px;
+            right: 8px;
+            width: 156px;
+            max-width: 42vw;
+            margin: 0;
+            padding: 6px;
+            z-index: 950;
+            border-radius: 14px;
+            border: 1px solid rgba(56, 189, 248, 0.75);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.65);
+            text-align: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .call-panel.call-active .call-header {
+            margin-bottom: 5px;
+            padding-bottom: 4px;
+            border-bottom: none;
+            justify-content: center;
+        }
+
+        .call-panel.call-active .call-title {
+            font-size: 0.62rem;
+            line-height: 1.1;
+            letter-spacing: 0.2px;
+        }
+
+        .call-panel.call-active .call-status {
+            display: none;
+        }
+
+        .call-panel.call-active .call-videos {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .call-panel.call-active .video-tile:first-child {
+            display: none;
+        }
+
+        .call-panel.call-active .video-tile {
+            aspect-ratio: 3 / 4;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: #020617;
+        }
+
+        .call-panel.call-active .video-label {
+            left: 5px;
+            bottom: 5px;
+            padding: 2px 7px;
+            font-size: 0.62rem;
+        }
+
+        .call-panel.call-active .call-controls {
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .call-panel.call-active #start-call-btn,
+        .call-panel.call-active #start-audio-call-btn {
+            display: none;
+        }
+
+        .call-panel.call-active #toggle-mic-btn,
+        .call-panel.call-active #toggle-camera-btn,
+        .call-panel.call-active #end-call-btn {
+            display: block;
+            padding: 6px 4px;
+            font-size: 0.58rem;
+            line-height: 1.1;
+        }
+
+        .call-panel.call-active #end-call-btn {
+            grid-column: 1 / -1;
+        }
+
         @media (max-width: 480px) {
             .call-videos { grid-template-columns: 1fr 1fr; }
             .video-tile { aspect-ratio: 1 / 1; }
             .call-controls { grid-template-columns: 1fr 1fr; }
+            .call-panel.call-active {
+                top: 78px;
+                right: 6px;
+                width: 138px;
+                max-width: 40vw;
+            }
         }
 
 
