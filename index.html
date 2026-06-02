@@ -1106,6 +1106,7 @@
 
         .call-panel.call-active #toggle-mic-btn,
         .call-panel.call-active #toggle-camera-btn,
+        .call-panel.call-active #unlock-audio-btn,
         .call-panel.call-active #call-size-minus-btn,
         .call-panel.call-active #call-size-plus-btn,
         .call-panel.call-active #end-call-btn {
@@ -1277,6 +1278,7 @@
                 </div>
                 <div class="video-tile">
                     <video id="remote-video" autoplay playsinline></video>
+                    <audio id="remote-audio" autoplay playsinline></audio>
                     <div class="video-label">Oponente</div>
                 </div>
             </div>
@@ -1285,6 +1287,7 @@
                 <button id="start-audio-call-btn" class="btn-call-start" type="button">Somente áudio</button>
                 <button id="toggle-mic-btn" type="button">🎙️ Microfone</button>
                 <button id="toggle-camera-btn" type="button">📷 Câmera</button>
+                <button id="unlock-audio-btn" class="btn-call-size" type="button">🔊 Som</button>
                 <button id="call-size-minus-btn" class="btn-call-size" type="button">➖ Menor</button>
                 <button id="call-size-plus-btn" class="btn-call-size" type="button">➕ Maior</button>
                 <button id="end-call-btn" class="btn-call-end" type="button">Encerrar</button>
@@ -2092,6 +2095,8 @@
     const callSizePlusBtn = document.getElementById('call-size-plus-btn');
     const localVideoEl = document.getElementById('local-video');
     const remoteVideoEl = document.getElementById('remote-video');
+    const remoteAudioEl = document.getElementById('remote-audio');
+    const unlockAudioBtn = document.getElementById('unlock-audio-btn');
     const callStatusText = document.getElementById('call-status-text');
 
 
@@ -2824,15 +2829,25 @@
                 remoteStream = remoteVideoEl.srcObject instanceof MediaStream
                     ? remoteVideoEl.srcObject
                     : new MediaStream();
-                if (!remoteStream.getTracks().some(t => t.id === event.track.id)) {
-                    remoteStream.addTrack(event.track);
-                }
+            }
+
+            // Garante que áudio e vídeo do oponente entrem no mesmo stream, mesmo chegando separados.
+            if (event.track && !remoteStream.getTracks().some(t => t.id === event.track.id)) {
+                try { remoteStream.addTrack(event.track); } catch (_) {}
             }
 
             remoteVideoEl.srcObject = remoteStream;
-            remoteVideoEl.muted = false;
-            remoteVideoEl.volume = 1;
+            remoteVideoEl.muted = true; // o som sai pelo elemento de áudio abaixo para evitar bloqueio/duplicidade.
             remoteVideoEl.play?.().catch(() => {});
+
+            if (remoteAudioEl) {
+                remoteAudioEl.srcObject = remoteStream;
+                remoteAudioEl.muted = false;
+                remoteAudioEl.volume = 1;
+                remoteAudioEl.play?.().catch(() => {
+                    atualizarStatusChamada("Vídeo conectado. Toque em 🔊 Som para liberar o áudio.");
+                });
+            }
 
             atualizarStatusChamada("Conectado ✅");
             if (voiceVideoCallPanel) {
@@ -3053,6 +3068,7 @@
 
         if (localVideoEl) localVideoEl.srcObject = null;
         if (remoteVideoEl) remoteVideoEl.srcObject = null;
+        if (remoteAudioEl) remoteAudioEl.srcObject = null;
         if (voiceVideoCallPanel) voiceVideoCallPanel.classList.remove("call-active");
 
         processedRemoteCandidates = new Set();
@@ -3184,6 +3200,20 @@
     ativarArrastarChamadaFlutuante();
     if (callSizeMinusBtn) callSizeMinusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(-18));
     if (callSizePlusBtn) callSizePlusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(18));
+
+
+    function liberarSomDoOponente() {
+        if (!remoteAudioEl) return;
+        remoteAudioEl.muted = false;
+        remoteAudioEl.volume = 1;
+        remoteAudioEl.play?.().then(() => {
+            atualizarStatusChamada("Som do oponente liberado ✅");
+        }).catch(() => {
+            atualizarStatusChamada("Toque novamente em 🔊 Som quando o oponente falar.");
+        });
+    }
+
+    if (unlockAudioBtn) unlockAudioBtn.addEventListener('click', liberarSomDoOponente);
 
     if (startCallBtn) startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
     if (startAudioCallBtn) startAudioCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(true));
