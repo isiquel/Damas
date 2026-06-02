@@ -3416,15 +3416,20 @@
         spectatorWatchUnsubscribers.push(unsub);
     }
 
+    function adicionarTracksLocaisAoPeerSpectador(pc) {
+        if (!pc || !localCallStream) return;
+        const jaEnviando = pc.getSenders().some(sender => sender.track);
+        if (jaEnviando) return;
+        localCallStream.getTracks().forEach(track => {
+            try { pc.addTrack(track, localCallStream); } catch (_) {}
+        });
+    }
+
     function criarPeerJogadorParaEspectador(spectatorId) {
         if (playerSpectatorPeers[spectatorId]) return playerSpectatorPeers[spectatorId];
 
         const pc = new RTCPeerConnection(rtcConfigGratis);
         playerSpectatorPeers[spectatorId] = pc;
-
-        if (localCallStream) {
-            localCallStream.getTracks().forEach(track => pc.addTrack(track, localCallStream));
-        }
 
         pc.onicecandidate = async (event) => {
             if (!event.candidate || !roomId || !spectatorId || !playerRole) return;
@@ -3443,6 +3448,15 @@
             if (estado === "failed" || estado === "closed") {
                 try { pc.close(); } catch (_) {}
                 delete playerSpectatorPeers[spectatorId];
+                delete playerSpectatorOfferKeys[spectatorId];
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            const estadoIce = pc.iceConnectionState || "new";
+            if (estadoIce === "failed" || estadoIce === "disconnected") {
+                // Libera para responder de novo se o espectador atualizar/reabrir a transmissão.
+                delete playerSpectatorOfferKeys[spectatorId];
             }
         };
 
@@ -3472,6 +3486,9 @@
                     const pc = criarPeerJogadorParaEspectador(spectatorId);
                     if (!playerAnsweredSpectatorOffers.has(offerKey)) {
                         await pc.setRemoteDescription(new RTCSessionDescription({ type: offer.type, sdp: offer.sdp }));
+                        // Importante: adiciona a câmera/áudio DEPOIS de ler a oferta do espectador.
+                        // Em alguns celulares, adicionar antes faz o espectador conectar, mas receber tela preta/silêncio.
+                        adicionarTracksLocaisAoPeerSpectador(pc);
                         const answer = await pc.createAnswer();
                         await pc.setLocalDescription(answer);
                         await set(ref(db, `rooms/${roomId}/call/watchers/${spectatorId}/answers/${playerRole}`), {
