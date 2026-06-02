@@ -2814,14 +2814,30 @@
         callPeer = new RTCPeerConnection(rtcConfigGratis);
 
         callPeer.ontrack = (event) => {
-            const remoteStream = event.streams && event.streams[0];
-            if (remoteStream && remoteVideoEl) {
-                remoteVideoEl.srcObject = remoteStream;
-                atualizarStatusChamada("Conectado ✅");
-                if (voiceVideoCallPanel) {
-                    voiceVideoCallPanel.classList.add("call-active");
-                    restaurarPosicaoChamadaFlutuante();
+            // Recebe áudio/vídeo do outro jogador. Mantém os tracks juntos em um único stream remoto.
+            if (!remoteVideoEl) return;
+
+            let remoteStream = event.streams && event.streams[0];
+
+            // Alguns celulares não entregam event.streams[0]; então criamos um MediaStream manual.
+            if (!remoteStream) {
+                remoteStream = remoteVideoEl.srcObject instanceof MediaStream
+                    ? remoteVideoEl.srcObject
+                    : new MediaStream();
+                if (!remoteStream.getTracks().some(t => t.id === event.track.id)) {
+                    remoteStream.addTrack(event.track);
                 }
+            }
+
+            remoteVideoEl.srcObject = remoteStream;
+            remoteVideoEl.muted = false;
+            remoteVideoEl.volume = 1;
+            remoteVideoEl.play?.().catch(() => {});
+
+            atualizarStatusChamada("Conectado ✅");
+            if (voiceVideoCallPanel) {
+                voiceVideoCallPanel.classList.add("call-active");
+                restaurarPosicaoChamadaFlutuante();
             }
         };
 
@@ -2909,8 +2925,8 @@
             atualizarPainelChamada();
 
             atualizarStatusChamada(playerRole === "p1"
-                ? "Esperando o jogador preto tocar em iniciar..."
-                : "Esperando o jogador vermelho enviar o convite...");
+                ? "Aguardando conexão com o jogador preto..."
+                : "Aguardando convite do jogador vermelho...");
         } catch (e) {
             encerrarChamadaWebRTC(false);
             exibirAlertaDoSistema("Erro na chamada", somenteTextoSeguro(e.message || "Não foi possível iniciar a chamada.", 180));
@@ -2996,20 +3012,24 @@
             }
 
             // Troca de candidatos ICE por função: p1 lê p2, p2 lê p1.
+            // Correção importante: se o candidato chegar antes da descrição remota, NÃO marcamos como processado.
+            // Assim ele será tentado novamente quando a oferta/resposta já estiver aplicada.
             if (localCallStream && callData.candidates) {
                 const outroRole = oponenteDaChamada();
                 const lista = callData.candidates[outroRole] || {};
                 for (const [candId, cand] of Object.entries(lista)) {
                     const chave = `${outroRole}_${candId}`;
                     if (processedRemoteCandidates.has(chave)) continue;
-                    processedRemoteCandidates.add(chave);
                     try {
                         const pc = criarPeerChamada();
-                        if (pc.remoteDescription && cand) {
-                            await pc.addIceCandidate(new RTCIceCandidate(cand));
+                        if (!pc.remoteDescription || !cand || !cand.candidate) {
+                            continue;
                         }
+                        await pc.addIceCandidate(new RTCIceCandidate(cand));
+                        processedRemoteCandidates.add(chave);
                     } catch (e) {
-                        console.warn("Candidato ICE ignorado:", e);
+                        // Não mata a chamada por candidato duplicado/fora de ordem.
+                        console.warn("Candidato ICE aguardando nova tentativa:", e);
                     }
                 }
             }
