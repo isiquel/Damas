@@ -923,6 +923,7 @@
             margin: 0 auto 14px auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.45);
             text-align: left;
+            order: 6;
         }
 
         .call-header {
@@ -951,11 +952,12 @@
         }
 
         .call-videos {
-            display: grid;
+            display: none;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
             margin-bottom: 10px;
         }
+        .call-panel.call-active .call-videos { display: grid; }
 
         .video-tile {
             position: relative;
@@ -1006,7 +1008,8 @@
         .btn-call-muted { background-color: #475569 !important; }
 
         @media (max-width: 480px) {
-            .call-videos { grid-template-columns: 1fr; }
+            .call-videos { grid-template-columns: 1fr 1fr; }
+            .video-tile { aspect-ratio: 1 / 1; }
             .call-controls { grid-template-columns: 1fr 1fr; }
         }
 
@@ -1161,6 +1164,7 @@
             </div>
             <div class="call-controls">
                 <button id="start-call-btn" class="btn-call-start" type="button">Iniciar chamada</button>
+                <button id="start-audio-call-btn" class="btn-call-start" type="button">Somente áudio</button>
                 <button id="toggle-mic-btn" type="button">🎙️ Microfone</button>
                 <button id="toggle-camera-btn" type="button">📷 Câmera</button>
                 <button id="end-call-btn" class="btn-call-end" type="button">Encerrar</button>
@@ -1960,6 +1964,7 @@
 
     const voiceVideoCallPanel = document.getElementById('voice-video-call-panel');
     const startCallBtn = document.getElementById('start-call-btn');
+    const startAudioCallBtn = document.getElementById('start-audio-call-btn');
     const endCallBtn = document.getElementById('end-call-btn');
     const toggleMicBtn = document.getElementById('toggle-mic-btn');
     const toggleCameraBtn = document.getElementById('toggle-camera-btn');
@@ -2598,32 +2603,57 @@
         if (!voiceVideoCallPanel) return;
         if (podeUsarChamadaAgora()) {
             voiceVideoCallPanel.style.display = "block";
+            voiceVideoCallPanel.classList.toggle("call-active", !!localCallStream);
             startCallBtn.disabled = !!localCallStream;
+            if (startAudioCallBtn) startAudioCallBtn.disabled = !!localCallStream;
             endCallBtn.disabled = !localCallStream;
             toggleMicBtn.disabled = !localCallStream;
             toggleCameraBtn.disabled = !localCallStream;
             atualizarStatusChamada(localCallStream ? "Chamada ativa nesta sala." : "Disponível para os dois jogadores da sala.");
         } else {
+            voiceVideoCallPanel.classList.remove("call-active");
             voiceVideoCallPanel.style.display = "none";
         }
     }
 
-    async function prepararMidiaLocal() {
+    function explicarErroMidia(erro) {
+        const nomeErro = String(erro?.name || "");
+        if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+            return "A câmera e o microfone só funcionam em site seguro. Publique na Vercel e acesse pelo link HTTPS, não abrindo o arquivo direto.";
+        }
+        if (nomeErro === "NotAllowedError" || nomeErro === "PermissionDeniedError") {
+            return "A permissão foi bloqueada. No celular, toque no cadeado ao lado do endereço do site, entre em Permissões e libere Câmera e Microfone. Depois atualize a página.";
+        }
+        if (nomeErro === "NotFoundError" || nomeErro === "DevicesNotFoundError") {
+            return "O navegador não encontrou câmera ou microfone disponível neste aparelho.";
+        }
+        if (nomeErro === "NotReadableError" || nomeErro === "TrackStartError") {
+            return "A câmera ou o microfone estão ocupados por outro aplicativo. Feche WhatsApp, Instagram, câmera ou chamada aberta e tente novamente.";
+        }
+        return "Não foi possível acessar câmera ou microfone. Libere as permissões do navegador e tente novamente.";
+    }
+
+    async function prepararMidiaLocal(somenteAudio = false) {
         if (localCallStream) return localCallStream;
         try {
-            localCallStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        } catch (erroVideo) {
-            try {
+            if (somenteAudio) {
                 localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                exibirAlertaDoSistema("Chamada por áudio", "A câmera não foi liberada, então a chamada começou somente com áudio.");
-            } catch (erroAudio) {
-                throw new Error("Não foi possível acessar câmera ou microfone. Verifique as permissões do navegador.");
+            } else {
+                try {
+                    localCallStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+                } catch (erroVideo) {
+                    localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                    exibirAlertaDoSistema("Chamada por áudio", "A câmera não foi liberada, então a chamada começou somente com áudio.");
+                }
             }
+        } catch (erroMidia) {
+            throw new Error(explicarErroMidia(erroMidia));
         }
 
         localMicEnabled = true;
         localCameraEnabled = localCallStream.getVideoTracks().some(t => t.enabled);
-        localVideoEl.srcObject = localCallStream;
+        if (localVideoEl) localVideoEl.srcObject = localCallStream;
+        if (voiceVideoCallPanel) voiceVideoCallPanel.classList.add("call-active");
         toggleMicBtn.innerText = "🎙️ Microfone";
         toggleCameraBtn.innerText = localCameraEnabled ? "📷 Câmera" : "📷 Sem câmera";
         return localCallStream;
@@ -2672,7 +2702,7 @@
         callUnsubscribers = [];
     }
 
-    async function iniciarChamadaWebRTC() {
+    async function iniciarChamadaWebRTC(somenteAudio = false) {
         if (!podeUsarChamadaAgora()) {
             exibirAlertaDoSistema("Chamada indisponível", "A chamada de vídeo e áudio funciona apenas para os dois jogadores da sala online.");
             return;
@@ -2688,7 +2718,7 @@
         atualizarStatusChamada("Pedindo permissão da câmera e microfone...");
 
         try {
-            await prepararMidiaLocal();
+            await prepararMidiaLocal(somenteAudio);
             criarPeerChamada();
 
             await update(ref(db, `rooms/${roomId}/call/participants/${playerId}`), {
@@ -2815,6 +2845,7 @@
 
         if (localVideoEl) localVideoEl.srcObject = null;
         if (remoteVideoEl) remoteVideoEl.srcObject = null;
+        if (voiceVideoCallPanel) voiceVideoCallPanel.classList.remove("call-active");
 
         processedRemoteCandidates = new Set();
         remoteDescriptionApplied = false;
@@ -2833,7 +2864,8 @@
         atualizarStatusChamada("Chamada encerrada.");
     }
 
-    startCallBtn.addEventListener('click', iniciarChamadaWebRTC);
+    startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
+    if (startAudioCallBtn) startAudioCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(true));
     endCallBtn.addEventListener('click', () => encerrarChamadaWebRTC(true));
 
     toggleMicBtn.addEventListener('click', () => {
