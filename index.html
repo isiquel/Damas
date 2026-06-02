@@ -1590,6 +1590,7 @@
     let playerSpectatorUnsubscribers = [];
     let playerProcessedSpectatorCandidates = new Set();
     let playerAnsweredSpectatorOffers = new Set();
+    let playerSpectatorOfferKeys = {};
 
 
 
@@ -3209,6 +3210,7 @@
         playerSpectatorPeers = {};
         playerProcessedSpectatorCandidates = new Set();
         playerAnsweredSpectatorOffers = new Set();
+        playerSpectatorOfferKeys = {};
     }
 
     async function encerrarAssistirChamadaEspectador(removerFirebase = true) {
@@ -3329,9 +3331,16 @@
         atualizarStatusChamada("Conectando como espectador da chamada...");
 
         try {
+            // Limpa qualquer tentativa antiga deste espectador antes de criar novas ofertas.
+            // Isso evita o bug de aparecer só um jogador por causa de offer/answer velha no Firebase.
+            await remove(ref(db, `rooms/${roomId}/call/watchers/${playerId}`));
+            const watchSessionId = `${Date.now()}_${playerId}`;
+            spectatorProcessedCandidates = new Set();
+
             await update(ref(db, `rooms/${roomId}/call/watchers/${playerId}/meta`), {
                 name: nomeSeguro(nameInput?.value || "Espectador"),
-                joinedAt: Date.now()
+                joinedAt: Date.now(),
+                sessionId: watchSessionId
             });
             onDisconnect(ref(db, `rooms/${roomId}/call/watchers/${playerId}`)).remove();
 
@@ -3342,6 +3351,7 @@
                 await set(ref(db, `rooms/${roomId}/call/watchers/${playerId}/offers/${roleAlvo}`), {
                     type: offer.type,
                     sdp: offer.sdp,
+                    sessionId: watchSessionId,
                     createdAt: Date.now()
                 });
             }
@@ -3451,8 +3461,14 @@
                 const offer = watcher.offers?.[playerRole];
                 if (!offer?.sdp) continue;
 
-                const offerKey = `${spectatorId}_${playerRole}_${offer.createdAt || offer.sdp.slice(0, 24)}`;
+                const offerKey = `${spectatorId}_${playerRole}_${offer.sessionId || watcher.meta?.sessionId || offer.createdAt || offer.sdp.slice(0, 24)}`;
                 try {
+                    // Se o espectador atualizou/reentrou, recria a conexão deste jogador para não ficar presa em SDP antigo.
+                    if (playerSpectatorOfferKeys[spectatorId] && playerSpectatorOfferKeys[spectatorId] !== offerKey) {
+                        try { playerSpectatorPeers[spectatorId]?.close(); } catch (_) {}
+                        delete playerSpectatorPeers[spectatorId];
+                    }
+
                     const pc = criarPeerJogadorParaEspectador(spectatorId);
                     if (!playerAnsweredSpectatorOffers.has(offerKey)) {
                         await pc.setRemoteDescription(new RTCSessionDescription({ type: offer.type, sdp: offer.sdp }));
@@ -3461,14 +3477,16 @@
                         await set(ref(db, `rooms/${roomId}/call/watchers/${spectatorId}/answers/${playerRole}`), {
                             type: answer.type,
                             sdp: answer.sdp,
+                            sessionId: offer.sessionId || watcher.meta?.sessionId || "",
                             createdAt: Date.now()
                         });
                         playerAnsweredSpectatorOffers.add(offerKey);
+                        playerSpectatorOfferKeys[spectatorId] = offerKey;
                     }
 
                     const lista = watcher.candidates?.spectator?.[playerRole] || {};
                     for (const [candId, cand] of Object.entries(lista)) {
-                        const chave = `${spectatorId}_${playerRole}_${candId}`;
+                        const chave = `${spectatorId}_${playerRole}_${offerKey}_${candId}`;
                         if (playerProcessedSpectatorCandidates.has(chave)) continue;
                         try {
                             if (!pc.remoteDescription || !cand?.candidate) continue;
@@ -3480,6 +3498,9 @@
                     }
                 } catch (e) {
                     console.warn("Falha ao responder espectador da chamada:", e);
+                    try { playerSpectatorPeers[spectatorId]?.close(); } catch (_) {}
+                    delete playerSpectatorPeers[spectatorId];
+                    delete playerSpectatorOfferKeys[spectatorId];
                 }
             }
         });
