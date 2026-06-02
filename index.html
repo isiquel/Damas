@@ -1123,6 +1123,24 @@
             grid-column: span 2;
         }
 
+        /* Espectador assiste sem câmera, sem microfone e sem interação na chamada. */
+        .call-panel.call-spectator #start-call-btn,
+        .call-panel.call-spectator #start-audio-call-btn,
+        .call-panel.call-spectator #toggle-mic-btn,
+        .call-panel.call-spectator #toggle-camera-btn {
+            display: none !important;
+        }
+
+        .call-panel.call-spectator.call-active #unlock-audio-btn,
+        .call-panel.call-spectator.call-active #call-size-minus-btn,
+        .call-panel.call-spectator.call-active #call-size-plus-btn {
+            display: block;
+        }
+
+        .call-panel.call-spectator.call-active #end-call-btn {
+            grid-column: span 3;
+        }
+
         @media (max-width: 480px) {
             .call-videos { grid-template-columns: 1fr 1fr; }
             .video-tile { aspect-ratio: 1 / 1; }
@@ -1555,6 +1573,23 @@
     let remoteDescriptionApplied = false;
     let localMicEnabled = true;
     let localCameraEnabled = true;
+
+    // 👁️ Transmissão da chamada para espectadores.
+    // Mantém a chamada dos jogadores intacta e cria conexões separadas, somente para assistir.
+    let spectatorWatchActive = false;
+    let spectatorWatchConnecting = false;
+    let spectatorWatchUnsubscribers = [];
+    let spectatorWatchPeers = {};
+    let spectatorWatchStreams = { p1: null, p2: null };
+    let spectatorProcessedCandidates = new Set();
+    let spectatorAudioP1 = null;
+    let spectatorAudioP2 = null;
+
+    // Conexões extras que cada jogador abre para enviar sua câmera/áudio aos espectadores.
+    let playerSpectatorPeers = {};
+    let playerSpectatorUnsubscribers = [];
+    let playerProcessedSpectatorCandidates = new Set();
+    let playerAnsweredSpectatorOffers = new Set();
 
 
 
@@ -2748,25 +2783,60 @@
     function atualizarPainelChamada() {
         if (!voiceVideoCallPanel) return;
 
-        if (podeUsarChamadaAgora()) {
+        const souJogadorDaChamada = podeUsarChamadaAgora();
+        const souEspectadorOnline = !isPracticeMode && roomId && playerRole === "spectator";
+
+        if (souJogadorDaChamada) {
             voiceVideoCallPanel.style.display = "block";
+            voiceVideoCallPanel.classList.remove("call-spectator");
             voiceVideoCallPanel.classList.toggle("call-active", !!localCallStream);
             if (localCallStream) restaurarPosicaoChamadaFlutuante();
 
-            if (startCallBtn) startCallBtn.disabled = !!localCallStream;
-            if (startAudioCallBtn) startAudioCallBtn.disabled = !!localCallStream;
-            if (endCallBtn) endCallBtn.disabled = !localCallStream;
+            const localLabel = voiceVideoCallPanel.querySelector('.video-tile:first-child .video-label');
+            const remoteLabel = voiceVideoCallPanel.querySelector('.video-tile:nth-child(2) .video-label');
+            if (localLabel) localLabel.innerText = "Você";
+            if (remoteLabel) remoteLabel.innerText = "Oponente";
+
+            if (startCallBtn) { startCallBtn.disabled = !!localCallStream; startCallBtn.style.display = ""; }
+            if (startAudioCallBtn) { startAudioCallBtn.disabled = !!localCallStream; startAudioCallBtn.style.display = ""; }
+            if (endCallBtn) { endCallBtn.disabled = !localCallStream; endCallBtn.innerText = "Encerrar"; }
             if (toggleMicBtn) toggleMicBtn.disabled = !localCallStream;
             if (toggleCameraBtn) toggleCameraBtn.disabled = !localCallStream;
+            if (unlockAudioBtn) unlockAudioBtn.style.display = "";
 
             if (!localCallStream) {
                 atualizarStatusChamada("Toque em iniciar para chamar o oponente.");
             }
-        } else {
-            voiceVideoCallPanel.classList.remove("call-active");
-            voiceVideoCallPanel.style.display = "none";
-            atualizarStatusChamada("Disponível apenas para os dois jogadores da sala.");
+            return;
         }
+
+        if (souEspectadorOnline) {
+            voiceVideoCallPanel.style.display = "block";
+            voiceVideoCallPanel.classList.add("call-spectator");
+            voiceVideoCallPanel.classList.toggle("call-active", !!spectatorWatchActive);
+            if (spectatorWatchActive) restaurarPosicaoChamadaFlutuante();
+
+            const localLabel = voiceVideoCallPanel.querySelector('.video-tile:first-child .video-label');
+            const remoteLabel = voiceVideoCallPanel.querySelector('.video-tile:nth-child(2) .video-label');
+            if (localLabel) localLabel.innerText = "Vermelho";
+            if (remoteLabel) remoteLabel.innerText = "Preto";
+
+            if (startCallBtn) { startCallBtn.disabled = true; startCallBtn.style.display = "none"; }
+            if (startAudioCallBtn) { startAudioCallBtn.disabled = true; startAudioCallBtn.style.display = "none"; }
+            if (toggleMicBtn) { toggleMicBtn.disabled = true; toggleMicBtn.style.display = "none"; }
+            if (toggleCameraBtn) { toggleCameraBtn.disabled = true; toggleCameraBtn.style.display = "none"; }
+            if (endCallBtn) { endCallBtn.disabled = !spectatorWatchActive; endCallBtn.innerText = "Parar transmissão"; }
+            if (unlockAudioBtn) unlockAudioBtn.style.display = "";
+
+            if (!spectatorWatchActive && !spectatorWatchConnecting) {
+                atualizarStatusChamada("Aguardando os jogadores abrirem câmera e áudio...");
+            }
+            return;
+        }
+
+        voiceVideoCallPanel.classList.remove("call-active", "call-spectator");
+        voiceVideoCallPanel.style.display = "none";
+        atualizarStatusChamada("Disponível apenas para sala online.");
     }
 
     function explicarErroMidia(erro) {
@@ -2949,6 +3019,7 @@
 
             criarPeerChamada();
             escutarSinalizacaoChamada();
+            escutarPedidosEspectadoresChamada();
             atualizarPainelChamada();
 
             atualizarStatusChamada(playerRole === "p1"
@@ -3067,6 +3138,11 @@
 
     async function encerrarChamadaWebRTC(avisarFirebase = true) {
         limparListenersChamada();
+        limparListenersJogadorParaEspectadores();
+        fecharPeersJogadorParaEspectadores();
+        if (playerRole === "spectator") {
+            await encerrarAssistirChamadaEspectador(avisarFirebase);
+        }
 
         if (callPeer) {
             try { callPeer.close(); } catch (_) {}
@@ -3095,6 +3171,9 @@
                     endedAt: Date.now(),
                     endedBy: playerId
                 });
+                if (playerRole === "p1" || playerRole === "p2") {
+                    await remove(ref(db, `rooms/${roomId}/call/watchers`));
+                }
             } catch (e) {
                 console.warn("Não foi possível limpar chamada no Firebase:", e);
             }
@@ -3104,6 +3183,308 @@
         atualizarStatusChamada("Chamada encerrada.");
     }
 
+
+
+
+    // 👁️ ESPECTADORES VENDO E OUVINDO A CHAMADA DOS DOIS JOGADORES
+    // Cada espectador recebe uma conexão separada de cada jogador, sem enviar câmera nem microfone.
+    function limparListenersEspectadorChamada() {
+        spectatorWatchUnsubscribers.forEach(unsub => {
+            try { if (typeof unsub === "function") unsub(); } catch (_) {}
+        });
+        spectatorWatchUnsubscribers = [];
+    }
+
+    function limparListenersJogadorParaEspectadores() {
+        playerSpectatorUnsubscribers.forEach(unsub => {
+            try { if (typeof unsub === "function") unsub(); } catch (_) {}
+        });
+        playerSpectatorUnsubscribers = [];
+    }
+
+    function fecharPeersJogadorParaEspectadores() {
+        Object.values(playerSpectatorPeers).forEach(pc => {
+            try { pc.close(); } catch (_) {}
+        });
+        playerSpectatorPeers = {};
+        playerProcessedSpectatorCandidates = new Set();
+        playerAnsweredSpectatorOffers = new Set();
+    }
+
+    async function encerrarAssistirChamadaEspectador(removerFirebase = true) {
+        limparListenersEspectadorChamada();
+
+        Object.values(spectatorWatchPeers).forEach(pc => {
+            try { pc.close(); } catch (_) {}
+        });
+        spectatorWatchPeers = {};
+        spectatorWatchStreams = { p1: null, p2: null };
+        spectatorProcessedCandidates = new Set();
+        spectatorWatchActive = false;
+        spectatorWatchConnecting = false;
+
+        if (localVideoEl) localVideoEl.srcObject = null;
+        if (remoteVideoEl) remoteVideoEl.srcObject = null;
+        if (spectatorAudioP1) { try { spectatorAudioP1.pause(); spectatorAudioP1.srcObject = null; } catch (_) {} }
+        if (spectatorAudioP2) { try { spectatorAudioP2.pause(); spectatorAudioP2.srcObject = null; } catch (_) {} }
+        spectatorAudioP1 = null;
+        spectatorAudioP2 = null;
+
+        if (removerFirebase && roomId && playerId) {
+            try { await remove(ref(db, `rooms/${roomId}/call/watchers/${playerId}`)); } catch (_) {}
+        }
+
+        atualizarPainelChamada();
+    }
+
+    function obterAudioEspectador(role) {
+        if (role === "p1") {
+            if (!spectatorAudioP1) {
+                spectatorAudioP1 = document.createElement('audio');
+                spectatorAudioP1.autoplay = true;
+                spectatorAudioP1.playsInline = true;
+            }
+            return spectatorAudioP1;
+        }
+        if (!spectatorAudioP2) {
+            spectatorAudioP2 = document.createElement('audio');
+            spectatorAudioP2.autoplay = true;
+            spectatorAudioP2.playsInline = true;
+        }
+        return spectatorAudioP2;
+    }
+
+    function aplicarStreamEspectador(role, event) {
+        let stream = event.streams && event.streams[0];
+        if (!stream) {
+            stream = spectatorWatchStreams[role] instanceof MediaStream ? spectatorWatchStreams[role] : new MediaStream();
+        }
+        if (event.track && !stream.getTracks().some(t => t.id === event.track.id)) {
+            try { stream.addTrack(event.track); } catch (_) {}
+        }
+        spectatorWatchStreams[role] = stream;
+
+        const videoEl = role === "p1" ? localVideoEl : remoteVideoEl;
+        if (videoEl) {
+            videoEl.srcObject = stream;
+            videoEl.muted = true;
+            videoEl.play?.().catch(() => {});
+        }
+
+        const audioEl = obterAudioEspectador(role);
+        audioEl.srcObject = stream;
+        audioEl.muted = false;
+        audioEl.volume = 1;
+        audioEl.play?.().catch(() => {
+            atualizarStatusChamada("Transmissão visível. Toque em 🔊 Som para liberar o áudio.");
+        });
+
+        spectatorWatchActive = true;
+        atualizarPainelChamada();
+        atualizarStatusChamada("Assistindo câmera e áudio dos jogadores ✅");
+    }
+
+    function criarPeerEspectadorPara(roleAlvo) {
+        if (spectatorWatchPeers[roleAlvo]) return spectatorWatchPeers[roleAlvo];
+
+        const pc = new RTCPeerConnection(rtcConfigGratis);
+        spectatorWatchPeers[roleAlvo] = pc;
+
+        pc.addTransceiver("video", { direction: "recvonly" });
+        pc.addTransceiver("audio", { direction: "recvonly" });
+
+        pc.ontrack = (event) => aplicarStreamEspectador(roleAlvo, event);
+
+        pc.onicecandidate = async (event) => {
+            if (!event.candidate || !roomId || !playerId) return;
+            try {
+                await push(ref(db, `rooms/${roomId}/call/watchers/${playerId}/candidates/spectator/${roleAlvo}`), {
+                    ...event.candidate.toJSON(),
+                    createdAt: Date.now()
+                });
+            } catch (e) {
+                console.warn("Falha ao enviar candidato ICE do espectador:", e);
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const estado = pc.connectionState || "new";
+            if (estado === "connected") {
+                spectatorWatchActive = true;
+                atualizarPainelChamada();
+                atualizarStatusChamada("Assistindo transmissão ao vivo ✅");
+            }
+            if (estado === "failed") atualizarStatusChamada("A rede bloqueou parte da transmissão. Toque em 🔊 Som ou atualize.");
+        };
+
+        return pc;
+    }
+
+    async function iniciarAssistirChamadaEspectador() {
+        if (spectatorWatchConnecting || spectatorWatchActive) return;
+        if (isPracticeMode || playerRole !== "spectator" || !roomId || !playerId) return;
+
+        spectatorWatchConnecting = true;
+        atualizarPainelChamada();
+        atualizarStatusChamada("Conectando como espectador da chamada...");
+
+        try {
+            await update(ref(db, `rooms/${roomId}/call/watchers/${playerId}/meta`), {
+                name: nomeSeguro(nameInput?.value || "Espectador"),
+                joinedAt: Date.now()
+            });
+            onDisconnect(ref(db, `rooms/${roomId}/call/watchers/${playerId}`)).remove();
+
+            for (const roleAlvo of ["p1", "p2"]) {
+                const pc = criarPeerEspectadorPara(roleAlvo);
+                const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+                await pc.setLocalDescription(offer);
+                await set(ref(db, `rooms/${roomId}/call/watchers/${playerId}/offers/${roleAlvo}`), {
+                    type: offer.type,
+                    sdp: offer.sdp,
+                    createdAt: Date.now()
+                });
+            }
+        } catch (e) {
+            console.warn("Falha ao iniciar espectador da chamada:", e);
+            atualizarStatusChamada("Não foi possível assistir a chamada agora.");
+        } finally {
+            spectatorWatchConnecting = false;
+        }
+    }
+
+    function escutarChamadaParaEspectador() {
+        limparListenersEspectadorChamada();
+        if (isPracticeMode || playerRole !== "spectator" || !roomId || !playerId) return;
+
+        const callRef = ref(db, `rooms/${roomId}/call`);
+        const unsub = onValue(callRef, async (snap) => {
+            const callData = snap.val() || {};
+            const participants = callData.participants || {};
+            const temP1 = Object.values(participants).some(p => p?.role === "p1");
+            const temP2 = Object.values(participants).some(p => p?.role === "p2");
+
+            if (callData.status === "active" && temP1 && temP2 && !spectatorWatchActive && !spectatorWatchConnecting) {
+                iniciarAssistirChamadaEspectador();
+            }
+
+            if ((!callData.status || callData.status === "ended") && (spectatorWatchActive || spectatorWatchConnecting)) {
+                encerrarAssistirChamadaEspectador(false);
+                atualizarStatusChamada("A chamada dos jogadores foi encerrada.");
+                return;
+            }
+
+            if (playerRole !== "spectator" || !roomId || !playerId) return;
+            const watcher = callData.watchers?.[playerId] || {};
+
+            for (const roleAlvo of ["p1", "p2"]) {
+                const answer = watcher.answers?.[roleAlvo];
+                const pc = spectatorWatchPeers[roleAlvo];
+                if (pc && answer?.sdp && !pc.remoteDescription) {
+                    try {
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: answer.type, sdp: answer.sdp }));
+                    } catch (e) {
+                        console.warn("Falha ao aplicar resposta para espectador:", e);
+                    }
+                }
+
+                const lista = watcher.candidates?.[roleAlvo] || {};
+                for (const [candId, cand] of Object.entries(lista)) {
+                    const chave = `${roleAlvo}_${candId}`;
+                    if (spectatorProcessedCandidates.has(chave)) continue;
+                    try {
+                        const pcAtual = spectatorWatchPeers[roleAlvo];
+                        if (!pcAtual || !pcAtual.remoteDescription || !cand?.candidate) continue;
+                        await pcAtual.addIceCandidate(new RTCIceCandidate(cand));
+                        spectatorProcessedCandidates.add(chave);
+                    } catch (e) {
+                        console.warn("Candidato ICE do jogador aguardando nova tentativa:", e);
+                    }
+                }
+            }
+        });
+        spectatorWatchUnsubscribers.push(unsub);
+    }
+
+    function criarPeerJogadorParaEspectador(spectatorId) {
+        if (playerSpectatorPeers[spectatorId]) return playerSpectatorPeers[spectatorId];
+
+        const pc = new RTCPeerConnection(rtcConfigGratis);
+        playerSpectatorPeers[spectatorId] = pc;
+
+        if (localCallStream) {
+            localCallStream.getTracks().forEach(track => pc.addTrack(track, localCallStream));
+        }
+
+        pc.onicecandidate = async (event) => {
+            if (!event.candidate || !roomId || !spectatorId || !playerRole) return;
+            try {
+                await push(ref(db, `rooms/${roomId}/call/watchers/${spectatorId}/candidates/${playerRole}`), {
+                    ...event.candidate.toJSON(),
+                    createdAt: Date.now()
+                });
+            } catch (e) {
+                console.warn("Falha ao enviar candidato ICE ao espectador:", e);
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const estado = pc.connectionState || "new";
+            if (estado === "failed" || estado === "closed") {
+                try { pc.close(); } catch (_) {}
+                delete playerSpectatorPeers[spectatorId];
+            }
+        };
+
+        return pc;
+    }
+
+    function escutarPedidosEspectadoresChamada() {
+        limparListenersJogadorParaEspectadores();
+        if (!localCallStream || !roomId || !(playerRole === "p1" || playerRole === "p2")) return;
+
+        const watchersRef = ref(db, `rooms/${roomId}/call/watchers`);
+        const unsub = onValue(watchersRef, async (snap) => {
+            const watchers = snap.val() || {};
+            for (const [spectatorId, watcher] of Object.entries(watchers)) {
+                if (!watcher || spectatorId === playerId) continue;
+                const offer = watcher.offers?.[playerRole];
+                if (!offer?.sdp) continue;
+
+                const offerKey = `${spectatorId}_${playerRole}_${offer.createdAt || offer.sdp.slice(0, 24)}`;
+                try {
+                    const pc = criarPeerJogadorParaEspectador(spectatorId);
+                    if (!playerAnsweredSpectatorOffers.has(offerKey)) {
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: offer.type, sdp: offer.sdp }));
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        await set(ref(db, `rooms/${roomId}/call/watchers/${spectatorId}/answers/${playerRole}`), {
+                            type: answer.type,
+                            sdp: answer.sdp,
+                            createdAt: Date.now()
+                        });
+                        playerAnsweredSpectatorOffers.add(offerKey);
+                    }
+
+                    const lista = watcher.candidates?.spectator?.[playerRole] || {};
+                    for (const [candId, cand] of Object.entries(lista)) {
+                        const chave = `${spectatorId}_${playerRole}_${candId}`;
+                        if (playerProcessedSpectatorCandidates.has(chave)) continue;
+                        try {
+                            if (!pc.remoteDescription || !cand?.candidate) continue;
+                            await pc.addIceCandidate(new RTCIceCandidate(cand));
+                            playerProcessedSpectatorCandidates.add(chave);
+                        } catch (e) {
+                            console.warn("Candidato ICE do espectador aguardando nova tentativa:", e);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Falha ao responder espectador da chamada:", e);
+                }
+            }
+        });
+        playerSpectatorUnsubscribers.push(unsub);
+    }
 
     // 🖼️ Controles da janelinha flutuante da chamada: arrastar + maior/menor.
     let callFloatingWidth = Number(localStorage.getItem('damas_call_floating_width_landscape') || 330);
@@ -3223,13 +3604,26 @@
 
 
     function liberarSomDoOponente() {
-        if (!remoteAudioEl) return;
-        remoteAudioEl.muted = false;
-        remoteAudioEl.volume = 1;
-        remoteAudioEl.play?.().then(() => {
-            atualizarStatusChamada("Som do oponente liberado ✅");
+        const tentativas = [];
+        if (remoteAudioEl) {
+            remoteAudioEl.muted = false;
+            remoteAudioEl.volume = 1;
+            tentativas.push(remoteAudioEl.play?.());
+        }
+        if (spectatorAudioP1) {
+            spectatorAudioP1.muted = false;
+            spectatorAudioP1.volume = 1;
+            tentativas.push(spectatorAudioP1.play?.());
+        }
+        if (spectatorAudioP2) {
+            spectatorAudioP2.muted = false;
+            spectatorAudioP2.volume = 1;
+            tentativas.push(spectatorAudioP2.play?.());
+        }
+        Promise.allSettled(tentativas.filter(Boolean)).then(() => {
+            atualizarStatusChamada(playerRole === "spectator" ? "Som da transmissão liberado ✅" : "Som do oponente liberado ✅");
         }).catch(() => {
-            atualizarStatusChamada("Toque novamente em 🔊 Som quando o oponente falar.");
+            atualizarStatusChamada("Toque novamente em 🔊 Som quando alguém falar.");
         });
     }
 
@@ -3237,7 +3631,10 @@
 
     if (startCallBtn) startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
     if (startAudioCallBtn) startAudioCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(true));
-    if (endCallBtn) endCallBtn.addEventListener('click', () => encerrarChamadaWebRTC(true));
+    if (endCallBtn) endCallBtn.addEventListener('click', () => {
+        if (playerRole === "spectator") encerrarAssistirChamadaEspectador(true);
+        else encerrarChamadaWebRTC(true);
+    });
 
     if (toggleMicBtn) toggleMicBtn.addEventListener('click', () => {
         if (!localCallStream) return;
@@ -3656,6 +4053,9 @@
         
         toggleChatVisibility.style.display = (playerRole === "spectator") ? "none" : "block";
         atualizarPainelChamada();
+        if (playerRole === "spectator") {
+            escutarChamadaParaEspectador();
+        }
 
         onValue(roomRef, (snap) => {
             const data = snap.val();
@@ -3727,6 +4127,7 @@
 
     function setupPracticeGame(playerName) {
         encerrarChamadaWebRTC(false);
+        encerrarAssistirChamadaEspectador(false);
         isPracticeMode = true;
         alertaFimPartidaMostrado = false;
         toggleChatVisibility.style.display = "block";
