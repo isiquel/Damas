@@ -3418,10 +3418,31 @@
 
     function adicionarTracksLocaisAoPeerSpectador(pc) {
         if (!pc || !localCallStream) return;
-        const jaEnviando = pc.getSenders().some(sender => sender.track);
-        if (jaEnviando) return;
-        localCallStream.getTracks().forEach(track => {
-            try { pc.addTrack(track, localCallStream); } catch (_) {}
+
+        // IMPORTANTE PARA O MODO ESPECTADOR:
+        // O espectador cria uma oferta "recvonly". O jogador precisa encaixar
+        // a própria câmera e microfone dentro dos transceivers que já vieram
+        // nessa oferta. Se usar apenas addTrack aqui, alguns navegadores aceitam
+        // a conexão, mas enviam tela preta e áudio mudo para quem assiste.
+        const tracks = localCallStream.getTracks();
+
+        tracks.forEach(track => {
+            try {
+                const transceiver = pc.getTransceivers().find(t => {
+                    const receiverKind = t.receiver?.track?.kind;
+                    const senderKind = t.sender?.track?.kind;
+                    return receiverKind === track.kind || senderKind === track.kind;
+                });
+
+                if (transceiver) {
+                    transceiver.direction = "sendonly";
+                    transceiver.sender.replaceTrack(track).catch(() => {});
+                } else if (!pc.getSenders().some(sender => sender.track && sender.track.id === track.id)) {
+                    pc.addTrack(track, localCallStream);
+                }
+            } catch (e) {
+                console.warn("Não foi possível anexar mídia ao espectador:", e);
+            }
         });
     }
 
