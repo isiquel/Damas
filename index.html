@@ -3909,7 +3909,7 @@
             <div class="domino-admin-panel-central">
                 <h3>🁬 Administração do Dominó</h3>
                 <div style="color:#cbd5e1; font-size:.8rem; line-height:1.4;">
-                    Aqui o dono libera, bloqueia, limpa e encerra salas de Dominó. Jogador comum não cria sala: ele só entra no código que você liberar.
+                    Aqui o dono libera, bloqueia, limpa e encerra salas de Dominó. Jogador comum não cria sala: ele só entra no código que você liberar. Esta fase está estabilizando o modo online de 2 jogadores.
                 </div>
                 <div class="domino-admin-row">
                     <input id="domino-admin-room-input" type="text" placeholder="Código da sala. Ex: DOM1234" maxlength="10">
@@ -7827,6 +7827,30 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const other = adversarioSeatDomino();
             return dominoOnlineData?.players?.[other]?.name || 'Amigo';
         }
+
+        function estadoDominoOnlineValido(state) {
+            return !!(
+                state &&
+                state.started &&
+                !state.gameOver &&
+                Array.isArray(state.chain) &&
+                state.chain.length > 0 &&
+                Array.isArray(state.boneyard) &&
+                Array.isArray(state.hands?.p1) &&
+                Array.isArray(state.hands?.p2) &&
+                state.hands.p1.length > 0 &&
+                state.hands.p2.length > 0 &&
+                state.leftEnd !== null &&
+                state.leftEnd !== undefined &&
+                state.rightEnd !== null &&
+                state.rightEnd !== undefined &&
+                (state.turn === 'p1' || state.turn === 'p2')
+            );
+        }
+
+        function salaDominoTemDoisJogadores(sala) {
+            return !!(sala?.players?.p1?.uid && sala?.players?.p2?.uid);
+        }
         function atualizarLayoutPartidaDomino() {
             const screen = $('domino-screen');
             if (!screen) return;
@@ -8325,12 +8349,24 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             dominoLastFocus = state.lastFocus || 'centro';
             turn = state.turn === dominoOnlineSeat ? 'player' : 'bot';
 
+            const estadoOnlineValido = estadoDominoOnlineValido(state);
+
             if (!state.started) {
                 gameOver = true;
                 turn = 'bot';
                 setStatus(players.p1 && players.p2
-                    ? '✅ Os dois jogadores estão na sala. Qualquer um pode apertar <strong>Iniciar partida online</strong>.'
+                    ? '✅ Sala completa: os dois jogadores entraram. Qualquer um pode apertar <strong>Iniciar partida online</strong>.'
                     : '⏳ Sala online liberada. Aguarde o segundo jogador entrar.');
+            } else if (!estadoOnlineValido) {
+                gameOver = true;
+                turn = 'bot';
+                playerHand = [];
+                botHand = [];
+                chain = [];
+                leftEnd = null;
+                rightEnd = null;
+                boneyard = [];
+                setStatus('⚠️ A sala estava marcada como em andamento, mas sem peças. Aperte <strong>Iniciar partida online</strong> para distribuir as peças corretamente.');
             } else {
                 setStatus(state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.'));
             }
@@ -8458,7 +8494,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 updatedAt: Date.now()
             });
             acompanharSalaDominoOnline(code, seat);
-            setStatus(`Você entrou na sala <strong>${code}</strong>. Aguarde ou inicie a partida.`);
+            setStatus(`Você entrou na sala <strong>${code}</strong> como ${seat === 'p1' ? 'Jogador 1' : 'Jogador 2'}. Quando a sala estiver completa, qualquer um pode iniciar.`);
         }
 
         function acompanharSalaDominoOnline(code, seat) {
@@ -8494,22 +8530,35 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 setStatus('Esta sala não está liberada para iniciar. Fale com o administrador.');
                 return;
             }
-            if (!sala.players?.p1 || !sala.players?.p2) {
-                setStatus('A partida online precisa de dois jogadores. Envie o código para seu amigo entrar.');
+            if (!salaDominoTemDoisJogadores(sala)) {
+                setStatus('A partida online precisa de dois jogadores ocupando a sala. Envie o código para seu amigo entrar.');
                 return;
             }
             if (dominoOnlineSeat !== 'p1' && dominoOnlineSeat !== 'p2') {
                 setStatus('Entre como jogador para iniciar a partida online.');
                 return;
             }
-            if (sala.state && sala.state.started && !sala.state.gameOver) {
-                setStatus('A partida online já está em andamento.');
+            const estadoAtual = sala.state || {};
+            const partidaValidaEmAndamento = estadoDominoOnlineValido(estadoAtual);
+
+            if (partidaValidaEmAndamento) {
+                setStatus('A partida online já está em andamento e as peças já foram distribuídas.');
                 return;
+            }
+
+            if (estadoAtual.started && !partidaValidaEmAndamento) {
+                setStatus('⚠️ Corrigindo sala travada: a partida estava marcada como iniciada, mas sem peças válidas. Vou redistribuir agora.');
             }
 
             const deck = gerarPecas();
             const h1 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
             const h2 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+
+            if (h1.length !== 7 || h2.length !== 7 || deck.length !== 14) {
+                setStatus('Não foi possível distribuir as peças online. Tente iniciar novamente.');
+                return;
+            }
+
             const pStart = melhorInicial(h1);
             const bStart = melhorInicial(h2);
             let c = [], le = null, re = null, nextTurn = 'p1', lastKey = '';
@@ -8539,9 +8588,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     passStreak: 0,
                     lastPlayedKey: lastKey,
                     lastFocus: 'centro',
-                    status
+                    status,
+                    roundId: 'R' + Date.now()
                 }
             });
+            setStatus('✅ Partida online iniciada. Distribuindo as peças para os dois jogadores...');
         }
 
         function orientarOnline(tile, side, le, re, cLen) {
@@ -8678,6 +8729,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (removerJogador && dominoOnlineMode && codeSaindo && seatSaindo) {
                 try {
                     const salaRef = ref(db, 'dominoRooms/' + codeSaindo);
+                    const snapSaida = await get(salaRef);
+                    const salaSaida = snapSaida.exists() ? snapSaida.val() : {};
+                    const outroSeat = seatSaindo === 'p1' ? 'p2' : 'p1';
+                    const outroPermanece = !!salaSaida?.players?.[outroSeat]?.uid;
+
                     const updates = {
                         [`players/${seatSaindo}`]: null,
                         updatedAt: Date.now(),
@@ -8693,7 +8749,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                         'state/passStreak': 0,
                         'state/lastPlayedKey': '',
                         'state/lastFocus': 'centro',
-                        'state/status': 'Um jogador saiu da sala. Aguardando jogadores para nova partida.'
+                        'state/status': outroPermanece
+                            ? 'Um jogador saiu da sala. A vaga foi liberada; aguarde outro jogador entrar.'
+                            : 'Sala vazia. Aguardando jogadores para nova partida.'
                     };
                     await update(salaRef, updates);
                 } catch (e) {
