@@ -2065,6 +2065,112 @@
         .domino-board-area {
             cursor: grab;
         }
+
+        .domino-live-strip {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .domino-live-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: #020617;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #e2e8f0;
+            font-size: .8rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .domino-live-pill.turn {
+            background: rgba(37,99,235,0.18);
+            border-color: rgba(56,189,248,0.35);
+            color: #93c5fd;
+        }
+        .domino-live-pill.buy {
+            background: rgba(241,196,15,0.12);
+            border-color: rgba(241,196,15,0.25);
+            color: #fde68a;
+        }
+        .domino-screen.match-active .domino-hero,
+        .domino-screen.match-active .domino-helper-panel,
+        .domino-screen.match-active .domino-small-note,
+        .domino-screen.match-active .domino-meta {
+            display: none !important;
+        }
+        .domino-screen.match-active .domino-live-strip {
+            display: flex;
+        }
+        .domino-screen.match-active .domino-layout {
+            gap: 10px;
+        }
+        .domino-screen.match-active .domino-card {
+            padding: 12px;
+        }
+        .domino-screen.match-active .domino-card-title {
+            margin-bottom: 8px;
+        }
+        .domino-screen.match-active .domino-status {
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            font-size: .95rem;
+            line-height: 1.45;
+            border-left-width: 5px;
+        }
+        .domino-screen.match-active .domino-board-area {
+            min-height: 210px;
+            padding: 14px;
+        }
+        .domino-screen.match-active .domino-endpoints-view {
+            min-height: 150px;
+            gap: 12px;
+        }
+        .domino-screen.match-active .domino-endpoint-card {
+            min-height: 136px;
+            padding: 12px 8px;
+        }
+        .domino-screen.match-active .domino-endpoint-center {
+            min-width: 88px;
+            height: 88px;
+            font-size: .86rem;
+        }
+        .domino-screen.match-active .domino-table-tools {
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .domino-screen.match-active .domino-table-tools button {
+            padding: 10px 15px;
+            font-size: .8rem;
+        }
+        .domino-screen.match-active .domino-hand {
+            margin-top: 4px;
+            margin-bottom: 12px;
+        }
+        .domino-screen.match-active .domino-actions {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 0;
+        }
+        .domino-screen.match-active .domino-actions button {
+            min-height: 56px;
+            padding: 14px 10px;
+            font-size: .94rem;
+            font-weight: 900;
+            border-radius: 12px;
+            line-height: 1.2;
+        }
+        .domino-screen.match-active #domino-draw-btn {
+            grid-column: 1 / -1;
+        }
+        .domino-screen.match-active #domino-new-btn {
+            background: #1d4ed8;
+        }
+
         @media (max-width: 560px) {
             .domino-helper-grid { grid-template-columns: 1fr; }
             .domino-scoreline { grid-template-columns: 1fr 1fr; }
@@ -2074,6 +2180,14 @@
             .domino-meta { grid-template-columns: 1fr; }
             .domino-actions { grid-template-columns: 1fr 1fr; }
             .domino-board-area { min-height: 132px; padding: 10px; }
+            .domino-live-strip { gap: 6px; }
+            .domino-live-pill { min-height: 34px; padding: 7px 10px; font-size: .73rem; }
+            .domino-screen.match-active .domino-board-area { min-height: 188px; padding: 12px; }
+            .domino-screen.match-active .domino-status { font-size: .9rem; }
+            .domino-screen.match-active .domino-endpoints-view { min-height: 132px; }
+            .domino-screen.match-active .domino-endpoint-card { min-height: 116px; }
+            .domino-screen.match-active .domino-endpoint-center { min-width: 72px; height: 72px; font-size: .72rem; }
+            .domino-screen.match-active .domino-actions button { min-height: 58px; font-size: .9rem; }
             .domino-board-area::before { font-size: 0.64rem; max-width: calc(100vw - 54px); }
             .domino-chain { gap: 5px; padding-left: 34px; padding-right: 34px; }
             .domino-endpoints-view { gap: 7px; min-height: 96px; padding: 8px 2px; }
@@ -2236,6 +2350,11 @@
         <div class="domino-layout">
             <div class="domino-card">
                 <div class="domino-card-title">Mesa de jogo</div>
+                <div id="domino-live-strip" class="domino-live-strip">
+                    <div class="domino-live-pill">Contra: <span id="domino-opponent-mini" style="margin-left:4px;">Robô</span></div>
+                    <div id="domino-turn-pill" class="domino-live-pill turn">Aguardando nova partida</div>
+                    <div id="domino-buy-pill" class="domino-live-pill buy">Compra: 0</div>
+                </div>
                 <div id="domino-status" class="domino-status">Clique em <strong>Novo jogo</strong> para começar uma partida de dominó contra o robô.</div>
                 <div class="domino-meta">
                     <div class="domino-stat"><strong id="domino-left-end">-</strong>Ponta esquerda</div>
@@ -6856,6 +6975,21 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function salvarModoMesaDomino() {
             try { localStorage.setItem('tabuleiroArenaDominoViewMode', dominoViewMode); } catch (e) {}
         }
+        function atualizarLayoutPartidaDomino() {
+            const screen = $('domino-screen');
+            if (!screen) return;
+            const partidaAtiva = !gameOver && chain.length > 0;
+            screen.classList.toggle('match-active', partidaAtiva);
+        }
+        function atualizarCabecalhoCompactoDomino() {
+            const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
+            setText('domino-opponent-mini', 'Robô');
+            setText('domino-buy-pill', 'Compra: ' + boneyard.length);
+            if (gameOver) setText('domino-turn-pill', 'Partida encerrada');
+            else if (!chain.length) setText('domino-turn-pill', 'Aguardando nova partida');
+            else if (turn === 'player') setText('domino-turn-pill', 'Agora é sua vez');
+            else setText('domino-turn-pill', 'Agora é a vez do robô');
+        }
         function atualizarModoMesaDomino() {
             const mesa = $('domino-board-scroll');
             const btn = $('domino-toggle-view-btn');
@@ -7137,6 +7271,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const chainEl = $('domino-chain');
             const handEl = $('domino-hand');
             if (!chainEl || !handEl) return;
+            atualizarLayoutPartidaDomino();
+            atualizarCabecalhoCompactoDomino();
             chainEl.innerHTML = '';
             if (!chain.length) {
                 const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'A mesa aparecerá aqui.'; chainEl.appendChild(m);
@@ -7167,6 +7303,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('domino-player-count', playerHand.length);
             setText('domino-bot-count', botHand.length);
             setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : 'Robô'));
+            atualizarCabecalhoCompactoDomino();
             const leftBtn = $('domino-play-left-btn'), rightBtn = $('domino-play-right-btn'), drawBtn = $('domino-draw-btn');
             if (leftBtn) leftBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
             if (rightBtn) rightBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
@@ -7254,7 +7391,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             document.body.classList.remove('game-selected');
             document.body.classList.remove('domino-selected');
             const domino = $('domino-screen');
-            if (domino) domino.style.display = 'none';
+            if (domino) {
+                domino.style.display = 'none';
+                domino.classList.remove('match-active');
+            }
             const hub = $('games-hub-panel');
             if (hub) hub.style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
