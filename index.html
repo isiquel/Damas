@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
-    <!-- Versão Tabuleiro Arena v3: hub inicial realmente limpo; menu da Damas só abre ao clicar. -->
+    <!-- Versão Tabuleiro Arena v4: Dominó com mesa verde rolável, dica de jogada, placar local e mão organizada. -->
     <style>
         :root {
             --bg-color: #1a1a2e;
@@ -1794,6 +1794,89 @@
             white-space: nowrap;
             flex-wrap: nowrap;
         }
+
+        .domino-endpoints-view {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            min-height: 106px;
+            padding: 10px 6px;
+        }
+        .domino-board-area.only-ends {
+            overflow: hidden;
+            cursor: default;
+            touch-action: manipulation;
+        }
+        .domino-board-area.only-ends::before {
+            content: 'modo limpo: veja somente as duas pontas da mesa';
+        }
+        .domino-board-area.only-ends .domino-chain {
+            display: none;
+        }
+        .domino-board-area.only-ends .domino-endpoints-view {
+            display: flex;
+        }
+        .domino-endpoint-card {
+            flex: 1 1 0;
+            min-width: 0;
+            min-height: 96px;
+            border-radius: 14px;
+            background: rgba(2, 6, 23, 0.72);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 9px 6px;
+            box-shadow: inset 0 0 18px rgba(0,0,0,0.28);
+        }
+        .domino-endpoint-label {
+            color: #cbd5e1;
+            font-size: 0.68rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.55px;
+            text-align: center;
+        }
+        .domino-endpoint-number {
+            color: #f1c40f;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-align: center;
+        }
+        .domino-endpoint-empty {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-align: center;
+            line-height: 1.35;
+        }
+        .domino-endpoint-center {
+            flex: 0 0 auto;
+            min-width: 68px;
+            height: 68px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(241,196,15,0.12);
+            border: 1px dashed rgba(241,196,15,0.48);
+            color: #f1c40f;
+            font-size: 0.72rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.15;
+            padding: 8px;
+        }
+        .domino-table-tools .only-full-tool {
+            display: none;
+        }
+        .domino-board-full-active + .domino-table-tools .only-full-tool {
+            display: inline-flex;
+        }
         .domino-table-tools {
             display: flex;
             gap: 8px;
@@ -1913,12 +1996,91 @@
         html:has(body.domino-selected) {
             overflow-x: hidden;
         }
+
+
+        /* ✅ DOMINÓ ARENA - POLIMENTO DE JOGABILIDADE v4
+           Mantém a tela fixa e melhora somente a área verde/mesa do dominó. */
+        .domino-tile.playable {
+            outline: 2px solid rgba(46, 204, 113, 0.72);
+            box-shadow: 0 0 13px rgba(46,204,113,0.38), 0 5px 12px rgba(0,0,0,0.35);
+        }
+        .domino-tile.last-played {
+            outline: 3px solid rgba(241, 196, 15, 0.95);
+            box-shadow: 0 0 18px rgba(241,196,15,0.75), 0 5px 12px rgba(0,0,0,0.35);
+        }
+        .domino-helper-panel {
+            margin-top: 12px;
+            background: linear-gradient(135deg, #020617, #0f172a);
+            border: 1px solid rgba(56,189,248,0.22);
+            border-radius: 12px;
+            padding: 10px;
+        }
+        .domino-helper-title {
+            color: #38bdf8;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 7px;
+        }
+        .domino-helper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+        }
+        .domino-helper-grid button {
+            padding: 9px 7px;
+            font-size: 0.72rem;
+            text-transform: none;
+            border-radius: 8px;
+        }
+        .btn-domino-hint { background: #0ea5e9; }
+        .btn-domino-sort { background: #475569; }
+        .btn-domino-reset { background: #7c2d12; }
+        .domino-scoreline {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+            margin-top: 9px;
+        }
+        .domino-scorebox {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 9px;
+            padding: 8px 6px;
+            text-align: center;
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            line-height: 1.25;
+        }
+        .domino-scorebox strong {
+            display: block;
+            color: #f1c40f;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+        .domino-board-area.dragging {
+            cursor: grabbing;
+        }
+        .domino-board-area {
+            cursor: grab;
+        }
+        @media (max-width: 560px) {
+            .domino-helper-grid { grid-template-columns: 1fr; }
+            .domino-scoreline { grid-template-columns: 1fr 1fr; }
+        }
+
         @media (max-width: 560px) {
             .domino-meta { grid-template-columns: 1fr; }
             .domino-actions { grid-template-columns: 1fr 1fr; }
             .domino-board-area { min-height: 132px; padding: 10px; }
             .domino-board-area::before { font-size: 0.64rem; max-width: calc(100vw - 54px); }
             .domino-chain { gap: 5px; padding-left: 34px; padding-right: 34px; }
+            .domino-endpoints-view { gap: 7px; min-height: 96px; padding: 8px 2px; }
+            .domino-endpoint-card { min-height: 88px; padding: 7px 4px; }
+            .domino-endpoint-center { min-width: 52px; height: 52px; font-size: 0.58rem; padding: 6px; }
+            .domino-endpoint-label { font-size: 0.58rem; }
+            .domino-endpoint-number { font-size: 0.68rem; }
             .domino-tile { width: 38px; height: 66px; }
             .domino-tile.horizontal { width: 58px; height: 34px; }
             .domino-half { font-size: .92rem; }
@@ -2080,15 +2242,29 @@
                     <div class="domino-stat"><strong id="domino-boneyard-count">0</strong>Compra</div>
                     <div class="domino-stat"><strong id="domino-right-end">-</strong>Ponta direita</div>
                 </div>
-                <div class="domino-board-area" id="domino-board-scroll">
+                <div class="domino-board-area only-ends" id="domino-board-scroll">
+                    <div id="domino-endpoints-view" class="domino-endpoints-view">
+                        <div class="domino-endpoint-card">
+                            <div class="domino-endpoint-label">Ponta esquerda</div>
+                            <div id="domino-left-tile-view" class="domino-endpoint-empty">Aguardando início</div>
+                            <div id="domino-left-number-view" class="domino-endpoint-number">-</div>
+                        </div>
+                        <div class="domino-endpoint-center">Mesa<br>limpa</div>
+                        <div class="domino-endpoint-card">
+                            <div class="domino-endpoint-label">Ponta direita</div>
+                            <div id="domino-right-tile-view" class="domino-endpoint-empty">Aguardando início</div>
+                            <div id="domino-right-number-view" class="domino-endpoint-number">-</div>
+                        </div>
+                    </div>
                     <div id="domino-chain" class="domino-chain">
                         <div class="tiny-muted">A mesa aparecerá aqui.</div>
                     </div>
                 </div>
                 <div class="domino-table-tools">
-                    <button id="domino-center-btn" type="button">Centralizar mesa</button>
-                    <button id="domino-left-tip-btn" type="button">Ver ponta esquerda</button>
-                    <button id="domino-right-tip-btn" type="button">Ver ponta direita</button>
+                    <button id="domino-toggle-view-btn" type="button">Ver trilha completa</button>
+                    <button id="domino-center-btn" class="only-full-tool" type="button">Centralizar mesa</button>
+                    <button id="domino-left-tip-btn" class="only-full-tool" type="button">Ver ponta esquerda</button>
+                    <button id="domino-right-tip-btn" class="only-full-tool" type="button">Ver ponta direita</button>
                 </div>
             </div>
 
@@ -2106,7 +2282,22 @@
                     <button id="domino-play-right-btn" class="btn-domino-green" type="button">Jogar direita</button>
                     <button id="domino-draw-btn" class="btn-domino-yellow" type="button">Comprar / Passar</button>
                 </div>
-                <div class="domino-small-note">Dica: selecione uma pedra da sua mão. Se ela combinar com uma das pontas da mesa, escolha esquerda ou direita. Se não tiver jogada, compre uma pedra.</div>
+                <div class="domino-small-note">Dica: a mesa mostra só as duas pontas para ficar limpa no celular. Se quiser conferir a partida inteira, toque em <strong>Ver trilha completa</strong>.</div>
+
+                <div class="domino-helper-panel">
+                    <div class="domino-helper-title">Ajuda rápida e placar local</div>
+                    <div class="domino-helper-grid">
+                        <button id="domino-hint-btn" class="btn-domino-hint" type="button">Dica de jogada</button>
+                        <button id="domino-sort-btn" class="btn-domino-sort" type="button">Organizar mão</button>
+                        <button id="domino-score-reset-btn" class="btn-domino-reset" type="button">Zerar placar</button>
+                    </div>
+                    <div class="domino-scoreline">
+                        <div class="domino-scorebox"><strong id="domino-score-player">0</strong>Vitórias</div>
+                        <div class="domino-scorebox"><strong id="domino-score-bot">0</strong>Robô</div>
+                        <div class="domino-scorebox"><strong id="domino-score-draw">0</strong>Empates</div>
+                        <div class="domino-scorebox"><strong id="domino-player-points">0</strong>Seus pontos</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -6637,10 +6828,72 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let selectedIndex = null;
         let gameOver = true;
         let passStreak = 0;
+        let dominoLastFocus = 'centro';
+        let dominoLastPlayedKey = '';
+        let dominoViewMode = carregarModoMesaDomino();
+        let dominoScore = carregarPlacarDomino();
 
         function $(id) { return document.getElementById(id); }
         function soma(tile) { return tile[0] + tile[1]; }
         function tileKey(tile) { return tile[0] + '-' + tile[1]; }
+        function carregarPlacarDomino() {
+            try {
+                return JSON.parse(localStorage.getItem('tabuleiroArenaDominoScore') || '{"player":0,"bot":0,"draw":0}');
+            } catch (e) {
+                return { player: 0, bot: 0, draw: 0 };
+            }
+        }
+        function salvarPlacarDomino() {
+            try { localStorage.setItem('tabuleiroArenaDominoScore', JSON.stringify(dominoScore)); } catch (e) {}
+        }
+        function carregarModoMesaDomino() {
+            try {
+                return localStorage.getItem('tabuleiroArenaDominoViewMode') || 'ends';
+            } catch (e) {
+                return 'ends';
+            }
+        }
+        function salvarModoMesaDomino() {
+            try { localStorage.setItem('tabuleiroArenaDominoViewMode', dominoViewMode); } catch (e) {}
+        }
+        function atualizarModoMesaDomino() {
+            const mesa = $('domino-board-scroll');
+            const btn = $('domino-toggle-view-btn');
+            if (!mesa) return;
+            if (dominoViewMode === 'full') {
+                mesa.classList.remove('only-ends');
+                mesa.classList.add('domino-board-full-active');
+                if (btn) btn.innerText = 'Ver só as pontas';
+                ajustarMesaDomino(dominoLastFocus);
+            } else {
+                mesa.classList.add('only-ends');
+                mesa.classList.remove('domino-board-full-active', 'dragging');
+                if (btn) btn.innerText = 'Ver trilha completa';
+                mesa.scrollLeft = 0;
+            }
+        }
+        function alternarModoMesaDomino() {
+            dominoViewMode = dominoViewMode === 'full' ? 'ends' : 'full';
+            salvarModoMesaDomino();
+            atualizarModoMesaDomino();
+            setStatus(dominoViewMode === 'ends'
+                ? '✅ Modo limpo ativado: agora a mesa mostra somente as duas pontas ativas.'
+                : '🔎 Trilha completa ativada: agora você pode arrastar a mesa verde para ver todas as pedras jogadas.');
+        }
+        function atualizarPlacarDomino() {
+            const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
+            setText('domino-score-player', dominoScore.player || 0);
+            setText('domino-score-bot', dominoScore.bot || 0);
+            setText('domino-score-draw', dominoScore.draw || 0);
+            setText('domino-player-points', pontos(playerHand));
+        }
+        function registrarResultadoDomino(tipo) {
+            if (tipo === 'player') dominoScore.player = (dominoScore.player || 0) + 1;
+            if (tipo === 'bot') dominoScore.bot = (dominoScore.bot || 0) + 1;
+            if (tipo === 'draw') dominoScore.draw = (dominoScore.draw || 0) + 1;
+            salvarPlacarDomino();
+            atualizarPlacarDomino();
+        }
         function shuffle(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -6650,7 +6903,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
         function createTileElement(tile, opts = {}) {
             const el = document.createElement('div');
-            el.className = 'domino-tile' + (opts.horizontal ? ' horizontal' : '') + (opts.disabled ? ' disabled' : '') + (opts.selected ? ' selected' : '');
+            el.className = 'domino-tile' + (opts.horizontal ? ' horizontal' : '') + (opts.disabled ? ' disabled' : '') + (opts.selected ? ' selected' : '') + (opts.playable ? ' playable' : '') + (opts.lastPlayed ? ' last-played' : '');
             el.setAttribute('aria-label', `Pedra ${tile[0]} por ${tile[1]}`);
             const a = document.createElement('div'); a.className = 'domino-half'; a.innerText = tile[0];
             const sep = document.createElement('div'); sep.className = 'domino-sep';
@@ -6686,16 +6939,18 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedIndex = null;
             gameOver = false;
             passStreak = 0;
+            dominoLastFocus = 'centro';
+            dominoLastPlayedKey = '';
 
             const pStart = melhorInicial(playerHand);
             const bStart = melhorInicial(botHand);
             if (pStart.score >= bStart.score) {
                 const t = playerHand.splice(pStart.index, 1)[0];
-                chain.push(t); leftEnd = t[0]; rightEnd = t[1]; turn = 'bot';
+                chain.push(t); leftEnd = t[0]; rightEnd = t[1]; turn = 'bot'; dominoLastPlayedKey = tileKey(t);
                 setStatus(`Você abriu a mesa com <strong>${tileKey(t)}</strong>. Agora é a vez do robô.`);
             } else {
                 const t = botHand.splice(bStart.index, 1)[0];
-                chain.push(t); leftEnd = t[0]; rightEnd = t[1]; turn = 'player';
+                chain.push(t); leftEnd = t[0]; rightEnd = t[1]; turn = 'player'; dominoLastPlayedKey = tileKey(t);
                 setStatus(`O robô abriu a mesa com <strong>${tileKey(t)}</strong>. Sua vez: jogue uma pedra que combine com ${leftEnd} ou ${rightEnd}.`);
             }
             renderDomino();
@@ -6749,6 +7004,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             placeTileFromHand(playerHand, selectedIndex, side);
             const jogada = tileKey(tile);
+            dominoLastFocus = side === 'left' ? 'esquerda' : 'direita';
+            dominoLastPlayedKey = jogada;
             selectedIndex = null;
             turn = 'bot';
             setStatus(`Você jogou <strong>${jogada}</strong>. O robô está analisando a mesa...`);
@@ -6795,6 +7052,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (move) {
                 const tile = botHand[move.index];
                 placeTileFromHand(botHand, move.index, move.side);
+                dominoLastFocus = move.side === 'left' ? 'esquerda' : 'direita';
+                dominoLastPlayedKey = tileKey(tile);
                 turn = 'player';
                 setStatus(`O robô jogou <strong>${tileKey(tile)}</strong>. Agora é sua vez.`);
             } else {
@@ -6817,19 +7076,59 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             });
         }
 
+        function limparEndpointDomino(containerId, numeroId, texto = 'Aguardando início') {
+            const box = $(containerId);
+            const num = $(numeroId);
+            if (box) {
+                box.className = 'domino-endpoint-empty';
+                box.innerHTML = texto;
+            }
+            if (num) num.innerText = '-';
+        }
+        function preencherEndpointDomino(containerId, numeroId, tile, numeroDaPonta) {
+            const box = $(containerId);
+            const num = $(numeroId);
+            if (!box) return;
+            box.className = '';
+            box.innerHTML = '';
+            box.appendChild(createTileElement(tile, { horizontal: true, lastPlayed: tileKey(tile) === dominoLastPlayedKey }));
+            if (num) num.innerText = 'encaixe: ' + numeroDaPonta;
+        }
+        function renderDominoPontas() {
+            if (!chain.length) {
+                limparEndpointDomino('domino-left-tile-view', 'domino-left-number-view');
+                limparEndpointDomino('domino-right-tile-view', 'domino-right-number-view');
+                return;
+            }
+            const leftTile = chain[0];
+            const rightTile = chain[chain.length - 1];
+            preencherEndpointDomino('domino-left-tile-view', 'domino-left-number-view', leftTile, leftEnd);
+            preencherEndpointDomino('domino-right-tile-view', 'domino-right-number-view', rightTile, rightEnd);
+        }
+
         function checkEnd() {
+            if (gameOver) return true;
             if (playerHand.length === 0) {
                 gameOver = true;
+                registrarResultadoDomino('player');
                 setStatus('🏆 <strong>Você venceu!</strong> Acabou suas pedras antes do robô. Excelente estratégia!');
             } else if (botHand.length === 0) {
                 gameOver = true;
+                registrarResultadoDomino('bot');
                 setStatus('🤖 <strong>O robô venceu.</strong> Não desanime: observe as pontas da mesa e tente guardar pedras versáteis.');
             } else if (passStreak >= 2 && boneyard.length === 0 && !playerHand.some(canPlayTile) && !botHand.some(canPlayTile)) {
                 gameOver = true;
                 const pp = pontos(playerHand), bp = pontos(botHand);
-                if (pp < bp) setStatus(`🔒 Mesa fechada. Você venceu nos pontos: <strong>${pp} x ${bp}</strong>.`);
-                else if (bp < pp) setStatus(`🔒 Mesa fechada. O robô venceu nos pontos: <strong>${bp} x ${pp}</strong>.`);
-                else setStatus(`🔒 Mesa fechada. Empate nos pontos: <strong>${pp} x ${bp}</strong>.`);
+                if (pp < bp) {
+                    registrarResultadoDomino('player');
+                    setStatus(`🔒 Mesa fechada. Você venceu nos pontos: <strong>${pp} x ${bp}</strong>.`);
+                } else if (bp < pp) {
+                    registrarResultadoDomino('bot');
+                    setStatus(`🔒 Mesa fechada. O robô venceu nos pontos: <strong>${bp} x ${pp}</strong>.`);
+                } else {
+                    registrarResultadoDomino('draw');
+                    setStatus(`🔒 Mesa fechada. Empate nos pontos: <strong>${pp} x ${bp}</strong>.`);
+                }
             }
             if (gameOver) renderDomino();
             return gameOver;
@@ -6842,12 +7141,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!chain.length) {
                 const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'A mesa aparecerá aqui.'; chainEl.appendChild(m);
             } else {
-                chain.forEach(t => chainEl.appendChild(createTileElement(t, { horizontal: true })));
+                chain.forEach(t => chainEl.appendChild(createTileElement(t, { horizontal: true, lastPlayed: tileKey(t) === dominoLastPlayedKey })));
             }
             handEl.innerHTML = '';
             playerHand.forEach((tile, idx) => {
                 const disabled = gameOver || turn !== 'player' || !canPlayTile(tile);
-                const el = createTileElement(tile, { disabled, selected: selectedIndex === idx });
+                const el = createTileElement(tile, { disabled, selected: selectedIndex === idx, playable: !disabled && canPlayTile(tile) });
                 el.addEventListener('click', () => {
                     if (disabled) return;
                     selectedIndex = selectedIndex === idx ? null : idx;
@@ -6858,7 +7157,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!playerHand.length && !gameOver) {
                 const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'Sua mão está vazia.'; handEl.appendChild(m);
             }
-            ajustarMesaDomino('centro');
+            renderDominoPontas();
+            atualizarModoMesaDomino();
+            if (dominoViewMode === 'full') ajustarMesaDomino(dominoLastFocus);
             const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
             setText('domino-left-end', leftEnd === null ? '-' : leftEnd);
             setText('domino-right-end', rightEnd === null ? '-' : rightEnd);
@@ -6870,7 +7171,83 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (leftBtn) leftBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
             if (rightBtn) rightBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
             if (drawBtn) drawBtn.disabled = gameOver || turn !== 'player';
+            atualizarPlacarDomino();
         }
+        function darDicaDomino() {
+            if (gameOver || turn !== 'player') {
+                setStatus('A dica aparece durante a sua vez. Clique em <strong>Novo jogo</strong> para começar.');
+                return;
+            }
+            const opcoes = [];
+            playerHand.forEach((tile, index) => {
+                if (canPlaySide(tile, 'left')) opcoes.push({ index, tile, side: 'left', value: soma(tile) + (tile[0] === tile[1] ? 4 : 0) });
+                if (canPlaySide(tile, 'right')) opcoes.push({ index, tile, side: 'right', value: soma(tile) + (tile[0] === tile[1] ? 4 : 0) });
+            });
+            if (!opcoes.length) {
+                selectedIndex = null;
+                renderDomino();
+                setStatus(boneyard.length > 0 ? '💡 Você não tem encaixe agora. A melhor ação é <strong>Comprar / Passar</strong>.' : '💡 Você não tem encaixe e a compra acabou. A melhor ação é <strong>passar a vez</strong>.');
+                return;
+            }
+            opcoes.sort((a,b)=>b.value-a.value);
+            const best = opcoes[0];
+            selectedIndex = best.index;
+            dominoLastFocus = best.side === 'left' ? 'esquerda' : 'direita';
+            renderDomino();
+            setStatus(`💡 Sugestão: selecionei a pedra <strong>${tileKey(best.tile)}</strong>. Ela encaixa melhor na ponta <strong>${best.side === 'left' ? 'esquerda' : 'direita'}</strong>.`);
+        }
+
+        function organizarMaoDomino() {
+            playerHand.sort((a,b) => {
+                const da = a[0] === a[1] ? 1 : 0;
+                const db = b[0] === b[1] ? 1 : 0;
+                return db - da || soma(b) - soma(a) || b[0] - a[0] || b[1] - a[1];
+            });
+            selectedIndex = null;
+            renderDomino();
+            setStatus('🧩 Sua mão foi organizada: dobles e pedras maiores ficaram mais fáceis de encontrar.');
+        }
+
+        function zerarPlacarDomino() {
+            dominoScore = { player: 0, bot: 0, draw: 0 };
+            salvarPlacarDomino();
+            atualizarPlacarDomino();
+            setStatus('📊 Placar local do Dominó zerado neste aparelho.');
+        }
+
+        function ativarArrasteMesaDomino() {
+            const mesa = $('domino-board-scroll');
+            if (!mesa || mesa.dataset.dragReady === '1') return;
+            mesa.dataset.dragReady = '1';
+            let isDown = false;
+            let startX = 0;
+            let startScroll = 0;
+
+            const endDrag = () => {
+                isDown = false;
+                mesa.classList.remove('dragging');
+            };
+
+            mesa.addEventListener('pointerdown', (ev) => {
+                if (dominoViewMode !== 'full') return;
+                isDown = true;
+                startX = ev.clientX;
+                startScroll = mesa.scrollLeft;
+                mesa.classList.add('dragging');
+                if (mesa.setPointerCapture) mesa.setPointerCapture(ev.pointerId);
+            });
+
+            mesa.addEventListener('pointermove', (ev) => {
+                if (!isDown) return;
+                ev.preventDefault();
+                mesa.scrollLeft = startScroll - (ev.clientX - startX);
+            });
+
+            mesa.addEventListener('pointerup', endDrag);
+            mesa.addEventListener('pointercancel', endDrag);
+            mesa.addEventListener('mouseleave', endDrag);
+        }
+
         function voltarModalidadesDomino() {
             document.body.classList.add('platform-start-active');
             document.body.classList.add('mode-selecting');
@@ -6891,6 +7268,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const centerBtn = $('domino-center-btn');
             const leftTipBtn = $('domino-left-tip-btn');
             const rightTipBtn = $('domino-right-tip-btn');
+            const toggleViewBtn = $('domino-toggle-view-btn');
+            const hintBtn = $('domino-hint-btn');
+            const sortBtn = $('domino-sort-btn');
+            const scoreResetBtn = $('domino-score-reset-btn');
             if (newBtn) newBtn.addEventListener('click', iniciarDomino);
             if (leftBtn) leftBtn.addEventListener('click', () => playerPlay('left'));
             if (rightBtn) rightBtn.addEventListener('click', () => playerPlay('right'));
@@ -6899,6 +7280,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (centerBtn) centerBtn.addEventListener('click', () => ajustarMesaDomino('centro'));
             if (leftTipBtn) leftTipBtn.addEventListener('click', () => ajustarMesaDomino('esquerda'));
             if (rightTipBtn) rightTipBtn.addEventListener('click', () => ajustarMesaDomino('direita'));
+            if (toggleViewBtn) toggleViewBtn.addEventListener('click', alternarModoMesaDomino);
+            if (hintBtn) hintBtn.addEventListener('click', darDicaDomino);
+            if (sortBtn) sortBtn.addEventListener('click', organizarMaoDomino);
+            if (scoreResetBtn) scoreResetBtn.addEventListener('click', zerarPlacarDomino);
+            ativarArrasteMesaDomino();
             renderDomino();
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindDomino);
