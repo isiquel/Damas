@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Isiquel & Amigos - Jogo de Damas</title>
+    <!-- Versão v10 fase 6: polimento comercial gratuito, baseada na fase 5 estável. -->
     <style>
         :root {
             --bg-color: #1a1a2e;
@@ -1306,6 +1307,56 @@
         .phase4-bad { color: #fca5a5; font-weight: bold; }
         @media (max-width: 480px) {
             .phase4-quality-row { grid-template-columns: 1fr; }
+        }
+
+
+        /* ✅ FASE 5 - MODO APP + APRESENTAÇÃO COMERCIAL GRÁTIS */
+        .phase5-sales-panel {
+            background: linear-gradient(135deg, #101826, #241044);
+            border: 1px solid rgba(168, 85, 247, 0.45);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 18px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        }
+        .phase5-sales-title {
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: #d8b4fe;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .phase5-sales-desc {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+        .phase5-sales-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .phase5-sales-row button {
+            padding: 10px 8px;
+            font-size: 0.76rem;
+            text-transform: none;
+            border-radius: 8px;
+        }
+        .btn-phase5-copy { background-color: #7c3aed; }
+        .btn-phase5-demo { background-color: #2563eb; }
+        .btn-phase5-app { background-color: #0f766e; }
+        .btn-phase5-final { background-color: #b45309; }
+        .phase5-mini-note {
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: 0.74rem;
+            line-height: 1.3;
+        }
+        @media (max-width: 480px) {
+            .phase5-sales-row { grid-template-columns: 1fr; }
         }
 
     </style>
@@ -5387,7 +5438,7 @@
                     const pill = document.createElement('span');
                     pill.id = 'phase3-version-pill';
                     pill.className = 'phase3-version-pill';
-                    pill.innerText = 'v10 • fase 4';
+                    pill.innerText = 'v10 • fase 6';
                     tituloPrincipal.appendChild(pill);
                 }
 
@@ -5558,7 +5609,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
                 document.getElementById('phase4-backup-btn')?.addEventListener('click', () => {
                     const dados = {
-                        versao: 'v10-fase4-gratis',
+                        versao: 'v10-fase5-gratis',
                         criadoEm: new Date().toISOString(),
                         jogador: {
                             nome: document.getElementById('name-input')?.value || '',
@@ -5625,6 +5676,126 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 });
             } catch (_) {}
             return dados;
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
+        else executar();
+    })();
+
+
+
+    // ================================================================
+    // ✅ FASE 5 GRÁTIS - MODO APP + APRESENTAÇÃO COMERCIAL
+    // Não usa serviço pago. Não mexe no tabuleiro, admin, ranking ou vídeo.
+    // Apenas melhora instalação, divulgação e apresentação para venda.
+    // ================================================================
+    (function aplicarFase5Gratis() {
+        const executar = () => {
+            try {
+                criarManifestGratisFase5();
+                const lobby = document.getElementById('lobby-screen');
+                if (!lobby || document.getElementById('phase5-sales-panel')) return;
+
+                const panel = document.createElement('div');
+                panel.id = 'phase5-sales-panel';
+                panel.className = 'phase5-sales-panel';
+                panel.innerHTML = `
+                    <div class="phase5-sales-title">💼 Central Comercial 10/10 Gratuita</div>
+                    <div class="phase5-sales-desc">Use esta área para apresentar o jogo para escolas, igrejas, clubes e projetos sociais sem precisar pagar por nenhum serviço adicional.</div>
+                    <div class="phase5-sales-row">
+                        <button id="phase5-copy-pitch-btn" class="btn-phase5-copy" type="button">Copiar apresentação</button>
+                        <button id="phase5-demo-script-btn" class="btn-phase5-demo" type="button">Roteiro de demonstração</button>
+                        <button id="phase5-app-mode-btn" class="btn-phase5-app" type="button">Modo app grátis</button>
+                        <button id="phase5-final-check-btn" class="btn-phase5-final" type="button">Checklist 10/10</button>
+                    </div>
+                    <div class="phase5-mini-note">Dica: antes de vender, mostre uma partida online, uma chamada de vídeo, o modo aprender, o ranking e o painel admin liberando uma sala.</div>
+                `;
+
+                const phase4Panel = document.getElementById('phase4-quality-panel');
+                const feedbackPanel = document.querySelector('.feedback-panel');
+                if (phase4Panel && phase4Panel.nextSibling) lobby.insertBefore(panel, phase4Panel.nextSibling);
+                else if (feedbackPanel) lobby.insertBefore(panel, feedbackPanel);
+                else lobby.appendChild(panel);
+
+                document.getElementById('phase5-copy-pitch-btn')?.addEventListener('click', async () => {
+                    const texto = `Arena de Damas Online Interativa\n\nUma plataforma completa de damas online com salas privadas, ranking, torneios, modo treino contra robô, modo aprender com dicas no tabuleiro, chat, espectadores e chamada de vídeo/áudio entre jogadores.\n\nIdeal para escolas, igrejas, clubes, projetos sociais e comunidades que desejam organizar torneios e estimular raciocínio lógico de forma divertida e interativa.`;
+                    try {
+                        await navigator.clipboard.writeText(texto);
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Apresentação copiada', 'O texto comercial foi copiado. Agora você pode enviar para um possível cliente ou parceiro.');
+                        else alert('Apresentação copiada.');
+                    } catch (e) {
+                        prompt('Copie a apresentação abaixo:', texto);
+                    }
+                });
+
+                document.getElementById('phase5-demo-script-btn')?.addEventListener('click', () => {
+                    const html = `<div class="phase4-check-list">
+                        <div><span class="phase4-ok">1.</span> Abra o jogo no celular e mostre o visual inicial.</div>
+                        <div><span class="phase4-ok">2.</span> Entre no admin e libere uma sala.</div>
+                        <div><span class="phase4-ok">3.</span> Entre com dois jogadores na mesma sala.</div>
+                        <div><span class="phase4-ok">4.</span> Mostre o chat e a chamada de vídeo/áudio.</div>
+                        <div><span class="phase4-ok">5.</span> Mostre o espectador assistindo a partida.</div>
+                        <div><span class="phase4-ok">6.</span> Mostre o modo aprender explicando uma jogada.</div>
+                        <div><span class="phase4-ok">7.</span> Mostre o ranking e o torneio.</div>
+                        <div><span class="phase4-ok">8.</span> Finalize falando: “isso pode ser personalizado para sua escola, igreja, clube ou projeto”.</div>
+                    </div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Roteiro de demonstração', html);
+                    else alert('Roteiro carregado.');
+                });
+
+                document.getElementById('phase5-app-mode-btn')?.addEventListener('click', () => {
+                    const msg = `O modo app grátis já foi preparado nesta versão por meio de configurações no navegador.\n\nPara instalar no celular:\n\nAndroid/Chrome: toque nos três pontinhos > Adicionar à tela inicial.\n\niPhone/Safari: toque em compartilhar > Adicionar à Tela de Início.\n\nIsso não usa serviço pago e deixa o jogo com aparência de aplicativo.`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Modo app grátis', msg.replace(/\n/g, '<br>'));
+                    else alert(msg);
+                });
+
+                document.getElementById('phase5-final-check-btn')?.addEventListener('click', () => {
+                    const html = `<div class="phase4-check-list">
+                        <div><span class="phase4-ok">✅</span> Testar em dois celulares diferentes.</div>
+                        <div><span class="phase4-ok">✅</span> Testar login admin, liberar sala e bloquear sala.</div>
+                        <div><span class="phase4-ok">✅</span> Testar vídeo/áudio entre jogadores.</div>
+                        <div><span class="phase4-ok">✅</span> Testar espectador assistindo.</div>
+                        <div><span class="phase4-ok">✅</span> Testar modo treino difícil e modo aprender.</div>
+                        <div><span class="phase4-ok">✅</span> Testar ranking global e ranking contra máquina.</div>
+                        <div><span class="phase4-ok">✅</span> Testar torneio e WhatsApp manual.</div>
+                        <div><span class="phase4-warn">⚠️</span> Para venda premium: aplicar Firebase Rules finais e testar no domínio definitivo.</div>
+                    </div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Checklist 10/10 final', html);
+                    else alert('Checklist 10/10 carregado.');
+                });
+            } catch (e) {
+                console.warn('Fase 5 não pôde ser aplicada:', e);
+            }
+        };
+
+        function criarManifestGratisFase5() {
+            try {
+                if (document.querySelector('link[rel="manifest"]')) return;
+                const manifest = {
+                    name: 'Isiquel & Amigos - Damas Online',
+                    short_name: 'Damas Online',
+                    start_url: './',
+                    display: 'standalone',
+                    background_color: '#1a1a2e',
+                    theme_color: '#e94560',
+                    orientation: 'portrait-primary',
+                    description: 'Jogo de damas online com ranking, torneios, modo aprender e vídeo/áudio.'
+                };
+                const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('link');
+                link.rel = 'manifest';
+                link.href = url;
+                document.head.appendChild(link);
+                if (!document.querySelector('meta[name="theme-color"]')) {
+                    const meta = document.createElement('meta');
+                    meta.name = 'theme-color';
+                    meta.content = '#e94560';
+                    document.head.appendChild(meta);
+                }
+            } catch (e) {
+                console.warn('Manifest grátis não pôde ser criado:', e);
+            }
         }
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
