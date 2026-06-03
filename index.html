@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabuleiro Arena - Damas Online</title>
-    <!-- Versão v10 fase 8: lobby limpo, rankings unificados e centrais internas no admin. -->
+    <title>Tabuleiro Arena - Plataforma de Jogos</title>
+    <!-- Versão Tabuleiro Arena v3: hub inicial realmente limpo; menu da Damas só abre ao clicar. -->
     <style>
         :root {
             --bg-color: #1a1a2e;
@@ -1590,6 +1590,19 @@
         .current-game-strip strong { color: #fff; }
 
         /* 🧭 HUB LIMPO: ao abrir, mostra somente escolha de modalidade */
+        body.platform-start-active #lobby-screen,
+        body.platform-start-active #game-screen,
+        body.platform-start-active #countdown-screen { display: none !important; }
+        body.platform-start-active #games-hub-panel { display: block !important; }
+        body.platform-start-active .container { max-width: 520px; }
+        body.platform-start-active h1 { margin-bottom: 18px; font-size: clamp(2rem, 7vw, 3rem); }
+        body.platform-start-active .brand-kicker,
+        body.platform-start-active .platform-subtitle,
+        body.platform-start-active .games-hub-desc { display: none !important; }
+        body.platform-start-active .games-hub-panel { text-align: center; margin-top: 6px; padding: 20px; }
+        body.platform-start-active .games-hub-title { text-align: center; font-size: 1.05rem; margin-bottom: 14px; }
+        body.platform-start-active .game-mode-card { text-align: center; min-height: 116px; }
+
         body.mode-selecting .brand-kicker,
         body.mode-selecting .platform-subtitle,
         body.mode-selecting .games-hub-desc { display: none !important; }
@@ -1649,7 +1662,7 @@
 
     </style>
 </head>
-<body class="mode-selecting">
+<body class="platform-start-active mode-selecting">
 
 <div id="countdown-screen" class="countdown-overlay" aria-live="polite">
     <div class="countdown-card">
@@ -1691,7 +1704,7 @@
         </div>
     </div>
 
-    <div id="lobby-screen" class="card">
+    <div id="lobby-screen" class="card" style="display:none;">
         <button id="back-to-games-btn" class="back-to-games-btn" type="button">← Escolher outra modalidade</button>
         <div class="current-game-strip"><strong>Modalidade ativa:</strong> Damas Arena — jogue online, treine contra a máquina, aprenda estratégias e dispute torneios.</div>
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
@@ -6206,11 +6219,34 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
     })();
 
 
+    // 🧱 Garantia extra: ao abrir, só o hub aparece.
+    (function garantirHubInicialLimpo() {
+        const aplicar = () => {
+            if (!document.body.classList.contains('game-selected')) {
+                document.body.classList.add('platform-start-active');
+                document.body.classList.add('mode-selecting');
+                const lobby = document.getElementById('lobby-screen');
+                const game = document.getElementById('game-screen');
+                const hub = document.getElementById('games-hub-panel');
+                if (lobby) lobby.style.display = 'none';
+                if (game) game.style.display = 'none';
+                if (hub) hub.style.display = 'block';
+            }
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicar);
+        else aplicar();
+        setTimeout(aplicar, 300);
+        setTimeout(aplicar, 1200);
+    })();
+
     // 🎲 Tabuleiro Arena: seletor de modalidades sem mexer na lógica da Damas
     (function prepararHubTabuleiroArena() {
         const abrirDamas = () => {
+            document.body.classList.remove('platform-start-active');
             document.body.classList.remove('mode-selecting');
             document.body.classList.add('game-selected');
+            const hub = document.getElementById('games-hub-panel');
+            if (hub) hub.style.display = 'none';
             const lobby = document.getElementById('lobby-screen');
             if (lobby) {
                 lobby.style.display = 'block';
@@ -6218,6 +6254,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
         };
         const voltarModalidades = () => {
+            document.body.classList.add('platform-start-active');
             document.body.classList.add('mode-selecting');
             document.body.classList.remove('game-selected');
             const gameScreen = document.getElementById('game-screen');
