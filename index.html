@@ -1199,6 +1199,63 @@
             .coord-row-top { top: 2px; } .coord-row-bottom { bottom: 2px; }
             .coord-col-left { left: 2px; } .coord-col-right { right: 2px; }
         }
+    
+
+        /* ✅ FASE 3 - POLIMENTO COMERCIAL GRÁTIS: compartilhamento, privacidade e suporte visual */
+        .phase3-tools-panel {
+            background: linear-gradient(135deg, #101827, #111827);
+            border: 1px solid rgba(241,196,15,0.35);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 18px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        }
+        .phase3-tools-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #f1c40f;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .phase3-tools-desc {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+        .phase3-tools-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .phase3-tools-row button {
+            padding: 10px 8px;
+            font-size: 0.76rem;
+            text-transform: none;
+            border-radius: 8px;
+        }
+        .btn-phase3-share { background-color: #25d366; }
+        .btn-phase3-copy { background-color: #2563eb; }
+        .btn-phase3-install { background-color: #7c3aed; }
+        .btn-phase3-privacy { background-color: #475569; }
+        .phase3-version-pill {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(46,204,113,0.16);
+            border: 1px solid rgba(46,204,113,0.45);
+            color: #86efac;
+            font-size: 0.68rem;
+            font-weight: 800;
+            vertical-align: middle;
+        }
+        @media (max-width: 480px) {
+            .phase3-tools-row { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -5262,6 +5319,133 @@
         ultimoTurnoRegistrado = 0; timestampInicioTurnoAtual = 0; jaAlertouTurnoDemorado = false;
         difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
     });
+
+
+    // ================================================================
+    // ✅ FASE 3 GRÁTIS - POLIMENTO COMERCIAL SEM SERVIÇO PAGO
+    // Recursos seguros: compartilhar sala, copiar link, instrução de instalação,
+    // privacidade básica e tratamento de erros visíveis ao usuário.
+    // ================================================================
+    (function aplicarFase3Gratis() {
+        const executar = () => {
+            try {
+                const lobby = document.getElementById('lobby-screen');
+                const tituloPrincipal = document.querySelector('h1');
+                if (tituloPrincipal && !document.getElementById('phase3-version-pill')) {
+                    const pill = document.createElement('span');
+                    pill.id = 'phase3-version-pill';
+                    pill.className = 'phase3-version-pill';
+                    pill.innerText = 'v10 • fase 3';
+                    tituloPrincipal.appendChild(pill);
+                }
+
+                if (lobby && !document.getElementById('phase3-tools-panel')) {
+                    const panel = document.createElement('div');
+                    panel.id = 'phase3-tools-panel';
+                    panel.className = 'phase3-tools-panel';
+                    panel.innerHTML = `
+                        <div class="phase3-tools-title">🚀 Ferramentas rápidas</div>
+                        <div class="phase3-tools-desc">Compartilhe sala, copie link do jogo, veja como instalar no celular e consulte o aviso de privacidade.</div>
+                        <div class="phase3-tools-row">
+                            <button id="phase3-share-room-btn" class="btn-phase3-share" type="button">Compartilhar sala no WhatsApp</button>
+                            <button id="phase3-copy-link-btn" class="btn-phase3-copy" type="button">Copiar link do jogo</button>
+                            <button id="phase3-install-help-btn" class="btn-phase3-install" type="button">Como instalar no celular</button>
+                            <button id="phase3-privacy-btn" class="btn-phase3-privacy" type="button">Privacidade e avisos</button>
+                        </div>
+                    `;
+                    const feedbackPanel = document.querySelector('.feedback-panel');
+                    if (feedbackPanel) lobby.insertBefore(panel, feedbackPanel); else lobby.appendChild(panel);
+                }
+
+                const shareBtn = document.getElementById('phase3-share-room-btn');
+                if (shareBtn && !shareBtn.dataset.phase3Ready) {
+                    shareBtn.dataset.phase3Ready = '1';
+                    shareBtn.addEventListener('click', () => {
+                        const nome = (document.getElementById('name-input')?.value || 'Jogador').trim() || 'Jogador';
+                        const sala = (document.getElementById('room-input')?.value || '').trim();
+                        if (!sala) {
+                            if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Informe a sala', 'Digite o código da sala antes de compartilhar.');
+                            else alert('Digite o código da sala antes de compartilhar.');
+                            return;
+                        }
+                        const link = window.location.href.split('#')[0];
+                        const texto = encodeURIComponent(`🔥 Partida de Damas Online!
+${nome} está chamando você para jogar ou assistir.
+Sala: ${sala}
+Entre pelo link: ${link}`);
+                        window.open(`https://wa.me/?text=${texto}`, '_blank');
+                    });
+                }
+
+                const copyBtn = document.getElementById('phase3-copy-link-btn');
+                if (copyBtn && !copyBtn.dataset.phase3Ready) {
+                    copyBtn.dataset.phase3Ready = '1';
+                    copyBtn.addEventListener('click', async () => {
+                        const sala = (document.getElementById('room-input')?.value || '').trim();
+                        const link = window.location.href.split('#')[0] + (sala ? `#sala=${encodeURIComponent(sala)}` : '');
+                        try {
+                            await navigator.clipboard.writeText(link);
+                            if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Link copiado', 'O link do jogo foi copiado. Agora é só enviar para os participantes.');
+                            else alert('Link copiado.');
+                        } catch (e) {
+                            prompt('Copie o link abaixo:', link);
+                        }
+                    });
+                }
+
+                const installBtn = document.getElementById('phase3-install-help-btn');
+                if (installBtn && !installBtn.dataset.phase3Ready) {
+                    installBtn.dataset.phase3Ready = '1';
+                    installBtn.addEventListener('click', () => {
+                        const msg = `No celular, abra este jogo pelo navegador.
+
+Android/Chrome: toque nos três pontinhos e escolha “Adicionar à tela inicial”.
+
+iPhone/Safari: toque em compartilhar e depois “Adicionar à Tela de Início”.
+
+Isso cria um ícone do jogo no celular sem precisar pagar nada.`;
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Instalar no celular', msg.replace(/
+/g, '<br>'));
+                        else alert(msg);
+                    });
+                }
+
+                const privacyBtn = document.getElementById('phase3-privacy-btn');
+                if (privacyBtn && !privacyBtn.dataset.phase3Ready) {
+                    privacyBtn.dataset.phase3Ready = '1';
+                    privacyBtn.addEventListener('click', () => {
+                        const msg = `Este jogo pode salvar nome, sala, ranking, mensagens do chat e WhatsApp somente quando o jogador autorizar avisos.
+
+A chamada de vídeo/áudio depende da permissão do navegador e deve ser iniciada pelo jogador.
+
+O WhatsApp automático não é usado nesta versão: os avisos são manuais, para evitar spam e custos.`;
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Privacidade e avisos', msg.replace(/
+/g, '<br>'));
+                        else alert(msg);
+                    });
+                }
+
+                const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+                const salaHash = hash.get('sala');
+                const roomInput = document.getElementById('room-input');
+                if (salaHash && roomInput && !roomInput.value) roomInput.value = salaHash.slice(0, 15);
+            } catch (e) {
+                console.warn('Fase 3 não pôde ser aplicada:', e);
+            }
+        };
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
+        else executar();
+
+        window.addEventListener('error', (event) => {
+            console.warn('Erro capturado pelo modo estabilidade:', event.message);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.warn('Promessa rejeitada capturada pelo modo estabilidade:', event.reason);
+        });
+    })();
+
 </script>
 
 
