@@ -685,6 +685,30 @@
             border: 1px solid #334155;
         }
 
+        /* ✅ PAINEL 10/10 - STATUS E ESTABILIDADE (sem custo extra) */
+        .system-status-panel {
+            background: linear-gradient(135deg, #07111f, #0f172a);
+            border: 1px solid rgba(241, 196, 15, 0.35);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 14px 0;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .system-status-title {
+            color: #f1c40f;
+            font-size: 0.82rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        .system-status-text {
+            color: #cbd5e1;
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+
         .practice-ranking-panel {
             background: linear-gradient(135deg, #092f2c, #0f172a);
             border: 1px solid rgba(46, 204, 113, 0.35);
@@ -1190,6 +1214,12 @@
     <div id="lobby-screen" class="card">
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
         
+        <div class="system-status-panel">
+            <div class="system-status-title">✅ Versão 10/10 — Fase 1 gratuita</div>
+            <div id="system-health-text" class="system-status-text">Preparando jogo com modo treino liberado, login admin protegido, ranking com backup local e sem serviço pago adicional.</div>
+        </div>
+
+        
         <div class="live-podium">
             <div class="podium-title">🏆 Top Campeões do Sistema</div>
             <div id="live-podium-content">
@@ -1604,6 +1634,8 @@
     const LEGACY_FIRST_ADMIN_NAME = "isiquel_admin";
     const WHATSAPP_SUPORTE = "5544991711936";
     const ADMIN_EMAIL_AUTORIZADO = "isiquelcamilanatan@gmail.com";
+    const APP_VERSION_10 = "10/10 Fase 2 gratuita - Admin e salas reforçados";
+    const TEMPO_MAX_LOGIN_ADMIN_MS = 12000;
     let usuarioAdminConfirmado = false;
     let usuarioLogadoPorSenha = false;
     let emailAdministradorAtual = "";
@@ -2003,6 +2035,31 @@
         }
     }
 
+    async function obterSalaAdminAlvo(opcoes = {}) {
+        const { permitirSala00 = false, exigirExistente = true } = opcoes;
+        const salaAlvo = salaSegura(adminTargetRoomInput.value);
+
+        if (!salaAlvo) {
+            exibirAlertaDoSistema("Aviso", "Digite ou selecione o código da sala primeiro.");
+            return null;
+        }
+
+        if (salaAlvo === ADMIN_ROOM_CODE && !permitirSala00) {
+            exibirAlertaDoSistema("Código restrito 🛡️", "A sala <strong>00</strong> é o terminal do administrador e não deve ser alterada por esta ação.");
+            return null;
+        }
+
+        const refSala = ref(db, 'rooms/' + salaAlvo);
+        const snap = await get(refSala);
+
+        if (exigirExistente && !snap.exists()) {
+            exibirAlertaDoSistema("Sala não encontrada", `A sala <strong>${salaAlvo.toUpperCase()}</strong> ainda não existe. Use <strong>LIBERAR / CRIAR SALA</strong> primeiro.`);
+            return null;
+        }
+
+        return { salaAlvo, refSala, snap, data: snap.exists() ? snap.val() : null };
+    }
+
     function exibirAlertaDoSistema(titulo, texto) {
         document.getElementById('custom-alert-title').innerText = titulo;
         document.getElementById('custom-alert-text').innerHTML = texto;
@@ -2011,6 +2068,15 @@
     document.getElementById('close-alert-btn').addEventListener('click', () => {
         document.getElementById('custom-alert-modal').style.display = 'none';
         document.body.classList.remove('vitoria-animada');
+    });
+
+    window.addEventListener('error', (ev) => {
+        console.error('Erro geral capturado:', ev.error || ev.message);
+        atualizarStatusSistema('Atenção: o navegador capturou um erro, mas o jogo tentou continuar funcionando. Abra o console se precisar diagnosticar.', '#f1c40f');
+    });
+    window.addEventListener('unhandledrejection', (ev) => {
+        console.error('Promessa rejeitada capturada:', ev.reason);
+        atualizarStatusSistema('Atenção: uma operação online falhou, mas o modo treino e a tela continuam disponíveis.', '#f1c40f');
     });
 
     let acaoConfirmadaCallback = null;
@@ -2106,6 +2172,9 @@
     const gameScreen = document.getElementById('game-screen');
     const nameInput = document.getElementById('name-input');
     const roomInput = document.getElementById('room-input');
+    const whatsappInput = document.getElementById('whatsapp-input');
+    const whatsappConsent = document.getElementById('whatsapp-consent');
+    const systemHealthText = document.getElementById('system-health-text');
     const joinBtn = document.getElementById('join-btn');
     const spectateBtn = document.getElementById('spectate-btn');
     const practiceBtn = document.getElementById('practice-btn');
@@ -2146,6 +2215,37 @@
     const remoteAudioEl = document.getElementById('remote-audio');
     const unlockAudioBtn = document.getElementById('unlock-audio-btn');
     const callStatusText = document.getElementById('call-status-text');
+
+    function atualizarStatusSistema(texto, cor = '') {
+        if (!systemHealthText) return;
+        systemHealthText.innerText = texto;
+        if (cor) systemHealthText.style.color = cor;
+    }
+
+    function carregarPreferenciasLocais() {
+        try {
+            const nomeSalvo = localStorage.getItem('damas_nome_jogador') || '';
+            const zapSalvo = localStorage.getItem('damas_whatsapp_jogador') || '';
+            const consentSalvo = localStorage.getItem('damas_whatsapp_consent') === 'sim';
+            if (nomeSalvo && !nameInput.value) nameInput.value = nomeSeguro(nomeSalvo);
+            if (zapSalvo && whatsappInput && !whatsappInput.value) whatsappInput.value = telefoneSeguro(zapSalvo);
+            if (whatsappConsent) whatsappConsent.checked = consentSalvo;
+        } catch(e) { console.warn('Preferências locais indisponíveis:', e); }
+    }
+
+    function salvarPreferenciasLocais() {
+        try {
+            localStorage.setItem('damas_nome_jogador', nomeSeguro(nameInput.value || ''));
+            if (whatsappInput) localStorage.setItem('damas_whatsapp_jogador', telefoneSeguro(whatsappInput.value || ''));
+            if (whatsappConsent) localStorage.setItem('damas_whatsapp_consent', whatsappConsent.checked ? 'sim' : 'nao');
+        } catch(e) { console.warn('Não foi possível salvar preferências locais:', e); }
+    }
+
+    carregarPreferenciasLocais();
+    [nameInput, whatsappInput, whatsappConsent].filter(Boolean).forEach(el => {
+        el.addEventListener('input', salvarPreferenciasLocais);
+        el.addEventListener('change', salvarPreferenciasLocais);
+    });
 
 
     const adminPanel = document.getElementById('admin-panel');
@@ -2193,7 +2293,7 @@
         adminLoginStatus.innerText = "Validando login do administrador...";
 
         try {
-            const cred = await comTempoLimite(signInWithEmailAndPassword(auth, email, senha), 12000, "O login demorou demais. Confira a internet, o Firebase Auth e se o usuário foi criado.");
+            const cred = await comTempoLimite(signInWithEmailAndPassword(auth, email, senha), TEMPO_MAX_LOGIN_ADMIN_MS, "O login demorou demais. Confira a internet, o Firebase Auth e se o usuário foi criado.");
             const ok = await configurarAdminPorLoginEmail(cred.user);
             if (!ok) {
                 adminLoginStatus.innerText = "Login feito, mas este usuário ainda não está autorizado como admin.";
@@ -2313,12 +2413,15 @@
 
     function liberarLobbyBasico(mensagem, modoLimitado = false) {
         authStatusEl.innerText = mensagem;
+        atualizarStatusSistema(modoLimitado
+            ? 'Modo treino, modo aprender e regras liberados. Online aguardando Firebase sem travar o jogo.'
+            : 'Sistema online ativo. Multiplayer, ranking, torneios, chamadas e painel admin disponíveis conforme permissão.',
+            modoLimitado ? '#f1c40f' : '#cbd5e1'
+        );
         nameInput.disabled = false;
         roomInput.disabled = false;
-        const whatsappInputEl = document.getElementById('whatsapp-input');
-        const whatsappConsentEl = document.getElementById('whatsapp-consent');
-        if (whatsappInputEl) whatsappInputEl.disabled = false;
-        if (whatsappConsentEl) whatsappConsentEl.disabled = false;
+        if (whatsappInput) whatsappInput.disabled = false;
+        if (whatsappConsent) whatsappConsent.disabled = false;
         practiceBtn.disabled = false;
         rulesBtnLobby.disabled = false;
         rankBtnLobby.disabled = modoLimitado;
@@ -2598,15 +2701,35 @@
     async function updatePlayerRanking(isWin, winnerName) {
         if (isPracticeMode || hasRecordedResult) return;
         hasRecordedResult = true;
+        const nomeFinal = nomeSeguro(winnerName);
+        if (!playerId) {
+            console.warn('Ranking online não atualizado: jogador ainda sem UID.');
+            return;
+        }
         const userRankRef = ref(db, 'leaderboard/' + playerId);
-        const snapshot = await get(userRankRef);
-        let stats = snapshot.val() || { name: nomeSeguro(winnerName), wins: 0, losses: 0 };
-        stats.name = nomeSeguro(winnerName);
-        stats.wins = numeroSeguro(stats.wins);
-        stats.losses = numeroSeguro(stats.losses);
-        if (isWin) stats.wins += 1;
-        else stats.losses += 1;
-        await set(userRankRef, stats);
+        try {
+            await runTransaction(userRankRef, (atual) => {
+                const stats = atual || { name: nomeFinal, wins: 0, losses: 0, updatedAt: 0 };
+                stats.name = nomeFinal;
+                stats.wins = numeroSeguro(stats.wins);
+                stats.losses = numeroSeguro(stats.losses);
+                if (isWin) stats.wins += 1;
+                else stats.losses += 1;
+                stats.updatedAt = Date.now();
+                return stats;
+            });
+        } catch (e) {
+            console.warn('Não foi possível atualizar ranking online no Firebase:', e);
+            try {
+                const key = `leaderboardBackup:${playerId}`;
+                const atual = JSON.parse(localStorage.getItem(key) || '{}');
+                atual.name = nomeFinal;
+                atual.wins = numeroSeguro(atual.wins) + (isWin ? 1 : 0);
+                atual.losses = numeroSeguro(atual.losses) + (isWin ? 0 : 1);
+                atual.updatedAt = Date.now();
+                localStorage.setItem(key, JSON.stringify(atual));
+            } catch(_) {}
+        }
     }
 
     joinBtn.addEventListener('click', () => {
@@ -3853,9 +3976,10 @@
         if (!(await exigirAdminSeguro())) return;
         exibirConfirmacao(
             "Limpar Ranking Global ⚠️", 
-            "Você tem certeza de que quer **RESETAR COMPLETAMENTE** o placar dos campeões? Todos os jogadores voltarão para 0 vitórias.", 
+            "Você tem certeza de que quer <strong>RESETAR COMPLETAMENTE</strong> o placar dos campeões? Todos os jogadores voltarão para 0 vitórias.", 
             async () => {
                 await set(ref(db, 'leaderboard'), null);
+                await registrarLogAdmin('zerou_ranking_global');
                 exibirAlertaDoSistema("Sucesso", "O Ranking Global foi zerado com total sucesso!");
             }
         );
@@ -3863,39 +3987,58 @@
 
     document.getElementById('btn-adm-excluir-total').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja banir do sistema.");
-        if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "A sala mestre de manutenção não pode ser apagada.");
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
 
-        exibirConfirmacao("Excluir Servidor", `Tem certeza absoluta de que quer **DELETAR** permanentemente a sala <strong>${salaAlvo.toUpperCase()}</strong> do banco de dados?`, async () => {
-            const refSala = ref(db, 'rooms/' + salaAlvo);
+        exibirConfirmacao("Excluir Servidor", `Tem certeza absoluta de que quer <strong>DELETAR</strong> permanentemente a sala <strong>${salaAlvo.toUpperCase()}</strong> do banco de dados?`, async () => {
             await remove(refSala);
-            exibirAlertaDoSistema("Eliminação Concluída", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi pulverizada.`);
+            await registrarLogAdmin('excluiu_sala', salaAlvo);
+            exibirAlertaDoSistema("Eliminação Concluída", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi removida do sistema.`);
             adminTargetRoomInput.value = "";
         });
     });
 
     document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = salaSegura(adminTargetRoomInput.value);
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        if (salaAlvo === "00") return exibirAlertaDoSistema("Aviso", "Código restrito.");
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: false });
+        if (!alvo) return;
+        const { salaAlvo, refSala, snap } = alvo;
 
-        const refSala = ref(db, 'rooms/' + salaAlvo);
-        const snap = await get(refSala);
-        
         if (!snap.exists()) {
             await set(refSala, {
-                id: salaAlvo, board: getInitialBoard(), turn: 1, status: "waiting",
-                p1Id: "", p1Name: "", p2Id: "", p2Name: "", startTime: 0, chat: null,
-                isAuthorized: true, chatBlocked: false,
-                winnerRole: null, winnerName: null, finishReason: null, finishedAt: null,
+                id: salaAlvo,
+                board: getInitialBoard(),
+                turn: 1,
+                status: "waiting",
+                p1Id: "",
+                p1Name: "",
+                p2Id: "",
+                p2Name: "",
+                startTime: 0,
+                chat: null,
+                isAuthorized: true,
+                chatBlocked: false,
+                winnerRole: null,
+                winnerName: null,
+                finishReason: null,
+                finishedAt: null,
                 createdByAdminUid: playerId,
+                createdAt: Date.now(),
+                lastAdminAction: "criada_e_liberada",
                 lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             });
+            await registrarLogAdmin('criou_e_liberou_sala', salaAlvo);
             exibirAlertaDoSistema("Sucesso", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi criada pelo administrador e já está liberada!`);
         } else {
-            await update(refSala, { isAuthorized: true });
+            await update(refSala, {
+                isAuthorized: true,
+                lastAdminAction: "liberada",
+                lastAdminUid: playerId,
+                lastAdminAt: Date.now(),
+                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+            });
+            await registrarLogAdmin('liberou_sala', salaAlvo);
             exibirAlertaDoSistema("Sucesso", `Acesso liberado para a sala <strong>${salaAlvo.toUpperCase()}</strong>.`);
         }
         adminTargetRoomInput.value = "";
@@ -3903,48 +4046,99 @@
 
     document.getElementById('btn-adm-bloquear').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        await update(ref(db, 'rooms/' + salaAlvo), { isAuthorized: false });
-        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>.`);
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
+        await update(refSala, {
+            isAuthorized: false,
+            lastAdminAction: "bloqueada",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin('bloqueou_sala', salaAlvo);
+        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Quem já estiver jogando pode precisar sair e entrar novamente para ver o bloqueio.`);
         adminTargetRoomInput.value = "";
     });
 
     document.getElementById('btn-adm-travar-chat').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        
-        const snap = await get(ref(db, 'rooms/' + salaAlvo + '/chatBlocked'));
-        const estadoAtual = snap.val() || false;
-        await update(ref(db, 'rooms/' + salaAlvo), { chatBlocked: !estadoAtual });
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala, data } = alvo;
+        const novoEstado = !(data && data.chatBlocked === true);
+        await update(refSala, {
+            chatBlocked: novoEstado,
+            lastAdminAction: novoEstado ? "chat_travado" : "chat_liberado",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin(novoEstado ? 'travou_chat' : 'destravou_chat', salaAlvo);
+        exibirAlertaDoSistema("Chat atualizado", `O chat da sala <strong>${salaAlvo.toUpperCase()}</strong> foi ${novoEstado ? '<strong>travado</strong>' : '<strong>liberado</strong>'}.`);
         adminTargetRoomInput.value = "";
     });
 
     document.getElementById('btn-adm-expulsar').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
         
-        exibirConfirmacao("Expulsar Todos", `Deseja remover todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> agora?`, async () => {
-            await update(ref(db, 'rooms/' + salaAlvo), { p1Id: "", p1Name: "", p2Id: "", p2Name: "", status: "waiting" });
+        exibirConfirmacao("Expulsar Todos", `Deseja remover todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> agora? O tabuleiro será mantido, mas a sala voltará a aguardar novos jogadores.`, async () => {
+            await update(refSala, {
+                p1Id: "",
+                p1Name: "",
+                p2Id: "",
+                p2Name: "",
+                spectators: null,
+                status: "waiting",
+                startTime: 0,
+                lastAdminAction: "jogadores_expulsos",
+                lastAdminUid: playerId,
+                lastAdminAt: Date.now()
+            });
+            await registrarLogAdmin('expulsou_jogadores', salaAlvo);
+            exibirAlertaDoSistema("Jogadores removidos", `Todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> foram removidos.`);
             adminTargetRoomInput.value = "";
         });
     });
 
     document.getElementById('btn-adm-limpar-chat').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        await set(ref(db, `rooms/${salaAlvo}/chat`), null);
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
+        await update(refSala, {
+            chat: null,
+            lastAdminAction: "chat_limpo",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin('limpou_chat', salaAlvo);
+        exibirAlertaDoSistema("Chat limpo", `As mensagens da sala <strong>${salaAlvo.toUpperCase()}</strong> foram apagadas.`);
         adminTargetRoomInput.value = "";
     });
 
     document.getElementById('btn-adm-reset').addEventListener('click', async () => {
         if (!(await exigirAdminSeguro())) return;
-        const salaAlvo = adminTargetRoomInput.value.trim().toLowerCase();
-        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Digite o código da sala primeiro.");
-        await update(ref(db, 'rooms/' + salaAlvo), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now() });
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala, data } = alvo;
+        const temDoisJogadores = !!(data && data.p1Id && data.p2Id);
+        await update(refSala, {
+            board: getInitialBoard(),
+            turn: 1,
+            status: temDoisJogadores ? "playing" : "waiting",
+            startTime: temDoisJogadores ? Date.now() : 0,
+            winnerRole: null,
+            winnerName: null,
+            finishReason: null,
+            finishedAt: null,
+            lastAdminAction: "tabuleiro_resetado",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin('resetou_tabuleiro', salaAlvo);
+        exibirAlertaDoSistema("Tabuleiro resetado", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi reiniciada com segurança.`);
         adminTargetRoomInput.value = "";
     });
 
@@ -3953,6 +4147,7 @@
         if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); listenerChatAdminAtivo = null; }
         document.getElementById('admin-chat-monitor-container').style.display = "none";
         adminPanel.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
+        atualizarStatusSistema('Admin saiu do terminal. Jogo continua disponível normalmente.', '#c084fc');
     });
 
     // -------------------------------------------------------------------------------------------------------------------------------- //
