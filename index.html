@@ -1325,7 +1325,7 @@
         
         <div class="system-status-panel">
             <div class="system-status-title">✅ Versão 10/10 — Fase 1 gratuita</div>
-            <div id="system-health-text" class="system-status-text">Preparando jogo com modo treino liberado, login admin protegido, ranking com backup local e sem serviço pago adicional.</div>
+            <div id="system-health-text" class="system-status-text">Diagnóstico, backup, compartilhamento, modo treino liberado e estabilidade gratuita ativados.</div>
         </div>
 
         
@@ -5456,8 +5456,7 @@ Android/Chrome: toque nos três pontinhos e escolha “Adicionar à tela inicial
 iPhone/Safari: toque em compartilhar e depois “Adicionar à Tela de Início”.
 
 Isso cria um ícone do jogo no celular sem precisar pagar nada.`;
-                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Instalar no celular', msg.replace(/
-/g, '<br>'));
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Instalar no celular', msg.replace(/\n/g, '<br>'));
                         else alert(msg);
                     });
                 }
@@ -5471,8 +5470,7 @@ Isso cria um ícone do jogo no celular sem precisar pagar nada.`;
 A chamada de vídeo/áudio depende da permissão do navegador e deve ser iniciada pelo jogador.
 
 O WhatsApp automático não é usado nesta versão: os avisos são manuais, para evitar spam e custos.`;
-                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Privacidade e avisos', msg.replace(/
-/g, '<br>'));
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Privacidade e avisos', msg.replace(/\n/g, '<br>'));
                         else alert(msg);
                     });
                 }
