@@ -1598,6 +1598,28 @@
             background: linear-gradient(135deg, rgba(46,204,113,0.16), rgba(2,6,23,0.98));
             box-shadow: 0 0 18px rgba(46,204,113,0.12);
         }
+        .game-mode-card.admin-entry {
+            border-color: rgba(192,132,252,0.55);
+            background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(2,6,23,0.98));
+        }
+        .game-mode-card.admin-entry:hover {
+            border-color: rgba(216,180,254,0.9);
+            box-shadow: 0 0 20px rgba(124,58,237,0.18);
+        }
+        .game-mode-card.admin-entry .game-mode-badge {
+            background: #c084fc;
+            color: #1e1b4b;
+        }
+        .admin-login-panel.central-hidden {
+            display: none;
+        }
+        .btn-admin-login-back {
+            background-color: #334155;
+            margin-top: 8px;
+        }
+        .btn-admin-login-back:hover:not(:disabled) {
+            background-color: #475569;
+        }
         .game-mode-card.soon {
             opacity: 0.78;
         }
@@ -1658,6 +1680,7 @@
         body.platform-start-active .games-hub-desc { display: none !important; }
         body.platform-start-active .games-hub-panel { text-align: center; margin-top: 6px; padding: 20px; }
         body.platform-start-active .games-hub-title { text-align: center; font-size: 1.05rem; margin-bottom: 14px; }
+        body.platform-start-active .game-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         body.platform-start-active .game-mode-card { text-align: center; min-height: 116px; }
 
         body.mode-selecting .brand-kicker,
@@ -1686,6 +1709,7 @@
             margin-bottom: 14px;
         }
 
+        body.mode-selecting .game-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         body.mode-selecting .game-mode-card {
             text-align: center;
             min-height: 116px;
@@ -2299,8 +2323,14 @@
                 <div class="game-mode-name">Dominó Arena</div>
                 <div class="game-mode-copy">Versão inicial jogável contra o robô, preparando o futuro modo online.</div>
             </div>
+            <div class="game-mode-card admin-entry" id="game-card-admin" role="button" tabindex="0">
+                <span class="game-mode-badge">Dono</span>
+                <div class="game-mode-icon">🛡️</div>
+                <div class="game-mode-name">Painel Admin</div>
+                <div class="game-mode-copy">Entre como administrador para controlar Damas, Dominó e as próximas modalidades.</div>
+            </div>
         </div>
-        <div class="admin-login-panel">
+        <div id="admin-login-panel" class="admin-login-panel central-hidden">
             <div class="admin-login-title">🛡️ Entrada do Administrador</div>
             <div class="admin-login-desc">Área exclusiva do dono do jogo. Entre com o e-mail e a senha cadastrados no Firebase para abrir o painel de controle.</div>
             <div class="admin-login-row">
@@ -2308,6 +2338,7 @@
                 <input type="password" id="admin-password-input" placeholder="Senha do administrador" autocomplete="current-password">
             </div>
             <button id="admin-login-btn" class="btn-admin-login" type="button">Entrar no Painel Admin</button>
+            <button id="admin-login-back-btn" class="btn-admin-login-back" type="button">← Voltar às modalidades</button>
             <button id="admin-logout-btn" class="btn-admin-logout" type="button" style="display:none;">Sair do Admin</button>
             <div id="admin-login-status" class="admin-login-status">Jogadores comuns não usam esta área.</div>
 
@@ -3406,6 +3437,9 @@
     const centralAdminXadrezBtn = document.getElementById('central-admin-xadrez-btn');
     const centralAdminBackBtn = document.getElementById('central-admin-back-btn');
     const centralAdminNote = document.getElementById('central-admin-note');
+    const adminEntryCard = document.getElementById('game-card-admin');
+    const adminLoginPanelBox = document.getElementById('admin-login-panel');
+    const adminLoginBackBtn = document.getElementById('admin-login-back-btn');
     
     const gameTimerEl = document.getElementById('game-timer');
     const liveSpectatorsEl = document.getElementById('live-spectators');
@@ -3494,7 +3528,42 @@
     const btnLearningRefresh = document.getElementById('btn-learning-refresh');
     const btnLearningToggle = document.getElementById('btn-learning-toggle');
 
+    function abrirEntradaAdminInicial() {
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hub = document.getElementById('games-hub-panel');
+        if (hub) hub.style.display = 'block';
+        if (lobbyScreen) lobbyScreen.style.display = 'none';
+        if (gameScreen) gameScreen.style.display = 'none';
+        const domino = document.getElementById('domino-screen');
+        if (domino) domino.style.display = 'none';
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.remove('central-hidden');
+            adminLoginPanelBox.style.display = 'block';
+            adminLoginPanelBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (adminLoginStatus && (!auth.currentUser || auth.currentUser.isAnonymous)) {
+            adminLoginStatus.innerText = 'Digite o e-mail e a senha do dono para administrar a plataforma.';
+        }
+    }
+
+    function fecharEntradaAdminInicial() {
+        if (centralAdminMenu) centralAdminMenu.style.display = 'none';
+        if (centralAdminNote) centralAdminNote.style.display = 'none';
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.add('central-hidden');
+            adminLoginPanelBox.style.display = 'none';
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function mostrarMenuCentralAdmin(mensagem = "") {
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.remove('central-hidden');
+            adminLoginPanelBox.style.display = 'block';
+        }
         if (centralAdminMenu) centralAdminMenu.style.display = "block";
         if (centralAdminNote) {
             centralAdminNote.style.display = mensagem ? "block" : "none";
@@ -3621,8 +3690,26 @@
         document.body.classList.remove('domino-selected');
         const hub = document.getElementById('games-hub-panel');
         if (hub) hub.style.display = 'block';
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.add('central-hidden');
+            adminLoginPanelBox.style.display = 'none';
+        }
         iniciarAutenticacaoAnonima();
     });
+
+    function ligarCardAdminInicial() {
+        if (!adminEntryCard || adminEntryCard.dataset.adminBind === '1') return;
+        adminEntryCard.dataset.adminBind = '1';
+        adminEntryCard.addEventListener('click', abrirEntradaAdminInicial);
+        adminEntryCard.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                abrirEntradaAdminInicial();
+            }
+        });
+    }
+    ligarCardAdminInicial();
+    if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', fecharEntradaAdminInicial);
 
     if (centralAdminDamasBtn) centralAdminDamasBtn.addEventListener('click', abrirAdminDamasCentral);
     if (centralAdminDominoBtn) centralAdminDominoBtn.addEventListener('click', abrirAdminDominoCentral);
@@ -3746,6 +3833,10 @@
                     adminLoginBtn.style.display = "none";
                     adminLogoutBtn.style.display = "block";
                     adminLoginStatus.innerText = `Admin conectado: ${user.email || 'usuário autorizado'}`;
+                    if (adminLoginPanelBox) {
+                        adminLoginPanelBox.classList.remove('central-hidden');
+                        adminLoginPanelBox.style.display = 'block';
+                    }
                     if (centralAdminMenu) centralAdminMenu.style.display = "block";
                 } else {
                     adminLoginStatus.innerText = "Usuário logado por e-mail, mas ainda não autorizado como administrador.";
