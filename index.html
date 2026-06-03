@@ -2720,8 +2720,8 @@
             <div class="domino-mode-choice-title">Escolha como deseja jogar</div>
             <div class="domino-mode-choice-desc">Para uma partida rápida, jogue contra o robô. Para jogar com um amigo, use uma sala liberada pelo administrador.</div>
             <div class="domino-mode-choice-actions">
-                <button id="domino-mode-bot-btn" class="btn-domino-mode-bot" type="button">🤖 Jogar contra robô<br><span style="font-size:.68rem; opacity:.85;">começar agora</span></button>
-                <button id="domino-mode-online-btn" class="btn-domino-mode-online" type="button">🌐 Jogar online com amigo<br><span style="font-size:.68rem; opacity:.85;">entrar com código</span></button>
+                <button id="domino-mode-bot-btn" class="btn-domino-mode-bot" type="button" onclick="window.tabuleiroArenaStartDominoBot && window.tabuleiroArenaStartDominoBot(event)">🤖 Jogar contra robô<br><span style="font-size:.68rem; opacity:.85;">começar agora</span></button>
+                <button id="domino-mode-online-btn" class="btn-domino-mode-online" type="button" onclick="window.tabuleiroArenaOpenDominoOnline && window.tabuleiroArenaOpenDominoOnline(event)">🌐 Jogar online com amigo<br><span style="font-size:.68rem; opacity:.85;">entrar com código</span></button>
             </div>
         </div>
 
@@ -8006,9 +8006,27 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             });
             return { tile: best, index: idx, score };
         }
+        function prepararDominioContraRoboAntesDeIniciar() {
+            if (dominoOnlineUnsub) {
+                try { dominoOnlineUnsub(); } catch (e) {}
+                dominoOnlineUnsub = null;
+            }
+            dominoOnlineMode = false;
+            dominoOnlineRoomCode = '';
+            dominoOnlineSeat = '';
+            dominoOnlineData = null;
+            dominoOpponentName = 'Robô';
+            const badge = $('domino-room-badge');
+            if (badge) badge.style.display = 'none';
+            const screen = $('domino-screen');
+            if (screen) {
+                screen.classList.remove('online-setup-active');
+                screen.classList.remove('match-active');
+            }
+        }
+
         function iniciarDomino() {
-            sairDominoOnline(false);
-            fecharEscolhaOnlineDomino();
+            prepararDominioContraRoboAntesDeIniciar();
             dominoOnlineMode = false;
             dominoOpponentName = 'Robô';
             tiles = gerarPecas();
@@ -8035,6 +8053,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 setStatus(`O robô abriu a mesa com <strong>${tileKey(t)}</strong>. Sua vez: jogue uma pedra que combine com ${leftEnd} ou ${rightEnd}.`);
             }
             renderDomino();
+            const mesaCard = $('domino-board-scroll');
+            if (mesaCard) setTimeout(() => mesaCard.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
             if (turn === 'bot') setTimeout(botMove, 800);
         }
         function canPlayTile(tile) {
@@ -8752,6 +8772,22 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (hub) hub.style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+        window.tabuleiroArenaStartDominoBot = function(ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            prepararSomDomino();
+            iniciarDomino();
+            return false;
+        };
+
+        window.tabuleiroArenaOpenDominoOnline = function(ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            prepararSomDomino();
+            abrirEscolhaOnlineDomino();
+            return false;
+        };
+
         function bindDomino() {
             const newBtn = $('domino-new-btn');
             const leftBtn = $('domino-play-left-btn');
@@ -8785,7 +8821,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (hintBtn) hintBtn.addEventListener('click', darDicaDomino);
             if (sortBtn) sortBtn.addEventListener('click', organizarMaoDomino);
             if (scoreResetBtn) scoreResetBtn.addEventListener('click', zerarPlacarDomino);
-            if (botModeBtn) botModeBtn.addEventListener('click', () => { prepararSomDomino(); iniciarDomino(); });
+            if (botModeBtn) {
+                botModeBtn.addEventListener('click', window.tabuleiroArenaStartDominoBot);
+            }
             if (onlineModeBtn) onlineModeBtn.addEventListener('click', () => { prepararSomDomino(); abrirEscolhaOnlineDomino(); });
             if (backModeBtn) backModeBtn.addEventListener('click', () => { prepararSomDomino(); sairDominoOnline(true); fecharEscolhaOnlineDomino(); });
             if (createOnlineBtn) createOnlineBtn.addEventListener('click', () => { prepararSomDomino(); criarSalaDominoOnline(); });
@@ -8793,6 +8831,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (startOnlineBtn) startOnlineBtn.addEventListener('click', () => { prepararSomDomino(); iniciarPartidaDominoOnline(); });
             if (leaveOnlineBtn) leaveOnlineBtn.addEventListener('click', () => { prepararSomDomino(); sairDominoOnline(true); });
             if (resultCloseBtn) resultCloseBtn.addEventListener('click', fecharResultadoDomino);
+            document.addEventListener('click', (ev) => {
+                const botBtn = ev.target && ev.target.closest ? ev.target.closest('#domino-mode-bot-btn') : null;
+                const onlineBtn = ev.target && ev.target.closest ? ev.target.closest('#domino-mode-online-btn') : null;
+                if (botBtn) window.tabuleiroArenaStartDominoBot(ev);
+                if (onlineBtn) window.tabuleiroArenaOpenDominoOnline(ev);
+            });
             ativarArrasteMesaDomino();
             renderDomino();
         }
