@@ -1660,6 +1660,193 @@
             .platform-subtitle { font-size: 0.86rem; margin-top: -6px; }
         }
 
+
+        /* 🁬 DOMINÓ ARENA - VERSÃO INICIAL GRATUITA */
+        .domino-screen {
+            display: none;
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .domino-hero {
+            background: linear-gradient(135deg, #111827, #0f172a 50%, #312e81);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.45);
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .domino-kicker {
+            color: #f1c40f;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 5px;
+        }
+        .domino-title {
+            color: #fff;
+            font-size: 1.55rem;
+            font-weight: 900;
+            margin-bottom: 7px;
+        }
+        .domino-desc {
+            color: #cbd5e1;
+            font-size: .9rem;
+            line-height: 1.45;
+        }
+        .domino-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .domino-card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+            text-align: left;
+        }
+        .domino-card-title {
+            color: #38bdf8;
+            font-size: .9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 8px;
+        }
+        .domino-status {
+            background: #020617;
+            border-left: 4px solid #f1c40f;
+            border-radius: 10px;
+            padding: 10px;
+            color: #e2e8f0;
+            font-size: .9rem;
+            line-height: 1.45;
+            margin-bottom: 10px;
+        }
+        .domino-board-area {
+            min-height: 150px;
+            background: radial-gradient(circle at center, #14532d, #052e16 62%, #020617);
+            border: 2px solid rgba(241,196,15,0.28);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: auto;
+            box-shadow: inset 0 0 26px rgba(0,0,0,0.35);
+        }
+        .domino-chain {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            min-width: max-content;
+        }
+        .domino-hand {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .domino-tile {
+            width: 42px;
+            height: 74px;
+            border-radius: 9px;
+            background: linear-gradient(180deg, #f8fafc, #cbd5e1);
+            color: #020617;
+            border: 2px solid #0f172a;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.35);
+            display: grid;
+            grid-template-rows: 1fr 2px 1fr;
+            cursor: pointer;
+            user-select: none;
+            flex: 0 0 auto;
+            overflow: hidden;
+        }
+        .domino-tile.horizontal {
+            width: 74px;
+            height: 42px;
+            grid-template-columns: 1fr 2px 1fr;
+            grid-template-rows: 1fr;
+        }
+        .domino-tile.disabled {
+            opacity: .38;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .domino-tile.selected {
+            outline: 3px solid #f1c40f;
+            box-shadow: 0 0 18px rgba(241,196,15,0.75);
+            transform: translateY(-3px);
+        }
+        .domino-tile:hover:not(.disabled) { transform: translateY(-2px); }
+        .domino-half {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.05rem;
+        }
+        .domino-sep { background: #0f172a; }
+        .domino-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .domino-stat {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 9px;
+            text-align: center;
+            color: #e2e8f0;
+            font-size: .8rem;
+        }
+        .domino-stat strong { color: #f1c40f; display:block; font-size: 1rem; margin-bottom: 2px; }
+        .domino-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .domino-actions button {
+            padding: 10px 8px;
+            font-size: .76rem;
+            text-transform: none;
+        }
+        .btn-domino-primary { background: #2563eb; }
+        .btn-domino-green { background: #16a34a; }
+        .btn-domino-yellow { background: #ca8a04; }
+        .btn-domino-muted { background: #475569; }
+        .domino-small-note {
+            color: #94a3b8;
+            font-size: .76rem;
+            line-height: 1.35;
+            margin-top: 8px;
+            text-align: center;
+        }
+        body.domino-selected #games-hub-panel,
+        body.domino-selected #lobby-screen,
+        body.domino-selected #game-screen { display: none !important; }
+        body.domino-selected #domino-screen { display: block !important; }
+        body.domino-selected .brand-kicker,
+        body.domino-selected .platform-subtitle { display: none !important; }
+        body.domino-selected .container { max-width: 790px; }
+        @media (max-width: 560px) {
+            .domino-meta { grid-template-columns: 1fr; }
+            .domino-actions { grid-template-columns: 1fr 1fr; }
+            .domino-tile { width: 38px; height: 66px; }
+            .domino-tile.horizontal { width: 66px; height: 38px; }
+        }
+
+
     </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -1695,11 +1882,11 @@
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Futura modalidade com salas, ranking, torneios e partidas ao vivo.</div>
             </div>
-            <div class="game-mode-card soon" id="game-card-domino" role="button" tabindex="0">
-                <span class="game-mode-badge">Em breve</span>
+            <div class="game-mode-card active" id="game-card-domino" role="button" tabindex="0">
+                <span class="game-mode-badge">Novo</span>
                 <div class="game-mode-icon">🁬</div>
                 <div class="game-mode-name">Dominó Arena</div>
-                <div class="game-mode-copy">Preparado para partidas, campeonatos e comunidades de dominó.</div>
+                <div class="game-mode-copy">Versão inicial jogável contra o robô, preparando o futuro modo online.</div>
             </div>
         </div>
     </div>
@@ -1797,6 +1984,50 @@
             </div>
         </div>
     </div>
+
+    <div id="domino-screen" class="domino-screen">
+        <button id="domino-back-to-games-btn" class="back-to-games-btn" type="button">← Escolher outra modalidade</button>
+        <div class="domino-hero">
+            <div class="domino-kicker">🁬 Nova modalidade ativa</div>
+            <div class="domino-title">Dominó Arena</div>
+            <div class="domino-desc">Versão inicial gratuita do Dominó dentro do Tabuleiro Arena. Nesta primeira etapa, você joga contra um robô no próprio navegador, aprende a dinâmica da mesa e prepara a base para o futuro modo online com salas, ranking, torneios e vídeo/áudio.</div>
+        </div>
+
+        <div class="domino-layout">
+            <div class="domino-card">
+                <div class="domino-card-title">Mesa de jogo</div>
+                <div id="domino-status" class="domino-status">Clique em <strong>Novo jogo</strong> para começar uma partida de dominó contra o robô.</div>
+                <div class="domino-meta">
+                    <div class="domino-stat"><strong id="domino-left-end">-</strong>Ponta esquerda</div>
+                    <div class="domino-stat"><strong id="domino-boneyard-count">0</strong>Compra</div>
+                    <div class="domino-stat"><strong id="domino-right-end">-</strong>Ponta direita</div>
+                </div>
+                <div class="domino-board-area">
+                    <div id="domino-chain" class="domino-chain">
+                        <div class="tiny-muted">A mesa aparecerá aqui.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="domino-card">
+                <div class="domino-card-title">Sua mão</div>
+                <div class="domino-meta">
+                    <div class="domino-stat"><strong id="domino-player-count">0</strong>Você</div>
+                    <div class="domino-stat"><strong id="domino-bot-count">0</strong>Robô</div>
+                    <div class="domino-stat"><strong id="domino-turn-label">-</strong>Vez atual</div>
+                </div>
+                <div id="domino-hand" class="domino-hand"></div>
+                <div class="domino-actions">
+                    <button id="domino-new-btn" class="btn-domino-primary" type="button">Novo jogo</button>
+                    <button id="domino-play-left-btn" class="btn-domino-green" type="button">Jogar esquerda</button>
+                    <button id="domino-play-right-btn" class="btn-domino-green" type="button">Jogar direita</button>
+                    <button id="domino-draw-btn" class="btn-domino-yellow" type="button">Comprar / Passar</button>
+                </div>
+                <div class="domino-small-note">Dica: selecione uma pedra da sua mão. Se ela combinar com uma das pontas da mesa, escolha esquerda ou direita. Se não tiver jogada, compre uma pedra.</div>
+            </div>
+        </div>
+    </div>
+
 
     <div id="game-screen">
         <div id="normal-game-status" class="status-panel">
@@ -6264,6 +6495,19 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
+        const abrirDomino = () => {
+            document.body.classList.remove('platform-start-active');
+            document.body.classList.remove('mode-selecting');
+            document.body.classList.remove('game-selected');
+            document.body.classList.add('domino-selected');
+            const hub = document.getElementById('games-hub-panel');
+            if (hub) hub.style.display = 'none';
+            const domino = document.getElementById('domino-screen');
+            if (domino) {
+                domino.style.display = 'block';
+                domino.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
         const avisarEmBreve = (jogo) => {
             const texto = `<strong>${jogo} Arena</strong> já está planejado para entrar na plataforma Tabuleiro Arena.<br><br>Primeiro vamos manter Damas Arena estável e profissional; depois essa modalidade poderá usar a mesma base de salas, ranking, torneios, chat e vídeo/áudio.`;
             if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema(`${jogo} em breve`, texto);
@@ -6286,16 +6530,280 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 const backBtn = document.getElementById('back-to-games-btn');
                 if (backBtn) backBtn.addEventListener('click', voltarModalidades);
                 ligarCard('game-card-xadrez', () => avisarEmBreve('Xadrez'));
-                ligarCard('game-card-domino', () => avisarEmBreve('Dominó'));
+                ligarCard('game-card-domino', abrirDomino);
             });
         } else {
             ligarCard('game-card-damas', abrirDamas);
             const backBtn = document.getElementById('back-to-games-btn');
             if (backBtn) backBtn.addEventListener('click', voltarModalidades);
             ligarCard('game-card-xadrez', () => avisarEmBreve('Xadrez'));
-            ligarCard('game-card-domino', () => avisarEmBreve('Dominó'));
+            ligarCard('game-card-domino', abrirDomino);
         }
     })();
+
+    // 🁬 Dominó Arena - versão inicial gratuita contra robô
+    (function prepararDominoArenaInicial() {
+        let tiles = [];
+        let playerHand = [];
+        let botHand = [];
+        let boneyard = [];
+        let chain = [];
+        let leftEnd = null;
+        let rightEnd = null;
+        let turn = 'player';
+        let selectedIndex = null;
+        let gameOver = true;
+        let passStreak = 0;
+
+        function $(id) { return document.getElementById(id); }
+        function soma(tile) { return tile[0] + tile[1]; }
+        function tileKey(tile) { return tile[0] + '-' + tile[1]; }
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        function createTileElement(tile, opts = {}) {
+            const el = document.createElement('div');
+            el.className = 'domino-tile' + (opts.horizontal ? ' horizontal' : '') + (opts.disabled ? ' disabled' : '') + (opts.selected ? ' selected' : '');
+            el.setAttribute('aria-label', `Pedra ${tile[0]} por ${tile[1]}`);
+            const a = document.createElement('div'); a.className = 'domino-half'; a.innerText = tile[0];
+            const sep = document.createElement('div'); sep.className = 'domino-sep';
+            const b = document.createElement('div'); b.className = 'domino-half'; b.innerText = tile[1];
+            el.appendChild(a); el.appendChild(sep); el.appendChild(b);
+            return el;
+        }
+        function setStatus(html) {
+            const el = $('domino-status');
+            if (el) el.innerHTML = html;
+        }
+        function gerarPecas() {
+            const arr = [];
+            for (let a = 0; a <= 6; a++) for (let b = a; b <= 6; b++) arr.push([a,b]);
+            return shuffle(arr);
+        }
+        function melhorInicial(hand) {
+            let best = null, idx = -1, score = -1;
+            hand.forEach((t, i) => {
+                const isDouble = t[0] === t[1];
+                const sc = (isDouble ? 100 : 0) + soma(t);
+                if (sc > score) { score = sc; best = t; idx = i; }
+            });
+            return { tile: best, index: idx, score };
+        }
+        function iniciarDomino() {
+            tiles = gerarPecas();
+            playerHand = tiles.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+            botHand = tiles.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+            boneyard = tiles;
+            chain = [];
+            leftEnd = rightEnd = null;
+            selectedIndex = null;
+            gameOver = false;
+            passStreak = 0;
+
+            const pStart = melhorInicial(playerHand);
+            const bStart = melhorInicial(botHand);
+            if (pStart.score >= bStart.score) {
+                const t = playerHand.splice(pStart.index, 1)[0];
+                chain.push(t); leftEnd = t[0]; rightEnd = t[1]; turn = 'bot';
+                setStatus(`Você abriu a mesa com <strong>${tileKey(t)}</strong>. Agora é a vez do robô.`);
+            } else {
+                const t = botHand.splice(bStart.index, 1)[0];
+                chain.push(t); leftEnd = t[0]; rightEnd = t[1]; turn = 'player';
+                setStatus(`O robô abriu a mesa com <strong>${tileKey(t)}</strong>. Sua vez: jogue uma pedra que combine com ${leftEnd} ou ${rightEnd}.`);
+            }
+            renderDomino();
+            if (turn === 'bot') setTimeout(botMove, 800);
+        }
+        function canPlayTile(tile) {
+            if (chain.length === 0) return true;
+            return tile[0] === leftEnd || tile[1] === leftEnd || tile[0] === rightEnd || tile[1] === rightEnd;
+        }
+        function canPlaySide(tile, side) {
+            if (chain.length === 0) return true;
+            if (side === 'left') return tile[0] === leftEnd || tile[1] === leftEnd;
+            return tile[0] === rightEnd || tile[1] === rightEnd;
+        }
+        function orientedForSide(tile, side) {
+            if (chain.length === 0) return tile;
+            if (side === 'left') {
+                if (tile[1] === leftEnd) return [tile[0], tile[1]];
+                if (tile[0] === leftEnd) return [tile[1], tile[0]];
+            } else {
+                if (tile[0] === rightEnd) return [tile[0], tile[1]];
+                if (tile[1] === rightEnd) return [tile[1], tile[0]];
+            }
+            return null;
+        }
+        function placeTileFromHand(hand, index, side) {
+            const tile = hand[index];
+            const oriented = orientedForSide(tile, side);
+            if (!oriented) return false;
+            hand.splice(index, 1);
+            if (chain.length === 0) {
+                chain.push(oriented); leftEnd = oriented[0]; rightEnd = oriented[1];
+            } else if (side === 'left') {
+                chain.unshift(oriented); leftEnd = oriented[0];
+            } else {
+                chain.push(oriented); rightEnd = oriented[1];
+            }
+            passStreak = 0;
+            return true;
+        }
+        function playerPlay(side) {
+            if (gameOver || turn !== 'player') return;
+            if (selectedIndex === null || !playerHand[selectedIndex]) {
+                setStatus('Selecione uma pedra da sua mão primeiro.');
+                return;
+            }
+            const tile = playerHand[selectedIndex];
+            if (!canPlaySide(tile, side)) {
+                setStatus(`Essa pedra não encaixa na ponta ${side === 'left' ? 'esquerda' : 'direita'}. Escolha outra pedra ou outro lado.`);
+                return;
+            }
+            placeTileFromHand(playerHand, selectedIndex, side);
+            const jogada = tileKey(tile);
+            selectedIndex = null;
+            turn = 'bot';
+            setStatus(`Você jogou <strong>${jogada}</strong>. O robô está analisando a mesa...`);
+            renderDomino();
+            if (!checkEnd()) setTimeout(botMove, 850);
+        }
+        function comprarOuPassar() {
+            if (gameOver || turn !== 'player') return;
+            if (playerHand.some(canPlayTile)) {
+                setStatus('Você ainda tem jogada disponível. Selecione uma pedra que combine com a mesa.');
+                return;
+            }
+            if (boneyard.length > 0) {
+                const t = boneyard.shift();
+                playerHand.push(t);
+                playerHand.sort((a,b)=>soma(b)-soma(a));
+                setStatus(`Você comprou uma pedra. ${canPlayTile(t) ? 'Ela pode encaixar na mesa.' : 'Ainda não encaixa; se não houver jogada, compre novamente ou passe quando acabar a compra.'}`);
+                renderDomino();
+            } else {
+                passStreak++;
+                turn = 'bot';
+                setStatus('Você passou a vez. O robô vai jogar.');
+                renderDomino();
+                if (!checkEnd()) setTimeout(botMove, 750);
+            }
+        }
+        function botChooseMove() {
+            const candidates = [];
+            botHand.forEach((tile, index) => {
+                if (canPlaySide(tile, 'left')) candidates.push({ index, side: 'left', tile, value: soma(tile) + (tile[0] === tile[1] ? 5 : 0) });
+                if (canPlaySide(tile, 'right')) candidates.push({ index, side: 'right', tile, value: soma(tile) + (tile[0] === tile[1] ? 5 : 0) });
+            });
+            candidates.sort((a,b)=>b.value-a.value);
+            return candidates[0] || null;
+        }
+        function botMove() {
+            if (gameOver || turn !== 'bot') return;
+            let move = botChooseMove();
+            while (!move && boneyard.length > 0) {
+                botHand.push(boneyard.shift());
+                botHand.sort((a,b)=>soma(b)-soma(a));
+                move = botChooseMove();
+            }
+            if (move) {
+                const tile = botHand[move.index];
+                placeTileFromHand(botHand, move.index, move.side);
+                turn = 'player';
+                setStatus(`O robô jogou <strong>${tileKey(tile)}</strong>. Agora é sua vez.`);
+            } else {
+                passStreak++;
+                turn = 'player';
+                setStatus('O robô passou a vez. Sua vez de jogar.');
+            }
+            renderDomino();
+            checkEnd();
+        }
+        function pontos(hand) { return hand.reduce((acc,t)=>acc+soma(t),0); }
+        function checkEnd() {
+            if (playerHand.length === 0) {
+                gameOver = true;
+                setStatus('🏆 <strong>Você venceu!</strong> Acabou suas pedras antes do robô. Excelente estratégia!');
+            } else if (botHand.length === 0) {
+                gameOver = true;
+                setStatus('🤖 <strong>O robô venceu.</strong> Não desanime: observe as pontas da mesa e tente guardar pedras versáteis.');
+            } else if (passStreak >= 2 && boneyard.length === 0 && !playerHand.some(canPlayTile) && !botHand.some(canPlayTile)) {
+                gameOver = true;
+                const pp = pontos(playerHand), bp = pontos(botHand);
+                if (pp < bp) setStatus(`🔒 Mesa fechada. Você venceu nos pontos: <strong>${pp} x ${bp}</strong>.`);
+                else if (bp < pp) setStatus(`🔒 Mesa fechada. O robô venceu nos pontos: <strong>${bp} x ${pp}</strong>.`);
+                else setStatus(`🔒 Mesa fechada. Empate nos pontos: <strong>${pp} x ${bp}</strong>.`);
+            }
+            if (gameOver) renderDomino();
+            return gameOver;
+        }
+        function renderDomino() {
+            const chainEl = $('domino-chain');
+            const handEl = $('domino-hand');
+            if (!chainEl || !handEl) return;
+            chainEl.innerHTML = '';
+            if (!chain.length) {
+                const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'A mesa aparecerá aqui.'; chainEl.appendChild(m);
+            } else {
+                chain.forEach(t => chainEl.appendChild(createTileElement(t, { horizontal: true })));
+            }
+            handEl.innerHTML = '';
+            playerHand.forEach((tile, idx) => {
+                const disabled = gameOver || turn !== 'player' || !canPlayTile(tile);
+                const el = createTileElement(tile, { disabled, selected: selectedIndex === idx });
+                el.addEventListener('click', () => {
+                    if (disabled) return;
+                    selectedIndex = selectedIndex === idx ? null : idx;
+                    renderDomino();
+                });
+                handEl.appendChild(el);
+            });
+            if (!playerHand.length && !gameOver) {
+                const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'Sua mão está vazia.'; handEl.appendChild(m);
+            }
+            const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
+            setText('domino-left-end', leftEnd === null ? '-' : leftEnd);
+            setText('domino-right-end', rightEnd === null ? '-' : rightEnd);
+            setText('domino-boneyard-count', boneyard.length);
+            setText('domino-player-count', playerHand.length);
+            setText('domino-bot-count', botHand.length);
+            setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : 'Robô'));
+            const leftBtn = $('domino-play-left-btn'), rightBtn = $('domino-play-right-btn'), drawBtn = $('domino-draw-btn');
+            if (leftBtn) leftBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
+            if (rightBtn) rightBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
+            if (drawBtn) drawBtn.disabled = gameOver || turn !== 'player';
+        }
+        function voltarModalidadesDomino() {
+            document.body.classList.add('platform-start-active');
+            document.body.classList.add('mode-selecting');
+            document.body.classList.remove('game-selected');
+            document.body.classList.remove('domino-selected');
+            const domino = $('domino-screen');
+            if (domino) domino.style.display = 'none';
+            const hub = $('games-hub-panel');
+            if (hub) hub.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function bindDomino() {
+            const newBtn = $('domino-new-btn');
+            const leftBtn = $('domino-play-left-btn');
+            const rightBtn = $('domino-play-right-btn');
+            const drawBtn = $('domino-draw-btn');
+            const backBtn = $('domino-back-to-games-btn');
+            if (newBtn) newBtn.addEventListener('click', iniciarDomino);
+            if (leftBtn) leftBtn.addEventListener('click', () => playerPlay('left'));
+            if (rightBtn) rightBtn.addEventListener('click', () => playerPlay('right'));
+            if (drawBtn) drawBtn.addEventListener('click', comprarOuPassar);
+            if (backBtn) backBtn.addEventListener('click', voltarModalidadesDomino);
+            renderDomino();
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindDomino);
+        else bindDomino();
+    })();
+
 
 </script>
 
