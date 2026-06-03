@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Isiquel & Amigos - Jogo de Damas</title>
-    <!-- Versão v10 fase 6: polimento comercial gratuito, baseada na fase 5 estável. -->
+    <!-- Versão v10 fase 7: polimento comercial gratuito, baseada na fase 5 estável. -->
     <style>
         :root {
             --bg-color: #1a1a2e;
@@ -340,7 +340,7 @@
 
         .control-box {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
             width: 100%;
             max-width: 500px;
@@ -1610,6 +1610,7 @@
             <button id="reset-room-btn" style="background-color: #d35400;">Resetar</button>
             <button id="draw-btn" style="background-color: #cca43b;">Empate</button>
             <button id="rules-btn-game" class="btn-info">Regras</button>
+            <button id="flip-board-btn" style="background-color: #0f766e;">Virar</button>
         </div>
 
         <div id="normal-chat-wrapper" class="chat-container">
@@ -1754,6 +1755,7 @@
     let emContagemRegressivaAtiva = false;
     let listenerChatAdminAtivo = null;
     let alertaFimPartidaMostrado = false;
+    let tabuleiroViradoManual = false;
 
     let callPeer = null;
     let localCallStream = null;
@@ -2415,6 +2417,7 @@
     const rulesModal = document.getElementById('rules-modal');
     const rulesBtnLobby = document.getElementById('rules-btn-lobby');
     const rulesBtnGame = document.getElementById('rules-btn-game');
+    const flipBoardBtn = document.getElementById('flip-board-btn');
     const closeRulesBtn = document.getElementById('close-rules-btn');
 
     const rankModal = document.getElementById('rank-modal');
@@ -2513,6 +2516,12 @@
     rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
     rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
     closeRulesBtn.addEventListener('click', () => rulesModal.style.display = 'none');
+    if (flipBoardBtn) {
+        flipBoardBtn.addEventListener('click', () => {
+            tabuleiroViradoManual = !tabuleiroViradoManual;
+            if (currentGameState && currentGameState.board) generateBoardUI(currentGameState.board);
+        });
+    }
 
     rankBtnLobby.addEventListener('click', () => { networkLeaderboard(); });
     async function networkLeaderboard() { rankModal.style.display = 'flex'; await loadLeaderboard(); }
@@ -4606,12 +4615,58 @@
         }
     }
 
+    function deveVirarTabuleiroParaVisualizacao() {
+        // A lógica interna do jogo continua igual. Aqui mudamos só a forma de enxergar o tabuleiro.
+        // Vermelho vê normal. Preto vê virado automaticamente. Espectador pode virar no botão.
+        const virarAutomatico = (!isPracticeMode && playerRole === "p2");
+        return tabuleiroViradoManual ? !virarAutomatico : virarAutomatico;
+    }
+
+    function atualizarCoordenadasDoTabuleiro(tabuleiroVirado) {
+        const letras = tabuleiroVirado ? ['H','G','F','E','D','C','B','A'] : ['A','B','C','D','E','F','G','H'];
+        const numeros = tabuleiroVirado ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
+        const top = document.querySelectorAll('.coord-row-top .coord-space');
+        const bottom = document.querySelectorAll('.coord-row-bottom .coord-space');
+        const left = document.querySelectorAll('.coord-col-left .coord-space');
+        const right = document.querySelectorAll('.coord-col-right .coord-space');
+        top.forEach((el, i) => el.innerText = letras[i] || '');
+        bottom.forEach((el, i) => el.innerText = letras[i] || '');
+        left.forEach((el, i) => el.innerText = numeros[i] || '');
+        right.forEach((el, i) => el.innerText = numeros[i] || '');
+    }
+
+    function atualizarBotaoVirarTabuleiro(tabuleiroVirado) {
+        if (!flipBoardBtn) return;
+        if (playerRole === "p2" && !isPracticeMode) {
+            flipBoardBtn.innerText = tabuleiroVirado ? "Visão Preto" : "Visão Normal";
+            flipBoardBtn.title = tabuleiroVirado ? "Você está vendo o tabuleiro do lado das peças pretas." : "Você desvirou manualmente o tabuleiro.";
+        } else if (playerRole === "spectator") {
+            flipBoardBtn.innerText = tabuleiroVirado ? "Visão Preto" : "Virar";
+            flipBoardBtn.title = "Alternar visão do espectador.";
+        } else {
+            flipBoardBtn.innerText = tabuleiroVirado ? "Virado" : "Virar";
+            flipBoardBtn.title = "Virar tabuleiro manualmente.";
+        }
+    }
+
     function generateBoardUI(board) {
         boardEl.innerHTML = "";
-        for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
+        const tabuleiroVirado = deveVirarTabuleiroParaVisualizacao();
+        atualizarCoordenadasDoTabuleiro(tabuleiroVirado);
+        atualizarBotaoVirarTabuleiro(tabuleiroVirado);
+
+        const linhas = tabuleiroVirado ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+        const colunas = tabuleiroVirado ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+
+        for (let vr = 0; vr < 8; vr++) {
+            for (let vc = 0; vc < 8; vc++) {
+                const r = linhas[vr];
+                const c = colunas[vc];
                 const square = document.createElement('div');
                 square.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                square.dataset.row = String(r);
+                square.dataset.col = String(c);
+
                 const val = board[r][c];
                 if (val !== 0) {
                     const piece = document.createElement('div');
@@ -4620,12 +4675,15 @@
                     if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) piece.classList.add('selected');
                     square.appendChild(piece);
                 }
+
                 if (validMoves.some(m => m.toR === r && m.toC === c)) square.classList.add('highlight');
+
                 if (isLearningMode && learningTipsVisible && currentLearningHint && currentGameState?.turn === 1) {
                     if (currentLearningHint.move && currentLearningHint.move.fromR === r && currentLearningHint.move.fromC === c) square.classList.add('learn-from');
                     if (currentLearningHint.move && currentLearningHint.move.toR === r && currentLearningHint.move.toC === c) square.classList.add('learn-to');
                     if (currentLearningHint.danger && currentLearningHint.danger.r === r && currentLearningHint.danger.c === c) square.classList.add('learn-danger');
                 }
+
                 square.addEventListener('click', () => handleSquareInteraction(r, c));
                 boardEl.appendChild(square);
             }
@@ -5438,7 +5496,7 @@
                     const pill = document.createElement('span');
                     pill.id = 'phase3-version-pill';
                     pill.className = 'phase3-version-pill';
-                    pill.innerText = 'v10 • fase 6';
+                    pill.innerText = 'v10 • fase 7';
                     tituloPrincipal.appendChild(pill);
                 }
 
