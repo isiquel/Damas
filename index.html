@@ -1668,6 +1668,8 @@
             max-width: 760px;
             margin: 0 auto;
             text-align: center;
+            min-width: 0;
+            overflow-x: hidden;
         }
         .domino-hero {
             background: linear-gradient(135deg, #111827, #0f172a 50%, #312e81);
@@ -1699,8 +1701,12 @@
         }
         .domino-layout {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
             gap: 12px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: hidden;
         }
         .domino-card {
             background: var(--panel-bg);
@@ -1709,6 +1715,10 @@
             padding: 14px;
             box-shadow: 0 8px 22px rgba(0,0,0,0.35);
             text-align: left;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
         }
         .domino-card-title {
             color: #38bdf8;
@@ -1729,24 +1739,77 @@
             margin-bottom: 10px;
         }
         .domino-board-area {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             min-height: 150px;
             background: radial-gradient(circle at center, #14532d, #052e16 62%, #020617);
             border: 2px solid rgba(241,196,15,0.28);
             border-radius: 16px;
             padding: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
             overflow-x: auto;
+            overflow-y: hidden;
             box-shadow: inset 0 0 26px rgba(0,0,0,0.35);
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            position: relative;
+            box-sizing: border-box;
+            overscroll-behavior-x: contain;
+            touch-action: pan-x;
+            contain: layout paint;
         }
+        .domino-board-area::before {
+            content: 'arraste a mesa para ver a trilha completa';
+            position: sticky;
+            left: 50%;
+            transform: translateX(-50%);
+            display: block;
+            width: max-content;
+            max-width: calc(100vw - 80px);
+            margin: 0 auto 8px auto;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(2, 6, 23, 0.68);
+            color: #cbd5e1;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-align: center;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .domino-board-area::-webkit-scrollbar { height: 8px; }
+        .domino-board-area::-webkit-scrollbar-track { background: rgba(2,6,23,0.65); border-radius: 999px; }
+        .domino-board-area::-webkit-scrollbar-thumb { background: rgba(241,196,15,0.65); border-radius: 999px; }
         .domino-chain {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: flex-start;
             gap: 6px;
-            min-width: max-content;
+            width: max-content;
+            min-width: 100%;
+            max-width: none;
+            padding: 4px 46px 8px 46px;
+            margin: 0;
+            white-space: nowrap;
+            flex-wrap: nowrap;
         }
+        .domino-table-tools {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .domino-table-tools button {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 0.74rem;
+            border-radius: 999px;
+            text-transform: none;
+            background: #334155;
+        }
+        .domino-table-tools button:hover:not(:disabled) { background: #475569; }
         .domino-hand {
             display: flex;
             flex-wrap: wrap;
@@ -1838,12 +1901,27 @@
         body.domino-selected #domino-screen { display: block !important; }
         body.domino-selected .brand-kicker,
         body.domino-selected .platform-subtitle { display: none !important; }
-        body.domino-selected .container { max-width: 790px; }
+        body.domino-selected {
+            overflow-x: hidden;
+        }
+        body.domino-selected .container {
+            max-width: 790px;
+            width: 100%;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+        html:has(body.domino-selected) {
+            overflow-x: hidden;
+        }
         @media (max-width: 560px) {
             .domino-meta { grid-template-columns: 1fr; }
             .domino-actions { grid-template-columns: 1fr 1fr; }
+            .domino-board-area { min-height: 132px; padding: 10px; }
+            .domino-board-area::before { font-size: 0.64rem; max-width: calc(100vw - 54px); }
+            .domino-chain { gap: 5px; padding-left: 34px; padding-right: 34px; }
             .domino-tile { width: 38px; height: 66px; }
-            .domino-tile.horizontal { width: 66px; height: 38px; }
+            .domino-tile.horizontal { width: 58px; height: 34px; }
+            .domino-half { font-size: .92rem; }
         }
 
 
@@ -2002,10 +2080,15 @@
                     <div class="domino-stat"><strong id="domino-boneyard-count">0</strong>Compra</div>
                     <div class="domino-stat"><strong id="domino-right-end">-</strong>Ponta direita</div>
                 </div>
-                <div class="domino-board-area">
+                <div class="domino-board-area" id="domino-board-scroll">
                     <div id="domino-chain" class="domino-chain">
                         <div class="tiny-muted">A mesa aparecerá aqui.</div>
                     </div>
+                </div>
+                <div class="domino-table-tools">
+                    <button id="domino-center-btn" type="button">Centralizar mesa</button>
+                    <button id="domino-left-tip-btn" type="button">Ver ponta esquerda</button>
+                    <button id="domino-right-tip-btn" type="button">Ver ponta direita</button>
                 </div>
             </div>
 
@@ -6723,6 +6806,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             checkEnd();
         }
         function pontos(hand) { return hand.reduce((acc,t)=>acc+soma(t),0); }
+        function ajustarMesaDomino(posicao = 'centro') {
+            const mesa = $('domino-board-scroll');
+            if (!mesa) return;
+            requestAnimationFrame(() => {
+                const max = Math.max(0, mesa.scrollWidth - mesa.clientWidth);
+                if (posicao === 'esquerda') mesa.scrollLeft = 0;
+                else if (posicao === 'direita') mesa.scrollLeft = max;
+                else mesa.scrollLeft = Math.round(max / 2);
+            });
+        }
+
         function checkEnd() {
             if (playerHand.length === 0) {
                 gameOver = true;
@@ -6764,6 +6858,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!playerHand.length && !gameOver) {
                 const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'Sua mão está vazia.'; handEl.appendChild(m);
             }
+            ajustarMesaDomino('centro');
             const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
             setText('domino-left-end', leftEnd === null ? '-' : leftEnd);
             setText('domino-right-end', rightEnd === null ? '-' : rightEnd);
@@ -6793,11 +6888,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const rightBtn = $('domino-play-right-btn');
             const drawBtn = $('domino-draw-btn');
             const backBtn = $('domino-back-to-games-btn');
+            const centerBtn = $('domino-center-btn');
+            const leftTipBtn = $('domino-left-tip-btn');
+            const rightTipBtn = $('domino-right-tip-btn');
             if (newBtn) newBtn.addEventListener('click', iniciarDomino);
             if (leftBtn) leftBtn.addEventListener('click', () => playerPlay('left'));
             if (rightBtn) rightBtn.addEventListener('click', () => playerPlay('right'));
             if (drawBtn) drawBtn.addEventListener('click', comprarOuPassar);
             if (backBtn) backBtn.addEventListener('click', voltarModalidadesDomino);
+            if (centerBtn) centerBtn.addEventListener('click', () => ajustarMesaDomino('centro'));
+            if (leftTipBtn) leftTipBtn.addEventListener('click', () => ajustarMesaDomino('esquerda'));
+            if (rightTipBtn) rightTipBtn.addEventListener('click', () => ajustarMesaDomino('direita'));
             renderDomino();
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindDomino);
