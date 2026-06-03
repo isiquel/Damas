@@ -8847,6 +8847,211 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
 </script>
 
+<script>
+/* ============================================================
+   DOMINÓ CONTRA ROBÔ - MOTOR LOCAL DE SEGURANÇA
+   Este bloco não usa Firebase. Ele garante que o modo treino
+   funcione mesmo que a parte online/admin esteja carregando.
+============================================================ */
+(function dominoRoboSeguro(){
+    const $ = (id) => document.getElementById(id);
+    let deck = [], player = [], bot = [], buy = [], chain = [];
+    let leftEnd = null, rightEnd = null, selected = null, turn = 'player', over = true, pass = 0, lastKey = '';
+    let active = false;
+    let botTimer = null;
+
+    function sum(t){ return (t?.[0]||0) + (t?.[1]||0); }
+    function key(t){ return `${t[0]}-${t[1]}`; }
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function makeDeck(){ const a=[]; for(let i=0;i<=6;i++) for(let j=i;j<=6;j++) a.push([i,j]); return shuffle(a); }
+    function bestStart(hand){ let idx=0, score=-1; hand.forEach((t,i)=>{ const s=(t[0]===t[1]?100:0)+sum(t); if(s>score){score=s; idx=i;} }); return {idx,score}; }
+    function setStatus(html){ const el=$('domino-status'); if(el) el.innerHTML=html; }
+    function setText(id, value){ const el=$(id); if(el) el.innerText=value; }
+
+    function tileEl(t, opts={}){
+        const el=document.createElement('div');
+        el.className='domino-tile'+(opts.horizontal?' horizontal':'')+(opts.disabled?' disabled':'')+(opts.selected?' selected':'')+(opts.playable?' playable':'')+(opts.last?' last-played':'');
+        el.setAttribute('aria-label', `Pedra ${t[0]} por ${t[1]}`);
+        const a=document.createElement('div'); a.className='domino-half'; a.innerText=t[0];
+        const sep=document.createElement('div'); sep.className='domino-sep';
+        const b=document.createElement('div'); b.className='domino-half'; b.innerText=t[1];
+        el.appendChild(a); el.appendChild(sep); el.appendChild(b);
+        return el;
+    }
+
+    function canSide(t, side){
+        if(!chain.length) return true;
+        if(side==='left') return t[0]===leftEnd || t[1]===leftEnd;
+        return t[0]===rightEnd || t[1]===rightEnd;
+    }
+    function canPlay(t){ return canSide(t,'left') || canSide(t,'right'); }
+    function orient(t, side){
+        if(!chain.length) return [t[0],t[1]];
+        if(side==='left'){
+            if(t[1]===leftEnd) return [t[0],t[1]];
+            if(t[0]===leftEnd) return [t[1],t[0]];
+        } else {
+            if(t[0]===rightEnd) return [t[0],t[1]];
+            if(t[1]===rightEnd) return [t[1],t[0]];
+        }
+        return null;
+    }
+    function place(hand, idx, side){
+        const original=hand[idx];
+        const o=orient(original, side);
+        if(!o) return null;
+        hand.splice(idx,1);
+        if(!chain.length){ chain.push(o); leftEnd=o[0]; rightEnd=o[1]; }
+        else if(side==='left'){ chain.unshift(o); leftEnd=o[0]; }
+        else { chain.push(o); rightEnd=o[1]; }
+        lastKey=key(original); pass=0;
+        return original;
+    }
+    function points(hand){ return hand.reduce((a,t)=>a+sum(t),0); }
+
+    function showResult(type, title, msg){
+        const overlay=$('domino-result-overlay'), card=$('domino-result-card'), icon=$('domino-result-icon'), ttl=$('domino-result-title'), txt=$('domino-result-text');
+        if(overlay&&card&&icon&&ttl&&txt){
+            card.className='domino-result-card '+type;
+            icon.innerText=type==='win'?'🏆':(type==='draw'?'🔒':'🤝');
+            ttl.innerHTML=title; txt.innerHTML=msg; overlay.style.display='flex';
+        } else alert(title+'\n'+msg.replace(/<[^>]*>/g,''));
+    }
+
+    function renderEndpoints(){
+        const lbox=$('domino-left-tile-view'), rbox=$('domino-right-tile-view');
+        const lnum=$('domino-left-number-view'), rnum=$('domino-right-number-view');
+        if(!chain.length){
+            if(lbox){ lbox.className='domino-endpoint-empty'; lbox.innerHTML='Aguardando início'; }
+            if(rbox){ rbox.className='domino-endpoint-empty'; rbox.innerHTML='Aguardando início'; }
+            if(lnum) lnum.innerText='-'; if(rnum) rnum.innerText='-';
+            return;
+        }
+        if(lbox){ lbox.className=''; lbox.innerHTML=''; lbox.appendChild(tileEl(chain[0],{horizontal:true,last:key(chain[0])===lastKey})); }
+        if(rbox){ rbox.className=''; rbox.innerHTML=''; rbox.appendChild(tileEl(chain[chain.length-1],{horizontal:true,last:key(chain[chain.length-1])===lastKey})); }
+        if(lnum) lnum.innerText='encaixe: '+leftEnd;
+        if(rnum) rnum.innerText='encaixe: '+rightEnd;
+    }
+
+    function render(){
+        const screen=$('domino-screen');
+        if(screen){ screen.classList.add('match-active'); screen.classList.remove('online-setup-active'); }
+        const chainEl=$('domino-chain');
+        if(chainEl){
+            chainEl.innerHTML='';
+            if(!chain.length){ const m=document.createElement('div'); m.className='tiny-muted'; m.innerText='A mesa aparecerá aqui.'; chainEl.appendChild(m); }
+            else chain.forEach(t=>chainEl.appendChild(tileEl(t,{horizontal:true,last:key(t)===lastKey})));
+        }
+        const hand=$('domino-hand');
+        if(hand){
+            hand.innerHTML='';
+            player.forEach((t,i)=>{
+                const playable=!over && turn==='player' && canPlay(t);
+                const el=tileEl(t,{selected:selected===i,playable,disabled:!playable});
+                el.addEventListener('click',()=>{ if(!playable) return; selected=selected===i?null:i; render(); });
+                hand.appendChild(el);
+            });
+        }
+        renderEndpoints();
+        setText('domino-left-end', leftEnd===null?'-':leftEnd);
+        setText('domino-right-end', rightEnd===null?'-':rightEnd);
+        setText('domino-boneyard-count', buy.length);
+        setText('domino-player-count', player.length);
+        setText('domino-bot-count', bot.length);
+        setText('domino-turn-label', over?'Fim':(turn==='player'?'Você':'Robô'));
+        setText('domino-opponent-mini','Robô');
+        setText('domino-opponent-count-label','Robô');
+        setText('domino-buy-pill','Compra: '+buy.length);
+        setText('domino-turn-pill', over?'Partida encerrada':(turn==='player'?'Agora é sua vez':'Agora é a vez do robô'));
+        const newBtn=$('domino-new-btn'); if(newBtn) newBtn.innerText='Novo jogo';
+        const l=$('domino-play-left-btn'), r=$('domino-play-right-btn'), d=$('domino-draw-btn');
+        if(l) l.disabled=over||turn!=='player'||selected===null||!canSide(player[selected]||[-1,-1],'left');
+        if(r) r.disabled=over||turn!=='player'||selected===null||!canSide(player[selected]||[-1,-1],'right');
+        if(d) d.disabled=over||turn!=='player';
+        setText('domino-player-points', points(player));
+    }
+
+    function checkEnd(){
+        if(over) return true;
+        if(player.length===0){ over=true; setStatus('🏆 <strong>Você venceu!</strong> Acabaram suas pedras.'); showResult('win','Parabéns, você ganhou!','Você venceu a partida contra o robô. Excelente jogada!'); render(); return true; }
+        if(bot.length===0){ over=true; setStatus('🤖 <strong>O robô venceu.</strong> Não desanime.'); showResult('lose','O robô venceu esta partida','Não desanime. Observe as pontas e tente outra vez.'); render(); return true; }
+        if(pass>=2 && buy.length===0 && !player.some(canPlay) && !bot.some(canPlay)){
+            over=true; const pp=points(player), bp=points(bot);
+            if(pp<bp){ setStatus(`🔒 Mesa fechada. Você venceu nos pontos: <strong>${pp} x ${bp}</strong>.`); showResult('win','Você venceu nos pontos!',`Mesa fechada: <strong>${pp} x ${bp}</strong>.`); }
+            else if(bp<pp){ setStatus(`🔒 Mesa fechada. O robô venceu nos pontos: <strong>${bp} x ${pp}</strong>.`); showResult('lose','O robô venceu nos pontos',`Mesa fechada: <strong>${bp} x ${pp}</strong>. Não desanime.`); }
+            else { setStatus(`🔒 Mesa fechada. Empate nos pontos: <strong>${pp} x ${bp}</strong>.`); showResult('draw','Empate!',`Mesa fechada. Os dois terminaram com <strong>${pp}</strong> pontos.`); }
+            render(); return true;
+        }
+        return false;
+    }
+
+    function start(){
+        active=true; over=false; selected=null; pass=0; lastKey='';
+        if(botTimer) clearTimeout(botTimer);
+        const screen=$('domino-screen');
+        if(screen){ screen.classList.add('match-active'); screen.classList.remove('online-setup-active'); }
+        const badge=$('domino-room-badge'); if(badge) badge.style.display='none';
+        deck=makeDeck(); player=deck.splice(0,7).sort((a,b)=>sum(b)-sum(a)); bot=deck.splice(0,7).sort((a,b)=>sum(b)-sum(a)); buy=deck; chain=[]; leftEnd=rightEnd=null;
+        const ps=bestStart(player), bs=bestStart(bot);
+        if(ps.score>=bs.score){ const t=player.splice(ps.idx,1)[0]; chain.push(t); leftEnd=t[0]; rightEnd=t[1]; lastKey=key(t); turn='bot'; setStatus(`Você abriu a mesa com <strong>${key(t)}</strong>. Agora é a vez do robô.`); }
+        else { const t=bot.splice(bs.idx,1)[0]; chain.push(t); leftEnd=t[0]; rightEnd=t[1]; lastKey=key(t); turn='player'; setStatus(`O robô abriu a mesa com <strong>${key(t)}</strong>. Sua vez: jogue uma pedra que combine com ${leftEnd} ou ${rightEnd}.`); }
+        render();
+        const mesa=$('domino-board-scroll'); if(mesa) setTimeout(()=>mesa.scrollIntoView({behavior:'smooth',block:'center'}),80);
+        if(turn==='bot') botTimer=setTimeout(botMove,650);
+    }
+
+    function play(side){
+        if(!active || over || turn!=='player') return;
+        if(selected===null || !player[selected]){ setStatus('Selecione uma pedra da sua mão primeiro.'); return; }
+        if(!canSide(player[selected],side)){ setStatus(`Essa pedra não encaixa na ponta ${side==='left'?'esquerda':'direita'}.`); return; }
+        const t=place(player,selected,side); selected=null; turn='bot'; setStatus(`Você jogou <strong>${key(t)}</strong>. O robô está pensando...`); render();
+        if(!checkEnd()) botTimer=setTimeout(botMove,700);
+    }
+
+    function drawOrPass(){
+        if(!active || over || turn!=='player') return;
+        if(player.some(canPlay)){ setStatus('Você ainda tem jogada disponível. Selecione uma pedra que encaixa na mesa.'); return; }
+        if(buy.length){ const t=buy.shift(); player.push(t); player.sort((a,b)=>sum(b)-sum(a)); setStatus(canPlay(t)?'Você comprou uma pedra que pode encaixar.':'Você comprou uma pedra. Se ainda não encaixar, compre novamente.'); render(); return; }
+        pass++; turn='bot'; setStatus('Você passou a vez. O robô vai jogar.'); render(); if(!checkEnd()) botTimer=setTimeout(botMove,650);
+    }
+
+    function botChoose(){
+        const moves=[]; bot.forEach((t,i)=>{ if(canSide(t,'left')) moves.push({i,side:'left',score:sum(t)+(t[0]===t[1]?5:0)}); if(canSide(t,'right')) moves.push({i,side:'right',score:sum(t)+(t[0]===t[1]?5:0)}); });
+        moves.sort((a,b)=>b.score-a.score); return moves[0]||null;
+    }
+    function botMove(){
+        if(!active || over || turn!=='bot') return;
+        let m=botChoose();
+        while(!m && buy.length){ bot.push(buy.shift()); bot.sort((a,b)=>sum(b)-sum(a)); m=botChoose(); }
+        if(m){ const t=place(bot,m.i,m.side); turn='player'; setStatus(`O robô jogou <strong>${key(t)}</strong>. Agora é sua vez.`); }
+        else { pass++; turn='player'; setStatus('O robô passou a vez. Sua vez de jogar.'); }
+        render();
+        if(!checkEnd() && !player.some(canPlay)) setStatus(buy.length?'⚠️ Você não tem peça para encaixar. Compre uma pedra.':'⚠️ Você não tem peça e a compra acabou. Passe a vez.');
+    }
+
+    function sortHand(){ if(!active) return; player.sort((a,b)=>(b[0]===b[1])-(a[0]===a[1])||sum(b)-sum(a)); selected=null; render(); setStatus('🧩 Sua mão foi organizada.'); }
+    function hint(){ if(!active || over || turn!=='player') return; const idx=player.findIndex(canPlay); if(idx>=0){ selected=idx; render(); setStatus(`💡 Dica: a pedra <strong>${key(player[idx])}</strong> encaixa na mesa.`); } else setStatus('💡 Você não tem encaixe. Compre ou passe.'); }
+
+    function handleClick(ev){
+        const target=ev.target;
+        if(!target || !target.closest) return;
+        const ids=['domino-mode-bot-btn','domino-new-btn','domino-play-left-btn','domino-play-right-btn','domino-draw-btn','domino-sort-btn','domino-hint-btn'];
+        const found=ids.find(id=>target.closest('#'+id));
+        if(!found) return;
+        ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+        if(found==='domino-mode-bot-btn' || found==='domino-new-btn') start();
+        if(found==='domino-play-left-btn') play('left');
+        if(found==='domino-play-right-btn') play('right');
+        if(found==='domino-draw-btn') drawOrPass();
+        if(found==='domino-sort-btn') sortHand();
+        if(found==='domino-hint-btn') hint();
+    }
+
+    document.addEventListener('click', handleClick, true);
+    window.tabuleiroArenaStartDominoBot = function(ev){ if(ev){ ev.preventDefault?.(); ev.stopPropagation?.(); ev.stopImmediatePropagation?.(); } start(); return false; };
+})();
+</script>
+
 
 <!--
 ============================================================
