@@ -7754,11 +7754,24 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let dominoOnlineUnsub = null;
         let dominoOnlineData = null;
         let dominoOpponentName = 'Robô';
+        let dominoClientId = carregarDominoClientId();
         let dominoAudioContext = null;
         let dominoOnlineLastSoundKey = '';
         let dominoOnlineLastEndKey = '';
 
         function $(id) { return document.getElementById(id); }
+        function carregarDominoClientId() {
+            try {
+                let id = sessionStorage.getItem('tabuleiroArenaDominoClientId');
+                if (!id) {
+                    id = 'dc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
+                    sessionStorage.setItem('tabuleiroArenaDominoClientId', id);
+                }
+                return id;
+            } catch (e) {
+                return 'dc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
+            }
+        }
         function soma(tile) { return tile[0] + tile[1]; }
         function tileKey(tile) { return tile[0] + '-' + tile[1]; }
         function carregarPlacarDomino() {
@@ -7850,7 +7863,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function salaDominoTemDoisJogadores(sala) {
-            return !!(sala?.players?.p1?.uid && sala?.players?.p2?.uid);
+            return !!((sala?.players?.p1?.clientId || sala?.players?.p1?.uid) && (sala?.players?.p2?.clientId || sala?.players?.p2?.uid));
         }
         function atualizarLayoutPartidaDomino() {
             const screen = $('domino-screen');
@@ -8343,6 +8356,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             dominoOnlineData = data || {};
             const state = dominoOnlineData.state || {};
             const players = dominoOnlineData.players || {};
+
+            // Garante que esta aba/aparelho esteja associado à vaga correta.
+            if (players.p1?.clientId === dominoClientId) dominoOnlineSeat = 'p1';
+            else if (players.p2?.clientId === dominoClientId) dominoOnlineSeat = 'p2';
+
             const otherSeat = adversarioSeatDomino();
 
             dominoOnlineMode = true;
@@ -8384,7 +8402,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 setStatus(players.p1 && players.p2
                     ? '✅ Sala completa: os dois jogadores entraram. Aperte <strong>Iniciar / carregar partida</strong> para distribuir as peças.'
                     : '⏳ Sala online liberada. Aguarde o segundo jogador entrar.');
-                atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
+                atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você é: <strong>${dominoOnlineSeat === 'p1' ? 'Jogador 1' : 'Jogador 2'}</strong> — <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong><br>Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
                 renderDomino();
                 return;
             }
@@ -8421,7 +8439,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             turn = state.turn === dominoOnlineSeat ? 'player' : 'bot';
 
             setStatus(state.status || (turn === 'player' ? '✅ Agora é sua vez. Toque em uma peça destacada e escolha esquerda ou direita.' : '⏳ Aguarde: agora é a vez de ' + (players[otherSeat]?.name || 'seu amigo') + '.'));
-            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong><br>🎲 Rodada carregada`);
+            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você é: <strong>${dominoOnlineSeat === 'p1' ? 'Jogador 1' : 'Jogador 2'}</strong> — <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong><br>Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong><br>🎲 Rodada carregada`);
 
             const soundKey = [dominoOnlineRoomCode, state.roundId || '', state.lastPlayedKey || '', state.turn || '', state.status || ''].join('|');
             if (!gameOver && state.lastPlayedKey && state.turn === dominoOnlineSeat && dominoOnlineLastSoundKey !== soundKey) {
@@ -8521,14 +8539,19 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 return;
             }
             let seat = '';
-            const p1Ocupado = !!(sala.players?.p1 && sala.players.p1.uid);
-            const p2Ocupado = !!(sala.players?.p2 && sala.players.p2.uid);
-            if (sala.players?.p1?.uid === playerId) seat = 'p1';
-            else if (sala.players?.p2?.uid === playerId) seat = 'p2';
+            const p1 = sala.players?.p1 || null;
+            const p2 = sala.players?.p2 || null;
+            const p1Ocupado = !!(p1 && p1.clientId);
+            const p2Ocupado = !!(p2 && p2.clientId);
+
+            // Reentra na mesma vaga somente se for a mesma aba/aparelho.
+            // Não use apenas uid, porque dois testes podem estar com o mesmo Firebase/Auth.
+            if (p1?.clientId === dominoClientId) seat = 'p1';
+            else if (p2?.clientId === dominoClientId) seat = 'p2';
             else if (!p1Ocupado) seat = 'p1';
             else if (!p2Ocupado) seat = 'p2';
             else {
-                setStatus('Essa sala já tem dois jogadores. Use outra sala liberada pelo administrador.');
+                setStatus('Essa sala já tem dois jogadores. Use outra sala liberada pelo administrador ou peça ao admin para limpar a sala.');
                 return;
             }
 
@@ -8536,7 +8559,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             dominoOnlineSeat = seat;
             dominoOnlineMode = true;
             await update(refSalaDominoOnline(code), {
-                [`players/${seat}`]: { uid: playerId, name: nomeDominoOnline(), joinedAt: Date.now(), online: true },
+                [`players/${seat}`]: { uid: playerId, clientId: dominoClientId, name: nomeDominoOnline(), joinedAt: Date.now(), online: true },
                 updatedAt: Date.now()
             });
             acompanharSalaDominoOnline(code, seat);
@@ -8599,7 +8622,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     return;
                 }
 
-                if (!sala.players?.p1?.uid || !sala.players?.p2?.uid) {
+                if (!salaDominoTemDoisJogadores(sala)) {
                     setStatus('A partida online precisa de dois jogadores na sala. Peça para seu amigo entrar com o mesmo código.');
                     return;
                 }
@@ -8813,7 +8836,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
         async function sairDominoOnline(removerJogador = true) {
             const codeSaindo = dominoOnlineRoomCode;
-            const seatSaindo = dominoOnlineSeat;
+            let seatSaindo = dominoOnlineSeat;
+            if (dominoOnlineData?.players?.p1?.clientId === dominoClientId) seatSaindo = 'p1';
+            else if (dominoOnlineData?.players?.p2?.clientId === dominoClientId) seatSaindo = 'p2';
 
             if (dominoOnlineUnsub) {
                 try { dominoOnlineUnsub(); } catch (e) {}
