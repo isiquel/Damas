@@ -8551,106 +8551,126 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             });
         }
 
-        async function iniciarPartidaDominoOnline() {
-            if (!dominoOnlineMode || !dominoOnlineRoomCode) {
-                setStatus('Entre em uma sala online liberada pelo administrador primeiro.');
-                return;
-            }
 
-            const snap = await get(refSalaDominoOnline());
-            if (!snap.exists()) {
-                setStatus('Sala online não encontrada.');
-                return;
-            }
-
-            const sala = snap.val() || {};
-            if (!sala.isAuthorized || sala.blocked) {
-                setStatus('Esta sala não está liberada para iniciar. Fale com o administrador.');
-                return;
-            }
-
-            if (!sala.players?.p1?.uid || !sala.players?.p2?.uid) {
-                setStatus('A partida online precisa de dois jogadores na sala. Peça para seu amigo entrar com o mesmo código.');
-                return;
-            }
-
-            if (dominoOnlineSeat !== 'p1' && dominoOnlineSeat !== 'p2') {
-                setStatus('Entre como jogador para iniciar a partida online.');
-                return;
-            }
-
-            setStatus('🎲 Iniciando nova rodada online e distribuindo as peças...');
-
-            const deck = gerarPecas();
-            const h1 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
-            const h2 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
-
-            if (h1.length !== 7 || h2.length !== 7 || deck.length !== 14) {
-                setStatus('Erro ao distribuir as peças. Tente iniciar novamente.');
-                return;
-            }
-
-            const pStart = melhorInicial(h1);
-            const p2Start = melhorInicial(h2);
-
-            let c = [];
-            let le = null;
-            let re = null;
-            let nextTurn = 'p1';
-            let lastKey = '';
-            let status = '';
-
-            if (pStart.score >= p2Start.score) {
-                const t = h1.splice(pStart.index, 1)[0];
-                c.push(t);
-                le = t[0];
-                re = t[1];
-                nextTurn = 'p2';
-                lastKey = tileKey(t);
-                status = `${sala.players.p1.name || 'Jogador 1'} abriu a mesa com ${lastKey}. Agora é a vez de ${sala.players.p2.name || 'Jogador 2'}.`;
-            } else {
-                const t = h2.splice(p2Start.index, 1)[0];
-                c.push(t);
-                le = t[0];
-                re = t[1];
-                nextTurn = 'p1';
-                lastKey = tileKey(t);
-                status = `${sala.players.p2.name || 'Jogador 2'} abriu a mesa com ${lastKey}. Agora é a vez de ${sala.players.p1.name || 'Jogador 1'}.`;
-            }
-
-            const novoEstado = {
-                started: true,
-                gameOver: false,
-                chain: c,
-                boneyard: deck,
-                hands: { p1: h1, p2: h2 },
-                turn: nextTurn,
-                leftEnd: le,
-                rightEnd: re,
-                passStreak: 0,
-                lastPlayedKey: lastKey,
-                lastFocus: 'centro',
-                status,
-                roundId: 'R' + Date.now(),
-                updatedAt: Date.now()
-            };
-
-            const salaAtualizada = {
-                ...sala,
+        function aplicarRodadaOnlineLocal(salaBase, novoEstado) {
+            const salaLocal = {
+                ...(salaBase || {}),
+                isAuthorized: true,
+                blocked: false,
                 updatedAt: Date.now(),
-                lastStarter: dominoOnlineSeat,
                 state: novoEstado
             };
+            aplicarEstadoDominoOnline(salaLocal);
+        }
 
-            await update(refSalaDominoOnline(), {
-                updatedAt: salaAtualizada.updatedAt,
-                lastStarter: dominoOnlineSeat,
-                state: novoEstado
-            });
+        async function iniciarPartidaDominoOnline() {
+            try {
+                if (!dominoOnlineMode || !dominoOnlineRoomCode) {
+                    setStatus('Entre em uma sala online liberada pelo administrador primeiro.');
+                    return;
+                }
 
-            // Aplica imediatamente no aparelho que iniciou para não depender do próximo tick do Firebase.
-            aplicarEstadoDominoOnline(salaAtualizada);
-            setStatus(status);
+                const roomRef = refSalaDominoOnline();
+                const snap = await get(roomRef);
+                if (!snap.exists()) {
+                    setStatus('Sala online não encontrada. Peça ao administrador para liberar a sala novamente.');
+                    return;
+                }
+
+                const sala = snap.val() || {};
+                if (!sala.isAuthorized || sala.blocked) {
+                    setStatus('Esta sala não está liberada para iniciar. Fale com o administrador.');
+                    return;
+                }
+
+                if (!sala.players?.p1?.uid || !sala.players?.p2?.uid) {
+                    setStatus('A partida online precisa de dois jogadores na sala. Peça para seu amigo entrar com o mesmo código.');
+                    return;
+                }
+
+                if (dominoOnlineSeat !== 'p1' && dominoOnlineSeat !== 'p2') {
+                    setStatus('Entre como jogador para iniciar a partida online.');
+                    return;
+                }
+
+                setStatus('🎲 Montando a rodada no seu aparelho...');
+
+                const deck = gerarPecas();
+                const h1 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+                const h2 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+
+                if (h1.length !== 7 || h2.length !== 7 || deck.length !== 14) {
+                    setStatus('Erro ao distribuir as peças. Tente iniciar novamente.');
+                    return;
+                }
+
+                const pStart = melhorInicial(h1);
+                const p2Start = melhorInicial(h2);
+
+                let c = [];
+                let le = null;
+                let re = null;
+                let nextTurn = 'p1';
+                let lastKey = '';
+                let status = '';
+
+                if (pStart.score >= p2Start.score) {
+                    const t = h1.splice(pStart.index, 1)[0];
+                    c.push(t);
+                    le = t[0];
+                    re = t[1];
+                    nextTurn = 'p2';
+                    lastKey = tileKey(t);
+                    status = `${sala.players.p1.name || 'Jogador 1'} abriu a mesa com ${lastKey}. Agora é a vez de ${sala.players.p2.name || 'Jogador 2'}.`;
+                } else {
+                    const t = h2.splice(p2Start.index, 1)[0];
+                    c.push(t);
+                    le = t[0];
+                    re = t[1];
+                    nextTurn = 'p1';
+                    lastKey = tileKey(t);
+                    status = `${sala.players.p2.name || 'Jogador 2'} abriu a mesa com ${lastKey}. Agora é a vez de ${sala.players.p1.name || 'Jogador 1'}.`;
+                }
+
+                const agora = Date.now();
+                const novoEstado = {
+                    started: true,
+                    gameOver: false,
+                    chain: c,
+                    boneyard: deck,
+                    hands: { p1: h1, p2: h2 },
+                    turn: nextTurn,
+                    leftEnd: le,
+                    rightEnd: re,
+                    passStreak: 0,
+                    lastPlayedKey: lastKey,
+                    lastFocus: 'centro',
+                    status,
+                    roundId: 'R' + agora,
+                    updatedAt: agora
+                };
+
+                // Mostra as peças imediatamente no aparelho que iniciou.
+                aplicarRodadaOnlineLocal({
+                    ...sala,
+                    players: sala.players || {}
+                }, novoEstado);
+
+                setStatus(status + '<br><small>Sincronizando com o outro jogador...</small>');
+
+                // Grava no Firebase para o outro jogador receber.
+                await set(ref(db, 'dominoRooms/' + dominoOnlineRoomCode + '/state'), novoEstado);
+                await update(roomRef, {
+                    updatedAt: Date.now(),
+                    lastStarter: dominoOnlineSeat
+                });
+
+                setStatus(status);
+            } catch (erro) {
+                console.error('Erro ao iniciar rodada online de Dominó:', erro);
+                const msg = erro && erro.message ? erro.message : String(erro || 'erro desconhecido');
+                setStatus('❌ Não consegui gravar/iniciar a rodada online. Erro: <strong>' + msg + '</strong><br><br>Confira se a sala foi liberada pelo administrador e se as regras do Firebase permitem escrita em <strong>dominoRooms</strong>.');
+            }
         }
 
         function orientarOnline(tile, side, le, re, cLen) {
