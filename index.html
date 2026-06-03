@@ -298,22 +298,79 @@
         .countdown-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(10, 10, 25, 0.9);
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at center, rgba(233, 69, 96, 0.18), transparent 32%),
+                linear-gradient(135deg, rgba(2, 6, 23, 0.94), rgba(15, 23, 42, 0.96));
             z-index: 9999;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .countdown-card {
+            width: min(92vw, 520px);
+            min-height: 360px;
+            border-radius: 26px;
+            border: 1px solid rgba(56, 189, 248, 0.42);
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.82));
+            box-shadow:
+                0 0 35px rgba(56, 189, 248, 0.22),
+                0 30px 90px rgba(0, 0, 0, 0.72);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 34px 26px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .countdown-card::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.16), transparent);
+            transform: translateX(-100%);
+            animation: countdownShine 2.8s infinite;
+        }
+
+        @keyframes countdownShine {
+            0% { transform: translateX(-100%); }
+            55% { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .countdown-sync-label {
+            position: relative;
+            z-index: 1;
+            color: #38bdf8;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
         }
 
         .countdown-number {
-            font-size: 8rem;
-            font-weight: 900;
+            position: relative;
+            z-index: 1;
+            font-size: clamp(6rem, 24vw, 10rem);
+            line-height: 0.95;
+            font-weight: 1000;
             color: var(--accent-color);
-            text-shadow: 0 0 30px var(--accent-color);
-            transform: scale(0.5);
+            text-shadow:
+                0 0 18px rgba(233, 69, 96, 0.95),
+                0 0 52px rgba(233, 69, 96, 0.65);
+            transform: scale(0.55);
             opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+            transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.32s;
         }
 
         .countdown-number.show {
@@ -322,11 +379,61 @@
         }
 
         .countdown-text {
-            font-size: 1.5rem;
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            font-size: clamp(1rem, 4.6vw, 1.52rem);
+            line-height: 1.28;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #3498db;
-            margin-top: 20px;
+            letter-spacing: clamp(1.5px, 1vw, 5px);
+            color: #e0f2fe;
+            font-weight: 900;
+            margin-top: 18px;
+            text-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+            overflow-wrap: anywhere;
+        }
+
+        .countdown-subtext {
+            position: relative;
+            z-index: 1;
+            margin-top: 10px;
+            color: #94a3b8;
+            font-size: clamp(0.86rem, 3vw, 1rem);
+            line-height: 1.45;
+            max-width: 380px;
+        }
+
+        .countdown-loader {
+            position: relative;
+            z-index: 1;
+            width: min(72vw, 330px);
+            height: 6px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(148, 163, 184, 0.18);
+            margin-top: 24px;
+        }
+
+        .countdown-loader span {
+            display: block;
+            width: 40%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent-color), #38bdf8, #2ecc71);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
+            animation: countdownLoaderMove 1.15s infinite ease-in-out;
+        }
+
+        @keyframes countdownLoaderMove {
+            0% { transform: translateX(-110%); }
+            100% { transform: translateX(270%); }
+        }
+
+        @media (max-width: 480px) {
+            .countdown-overlay { padding: 18px; }
+            .countdown-card { min-height: 330px; padding: 30px 18px; border-radius: 22px; }
+            .countdown-sync-label { font-size: 0.68rem; letter-spacing: 2.8px; }
+            .countdown-text { letter-spacing: 2px; }
         }
 
         @keyframes vitoria-efeito {
@@ -1363,9 +1470,14 @@
 </head>
 <body>
 
-<div id="countdown-screen" class="countdown-overlay">
-    <div id="countdown-num" class="countdown-number">5</div>
-    <div id="countdown-txt" class="countdown-text">Aguardando Sincronização...</div>
+<div id="countdown-screen" class="countdown-overlay" aria-live="polite">
+    <div class="countdown-card">
+        <div class="countdown-sync-label">Preparando a partida</div>
+        <div id="countdown-num" class="countdown-number">5</div>
+        <div id="countdown-txt" class="countdown-text">Sincronizando o tabuleiro online</div>
+        <div id="countdown-subtxt" class="countdown-subtext">A partida começará em instantes para jogadores e espectadores.</div>
+        <div class="countdown-loader"><span></span></div>
+    </div>
 </div>
 
 <div class="container">
@@ -1770,6 +1882,7 @@
     let emContagemRegressivaAtiva = false;
     let listenerChatAdminAtivo = null;
     let alertaFimPartidaMostrado = false;
+    let ultimaContagemInicioMostrada = 0;
     let tabuleiroViradoManual = false;
 
     let callPeer = null;
@@ -4341,15 +4454,20 @@
 
     // -------------------------------------------------------------------------------------------------------------------------------- //
 
-    function dispararAnimaçãoContagemRegressiva(callbackFim) {
+    function dispararAnimaçãoContagemRegressiva(callbackFim, segundosIniciais = 5, tipo = "online") {
         emContagemRegressivaAtiva = true;
         const overlay = document.getElementById('countdown-screen');
         const numEl = document.getElementById('countdown-num');
         const txtEl = document.getElementById('countdown-txt');
+        const subEl = document.getElementById('countdown-subtxt');
         
         overlay.style.display = "flex";
-        let tempoRestante = 5;
-        txtEl.innerText = "Sincronizando Tabuleiro Online...";
+        let tempoRestante = Math.max(1, Math.min(5, Number(segundosIniciais) || 5));
+        numEl.classList.remove('show');
+        txtEl.innerText = tipo === "treino" ? "Preparando treino inteligente" : "Sincronizando o tabuleiro online";
+        subEl.innerText = tipo === "treino"
+            ? "Organizando peças, dicas e robô para começar com estabilidade."
+            : "A partida começará em instantes para jogadores e espectadores.";
 
         function rodarPasso() {
             if (tempoRestante > 0) {
@@ -4361,13 +4479,16 @@
                 setTimeout(rodarPasso, 1000);
             } else {
                 numEl.innerText = "JOGAR!";
-                txtEl.innerText = "Batalha Iniciada!";
+                txtEl.innerText = tipo === "treino" ? "Treino iniciado" : "Partida iniciada";
+                subEl.innerText = "Boa partida! Que vença a melhor estratégia.";
                 reproduzirSomDoJogo('gongo_start');
+                numEl.classList.remove('show');
+                setTimeout(() => { numEl.classList.add('show'); }, 50);
                 setTimeout(() => {
                     overlay.style.display = "none";
                     emContagemRegressivaAtiva = false;
                     if(callbackFim) callbackFim();
-                }, 1100);
+                }, 1050);
             }
         }
         rodarPasso();
@@ -4504,8 +4625,13 @@
             const data = snap.val();
             if (!data) return;
             
-            if (currentGameState && currentGameState.status === "waiting" && data.status === "playing") {
-                dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
+            const inicioPartidaOnline = Number(data.startTime || 0);
+            const agoraSincronizacao = Date.now();
+            const partidaAcabouDeComecar = data.status === "playing" && inicioPartidaOnline && (agoraSincronizacao - inicioPartidaOnline) < 6200;
+            if (partidaAcabouDeComecar && ultimaContagemInicioMostrada !== inicioPartidaOnline) {
+                ultimaContagemInicioMostrada = inicioPartidaOnline;
+                const segundosRestantes = Math.max(1, Math.min(5, Math.ceil((6200 - (agoraSincronizacao - inicioPartidaOnline)) / 1000)));
+                dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); }, segundosRestantes, "online");
             }
 
             if (currentGameState && currentGameState.status === "playing" && data.status === "finished" && (!data.p1Name || !data.p2Name)) {
@@ -4600,7 +4726,7 @@
         voiceVideoCallPanel.style.display = "none";
         currentLearningHint = null;
 
-        dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); });
+        dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); }, 5, "treino");
         
         runLocalTimer(currentGameState.startTime, "playing");
         renderGameStatus(currentGameState);
