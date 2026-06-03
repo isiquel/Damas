@@ -2734,7 +2734,7 @@
             </div>
             <div class="domino-online-actions">
                 <button id="domino-join-room-btn" class="btn-domino-online-join" type="button">Entrar na sala</button>
-                <button id="domino-start-online-btn" class="btn-domino-online-start" type="button">Iniciar partida online</button>
+                <button id="domino-start-online-btn" class="btn-domino-online-start" type="button">Iniciar / carregar partida</button>
                 <button id="domino-leave-online-btn" class="btn-domino-online-leave" type="button">Sair da sala</button>
                 <button id="domino-back-mode-btn" class="btn-domino-online-create" type="button">Voltar</button>
             </div>
@@ -8368,10 +8368,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 boneyard = [];
                 setStatus('⚠️ A sala estava marcada como em andamento, mas sem peças. Aperte <strong>Iniciar partida online</strong> para distribuir as peças corretamente.');
             } else {
-                setStatus(state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.'));
+                const minhaMaoOnline = Array.isArray(state.hands?.[dominoOnlineSeat]) ? state.hands[dominoOnlineSeat] : [];
+                if (!minhaMaoOnline.length) {
+                    gameOver = true;
+                    turn = 'bot';
+                    setStatus('⚠️ A partida está salva na sala, mas sua vaga não recebeu peças. Aperte <strong>Sair da sala</strong>, entre novamente ou aperte <strong>Iniciar partida online</strong> para redistribuir.');
+                } else {
+                    setStatus(state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.'));
+                }
             }
 
-            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
+            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong><br>${estadoOnlineValido ? '🎲 Partida carregada' : '⏳ Aguardando início válido'}`);
             if (dominoOnlineData.blocked || !dominoOnlineData.isAuthorized) {
                 gameOver = true;
                 setStatus('🔒 Esta sala foi bloqueada ou ainda não foi liberada pelo administrador.');
@@ -8494,7 +8501,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 updatedAt: Date.now()
             });
             acompanharSalaDominoOnline(code, seat);
-            setStatus(`Você entrou na sala <strong>${code}</strong> como ${seat === 'p1' ? 'Jogador 1' : 'Jogador 2'}. Quando a sala estiver completa, qualquer um pode iniciar.`);
+            const estadoEntrando = sala.state || {};
+            if (estadoDominoOnlineValido(estadoEntrando) && Array.isArray(estadoEntrando.hands?.[seat]) && estadoEntrando.hands[seat].length > 0) {
+                aplicarEstadoDominoOnline({ ...sala, players: { ...(sala.players || {}), [seat]: { uid: playerId, name: nomeDominoOnline(), joinedAt: Date.now(), online: true } } });
+                setStatus(estadoEntrando.status || 'Você entrou em uma partida que já estava em andamento. Suas peças foram carregadas.');
+            } else {
+                setStatus(`Você entrou na sala <strong>${code}</strong> como ${seat === 'p1' ? 'Jogador 1' : 'Jogador 2'}. Quando a sala estiver completa, qualquer um pode iniciar.`);
+            }
         }
 
         function acompanharSalaDominoOnline(code, seat) {
@@ -8542,8 +8555,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const partidaValidaEmAndamento = estadoDominoOnlineValido(estadoAtual);
 
             if (partidaValidaEmAndamento) {
-                setStatus('A partida online já está em andamento e as peças já foram distribuídas.');
-                return;
+                const minhaMaoAtual = Array.isArray(estadoAtual.hands?.[dominoOnlineSeat]) ? estadoAtual.hands[dominoOnlineSeat] : [];
+                if (minhaMaoAtual.length > 0) {
+                    aplicarEstadoDominoOnline(sala);
+                    setStatus(estadoAtual.status || 'A partida online já está em andamento. Carreguei suas peças na tela.');
+                    return;
+                }
+                setStatus('⚠️ A sala dizia que a partida já estava em andamento, mas sua mão não apareceu. Vou redistribuir as peças agora.');
             }
 
             if (estadoAtual.started && !partidaValidaEmAndamento) {
