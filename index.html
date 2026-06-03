@@ -2052,6 +2052,74 @@
         .btn-domino-green { background: #16a34a; }
         .btn-domino-yellow { background: #ca8a04; }
         .btn-domino-muted { background: #475569; }
+        .domino-online-panel {
+            background: linear-gradient(135deg, #07111f, #0f172a 60%, #172554);
+            border: 1px solid rgba(56,189,248,0.35);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.30);
+            text-align: left;
+        }
+        .domino-online-title {
+            color: #38bdf8;
+            font-size: .9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 6px;
+        }
+        .domino-online-desc {
+            color: #cbd5e1;
+            font-size: .8rem;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+        .domino-online-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .domino-online-grid input {
+            margin: 0;
+            text-align: left;
+            background: #020617;
+            border: 1px solid #1e293b;
+        }
+        .domino-online-grid .full {
+            grid-column: 1 / -1;
+        }
+        .domino-online-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 9px;
+        }
+        .domino-online-actions button {
+            padding: 10px 8px;
+            font-size: .76rem;
+            text-transform: none;
+            border-radius: 9px;
+        }
+        .btn-domino-online-create { background: #2563eb; }
+        .btn-domino-online-join { background: #16a34a; }
+        .btn-domino-online-start { background: #ca8a04; }
+        .btn-domino-online-leave { background: #64748b; }
+        .domino-room-badge {
+            display: none;
+            margin-top: 10px;
+            background: #020617;
+            border-left: 4px solid #38bdf8;
+            border-radius: 10px;
+            padding: 10px;
+            color: #e2e8f0;
+            font-size: .84rem;
+            line-height: 1.4;
+        }
+        .domino-room-badge strong { color: #f1c40f; }
+        .domino-screen.match-active .domino-online-panel {
+            display: none !important;
+        }
         .domino-small-note {
             color: #94a3b8;
             font-size: .76rem;
@@ -2259,6 +2327,7 @@
 
         @media (max-width: 560px) {
             .domino-meta { grid-template-columns: 1fr; }
+            .domino-online-grid, .domino-online-actions { grid-template-columns: 1fr; }
             .domino-actions { grid-template-columns: 1fr 1fr; }
             .domino-board-area { min-height: 132px; padding: 10px; }
             .domino-live-strip { gap: 6px; }
@@ -2448,6 +2517,22 @@
             <div class="domino-desc">Versão inicial gratuita do Dominó dentro do Tabuleiro Arena. Nesta primeira etapa, você joga contra um robô no próprio navegador, aprende a dinâmica da mesa e prepara a base para o futuro modo online com salas, ranking, torneios e vídeo/áudio.</div>
         </div>
 
+        <div id="domino-online-panel" class="domino-online-panel">
+            <div class="domino-online-title">🌐 Jogar online com amigo</div>
+            <div class="domino-online-desc">Crie uma sala de Dominó, envie o código para seu amigo e joguem em celulares diferentes. O modo contra robô continua funcionando pelo botão <strong>Novo jogo</strong>.</div>
+            <div class="domino-online-grid">
+                <input id="domino-online-name" type="text" placeholder="Seu nome" autocomplete="name">
+                <input id="domino-online-room" type="text" placeholder="Código da sala. Ex: DOM1234" maxlength="10" autocomplete="off">
+            </div>
+            <div class="domino-online-actions">
+                <button id="domino-create-room-btn" class="btn-domino-online-create" type="button">Criar sala online</button>
+                <button id="domino-join-room-btn" class="btn-domino-online-join" type="button">Entrar na sala</button>
+                <button id="domino-start-online-btn" class="btn-domino-online-start" type="button">Iniciar partida online</button>
+                <button id="domino-leave-online-btn" class="btn-domino-online-leave" type="button">Sair da sala</button>
+            </div>
+            <div id="domino-room-badge" class="domino-room-badge">Você ainda não entrou em uma sala online.</div>
+        </div>
+
         <div class="domino-layout">
             <div class="domino-card">
                 <div class="domino-card-title">Mesa de jogo</div>
@@ -2492,7 +2577,7 @@
                 <div class="domino-card-title">Sua mão</div>
                 <div class="domino-meta">
                     <div class="domino-stat"><strong id="domino-player-count">0</strong>Você</div>
-                    <div class="domino-stat"><strong id="domino-bot-count">0</strong>Robô</div>
+                    <div class="domino-stat"><strong id="domino-bot-count">0</strong><span id="domino-opponent-count-label">Robô</span></div>
                     <div class="domino-stat"><strong id="domino-turn-label">-</strong>Vez atual</div>
                 </div>
                 <div id="domino-hand" class="domino-hand"></div>
@@ -7196,6 +7281,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let dominoViewMode = carregarModoMesaDomino();
         let dominoScore = carregarPlacarDomino();
 
+        let dominoOnlineMode = false;
+        let dominoOnlineRoomCode = '';
+        let dominoOnlineSeat = '';
+        let dominoOnlineUnsub = null;
+        let dominoOnlineData = null;
+        let dominoOpponentName = 'Robô';
+
         function $(id) { return document.getElementById(id); }
         function soma(tile) { return tile[0] + tile[1]; }
         function tileKey(tile) { return tile[0] + '-' + tile[1]; }
@@ -7219,6 +7311,39 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function salvarModoMesaDomino() {
             try { localStorage.setItem('tabuleiroArenaDominoViewMode', dominoViewMode); } catch (e) {}
         }
+        function limparCodigoDominoSala(valor) {
+            return String(valor || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+        }
+        function gerarCodigoDominoSala() {
+            return 'DOM' + Math.floor(1000 + Math.random() * 9000);
+        }
+        function nomeDominoOnline() {
+            const input = $('domino-online-name');
+            const nome = (input && input.value ? input.value.trim() : '') || 'Jogador';
+            return nome.slice(0, 24);
+        }
+        function atualizarBadgeSalaDominoOnline(texto) {
+            const badge = $('domino-room-badge');
+            if (!badge) return;
+            badge.style.display = 'block';
+            badge.innerHTML = texto;
+        }
+        function refSalaDominoOnline(code = dominoOnlineRoomCode) {
+            return ref(db, 'dominoRooms/' + code);
+        }
+        function minhaVezDominoOnline() {
+            return dominoOnlineMode && dominoOnlineData && dominoOnlineData.state && dominoOnlineData.state.turn === dominoOnlineSeat;
+        }
+        function adversarioSeatDomino(seat = dominoOnlineSeat) {
+            return seat === 'p1' ? 'p2' : 'p1';
+        }
+        function getMeuNomeDominoOnline() {
+            return dominoOnlineData?.players?.[dominoOnlineSeat]?.name || nomeDominoOnline();
+        }
+        function getNomeAdversarioDominoOnline() {
+            const other = adversarioSeatDomino();
+            return dominoOnlineData?.players?.[other]?.name || 'Amigo';
+        }
         function atualizarLayoutPartidaDomino() {
             const screen = $('domino-screen');
             if (!screen) return;
@@ -7227,12 +7352,15 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
         function atualizarCabecalhoCompactoDomino() {
             const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
-            setText('domino-opponent-mini', 'Robô');
+            const oponente = dominoOnlineMode ? getNomeAdversarioDominoOnline() : 'Robô';
+            dominoOpponentName = oponente;
+            setText('domino-opponent-mini', oponente);
+            setText('domino-opponent-count-label', oponente);
             setText('domino-buy-pill', 'Compra: ' + boneyard.length);
-            if (gameOver) setText('domino-turn-pill', 'Partida encerrada');
-            else if (!chain.length) setText('domino-turn-pill', 'Aguardando nova partida');
+            if (gameOver) setText('domino-turn-pill', dominoOnlineMode ? 'Partida online encerrada' : 'Partida encerrada');
+            else if (!chain.length) setText('domino-turn-pill', dominoOnlineMode ? 'Aguardando início online' : 'Aguardando nova partida');
             else if (turn === 'player') setText('domino-turn-pill', 'Agora é sua vez');
-            else setText('domino-turn-pill', 'Agora é a vez do robô');
+            else setText('domino-turn-pill', 'Agora é a vez de ' + oponente);
         }
         function atualizarModoMesaDomino() {
             const mesa = $('domino-board-scroll');
@@ -7308,6 +7436,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return { tile: best, index: idx, score };
         }
         function iniciarDomino() {
+            sairDominoOnline(false);
+            dominoOnlineMode = false;
+            dominoOpponentName = 'Robô';
             tiles = gerarPecas();
             playerHand = tiles.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
             botHand = tiles.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
@@ -7370,6 +7501,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return true;
         }
         function playerPlay(side) {
+            if (dominoOnlineMode) {
+                playerPlayOnline(side);
+                return;
+            }
             if (gameOver || turn !== 'player') return;
             if (selectedIndex === null || !playerHand[selectedIndex]) {
                 setStatus('Selecione uma pedra da sua mão primeiro.');
@@ -7391,6 +7526,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!checkEnd()) setTimeout(botMove, 850);
         }
         function comprarOuPassar() {
+            if (dominoOnlineMode) {
+                comprarOuPassarOnline();
+                return;
+            }
             if (gameOver || turn !== 'player') return;
             if (playerHand.some(canPlayTile)) {
                 setStatus('Você ainda tem jogada disponível. Selecione uma pedra que combine com a mesa.');
@@ -7548,12 +7687,353 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('domino-bot-count', botHand.length);
             setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : 'Robô'));
             atualizarCabecalhoCompactoDomino();
-            const leftBtn = $('domino-play-left-btn'), rightBtn = $('domino-play-right-btn'), drawBtn = $('domino-draw-btn');
+            const leftBtn = $('domino-play-left-btn'), rightBtn = $('domino-play-right-btn'), drawBtn = $('domino-draw-btn'), newBtn = $('domino-new-btn');
+            if (newBtn) newBtn.innerText = dominoOnlineMode ? 'Jogar contra robô' : 'Novo jogo';
             if (leftBtn) leftBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
             if (rightBtn) rightBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
             if (drawBtn) drawBtn.disabled = gameOver || turn !== 'player';
             atualizarPlacarDomino();
         }
+        function aplicarEstadoDominoOnline(data) {
+            dominoOnlineData = data || {};
+            const state = dominoOnlineData.state || {};
+            const players = dominoOnlineData.players || {};
+            const otherSeat = adversarioSeatDomino();
+
+            dominoOnlineMode = true;
+            dominoOpponentName = players[otherSeat]?.name || 'Amigo';
+
+            chain = Array.isArray(state.chain) ? state.chain : [];
+            leftEnd = state.leftEnd ?? null;
+            rightEnd = state.rightEnd ?? null;
+            boneyard = Array.isArray(state.boneyard) ? state.boneyard : [];
+            playerHand = Array.isArray(state.hands?.[dominoOnlineSeat]) ? state.hands[dominoOnlineSeat] : [];
+            botHand = new Array(Array.isArray(state.hands?.[otherSeat]) ? state.hands[otherSeat].length : 0).fill([0,0]);
+            selectedIndex = null;
+            passStreak = state.passStreak || 0;
+            gameOver = !!state.gameOver;
+            dominoLastPlayedKey = state.lastPlayedKey || '';
+            dominoLastFocus = state.lastFocus || 'centro';
+            turn = state.turn === dominoOnlineSeat ? 'player' : 'bot';
+
+            if (!state.started) {
+                gameOver = true;
+                turn = 'bot';
+                setStatus(players.p1 && players.p2
+                    ? '✅ Os dois jogadores estão na sala. O criador pode apertar <strong>Iniciar partida online</strong>.'
+                    : '⏳ Sala online criada. Envie o código para seu amigo entrar.');
+            } else {
+                setStatus(state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.'));
+            }
+
+            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
+            renderDomino();
+        }
+
+        async function criarSalaDominoOnline() {
+            if (!playerId) {
+                setStatus('A conexão online ainda está preparando. Aguarde alguns segundos e tente novamente.');
+                return;
+            }
+            const nome = nomeDominoOnline();
+            const code = gerarCodigoDominoSala();
+            dominoOnlineRoomCode = code;
+            dominoOnlineSeat = 'p1';
+            dominoOnlineMode = true;
+            const input = $('domino-online-room');
+            if (input) input.value = code;
+
+            const sala = {
+                type: 'domino',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                createdBy: playerId,
+                isAuthorized: true,
+                blocked: false,
+                players: {
+                    p1: { uid: playerId, name: nome, joinedAt: Date.now(), online: true }
+                },
+                state: {
+                    started: false,
+                    gameOver: true,
+                    chain: [],
+                    boneyard: [],
+                    hands: { p1: [], p2: [] },
+                    turn: 'p1',
+                    leftEnd: null,
+                    rightEnd: null,
+                    passStreak: 0,
+                    lastPlayedKey: '',
+                    lastFocus: 'centro',
+                    status: 'Sala criada. Aguardando o segundo jogador.'
+                }
+            };
+            await set(refSalaDominoOnline(code), sala);
+            acompanharSalaDominoOnline(code, 'p1');
+            setStatus(`🌐 Sala online criada: <strong>${code}</strong>. Envie esse código para seu amigo entrar.`);
+            atualizarBadgeSalaDominoOnline(`Sala online criada: <strong>${code}</strong><br>Envie este código para seu amigo.`);
+        }
+
+        async function entrarSalaDominoOnline() {
+            if (!playerId) {
+                setStatus('A conexão online ainda está preparando. Aguarde alguns segundos e tente novamente.');
+                return;
+            }
+            const input = $('domino-online-room');
+            const code = limparCodigoDominoSala(input ? input.value : '');
+            if (!code) {
+                setStatus('Digite o código da sala para entrar.');
+                return;
+            }
+            const snap = await get(refSalaDominoOnline(code));
+            if (!snap.exists()) {
+                setStatus(`Sala <strong>${code}</strong> não encontrada. Confira o código ou peça para seu amigo criar a sala.`);
+                return;
+            }
+            const sala = snap.val() || {};
+            if (sala.blocked) {
+                setStatus('Esta sala de Dominó está bloqueada pelo administrador.');
+                return;
+            }
+            let seat = '';
+            if (sala.players?.p1?.uid === playerId) seat = 'p1';
+            else if (sala.players?.p2?.uid === playerId) seat = 'p2';
+            else if (!sala.players?.p1) seat = 'p1';
+            else if (!sala.players?.p2) seat = 'p2';
+            else {
+                setStatus('Essa sala já tem dois jogadores. Nesta primeira fase, o Dominó online é 1 contra 1.');
+                return;
+            }
+
+            dominoOnlineRoomCode = code;
+            dominoOnlineSeat = seat;
+            dominoOnlineMode = true;
+            await update(refSalaDominoOnline(code), {
+                [`players/${seat}`]: { uid: playerId, name: nomeDominoOnline(), joinedAt: Date.now(), online: true },
+                updatedAt: Date.now()
+            });
+            acompanharSalaDominoOnline(code, seat);
+            setStatus(`Você entrou na sala <strong>${code}</strong>. Aguarde ou inicie a partida.`);
+        }
+
+        function acompanharSalaDominoOnline(code, seat) {
+            if (dominoOnlineUnsub) {
+                try { dominoOnlineUnsub(); } catch (e) {}
+                dominoOnlineUnsub = null;
+            }
+            dominoOnlineRoomCode = code;
+            dominoOnlineSeat = seat;
+            dominoOnlineMode = true;
+            dominoOnlineUnsub = onValue(refSalaDominoOnline(code), (snap) => {
+                if (!snap.exists()) {
+                    setStatus('A sala online foi encerrada.');
+                    sairDominoOnline(false);
+                    return;
+                }
+                aplicarEstadoDominoOnline(snap.val());
+            });
+        }
+
+        async function iniciarPartidaDominoOnline() {
+            if (!dominoOnlineMode || !dominoOnlineRoomCode) {
+                setStatus('Crie ou entre em uma sala online primeiro.');
+                return;
+            }
+            const snap = await get(refSalaDominoOnline());
+            if (!snap.exists()) {
+                setStatus('Sala online não encontrada.');
+                return;
+            }
+            const sala = snap.val() || {};
+            if (!sala.players?.p1 || !sala.players?.p2) {
+                setStatus('A partida online precisa de dois jogadores. Envie o código para seu amigo entrar.');
+                return;
+            }
+            if (dominoOnlineSeat !== 'p1') {
+                setStatus('Nesta primeira fase, quem criou a sala inicia a partida.');
+                return;
+            }
+
+            const deck = gerarPecas();
+            const h1 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+            const h2 = deck.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
+            const pStart = melhorInicial(h1);
+            const bStart = melhorInicial(h2);
+            let c = [], le = null, re = null, nextTurn = 'p1', lastKey = '';
+            let status = '';
+            if (pStart.score >= bStart.score) {
+                const t = h1.splice(pStart.index, 1)[0];
+                c.push(t); le = t[0]; re = t[1]; nextTurn = 'p2'; lastKey = tileKey(t);
+                status = `${sala.players.p1.name} abriu a mesa com ${lastKey}. Agora é a vez de ${sala.players.p2.name}.`;
+            } else {
+                const t = h2.splice(bStart.index, 1)[0];
+                c.push(t); le = t[0]; re = t[1]; nextTurn = 'p1'; lastKey = tileKey(t);
+                status = `${sala.players.p2.name} abriu a mesa com ${lastKey}. Agora é a vez de ${sala.players.p1.name}.`;
+            }
+
+            await update(refSalaDominoOnline(), {
+                updatedAt: Date.now(),
+                state: {
+                    started: true,
+                    gameOver: false,
+                    chain: c,
+                    boneyard: deck,
+                    hands: { p1: h1, p2: h2 },
+                    turn: nextTurn,
+                    leftEnd: le,
+                    rightEnd: re,
+                    passStreak: 0,
+                    lastPlayedKey: lastKey,
+                    lastFocus: 'centro',
+                    status
+                }
+            });
+        }
+
+        function orientarOnline(tile, side, le, re, cLen) {
+            if (cLen === 0) return tile;
+            if (side === 'left') {
+                if (tile[1] === le) return [tile[0], tile[1]];
+                if (tile[0] === le) return [tile[1], tile[0]];
+            } else {
+                if (tile[0] === re) return [tile[0], tile[1]];
+                if (tile[1] === re) return [tile[1], tile[0]];
+            }
+            return null;
+        }
+
+        async function playerPlayOnline(side) {
+            if (!dominoOnlineMode || !dominoOnlineData?.state?.started || dominoOnlineData.state.gameOver) return;
+            if (!minhaVezDominoOnline()) {
+                setStatus('Aguarde: agora é a vez do seu amigo.');
+                return;
+            }
+            const state = dominoOnlineData.state;
+            const players = dominoOnlineData.players || {};
+            const my = dominoOnlineSeat;
+            const other = adversarioSeatDomino();
+            const hands = {
+                p1: Array.isArray(state.hands?.p1) ? [...state.hands.p1] : [],
+                p2: Array.isArray(state.hands?.p2) ? [...state.hands.p2] : []
+            };
+            if (selectedIndex === null || !hands[my][selectedIndex]) {
+                setStatus('Selecione uma pedra da sua mão primeiro.');
+                return;
+            }
+            const tile = hands[my][selectedIndex];
+            const oriented = orientarOnline(tile, side, state.leftEnd, state.rightEnd, (state.chain || []).length);
+            if (!oriented) {
+                setStatus(`Essa pedra não encaixa na ponta ${side === 'left' ? 'esquerda' : 'direita'}.`);
+                return;
+            }
+            hands[my].splice(selectedIndex, 1);
+            const newChain = Array.isArray(state.chain) ? [...state.chain] : [];
+            let le = state.leftEnd ?? null;
+            let re = state.rightEnd ?? null;
+            if (!newChain.length) {
+                newChain.push(oriented); le = oriented[0]; re = oriented[1];
+            } else if (side === 'left') {
+                newChain.unshift(oriented); le = oriented[0];
+            } else {
+                newChain.push(oriented); re = oriented[1];
+            }
+
+            const jogada = tileKey(tile);
+            let gameOverNow = hands[my].length === 0;
+            let status = gameOverNow
+                ? `🏆 ${players[my]?.name || 'Jogador'} venceu! Acabaram as pedras.`
+                : `${players[my]?.name || 'Jogador'} jogou ${jogada}. Agora é a vez de ${players[other]?.name || 'adversário'}.`;
+
+            await update(refSalaDominoOnline(), {
+                updatedAt: Date.now(),
+                'state/chain': newChain,
+                'state/leftEnd': le,
+                'state/rightEnd': re,
+                [`state/hands/${my}`]: hands[my],
+                'state/turn': other,
+                'state/passStreak': 0,
+                'state/lastPlayedKey': jogada,
+                'state/lastFocus': side === 'left' ? 'esquerda' : 'direita',
+                'state/gameOver': gameOverNow,
+                'state/status': status
+            });
+        }
+
+        async function comprarOuPassarOnline() {
+            if (!dominoOnlineMode || !dominoOnlineData?.state?.started || dominoOnlineData.state.gameOver) return;
+            if (!minhaVezDominoOnline()) {
+                setStatus('Aguarde: agora é a vez do seu amigo.');
+                return;
+            }
+            const state = dominoOnlineData.state;
+            const players = dominoOnlineData.players || {};
+            const my = dominoOnlineSeat;
+            const other = adversarioSeatDomino();
+            const myHand = Array.isArray(state.hands?.[my]) ? [...state.hands[my]] : [];
+            const compra = Array.isArray(state.boneyard) ? [...state.boneyard] : [];
+            const temJogada = myHand.some(t => {
+                return t[0] === state.leftEnd || t[1] === state.leftEnd || t[0] === state.rightEnd || t[1] === state.rightEnd;
+            });
+            if (temJogada) {
+                setStatus('Você ainda tem jogada disponível. Selecione uma pedra que encaixa na mesa.');
+                return;
+            }
+            if (compra.length > 0) {
+                const t = compra.shift();
+                myHand.push(t);
+                myHand.sort((a,b)=>soma(b)-soma(a));
+                await update(refSalaDominoOnline(), {
+                    updatedAt: Date.now(),
+                    [`state/hands/${my}`]: myHand,
+                    'state/boneyard': compra,
+                    'state/status': `${players[my]?.name || 'Jogador'} comprou uma pedra.`
+                });
+                return;
+            }
+
+            const novoPass = (state.passStreak || 0) + 1;
+            const otherHand = Array.isArray(state.hands?.[other]) ? state.hands[other] : [];
+            let gameOverNow = false;
+            let status = `${players[my]?.name || 'Jogador'} passou a vez. Agora é a vez de ${players[other]?.name || 'adversário'}.`;
+            if (novoPass >= 2) {
+                gameOverNow = true;
+                const mp = pontos(myHand), op = pontos(otherHand);
+                if (mp < op) status = `🔒 Mesa fechada. ${players[my]?.name || 'Jogador'} venceu nos pontos: ${mp} x ${op}.`;
+                else if (op < mp) status = `🔒 Mesa fechada. ${players[other]?.name || 'Adversário'} venceu nos pontos: ${op} x ${mp}.`;
+                else status = `🔒 Mesa fechada. Empate nos pontos: ${mp} x ${op}.`;
+            }
+            await update(refSalaDominoOnline(), {
+                updatedAt: Date.now(),
+                'state/turn': other,
+                'state/passStreak': novoPass,
+                'state/gameOver': gameOverNow,
+                'state/status': status
+            });
+        }
+
+        async function sairDominoOnline(removerJogador = true) {
+            if (dominoOnlineUnsub) {
+                try { dominoOnlineUnsub(); } catch (e) {}
+                dominoOnlineUnsub = null;
+            }
+            if (removerJogador && dominoOnlineMode && dominoOnlineRoomCode && dominoOnlineSeat) {
+                try {
+                    await update(refSalaDominoOnline(), {
+                        [`players/${dominoOnlineSeat}/online`]: false,
+                        updatedAt: Date.now()
+                    });
+                } catch (e) {}
+            }
+            dominoOnlineMode = false;
+            dominoOnlineRoomCode = '';
+            dominoOnlineSeat = '';
+            dominoOnlineData = null;
+            dominoOpponentName = 'Robô';
+            const badge = $('domino-room-badge');
+            if (badge) badge.style.display = 'none';
+            renderDomino();
+        }
+
         function darDicaDomino() {
             if (gameOver || turn !== 'player') {
                 setStatus('A dica aparece durante a sua vez. Clique em <strong>Novo jogo</strong> para começar.');
@@ -7630,6 +8110,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function voltarModalidadesDomino() {
+            sairDominoOnline(true);
             document.body.classList.add('platform-start-active');
             document.body.classList.add('mode-selecting');
             document.body.classList.remove('game-selected');
@@ -7656,6 +8137,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const hintBtn = $('domino-hint-btn');
             const sortBtn = $('domino-sort-btn');
             const scoreResetBtn = $('domino-score-reset-btn');
+            const createOnlineBtn = $('domino-create-room-btn');
+            const joinOnlineBtn = $('domino-join-room-btn');
+            const startOnlineBtn = $('domino-start-online-btn');
+            const leaveOnlineBtn = $('domino-leave-online-btn');
             if (newBtn) newBtn.addEventListener('click', iniciarDomino);
             if (leftBtn) leftBtn.addEventListener('click', () => playerPlay('left'));
             if (rightBtn) rightBtn.addEventListener('click', () => playerPlay('right'));
@@ -7668,6 +8153,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (hintBtn) hintBtn.addEventListener('click', darDicaDomino);
             if (sortBtn) sortBtn.addEventListener('click', organizarMaoDomino);
             if (scoreResetBtn) scoreResetBtn.addEventListener('click', zerarPlacarDomino);
+            if (createOnlineBtn) createOnlineBtn.addEventListener('click', criarSalaDominoOnline);
+            if (joinOnlineBtn) joinOnlineBtn.addEventListener('click', entrarSalaDominoOnline);
+            if (startOnlineBtn) startOnlineBtn.addEventListener('click', iniciarPartidaDominoOnline);
+            if (leaveOnlineBtn) leaveOnlineBtn.addEventListener('click', () => sairDominoOnline(true));
             ativarArrasteMesaDomino();
             renderDomino();
         }
