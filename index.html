@@ -1036,6 +1036,73 @@
             border-radius: 7px;
             text-transform: none;
         }
+        .domino-result-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: rgba(2, 6, 23, 0.78);
+            backdrop-filter: blur(7px);
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+        .domino-result-card {
+            width: min(92vw, 470px);
+            border-radius: 22px;
+            background: linear-gradient(135deg, #07111f, #0f172a 58%, #1e1b4b);
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            box-shadow: 0 22px 70px rgba(0,0,0,.75), 0 0 35px rgba(56,189,248,.16);
+            padding: 24px 20px;
+            text-align: center;
+            color: #e2e8f0;
+            animation: dominoResultPop .22s ease-out;
+        }
+        @keyframes dominoResultPop {
+            from { transform: translateY(12px) scale(.96); opacity: .35; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .domino-result-icon {
+            font-size: 3.2rem;
+            line-height: 1;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 10px 18px rgba(0,0,0,.45));
+        }
+        .domino-result-title {
+            font-size: 1.35rem;
+            color: #fff;
+            font-weight: 1000;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 8px;
+        }
+        .domino-result-text {
+            font-size: .98rem;
+            line-height: 1.45;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+        .domino-result-card.win {
+            border-color: rgba(46,204,113,.7);
+            box-shadow: 0 22px 70px rgba(0,0,0,.75), 0 0 38px rgba(46,204,113,.2);
+        }
+        .domino-result-card.lose {
+            border-color: rgba(239,68,68,.58);
+            box-shadow: 0 22px 70px rgba(0,0,0,.75), 0 0 38px rgba(239,68,68,.15);
+        }
+        .domino-result-card.draw {
+            border-color: rgba(250,204,21,.62);
+            box-shadow: 0 22px 70px rgba(0,0,0,.75), 0 0 38px rgba(250,204,21,.15);
+        }
+        .domino-result-btn {
+            width: auto;
+            min-width: 160px;
+            padding: 11px 18px;
+            border-radius: 999px;
+            background: #2563eb;
+            text-transform: none;
+            font-size: .9rem;
+        }
         @media (max-width: 520px) {
             .domino-admin-row, .domino-admin-actions { grid-template-columns: 1fr; }
             .central-admin-grid { grid-template-columns: 1fr; }
@@ -2688,6 +2755,15 @@
         </div>
     </div>
 
+
+    <div id="domino-result-overlay" class="domino-result-overlay">
+        <div id="domino-result-card" class="domino-result-card">
+            <div id="domino-result-icon" class="domino-result-icon">🏆</div>
+            <div id="domino-result-title" class="domino-result-title">Resultado</div>
+            <div id="domino-result-text" class="domino-result-text">Mensagem da partida.</div>
+            <button id="domino-result-close-btn" class="domino-result-btn" type="button">Continuar</button>
+        </div>
+    </div>
 
     <div id="game-screen">
         <div id="normal-game-status" class="status-panel">
@@ -7617,7 +7693,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let dominoOnlineSeat = '';
         let dominoOnlineUnsub = null;
         let dominoOnlineData = null;
-        let dominoOpponentName = 'Robô';
+        let dominoAudioContext = null;
+        let dominoOnlineLastSoundKey = '';
+        let dominoOnlineLastEndKey = '';
 
         function $(id) { return document.getElementById(id); }
         function soma(tile) { return tile[0] + tile[1]; }
@@ -7752,6 +7830,94 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const el = $('domino-status');
             if (el) el.innerHTML = html;
         }
+
+        function prepararSomDomino() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return null;
+                if (!dominoAudioContext) dominoAudioContext = new AudioCtx();
+                if (dominoAudioContext.state === 'suspended') dominoAudioContext.resume();
+                return dominoAudioContext;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function tocarBipDomino(quantidade = 1, grave = false) {
+            const ctx = prepararSomDomino();
+            if (!ctx) return;
+            const agora = ctx.currentTime;
+            for (let i = 0; i < quantidade; i++) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = grave ? 520 : 880;
+                gain.gain.setValueAtTime(0.0001, agora + i * 0.18);
+                gain.gain.exponentialRampToValueAtTime(0.18, agora + i * 0.18 + 0.018);
+                gain.gain.exponentialRampToValueAtTime(0.0001, agora + i * 0.18 + 0.11);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(agora + i * 0.18);
+                osc.stop(agora + i * 0.18 + 0.13);
+            }
+        }
+
+        function tocarSomVitoriaDomino() {
+            const ctx = prepararSomDomino();
+            if (!ctx) return;
+            const notas = [660, 880, 990, 1320];
+            notas.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                const t = ctx.currentTime + i * 0.11;
+                gain.gain.setValueAtTime(0.0001, t);
+                gain.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(t);
+                osc.stop(t + 0.18);
+            });
+        }
+
+        function exibirResultadoDomino(tipo, titulo, texto) {
+            const overlay = $('domino-result-overlay');
+            const card = $('domino-result-card');
+            const icon = $('domino-result-icon');
+            const title = $('domino-result-title');
+            const msg = $('domino-result-text');
+            if (!overlay || !card || !icon || !title || !msg) {
+                if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema(titulo, texto);
+                else alert(titulo + "\\n\\n" + texto.replace(/<[^>]+>/g, ''));
+                return;
+            }
+            card.className = 'domino-result-card ' + (tipo || '');
+            icon.innerText = tipo === 'win' ? '🏆' : (tipo === 'lose' ? '🤝' : '🔒');
+            title.innerHTML = titulo;
+            msg.innerHTML = texto;
+            overlay.style.display = 'flex';
+        }
+
+        function fecharResultadoDomino() {
+            const overlay = $('domino-result-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function jogadorTemJogadaDomino(hand = playerHand) {
+            return Array.isArray(hand) && hand.some(canPlayTile);
+        }
+
+        function avisarSePrecisaComprarDomino() {
+            if (gameOver || turn !== 'player') return;
+            if (!jogadorTemJogadaDomino(playerHand)) {
+                tocarBipDomino(2, true);
+                setStatus(boneyard.length > 0
+                    ? '⚠️ Você não tem peça para encaixar agora. Toque em <strong>Comprar / Passar</strong>.'
+                    : '⚠️ Você não tem peça e a compra acabou. Toque em <strong>Comprar / Passar</strong> para passar a vez.');
+            }
+        }
         function gerarPecas() {
             const arr = [];
             for (let a = 0; a <= 6; a++) for (let b = a; b <= 6; b++) arr.push([a,b]);
@@ -7866,6 +8032,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 setStatus('Você ainda tem jogada disponível. Selecione uma pedra que combine com a mesa.');
                 return;
             }
+            tocarBipDomino(2, true);
             if (boneyard.length > 0) {
                 const t = boneyard.shift();
                 playerHand.push(t);
@@ -7903,14 +8070,16 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 dominoLastFocus = move.side === 'left' ? 'esquerda' : 'direita';
                 dominoLastPlayedKey = tileKey(tile);
                 turn = 'player';
+                tocarBipDomino(1);
                 setStatus(`O robô jogou <strong>${tileKey(tile)}</strong>. Agora é sua vez.`);
             } else {
                 passStreak++;
                 turn = 'player';
+                tocarBipDomino(1);
                 setStatus('O robô passou a vez. Sua vez de jogar.');
             }
             renderDomino();
-            checkEnd();
+            if (!checkEnd()) avisarSePrecisaComprarDomino();
         }
         function pontos(hand) { return hand.reduce((acc,t)=>acc+soma(t),0); }
         function ajustarMesaDomino(posicao = 'centro') {
@@ -7960,22 +8129,32 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 gameOver = true;
                 registrarResultadoDomino('player');
                 setStatus('🏆 <strong>Você venceu!</strong> Acabou suas pedras antes do robô. Excelente estratégia!');
+                tocarSomVitoriaDomino();
+                exibirResultadoDomino('win', 'Parabéns, você ganhou!', 'Você venceu a partida de Dominó. Excelente jogada! Continue assim e suba seu nível no Tabuleiro Arena.');
             } else if (botHand.length === 0) {
                 gameOver = true;
                 registrarResultadoDomino('bot');
                 setStatus('🤖 <strong>O robô venceu.</strong> Não desanime: observe as pontas da mesa e tente guardar pedras versáteis.');
+                tocarBipDomino(3, true);
+                exibirResultadoDomino('lose', 'O robô venceu esta partida', 'Não desanime. Observe as pontas, guarde pedras versáteis e tente outra vez.');
             } else if (passStreak >= 2 && boneyard.length === 0 && !playerHand.some(canPlayTile) && !botHand.some(canPlayTile)) {
                 gameOver = true;
                 const pp = pontos(playerHand), bp = pontos(botHand);
                 if (pp < bp) {
                     registrarResultadoDomino('player');
                     setStatus(`🔒 Mesa fechada. Você venceu nos pontos: <strong>${pp} x ${bp}</strong>.`);
+                    tocarSomVitoriaDomino();
+                    exibirResultadoDomino('win', 'Você venceu nos pontos!', `Mesa fechada. Você ficou com menos pontos: <strong>${pp} x ${bp}</strong>.`);
                 } else if (bp < pp) {
                     registrarResultadoDomino('bot');
                     setStatus(`🔒 Mesa fechada. O robô venceu nos pontos: <strong>${bp} x ${pp}</strong>.`);
+                    tocarBipDomino(3, true);
+                    exibirResultadoDomino('lose', 'O robô venceu nos pontos', `Mesa fechada. O robô ficou com menos pontos: <strong>${bp} x ${pp}</strong>. Não desanime.`);
                 } else {
                     registrarResultadoDomino('draw');
                     setStatus(`🔒 Mesa fechada. Empate nos pontos: <strong>${pp} x ${bp}</strong>.`);
+                    tocarBipDomino(2);
+                    exibirResultadoDomino('draw', 'Empate!', `Mesa fechada. Os dois terminaram com <strong>${pp}</strong> pontos. Boa partida!`);
                 }
             }
             if (gameOver) renderDomino();
@@ -8066,6 +8245,32 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 gameOver = true;
                 setStatus('🔒 Esta sala foi bloqueada ou ainda não foi liberada pelo administrador.');
             }
+
+            const soundKey = [dominoOnlineRoomCode, state.lastPlayedKey || '', state.turn || '', state.status || '', state.updatedAt || dominoOnlineData.updatedAt || ''].join('|');
+            if (state.started && !state.gameOver && state.lastPlayedKey && state.turn === dominoOnlineSeat && dominoOnlineLastSoundKey !== soundKey) {
+                dominoOnlineLastSoundKey = soundKey;
+                tocarBipDomino(1);
+                setTimeout(() => avisarSePrecisaComprarDomino(), 80);
+            }
+
+            const endKey = dominoOnlineRoomCode + '|' + (state.status || '') + '|' + (state.gameOver ? 'fim' : 'ativo');
+            if (state.started && state.gameOver && dominoOnlineLastEndKey !== endKey) {
+                dominoOnlineLastEndKey = endKey;
+                const myName = players[dominoOnlineSeat]?.name || 'Você';
+                const otherName = players[otherSeat]?.name || 'Seu amigo';
+                const statusTxt = state.status || 'Partida encerrada.';
+                if (statusTxt.includes(myName) && statusTxt.toLowerCase().includes('venceu')) {
+                    tocarSomVitoriaDomino();
+                    exibirResultadoDomino('win', 'Parabéns, você ganhou!', `${statusTxt}<br><br>Você mandou bem! Seu nome fica marcado como vencedor desta sala.`);
+                } else if (statusTxt.toLowerCase().includes('empate')) {
+                    tocarBipDomino(2);
+                    exibirResultadoDomino('draw', 'Empate no Dominó!', `${statusTxt}<br><br>Boa partida para os dois jogadores.`);
+                } else {
+                    tocarBipDomino(3, true);
+                    exibirResultadoDomino('lose', `${otherName} ganhou esta partida`, `${statusTxt}<br><br>Não desanime. Observe as pontas, compre na hora certa e tente a revanche.`);
+                }
+            }
+
             renderDomino();
         }
 
@@ -8325,6 +8530,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 setStatus('Você ainda tem jogada disponível. Selecione uma pedra que encaixa na mesa.');
                 return;
             }
+            tocarBipDomino(2, true);
             if (compra.length > 0) {
                 const t = compra.shift();
                 myHand.push(t);
@@ -8488,10 +8694,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const joinOnlineBtn = $('domino-join-room-btn');
             const startOnlineBtn = $('domino-start-online-btn');
             const leaveOnlineBtn = $('domino-leave-online-btn');
-            if (newBtn) newBtn.addEventListener('click', iniciarDomino);
-            if (leftBtn) leftBtn.addEventListener('click', () => playerPlay('left'));
-            if (rightBtn) rightBtn.addEventListener('click', () => playerPlay('right'));
-            if (drawBtn) drawBtn.addEventListener('click', comprarOuPassar);
+            const resultCloseBtn = $('domino-result-close-btn');
+            if (newBtn) newBtn.addEventListener('click', () => { prepararSomDomino(); iniciarDomino(); });
+            if (leftBtn) leftBtn.addEventListener('click', () => { prepararSomDomino(); playerPlay('left'); });
+            if (rightBtn) rightBtn.addEventListener('click', () => { prepararSomDomino(); playerPlay('right'); });
+            if (drawBtn) drawBtn.addEventListener('click', () => { prepararSomDomino(); comprarOuPassar(); });
             if (backBtn) backBtn.addEventListener('click', voltarModalidadesDomino);
             if (centerBtn) centerBtn.addEventListener('click', () => ajustarMesaDomino('centro'));
             if (leftTipBtn) leftTipBtn.addEventListener('click', () => ajustarMesaDomino('esquerda'));
@@ -8500,10 +8707,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (hintBtn) hintBtn.addEventListener('click', darDicaDomino);
             if (sortBtn) sortBtn.addEventListener('click', organizarMaoDomino);
             if (scoreResetBtn) scoreResetBtn.addEventListener('click', zerarPlacarDomino);
-            if (createOnlineBtn) createOnlineBtn.addEventListener('click', criarSalaDominoOnline);
-            if (joinOnlineBtn) joinOnlineBtn.addEventListener('click', entrarSalaDominoOnline);
-            if (startOnlineBtn) startOnlineBtn.addEventListener('click', iniciarPartidaDominoOnline);
-            if (leaveOnlineBtn) leaveOnlineBtn.addEventListener('click', () => sairDominoOnline(true));
+            if (createOnlineBtn) createOnlineBtn.addEventListener('click', () => { prepararSomDomino(); criarSalaDominoOnline(); });
+            if (joinOnlineBtn) joinOnlineBtn.addEventListener('click', () => { prepararSomDomino(); entrarSalaDominoOnline(); });
+            if (startOnlineBtn) startOnlineBtn.addEventListener('click', () => { prepararSomDomino(); iniciarPartidaDominoOnline(); });
+            if (leaveOnlineBtn) leaveOnlineBtn.addEventListener('click', () => { prepararSomDomino(); sairDominoOnline(true); });
+            if (resultCloseBtn) resultCloseBtn.addEventListener('click', fecharResultadoDomino);
             ativarArrasteMesaDomino();
             renderDomino();
         }
