@@ -956,7 +956,88 @@
             line-height: 1.42;
         }
         .central-admin-note strong { color: #facc15; }
+        .domino-admin-panel-central {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #031712, #0f172a);
+            border: 1px solid rgba(20,184,166,0.35);
+            text-align: left;
+        }
+        .domino-admin-panel-central h3 {
+            color: #5eead4;
+            font-size: .92rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin: 0 0 8px 0;
+        }
+        .domino-admin-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 8px 0;
+        }
+        .domino-admin-row input {
+            margin: 0;
+            text-align: left;
+            background: #020617;
+            border: 1px solid #164e63;
+        }
+        .domino-admin-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 9px;
+        }
+        .domino-admin-actions button {
+            padding: 10px 8px;
+            min-height: 45px;
+            font-size: .74rem;
+            text-transform: none;
+            border-radius: 9px;
+            line-height: 1.15;
+        }
+        .btn-admin-domino-liberar { background: #0f766e; }
+        .btn-admin-domino-bloquear { background: #b91c1c; }
+        .btn-admin-domino-desbloquear { background: #16a34a; }
+        .btn-admin-domino-limpar { background: #ca8a04; }
+        .btn-admin-domino-expulsar { background: #7c3aed; }
+        .btn-admin-domino-atualizar { background: #2563eb; }
+        .domino-admin-list {
+            margin-top: 10px;
+            max-height: 260px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .domino-admin-room-card {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-left: 4px solid #14b8a6;
+            border-radius: 10px;
+            padding: 9px;
+            color: #e2e8f0;
+            font-size: .78rem;
+            line-height: 1.35;
+        }
+        .domino-admin-room-card.blocked { border-left-color: #ef4444; }
+        .domino-admin-room-card strong { color: #facc15; }
+        .domino-admin-mini-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 7px;
+        }
+        .domino-admin-mini-actions button {
+            width: auto;
+            padding: 6px 8px;
+            font-size: .68rem;
+            border-radius: 7px;
+            text-transform: none;
+        }
         @media (max-width: 520px) {
+            .domino-admin-row, .domino-admin-actions { grid-template-columns: 1fr; }
             .central-admin-grid { grid-template-columns: 1fr; }
         }
 
@@ -2413,10 +2494,10 @@
 
             <div id="central-admin-menu" class="central-admin-menu">
                 <div class="central-admin-title">🎮 Central do Dono da Plataforma</div>
-                <div class="central-admin-desc">Escolha qual modalidade deseja administrar. A Damas continua usando o painel completo atual; o Dominó já fica preparado para receber salas online na próxima fase.</div>
+                <div class="central-admin-desc">Escolha qual modalidade deseja administrar. A Damas e o Dominó passam a ser controlados pelo dono da plataforma.</div>
                 <div class="central-admin-grid">
                     <button id="central-admin-damas-btn" class="btn-central-admin-damas" type="button">Administrar Damas<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat e ranking</span></button>
-                    <button id="central-admin-domino-btn" class="btn-central-admin-domino" type="button">Administrar Dominó<br><span style="font-size:.68rem; opacity:.85;">preparar salas online</span></button>
+                    <button id="central-admin-domino-btn" class="btn-central-admin-domino" type="button">Administrar Dominó<br><span style="font-size:.68rem; opacity:.85;">liberar, bloquear e limpar salas</span></button>
                     <button id="central-admin-xadrez-btn" class="btn-central-admin-xadrez" type="button">Administrar Xadrez<br><span style="font-size:.68rem; opacity:.85;">em breve</span></button>
                     <button id="central-admin-back-btn" class="btn-central-admin-voltar" type="button">Voltar ao menu<br><span style="font-size:.68rem; opacity:.85;">continuar jogando</span></button>
                 </div>
@@ -2519,13 +2600,13 @@
 
         <div id="domino-online-panel" class="domino-online-panel">
             <div class="domino-online-title">🌐 Jogar online com amigo</div>
-            <div class="domino-online-desc">Crie uma sala de Dominó, envie o código para seu amigo e joguem em celulares diferentes. O modo contra robô continua funcionando pelo botão <strong>Novo jogo</strong>.</div>
+            <div class="domino-online-desc">Entre em uma sala de Dominó liberada pelo administrador e jogue com seu amigo em celulares diferentes. O modo contra robô continua funcionando pelo botão <strong>Novo jogo</strong>.</div>
             <div class="domino-online-grid">
                 <input id="domino-online-name" type="text" placeholder="Seu nome" autocomplete="name">
                 <input id="domino-online-room" type="text" placeholder="Código da sala. Ex: DOM1234" maxlength="10" autocomplete="off">
             </div>
             <div class="domino-online-actions">
-                <button id="domino-create-room-btn" class="btn-domino-online-create" type="button">Criar sala online</button>
+                <button id="domino-create-room-btn" class="btn-domino-online-create" type="button" disabled>Sala só pelo administrador</button>
                 <button id="domino-join-room-btn" class="btn-domino-online-join" type="button">Entrar na sala</button>
                 <button id="domino-start-online-btn" class="btn-domino-online-start" type="button">Iniciar partida online</button>
                 <button id="domino-leave-online-btn" class="btn-domino-online-leave" type="button">Sair da sala</button>
@@ -3666,6 +3747,258 @@
         if (domino) domino.style.display = 'none';
     }
 
+
+    let dominoAdminListenerAtivo = null;
+
+    function codigoSalaDominoAdmin(valor) {
+        return String(valor || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+    }
+
+    function gerarCodigoDominoAdmin() {
+        return 'DOM' + Math.floor(1000 + Math.random() * 9000);
+    }
+
+    async function exigirAdminCentralDominio() {
+        if (!auth.currentUser || auth.currentUser.isAnonymous || !(await usuarioEhAdminSeguro())) {
+            exibirAlertaDoSistema("Acesso negado 🛡️", "Entre primeiro com o login do administrador.");
+            return false;
+        }
+        return true;
+    }
+
+    function montarPainelAdminDominoCentral() {
+        if (!centralAdminNote) return;
+        centralAdminNote.style.display = "block";
+        centralAdminNote.innerHTML = `
+            <div class="domino-admin-panel-central">
+                <h3>🁬 Administração do Dominó</h3>
+                <div style="color:#cbd5e1; font-size:.8rem; line-height:1.4;">
+                    Aqui o dono libera, bloqueia, limpa e encerra salas de Dominó. Jogador comum não cria sala: ele só entra no código que você liberar.
+                </div>
+                <div class="domino-admin-row">
+                    <input id="domino-admin-room-input" type="text" placeholder="Código da sala. Ex: DOM1234" maxlength="10">
+                    <input id="domino-admin-note-input" type="text" placeholder="Observação interna opcional">
+                </div>
+                <div class="domino-admin-actions">
+                    <button id="domino-admin-generate-btn" class="btn-admin-domino-atualizar" type="button">Gerar código</button>
+                    <button id="domino-admin-release-btn" class="btn-admin-domino-liberar" type="button">Liberar / criar sala</button>
+                    <button id="domino-admin-block-btn" class="btn-admin-domino-bloquear" type="button">Bloquear sala</button>
+                    <button id="domino-admin-unblock-btn" class="btn-admin-domino-desbloquear" type="button">Desbloquear sala</button>
+                    <button id="domino-admin-clear-btn" class="btn-admin-domino-limpar" type="button">Limpar / reiniciar sala</button>
+                    <button id="domino-admin-delete-btn" class="btn-admin-domino-expulsar" type="button">Excluir sala</button>
+                    <button id="domino-admin-kick-p1-btn" class="btn-admin-domino-expulsar" type="button">Expulsar jogador 1</button>
+                    <button id="domino-admin-kick-p2-btn" class="btn-admin-domino-expulsar" type="button">Expulsar jogador 2</button>
+                </div>
+                <div id="domino-admin-feedback" style="margin-top:10px; color:#facc15; font-size:.8rem; line-height:1.35;">Escolha ou gere um código de sala.</div>
+                <div class="domino-admin-list" id="domino-admin-rooms-list">
+                    <div class="tiny-muted">Carregando salas de Dominó...</div>
+                </div>
+            </div>
+        `;
+
+        const input = document.getElementById('domino-admin-room-input');
+        const noteInput = document.getElementById('domino-admin-note-input');
+        const feedback = document.getElementById('domino-admin-feedback');
+
+        const setFeedback = (html) => { if (feedback) feedback.innerHTML = html; };
+        const getCode = () => codigoSalaDominoAdmin(input ? input.value : '');
+
+        const preencherCodigo = (code) => {
+            if (input) input.value = code;
+            setFeedback(`Código selecionado: <strong>${code}</strong>`);
+        };
+
+        const gerarBtn = document.getElementById('domino-admin-generate-btn');
+        if (gerarBtn) gerarBtn.addEventListener('click', () => preencherCodigo(gerarCodigoDominoAdmin()));
+
+        const liberarBtn = document.getElementById('domino-admin-release-btn');
+        if (liberarBtn) liberarBtn.addEventListener('click', async () => {
+            if (!(await exigirAdminCentralDominio())) return;
+            const code = getCode() || gerarCodigoDominoAdmin();
+            if (input) input.value = code;
+            const snap = await get(ref(db, 'dominoRooms/' + code));
+            const existente = snap.exists() ? snap.val() : {};
+            await update(ref(db, 'dominoRooms/' + code), {
+                type: 'domino',
+                code,
+                createdAt: existente.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                createdByAdmin: auth.currentUser.uid,
+                adminNote: noteInput ? String(noteInput.value || '').trim().slice(0, 120) : '',
+                isAuthorized: true,
+                blocked: false,
+                state: existente.state || {
+                    started: false,
+                    gameOver: true,
+                    chain: [],
+                    boneyard: [],
+                    hands: { p1: [], p2: [] },
+                    turn: 'p1',
+                    leftEnd: null,
+                    rightEnd: null,
+                    passStreak: 0,
+                    lastPlayedKey: '',
+                    lastFocus: 'centro',
+                    status: 'Sala liberada pelo administrador. Aguardando jogadores.'
+                }
+            });
+            setFeedback(`✅ Sala <strong>${code}</strong> liberada. Agora envie esse código aos jogadores.`);
+        });
+
+        const bloquearBtn = document.getElementById('domino-admin-block-btn');
+        if (bloquearBtn) bloquearBtn.addEventListener('click', async () => {
+            if (!(await exigirAdminCentralDominio())) return;
+            const code = getCode();
+            if (!code) return setFeedback('Digite ou selecione uma sala para bloquear.');
+            await update(ref(db, 'dominoRooms/' + code), {
+                blocked: true,
+                isAuthorized: false,
+                updatedAt: Date.now(),
+                'state/status': 'Sala bloqueada pelo administrador.'
+            });
+            setFeedback(`🔒 Sala <strong>${code}</strong> bloqueada.`);
+        });
+
+        const desbloquearBtn = document.getElementById('domino-admin-unblock-btn');
+        if (desbloquearBtn) desbloquearBtn.addEventListener('click', async () => {
+            if (!(await exigirAdminCentralDominio())) return;
+            const code = getCode();
+            if (!code) return setFeedback('Digite ou selecione uma sala para desbloquear.');
+            await update(ref(db, 'dominoRooms/' + code), {
+                blocked: false,
+                isAuthorized: true,
+                updatedAt: Date.now(),
+                'state/status': 'Sala liberada pelo administrador.'
+            });
+            setFeedback(`✅ Sala <strong>${code}</strong> desbloqueada/liberada.`);
+        });
+
+        const limparBtn = document.getElementById('domino-admin-clear-btn');
+        if (limparBtn) limparBtn.addEventListener('click', async () => {
+            if (!(await exigirAdminCentralDominio())) return;
+            const code = getCode();
+            if (!code) return setFeedback('Digite ou selecione uma sala para limpar.');
+            await update(ref(db, 'dominoRooms/' + code), {
+                updatedAt: Date.now(),
+                state: {
+                    started: false,
+                    gameOver: true,
+                    chain: [],
+                    boneyard: [],
+                    hands: { p1: [], p2: [] },
+                    turn: 'p1',
+                    leftEnd: null,
+                    rightEnd: null,
+                    passStreak: 0,
+                    lastPlayedKey: '',
+                    lastFocus: 'centro',
+                    status: 'Sala limpa pelo administrador. Aguardando nova partida.'
+                }
+            });
+            setFeedback(`🧹 Sala <strong>${code}</strong> limpa/reiniciada.`);
+        });
+
+        const excluirBtn = document.getElementById('domino-admin-delete-btn');
+        if (excluirBtn) excluirBtn.addEventListener('click', async () => {
+            if (!(await exigirAdminCentralDominio())) return;
+            const code = getCode();
+            if (!code) return setFeedback('Digite ou selecione uma sala para excluir.');
+            if (!confirm(`Excluir a sala ${code}?`)) return;
+            await remove(ref(db, 'dominoRooms/' + code));
+            setFeedback(`🗑️ Sala <strong>${code}</strong> excluída.`);
+        });
+
+        const kick = async (seat) => {
+            if (!(await exigirAdminCentralDominio())) return;
+            const code = getCode();
+            if (!code) return setFeedback('Digite ou selecione uma sala para expulsar jogador.');
+            await update(ref(db, 'dominoRooms/' + code), {
+                [`players/${seat}`]: null,
+                updatedAt: Date.now(),
+                'state/started': false,
+                'state/gameOver': true,
+                'state/status': `Jogador ${seat === 'p1' ? '1' : '2'} removido pelo administrador.`
+            });
+            setFeedback(`🚫 Jogador ${seat === 'p1' ? '1' : '2'} removido da sala <strong>${code}</strong>.`);
+        };
+        const kickP1 = document.getElementById('domino-admin-kick-p1-btn');
+        const kickP2 = document.getElementById('domino-admin-kick-p2-btn');
+        if (kickP1) kickP1.addEventListener('click', () => kick('p1'));
+        if (kickP2) kickP2.addEventListener('click', () => kick('p2'));
+
+        iniciarMonitorAdminDomino(preencherCodigo);
+    }
+
+    function iniciarMonitorAdminDomino(preencherCodigo) {
+        const lista = document.getElementById('domino-admin-rooms-list');
+        if (!lista) return;
+        if (dominoAdminListenerAtivo) {
+            try { dominoAdminListenerAtivo(); } catch (e) {}
+            dominoAdminListenerAtivo = null;
+        }
+        dominoAdminListenerAtivo = onValue(ref(db, 'dominoRooms'), (snap) => {
+            const salas = snap.exists() ? snap.val() : {};
+            const codigos = Object.keys(salas).sort((a,b) => (salas[b].updatedAt || 0) - (salas[a].updatedAt || 0));
+            if (!codigos.length) {
+                lista.innerHTML = '<div class="tiny-muted">Nenhuma sala de Dominó liberada ainda.</div>';
+                return;
+            }
+            lista.innerHTML = '';
+            codigos.forEach((code) => {
+                const sala = salas[code] || {};
+                const players = sala.players || {};
+                const state = sala.state || {};
+                const p1 = players.p1 ? (players.p1.name || 'Jogador 1') : 'vazio';
+                const p2 = players.p2 ? (players.p2.name || 'Jogador 2') : 'vazio';
+                const card = document.createElement('div');
+                card.className = 'domino-admin-room-card' + (sala.blocked ? ' blocked' : '');
+                card.innerHTML = `
+                    <div><strong>${code}</strong> — ${sala.blocked ? '🔒 bloqueada' : (sala.isAuthorized ? '✅ liberada' : '⚠️ não liberada')}</div>
+                    <div>Jogador 1: <strong>${p1}</strong></div>
+                    <div>Jogador 2: <strong>${p2}</strong></div>
+                    <div>Status: ${state.started ? 'partida em andamento' : 'aguardando'} ${state.gameOver ? '• parada' : ''}</div>
+                    <div class="tiny-muted">${state.status || 'Sem mensagem da sala.'}</div>
+                    <div class="domino-admin-mini-actions">
+                        <button type="button" data-action="select">Selecionar</button>
+                        <button type="button" data-action="block">Bloquear</button>
+                        <button type="button" data-action="unblock">Liberar</button>
+                        <button type="button" data-action="clear">Limpar</button>
+                    </div>
+                `;
+                card.querySelector('[data-action="select"]').addEventListener('click', () => preencherCodigo(code));
+                card.querySelector('[data-action="block"]').addEventListener('click', async () => {
+                    preencherCodigo(code);
+                    await update(ref(db, 'dominoRooms/' + code), { blocked: true, isAuthorized: false, updatedAt: Date.now(), 'state/status': 'Sala bloqueada pelo administrador.' });
+                });
+                card.querySelector('[data-action="unblock"]').addEventListener('click', async () => {
+                    preencherCodigo(code);
+                    await update(ref(db, 'dominoRooms/' + code), { blocked: false, isAuthorized: true, updatedAt: Date.now(), 'state/status': 'Sala liberada pelo administrador.' });
+                });
+                card.querySelector('[data-action="clear"]').addEventListener('click', async () => {
+                    preencherCodigo(code);
+                    await update(ref(db, 'dominoRooms/' + code), {
+                        updatedAt: Date.now(),
+                        state: {
+                            started: false,
+                            gameOver: true,
+                            chain: [],
+                            boneyard: [],
+                            hands: { p1: [], p2: [] },
+                            turn: 'p1',
+                            leftEnd: null,
+                            rightEnd: null,
+                            passStreak: 0,
+                            lastPlayedKey: '',
+                            lastFocus: 'centro',
+                            status: 'Sala limpa pelo administrador. Aguardando nova partida.'
+                        }
+                    });
+                });
+                lista.appendChild(card);
+            });
+        });
+    }
+
     async function abrirAdminDamasCentral() {
         if (!auth.currentUser || auth.currentUser.isAnonymous || !(await usuarioEhAdminSeguro())) {
             exibirAlertaDoSistema("Acesso negado 🛡️", "Entre primeiro com o login do administrador.");
@@ -3685,11 +4018,9 @@
         await joinRoom(ADMIN_ROOM_CODE, "Administrador", false);
     }
 
-    function abrirAdminDominoCentral() {
-        if (centralAdminNote) {
-            centralAdminNote.style.display = "block";
-            centralAdminNote.innerHTML = "<strong>Dominó:</strong> o painel central já está preparado. O próximo passo é ativar o Dominó online com salas no Firebase; depois estes controles vão liberar, bloquear e encerrar salas de Dominó pelo mesmo painel.";
-        }
+    async function abrirAdminDominoCentral() {
+        if (!(await exigirAdminCentralDominio())) return;
+        montarPainelAdminDominoCentral();
     }
 
     function abrirAdminXadrezCentral() {
@@ -7696,6 +8027,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
         function aplicarEstadoDominoOnline(data) {
             dominoOnlineData = data || {};
+            if (dominoOnlineData.blocked || !dominoOnlineData.isAuthorized) {
+                gameOver = true;
+                setStatus('🔒 Esta sala foi bloqueada ou ainda não foi liberada pelo administrador.');
+            }
             const state = dominoOnlineData.state || {};
             const players = dominoOnlineData.players || {};
             const otherSeat = adversarioSeatDomino();
@@ -7727,10 +8062,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
             atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
+            if (dominoOnlineData.blocked || !dominoOnlineData.isAuthorized) {
+                gameOver = true;
+                setStatus('🔒 Esta sala foi bloqueada ou ainda não foi liberada pelo administrador.');
+            }
             renderDomino();
         }
 
         async function criarSalaDominoOnline() {
+            setStatus('🛡️ As salas online do Dominó agora são criadas/liberadas somente pelo administrador da plataforma. Peça o código da sala ao dono e toque em <strong>Entrar na sala</strong>.');
+            atualizarBadgeSalaDominoOnline('Sala online: peça ao administrador para liberar um código de Dominó.');
+            return;
             if (!playerId) {
                 setStatus('A conexão online ainda está preparando. Aguarde alguns segundos e tente novamente.');
                 return;
@@ -7791,8 +8133,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 return;
             }
             const sala = snap.val() || {};
-            if (sala.blocked) {
-                setStatus('Esta sala de Dominó está bloqueada pelo administrador.');
+            if (!sala.isAuthorized || sala.blocked) {
+                setStatus('Esta sala de Dominó ainda não foi liberada ou está bloqueada pelo administrador.');
+                atualizarBadgeSalaDominoOnline(`Sala <strong>${code}</strong>: aguardando liberação do administrador.`);
                 return;
             }
             let seat = '';
@@ -7845,6 +8188,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 return;
             }
             const sala = snap.val() || {};
+            if (!sala.isAuthorized || sala.blocked) {
+                setStatus('Esta sala não está liberada para iniciar. Fale com o administrador.');
+                return;
+            }
             if (!sala.players?.p1 || !sala.players?.p2) {
                 setStatus('A partida online precisa de dois jogadores. Envie o código para seu amigo entrar.');
                 return;
