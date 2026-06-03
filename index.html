@@ -2292,6 +2292,7 @@
         .btn-domino-online-create { background: #2563eb; }
         .btn-domino-online-join { background: #16a34a; }
         .btn-domino-online-start { background: #ca8a04; }
+        .btn-domino-online-watch { background: #7c3aed; }
         .btn-domino-online-leave { background: #64748b; }
         .domino-room-badge {
             display: none;
@@ -2733,7 +2734,8 @@
                 <input id="domino-online-room" type="text" placeholder="Código da sala. Ex: DOM1234" maxlength="10" autocomplete="off">
             </div>
             <div class="domino-online-actions">
-                <button id="domino-join-room-btn" class="btn-domino-online-join" type="button">Entrar na sala</button>
+                <button id="domino-join-room-btn" class="btn-domino-online-join" type="button">Entrar como jogador</button>
+                <button id="domino-watch-room-btn" class="btn-domino-online-watch" type="button">Assistir como espectador</button>
                 <button id="domino-start-online-btn" class="btn-domino-online-start" type="button">Iniciar partida online</button>
                 <button id="domino-leave-online-btn" class="btn-domino-online-leave" type="button">Sair da sala</button>
                 <button id="domino-back-mode-btn" class="btn-domino-online-create" type="button">Voltar</button>
@@ -5433,7 +5435,7 @@
             const temP1 = Object.values(participants).some(p => p?.role === "p1");
             const temP2 = Object.values(participants).some(p => p?.role === "p2");
 
-            if (callData.status === "active" && temP1 && temP2 && !spectatorWatchActive && !spectatorWatchConnecting) {
+            if (callData.status === "active" && (temP1 || temP2) && !spectatorWatchActive && !spectatorWatchConnecting) {
                 iniciarAssistirChamadaEspectador();
             }
 
@@ -7751,6 +7753,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let dominoOnlineMode = false;
         let dominoOnlineRoomCode = '';
         let dominoOnlineSeat = '';
+        let dominoOnlineIsSpectator = false;
         let dominoOnlineUnsub = null;
         let dominoOnlineData = null;
         let dominoAudioContext = null;
@@ -7814,6 +7817,26 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function refSalaDominoOnline(code = dominoOnlineRoomCode) {
             return ref(db, 'dominoRooms/' + code);
         }
+        function idChamadaDominoOnline(code = dominoOnlineRoomCode) {
+            return code ? ('DOMINO_' + code) : '';
+        }
+        function prepararPainelChamadaDominoOnline() {
+            try {
+                if (voiceVideoCallPanel && voiceVideoCallPanel.parentElement !== document.body) {
+                    document.body.appendChild(voiceVideoCallPanel);
+                }
+            } catch (e) {}
+        }
+        function ativarContextoChamadaDominoOnline(code, role) {
+            prepararPainelChamadaDominoOnline();
+            roomId = idChamadaDominoOnline(code);
+            playerRole = role === 'spectator' ? 'spectator' : role;
+            isPracticeMode = false;
+            try { atualizarPainelChamada(); } catch (e) {}
+            try {
+                if (playerRole === 'spectator') escutarChamadaParaEspectador();
+            } catch (e) {}
+        }
         function minhaVezDominoOnline() {
             return dominoOnlineMode && dominoOnlineData && dominoOnlineData.state && dominoOnlineData.state.turn === dominoOnlineSeat;
         }
@@ -7821,9 +7844,15 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return seat === 'p1' ? 'p2' : 'p1';
         }
         function getMeuNomeDominoOnline() {
+            if (dominoOnlineIsSpectator) return nomeDominoOnline() || 'Espectador';
             return dominoOnlineData?.players?.[dominoOnlineSeat]?.name || nomeDominoOnline();
         }
         function getNomeAdversarioDominoOnline() {
+            if (dominoOnlineIsSpectator) {
+                const p1 = dominoOnlineData?.players?.p1?.name || 'Jogador 1';
+                const p2 = dominoOnlineData?.players?.p2?.name || 'Jogador 2';
+                return p1 + ' x ' + p2;
+            }
             const other = adversarioSeatDomino();
             return dominoOnlineData?.players?.[other]?.name || 'Amigo';
         }
@@ -8014,6 +8043,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             dominoOnlineMode = false;
             dominoOnlineRoomCode = '';
             dominoOnlineSeat = '';
+            dominoOnlineIsSpectator = false;
             dominoOnlineData = null;
             dominoOpponentName = 'Robô';
             const badge = $('domino-room-badge');
@@ -8028,6 +8058,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function iniciarDomino() {
             prepararDominioContraRoboAntesDeIniciar();
             dominoOnlineMode = false;
+            dominoOnlineIsSpectator = false;
+            roomId = '';
+            playerRole = 'spectator';
+            isPracticeMode = true;
+            try { atualizarPainelChamada(); } catch (e) {}
             dominoOpponentName = 'Robô';
             tiles = gerarPecas();
             playerHand = tiles.splice(0, 7).sort((a,b)=>soma(b)-soma(a));
@@ -8268,7 +8303,16 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chain.forEach(t => chainEl.appendChild(createTileElement(t, { horizontal: true, lastPlayed: tileKey(t) === dominoLastPlayedKey })));
             }
             handEl.innerHTML = '';
-            playerHand.forEach((tile, idx) => {
+            if (dominoOnlineIsSpectator) {
+                const m = document.createElement('div');
+                m.className = 'tiny-muted';
+                const p1n = dominoOnlineData?.players?.p1?.name || 'Jogador 1';
+                const p2n = dominoOnlineData?.players?.p2?.name || 'Jogador 2';
+                const p1c = Array.isArray(dominoOnlineData?.state?.hands?.p1) ? dominoOnlineData.state.hands.p1.length : 0;
+                const p2c = Array.isArray(dominoOnlineData?.state?.hands?.p2) ? dominoOnlineData.state.hands.p2.length : 0;
+                m.innerHTML = `👁️ Modo espectador ativo. Você vê a mesa ao vivo, mas não joga peças.<br>${p1n}: <strong>${p1c}</strong> pedras • ${p2n}: <strong>${p2c}</strong> pedras.`;
+                handEl.appendChild(m);
+            } else playerHand.forEach((tile, idx) => {
                 const disabled = gameOver || turn !== 'player' || !canPlayTile(tile);
                 const el = createTileElement(tile, { disabled, selected: selectedIndex === idx, playable: !disabled && canPlayTile(tile) });
                 el.addEventListener('click', () => {
@@ -8278,7 +8322,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 });
                 handEl.appendChild(el);
             });
-            if (!playerHand.length && !gameOver) {
+            if (!dominoOnlineIsSpectator && !playerHand.length && !gameOver) {
                 const m = document.createElement('div'); m.className = 'tiny-muted'; m.innerText = 'Sua mão está vazia.'; handEl.appendChild(m);
             }
             renderDominoPontas();
@@ -8288,15 +8332,24 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('domino-left-end', leftEnd === null ? '-' : leftEnd);
             setText('domino-right-end', rightEnd === null ? '-' : rightEnd);
             setText('domino-boneyard-count', boneyard.length);
-            setText('domino-player-count', playerHand.length);
-            setText('domino-bot-count', botHand.length);
-            setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : 'Robô'));
+            if (dominoOnlineIsSpectator) {
+                const st = dominoOnlineData?.state || {};
+                const ps = dominoOnlineData?.players || {};
+                setText('domino-player-count', Array.isArray(st.hands?.p1) ? st.hands.p1.length : 0);
+                setText('domino-bot-count', Array.isArray(st.hands?.p2) ? st.hands.p2.length : 0);
+                setText('domino-opponent-count-label', ps.p2?.name || 'Jogador 2');
+                setText('domino-turn-label', gameOver ? 'Fim' : (st.turn === 'p1' ? (ps.p1?.name || 'J1') : (ps.p2?.name || 'J2')));
+            } else {
+                setText('domino-player-count', playerHand.length);
+                setText('domino-bot-count', botHand.length);
+                setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : (dominoOnlineMode ? 'Amigo' : 'Robô')));
+            }
             atualizarCabecalhoCompactoDomino();
             const leftBtn = $('domino-play-left-btn'), rightBtn = $('domino-play-right-btn'), drawBtn = $('domino-draw-btn'), newBtn = $('domino-new-btn');
             if (newBtn) newBtn.innerText = dominoOnlineMode ? 'Jogar contra robô' : 'Novo jogo';
-            if (leftBtn) leftBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
-            if (rightBtn) rightBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
-            if (drawBtn) drawBtn.disabled = gameOver || turn !== 'player';
+            if (leftBtn) leftBtn.disabled = dominoOnlineIsSpectator || gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
+            if (rightBtn) rightBtn.disabled = dominoOnlineIsSpectator || gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
+            if (drawBtn) drawBtn.disabled = dominoOnlineIsSpectator || gameOver || turn !== 'player';
             atualizarPlacarDomino();
         }
         function aplicarEstadoDominoOnline(data) {
@@ -8307,35 +8360,48 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             const state = dominoOnlineData.state || {};
             const players = dominoOnlineData.players || {};
-            const otherSeat = adversarioSeatDomino();
+            const otherSeat = dominoOnlineIsSpectator ? 'p2' : adversarioSeatDomino();
 
             dominoOnlineMode = true;
-            dominoOpponentName = players[otherSeat]?.name || 'Amigo';
+            dominoOpponentName = dominoOnlineIsSpectator
+                ? `${players.p1?.name || 'Jogador 1'} x ${players.p2?.name || 'Jogador 2'}`
+                : (players[otherSeat]?.name || 'Amigo');
 
             chain = Array.isArray(state.chain) ? state.chain : [];
             leftEnd = state.leftEnd ?? null;
             rightEnd = state.rightEnd ?? null;
             boneyard = Array.isArray(state.boneyard) ? state.boneyard : [];
-            playerHand = Array.isArray(state.hands?.[dominoOnlineSeat]) ? state.hands[dominoOnlineSeat] : [];
-            botHand = new Array(Array.isArray(state.hands?.[otherSeat]) ? state.hands[otherSeat].length : 0).fill([0,0]);
+            if (dominoOnlineIsSpectator) {
+                playerHand = [];
+                const p1Count = Array.isArray(state.hands?.p1) ? state.hands.p1.length : 0;
+                const p2Count = Array.isArray(state.hands?.p2) ? state.hands.p2.length : 0;
+                botHand = new Array(p2Count).fill([0,0]);
+            } else {
+                playerHand = Array.isArray(state.hands?.[dominoOnlineSeat]) ? state.hands[dominoOnlineSeat] : [];
+                botHand = new Array(Array.isArray(state.hands?.[otherSeat]) ? state.hands[otherSeat].length : 0).fill([0,0]);
+            }
             selectedIndex = null;
             passStreak = state.passStreak || 0;
             gameOver = !!state.gameOver;
             dominoLastPlayedKey = state.lastPlayedKey || '';
             dominoLastFocus = state.lastFocus || 'centro';
-            turn = state.turn === dominoOnlineSeat ? 'player' : 'bot';
+            turn = dominoOnlineIsSpectator ? 'bot' : (state.turn === dominoOnlineSeat ? 'player' : 'bot');
 
             if (!state.started) {
                 gameOver = true;
                 turn = 'bot';
-                setStatus(players.p1 && players.p2
-                    ? '✅ Os dois jogadores estão na sala. O criador pode apertar <strong>Iniciar partida online</strong>.'
-                    : '⏳ Sala online criada. Envie o código para seu amigo entrar.');
+                setStatus(dominoOnlineIsSpectator
+                    ? '👁️ Você entrou como espectador. Aguarde a partida começar ou acompanhe a mesa ao vivo.'
+                    : (players.p1 && players.p2
+                        ? '✅ Os dois jogadores estão na sala. O criador pode apertar <strong>Iniciar partida online</strong>.'
+                        : '⏳ Sala online criada. Envie o código para seu amigo entrar.'));
             } else {
-                setStatus(state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.'));
+                setStatus(dominoOnlineIsSpectator ? ('👁️ Assistindo ao vivo: ' + (state.status || 'Partida em andamento.')) : (state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.')));
             }
 
-            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
+            atualizarBadgeSalaDominoOnline(dominoOnlineIsSpectator
+                ? `Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você está como <strong>espectador</strong> • ${players.p1?.name || 'Jogador 1'} x ${players.p2?.name || 'Jogador 2'}`
+                : `Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong>`);
             if (dominoOnlineData.blocked || !dominoOnlineData.isAuthorized) {
                 gameOver = true;
                 setStatus('🔒 Esta sala foi bloqueada ou ainda não foi liberada pelo administrador.');
@@ -8349,7 +8415,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
             const endKey = dominoOnlineRoomCode + '|' + (state.status || '') + '|' + (state.gameOver ? 'fim' : 'ativo');
-            if (state.started && state.gameOver && dominoOnlineLastEndKey !== endKey) {
+            if (!dominoOnlineIsSpectator && state.started && state.gameOver && dominoOnlineLastEndKey !== endKey) {
                 dominoOnlineLastEndKey = endKey;
                 const myName = players[dominoOnlineSeat]?.name || 'Você';
                 const otherName = players[otherSeat]?.name || 'Seu amigo';
@@ -8444,19 +8510,58 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             else if (!sala.players?.p1) seat = 'p1';
             else if (!sala.players?.p2) seat = 'p2';
             else {
-                setStatus('Essa sala já tem dois jogadores. Nesta primeira fase, o Dominó online é 1 contra 1.');
+                setStatus('Essa sala já tem dois jogadores. Toque em <strong>Assistir como espectador</strong> para acompanhar a partida ao vivo.');
                 return;
             }
 
             dominoOnlineRoomCode = code;
             dominoOnlineSeat = seat;
+            dominoOnlineIsSpectator = false;
             dominoOnlineMode = true;
             await update(refSalaDominoOnline(code), {
                 [`players/${seat}`]: { uid: playerId, name: nomeDominoOnline(), joinedAt: Date.now(), online: true },
                 updatedAt: Date.now()
             });
             acompanharSalaDominoOnline(code, seat);
-            setStatus(`Você entrou na sala <strong>${code}</strong>. Aguarde ou inicie a partida.`);
+            ativarContextoChamadaDominoOnline(code, seat);
+            setStatus(`Você entrou na sala <strong>${code}</strong>. Aguarde ou inicie a partida. A chamada de vídeo/áudio já está disponível para os jogadores.`);
+        }
+
+        async function assistirSalaDominoOnline() {
+            if (!playerId) {
+                setStatus('A conexão online ainda está preparando. Aguarde alguns segundos e tente novamente.');
+                return;
+            }
+            const input = $('domino-online-room');
+            const code = limparCodigoDominoSala(input ? input.value : '');
+            if (!code) {
+                setStatus('Digite o código da sala para assistir como espectador.');
+                return;
+            }
+            const snap = await get(refSalaDominoOnline(code));
+            if (!snap.exists()) {
+                setStatus(`Sala <strong>${code}</strong> não encontrada. Confira o código.`);
+                return;
+            }
+            const sala = snap.val() || {};
+            if (!sala.isAuthorized || sala.blocked) {
+                setStatus('Esta sala de Dominó ainda não foi liberada ou está bloqueada pelo administrador.');
+                atualizarBadgeSalaDominoOnline(`Sala <strong>${code}</strong>: aguardando liberação do administrador.`);
+                return;
+            }
+            dominoOnlineRoomCode = code;
+            dominoOnlineSeat = 'spectator';
+            dominoOnlineIsSpectator = true;
+            dominoOnlineMode = true;
+            await update(refSalaDominoOnline(code), {
+                [`spectators/${playerId}`]: { uid: playerId, name: nomeDominoOnline() || 'Espectador', joinedAt: Date.now(), online: true },
+                updatedAt: Date.now()
+            });
+            try { onDisconnect(ref(db, `dominoRooms/${code}/spectators/${playerId}`)).remove(); } catch (e) {}
+            acompanharSalaDominoOnline(code, 'spectator');
+            ativarContextoChamadaDominoOnline(code, 'spectator');
+            setStatus(`👁️ Você entrou como espectador na sala <strong>${code}</strong>. A mesa aparece ao vivo e, se os jogadores ligarem a chamada, você poderá ver e ouvir.`);
+            atualizarBadgeSalaDominoOnline(`Sala online: <strong>${code}</strong><br>Modo: <strong>Espectador</strong> • aguardando transmissão dos jogadores.`);
         }
 
         function acompanharSalaDominoOnline(code, seat) {
@@ -8466,7 +8571,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             dominoOnlineRoomCode = code;
             dominoOnlineSeat = seat;
+            dominoOnlineIsSpectator = seat === 'spectator';
             dominoOnlineMode = true;
+            ativarContextoChamadaDominoOnline(code, dominoOnlineIsSpectator ? 'spectator' : seat);
             dominoOnlineUnsub = onValue(refSalaDominoOnline(code), (snap) => {
                 if (!snap.exists()) {
                     setStatus('A sala online foi encerrada.');
@@ -8480,6 +8587,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         async function iniciarPartidaDominoOnline() {
             if (!dominoOnlineMode || !dominoOnlineRoomCode) {
                 setStatus('Crie ou entre em uma sala online primeiro.');
+                return;
+            }
+            if (dominoOnlineIsSpectator || dominoOnlineSeat === 'spectator') {
+                setStatus('Espectador não inicia partida. Apenas os jogadores controlam o jogo.');
                 return;
             }
             const snap = await get(refSalaDominoOnline());
@@ -8550,6 +8661,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         async function playerPlayOnline(side) {
+            if (dominoOnlineIsSpectator) { setStatus('Você está como espectador. Só os jogadores podem mexer nas peças.'); return; }
             if (!dominoOnlineMode || !dominoOnlineData?.state?.started || dominoOnlineData.state.gameOver) return;
             if (!minhaVezDominoOnline()) {
                 setStatus('Aguarde: agora é a vez do seu amigo.');
@@ -8607,6 +8719,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         async function comprarOuPassarOnline() {
+            if (dominoOnlineIsSpectator) { setStatus('Você está como espectador. Só os jogadores podem comprar ou passar.'); return; }
             if (!dominoOnlineMode || !dominoOnlineData?.state?.started || dominoOnlineData.state.gameOver) return;
             if (!minhaVezDominoOnline()) {
                 setStatus('Aguarde: agora é a vez do seu amigo.');
@@ -8666,15 +8779,21 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             if (removerJogador && dominoOnlineMode && dominoOnlineRoomCode && dominoOnlineSeat) {
                 try {
-                    await update(refSalaDominoOnline(), {
-                        [`players/${dominoOnlineSeat}/online`]: false,
-                        updatedAt: Date.now()
-                    });
+                    if (dominoOnlineIsSpectator || dominoOnlineSeat === 'spectator') {
+                        await remove(ref(db, `dominoRooms/${dominoOnlineRoomCode}/spectators/${playerId}`));
+                    } else {
+                        await update(refSalaDominoOnline(), {
+                            [`players/${dominoOnlineSeat}/online`]: false,
+                            updatedAt: Date.now()
+                        });
+                    }
                 } catch (e) {}
             }
+            try { encerrarChamadaWebRTC(false); } catch (e) {}
             dominoOnlineMode = false;
             dominoOnlineRoomCode = '';
             dominoOnlineSeat = '';
+            dominoOnlineIsSpectator = false;
             dominoOnlineData = null;
             dominoOpponentName = 'Robô';
             const badge = $('domino-room-badge');
@@ -8776,6 +8895,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (ev && ev.preventDefault) ev.preventDefault();
             if (ev && ev.stopPropagation) ev.stopPropagation();
             prepararSomDomino();
+            try { encerrarChamadaWebRTC(false); } catch (e) {}
             iniciarDomino();
             return false;
         };
@@ -8806,6 +8926,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const backModeBtn = $('domino-back-mode-btn');
             const createOnlineBtn = $('domino-create-room-btn');
             const joinOnlineBtn = $('domino-join-room-btn');
+            const watchOnlineBtn = $('domino-watch-room-btn');
             const startOnlineBtn = $('domino-start-online-btn');
             const leaveOnlineBtn = $('domino-leave-online-btn');
             const resultCloseBtn = $('domino-result-close-btn');
@@ -8828,6 +8949,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (backModeBtn) backModeBtn.addEventListener('click', () => { prepararSomDomino(); sairDominoOnline(true); fecharEscolhaOnlineDomino(); });
             if (createOnlineBtn) createOnlineBtn.addEventListener('click', () => { prepararSomDomino(); criarSalaDominoOnline(); });
             if (joinOnlineBtn) joinOnlineBtn.addEventListener('click', () => { prepararSomDomino(); entrarSalaDominoOnline(); });
+            if (watchOnlineBtn) watchOnlineBtn.addEventListener('click', () => { prepararSomDomino(); assistirSalaDominoOnline(); });
             if (startOnlineBtn) startOnlineBtn.addEventListener('click', () => { prepararSomDomino(); iniciarPartidaDominoOnline(); });
             if (leaveOnlineBtn) leaveOnlineBtn.addEventListener('click', () => { prepararSomDomino(); sairDominoOnline(true); });
             if (resultCloseBtn) resultCloseBtn.addEventListener('click', fecharResultadoDomino);
