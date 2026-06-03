@@ -1256,6 +1256,58 @@
             .phase3-tools-row { grid-template-columns: 1fr; }
         }
 
+
+        /* ✅ FASE 4 - DIAGNÓSTICO E BACKUP GRÁTIS PARA VIRAR PRODUTO 10/10 */
+        .phase4-quality-panel {
+            background: linear-gradient(135deg, #06121f, #0f172a);
+            border: 1px solid rgba(134, 239, 172, 0.35);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 18px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        }
+        .phase4-quality-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #86efac;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .phase4-quality-desc {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+        .phase4-quality-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .phase4-quality-row button {
+            padding: 10px 8px;
+            font-size: 0.76rem;
+            text-transform: none;
+            border-radius: 8px;
+        }
+        .btn-phase4-check { background-color: #059669; }
+        .btn-phase4-backup { background-color: #0ea5e9; }
+        .btn-phase4-clear { background-color: #64748b; }
+        .btn-phase4-sales { background-color: #9333ea; }
+        .phase4-check-list {
+            text-align: left;
+            line-height: 1.55;
+            font-size: 0.92rem;
+        }
+        .phase4-ok { color: #86efac; font-weight: bold; }
+        .phase4-warn { color: #facc15; font-weight: bold; }
+        .phase4-bad { color: #fca5a5; font-weight: bold; }
+        @media (max-width: 480px) {
+            .phase4-quality-row { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -5335,7 +5387,7 @@
                     const pill = document.createElement('span');
                     pill.id = 'phase3-version-pill';
                     pill.className = 'phase3-version-pill';
-                    pill.innerText = 'v10 • fase 3';
+                    pill.innerText = 'v10 • fase 4';
                     tituloPrincipal.appendChild(pill);
                 }
 
@@ -5444,6 +5496,141 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         window.addEventListener('unhandledrejection', (event) => {
             console.warn('Promessa rejeitada capturada pelo modo estabilidade:', event.reason);
         });
+    })();
+
+
+    // ================================================================
+    // ✅ FASE 4 GRÁTIS - DIAGNÓSTICO, BACKUP E CHECKLIST COMERCIAL
+    // Não muda regras do jogo. Só ajuda a testar, vender e manter estável.
+    // ================================================================
+    (function aplicarFase4Gratis() {
+        const executar = () => {
+            try {
+                const lobby = document.getElementById('lobby-screen');
+                if (!lobby || document.getElementById('phase4-quality-panel')) return;
+
+                const panel = document.createElement('div');
+                panel.id = 'phase4-quality-panel';
+                panel.className = 'phase4-quality-panel';
+                panel.innerHTML = `
+                    <div class="phase4-quality-title">✅ Central 10/10 do Sistema</div>
+                    <div class="phase4-quality-desc">Use estes botões antes de divulgar o jogo: teste recursos grátis, faça backup local e veja o checklist comercial.</div>
+                    <div class="phase4-quality-row">
+                        <button id="phase4-run-check-btn" class="btn-phase4-check" type="button">Rodar diagnóstico grátis</button>
+                        <button id="phase4-backup-btn" class="btn-phase4-backup" type="button">Baixar backup local</button>
+                        <button id="phase4-clear-local-btn" class="btn-phase4-clear" type="button">Limpar dados deste celular</button>
+                        <button id="phase4-sales-check-btn" class="btn-phase4-sales" type="button">Checklist para vender</button>
+                    </div>
+                `;
+                const phase3Panel = document.getElementById('phase3-tools-panel');
+                const feedbackPanel = document.querySelector('.feedback-panel');
+                if (phase3Panel && phase3Panel.nextSibling) lobby.insertBefore(panel, phase3Panel.nextSibling);
+                else if (feedbackPanel) lobby.insertBefore(panel, feedbackPanel);
+                else lobby.appendChild(panel);
+
+                const status = (ok, texto) => `<div><span class="${ok ? 'phase4-ok' : 'phase4-warn'}">${ok ? '✅' : '⚠️'}</span> ${texto}</div>`;
+
+                document.getElementById('phase4-run-check-btn')?.addEventListener('click', async () => {
+                    const checks = [];
+                    checks.push(status(!!window.navigator, 'Navegador carregado corretamente.'));
+                    checks.push(status(!!auth?.currentUser, auth?.currentUser ? 'Firebase Auth conectado.' : 'Firebase Auth ainda não confirmou usuário.'));
+                    checks.push(status(!!db, 'Realtime Database inicializado.'));
+                    checks.push(status(typeof RTCPeerConnection !== 'undefined', 'WebRTC disponível para vídeo/áudio.'));
+                    checks.push(status(!!navigator.mediaDevices?.getUserMedia, 'Permissão de câmera/microfone suportada pelo navegador.'));
+                    checks.push(status(!!navigator.clipboard, 'Função copiar link disponível.'));
+                    checks.push(status(testarLocalStorageFase4(), 'Armazenamento local disponível para salvar preferências.'));
+                    checks.push(status(!!document.getElementById('board'), 'Tabuleiro encontrado na tela.'));
+                    checks.push(status(!!document.getElementById('voice-video-call-panel'), 'Painel de chamada de vídeo/áudio encontrado.'));
+                    checks.push(status(!!document.getElementById('admin-login-panel'), 'Painel de login administrador encontrado.'));
+
+                    let dbExtra = '';
+                    try {
+                        if (auth?.currentUser && db) {
+                            const snap = await get(ref(db, '.info/connected'));
+                            dbExtra = snap.val() ? '<div><span class="phase4-ok">✅</span> Firebase informou conexão ativa.</div>' : '<div><span class="phase4-warn">⚠️</span> Firebase carregou, mas pode estar offline neste momento.</div>';
+                        }
+                    } catch (e) {
+                        dbExtra = '<div><span class="phase4-warn">⚠️</span> Não consegui consultar o status online do Firebase agora.</div>';
+                    }
+
+                    const html = `<div class="phase4-check-list">${checks.join('')}${dbExtra}<br><div class="tiny-muted">Dica: se algum item ficar com aviso, o jogo ainda pode funcionar, mas vale testar antes de chamar jogadores.</div></div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Diagnóstico do sistema', html);
+                    else alert('Diagnóstico concluído.');
+                });
+
+                document.getElementById('phase4-backup-btn')?.addEventListener('click', () => {
+                    const dados = {
+                        versao: 'v10-fase4-gratis',
+                        criadoEm: new Date().toISOString(),
+                        jogador: {
+                            nome: document.getElementById('name-input')?.value || '',
+                            sala: document.getElementById('room-input')?.value || '',
+                            whatsapp: document.getElementById('whatsapp-input')?.value || '',
+                            consentimentoWhatsapp: !!document.getElementById('whatsapp-consent')?.checked
+                        },
+                        localStorage: coletarLocalStorageDamasFase4(),
+                        observacao: 'Backup local simples. Não substitui o Firebase, mas ajuda a guardar configurações do navegador.'
+                    };
+                    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json;charset=utf-8' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `backup-damas-${Date.now()}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+                });
+
+                document.getElementById('phase4-clear-local-btn')?.addEventListener('click', () => {
+                    const limpar = () => {
+                        Object.keys(localStorage).forEach(k => { if (k.startsWith('damas_')) localStorage.removeItem(k); });
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Dados locais limpos', 'As preferências salvas neste celular foram apagadas. O ranking online e as salas no Firebase não foram alterados.');
+                        else alert('Dados locais limpos.');
+                    };
+                    if (typeof exibirConfirmacao === 'function') {
+                        exibirConfirmacao('Limpar dados deste celular', 'Isso apaga nome, WhatsApp salvo, posição da chamada e backups locais deste navegador. Não apaga Firebase nem ranking online.', limpar);
+                    } else if (confirm('Limpar dados locais deste navegador?')) limpar();
+                });
+
+                document.getElementById('phase4-sales-check-btn')?.addEventListener('click', () => {
+                    const html = `<div class="phase4-check-list">
+                        <div><span class="phase4-ok">✅</span> Testar login administrador.</div>
+                        <div><span class="phase4-ok">✅</span> Criar/liberar uma sala pelo painel.</div>
+                        <div><span class="phase4-ok">✅</span> Entrar com dois jogadores em celulares diferentes.</div>
+                        <div><span class="phase4-ok">✅</span> Testar vídeo/áudio dos dois lados.</div>
+                        <div><span class="phase4-ok">✅</span> Testar espectador assistindo.</div>
+                        <div><span class="phase4-ok">✅</span> Finalizar partida e conferir ranking.</div>
+                        <div><span class="phase4-ok">✅</span> Testar modo treino, difícil e aprender.</div>
+                        <div><span class="phase4-ok">✅</span> Criar torneio e gerar aviso WhatsApp manual.</div>
+                        <div><span class="phase4-warn">⚠️</span> Antes de vender caro: aplicar Rules seguras no Firebase e testar no celular do cliente.</div>
+                    </div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Checklist para vender', html);
+                    else alert('Checklist comercial carregado.');
+                });
+            } catch (e) {
+                console.warn('Fase 4 não pôde ser aplicada:', e);
+            }
+        };
+
+        function testarLocalStorageFase4() {
+            try {
+                localStorage.setItem('damas_teste_storage', 'ok');
+                localStorage.removeItem('damas_teste_storage');
+                return true;
+            } catch (_) { return false; }
+        }
+
+        function coletarLocalStorageDamasFase4() {
+            const dados = {};
+            try {
+                Object.keys(localStorage).forEach(k => {
+                    if (k.startsWith('damas_')) dados[k] = localStorage.getItem(k);
+                });
+            } catch (_) {}
+            return dados;
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
+        else executar();
     })();
 
 </script>
