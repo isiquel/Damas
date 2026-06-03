@@ -903,6 +903,63 @@
             line-height: 1.35;
         }
 
+        .central-admin-menu {
+            display: none;
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #130f25, #111827);
+            border: 1px solid rgba(192, 132, 252, 0.5);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+            text-align: left;
+        }
+        .central-admin-title {
+            color: #d8b4fe;
+            font-size: .92rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .55px;
+            margin-bottom: 6px;
+        }
+        .central-admin-desc {
+            color: #cbd5e1;
+            font-size: .78rem;
+            line-height: 1.38;
+            margin-bottom: 10px;
+        }
+        .central-admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .central-admin-grid button {
+            min-height: 54px;
+            padding: 11px 8px;
+            font-size: .78rem;
+            text-transform: none;
+            border-radius: 10px;
+            line-height: 1.2;
+        }
+        .btn-central-admin-damas { background: #7c3aed; }
+        .btn-central-admin-domino { background: #0f766e; }
+        .btn-central-admin-xadrez { background: #475569; }
+        .btn-central-admin-voltar { background: #334155; }
+        .central-admin-note {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #020617;
+            border-left: 4px solid #f1c40f;
+            color: #e2e8f0;
+            font-size: .8rem;
+            line-height: 1.42;
+        }
+        .central-admin-note strong { color: #facc15; }
+        @media (max-width: 520px) {
+            .central-admin-grid { grid-template-columns: 1fr; }
+        }
+
 
 
         /* 🎓 MODO APRENDER - DICAS VISUAIS NO TABULEIRO */
@@ -2243,6 +2300,31 @@
                 <div class="game-mode-copy">Versão inicial jogável contra o robô, preparando o futuro modo online.</div>
             </div>
         </div>
+        <div class="admin-login-panel">
+            <div class="admin-login-title">🛡️ Entrada do Administrador</div>
+            <div class="admin-login-desc">Área exclusiva do dono do jogo. Entre com o e-mail e a senha cadastrados no Firebase para abrir o painel de controle.</div>
+            <div class="admin-login-row">
+                <input type="email" id="admin-email-input" placeholder="E-mail do administrador" autocomplete="username">
+                <input type="password" id="admin-password-input" placeholder="Senha do administrador" autocomplete="current-password">
+            </div>
+            <button id="admin-login-btn" class="btn-admin-login" type="button">Entrar no Painel Admin</button>
+            <button id="admin-logout-btn" class="btn-admin-logout" type="button" style="display:none;">Sair do Admin</button>
+            <div id="admin-login-status" class="admin-login-status">Jogadores comuns não usam esta área.</div>
+
+            <div id="central-admin-menu" class="central-admin-menu">
+                <div class="central-admin-title">🎮 Central do Dono da Plataforma</div>
+                <div class="central-admin-desc">Escolha qual modalidade deseja administrar. A Damas continua usando o painel completo atual; o Dominó já fica preparado para receber salas online na próxima fase.</div>
+                <div class="central-admin-grid">
+                    <button id="central-admin-damas-btn" class="btn-central-admin-damas" type="button">Administrar Damas<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat e ranking</span></button>
+                    <button id="central-admin-domino-btn" class="btn-central-admin-domino" type="button">Administrar Dominó<br><span style="font-size:.68rem; opacity:.85;">preparar salas online</span></button>
+                    <button id="central-admin-xadrez-btn" class="btn-central-admin-xadrez" type="button">Administrar Xadrez<br><span style="font-size:.68rem; opacity:.85;">em breve</span></button>
+                    <button id="central-admin-back-btn" class="btn-central-admin-voltar" type="button">Voltar ao menu<br><span style="font-size:.68rem; opacity:.85;">continuar jogando</span></button>
+                </div>
+                <div id="central-admin-note" class="central-admin-note"></div>
+            </div>
+        </div>
+
+
     </div>
 
     <div id="lobby-screen" class="card" style="display:none;">
@@ -2314,18 +2396,6 @@
             <div id="live-games-lobby-list">
                 <div class="tiny-muted">Nenhuma partida ao vivo no momento.</div>
             </div>
-        </div>
-
-        <div class="admin-login-panel">
-            <div class="admin-login-title">🛡️ Entrada do Administrador</div>
-            <div class="admin-login-desc">Área exclusiva do dono do jogo. Entre com o e-mail e a senha cadastrados no Firebase para abrir o painel de controle.</div>
-            <div class="admin-login-row">
-                <input type="email" id="admin-email-input" placeholder="E-mail do administrador" autocomplete="username">
-                <input type="password" id="admin-password-input" placeholder="Senha do administrador" autocomplete="current-password">
-            </div>
-            <button id="admin-login-btn" class="btn-admin-login" type="button">Entrar no Painel Admin</button>
-            <button id="admin-logout-btn" class="btn-admin-logout" type="button" style="display:none;">Sair do Admin</button>
-            <div id="admin-login-status" class="admin-login-status">Jogadores comuns não usam esta área.</div>
         </div>
 
         <!-- 🔥 NOVA CENTRAL DE FEEDBACK DIRETO PARA O SEU WHATSAPP -->
@@ -3330,6 +3400,12 @@
     const adminLoginBtn = document.getElementById('admin-login-btn');
     const adminLogoutBtn = document.getElementById('admin-logout-btn');
     const adminLoginStatus = document.getElementById('admin-login-status');
+    const centralAdminMenu = document.getElementById('central-admin-menu');
+    const centralAdminDamasBtn = document.getElementById('central-admin-damas-btn');
+    const centralAdminDominoBtn = document.getElementById('central-admin-domino-btn');
+    const centralAdminXadrezBtn = document.getElementById('central-admin-xadrez-btn');
+    const centralAdminBackBtn = document.getElementById('central-admin-back-btn');
+    const centralAdminNote = document.getElementById('central-admin-note');
     
     const gameTimerEl = document.getElementById('game-timer');
     const liveSpectatorsEl = document.getElementById('live-spectators');
@@ -3418,6 +3494,57 @@
     const btnLearningRefresh = document.getElementById('btn-learning-refresh');
     const btnLearningToggle = document.getElementById('btn-learning-toggle');
 
+    function mostrarMenuCentralAdmin(mensagem = "") {
+        if (centralAdminMenu) centralAdminMenu.style.display = "block";
+        if (centralAdminNote) {
+            centralAdminNote.style.display = mensagem ? "block" : "none";
+            centralAdminNote.innerHTML = mensagem || "";
+        }
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hub = document.getElementById('games-hub-panel');
+        const domino = document.getElementById('domino-screen');
+        if (hub) hub.style.display = 'block';
+        if (lobbyScreen) lobbyScreen.style.display = 'none';
+        if (gameScreen) gameScreen.style.display = 'none';
+        if (domino) domino.style.display = 'none';
+    }
+
+    async function abrirAdminDamasCentral() {
+        if (!auth.currentUser || auth.currentUser.isAnonymous || !(await usuarioEhAdminSeguro())) {
+            exibirAlertaDoSistema("Acesso negado 🛡️", "Entre primeiro com o login do administrador.");
+            return;
+        }
+        document.body.classList.remove('platform-start-active');
+        document.body.classList.remove('mode-selecting');
+        document.body.classList.add('game-selected');
+        document.body.classList.remove('domino-selected');
+        if (centralAdminNote) {
+            centralAdminNote.style.display = "block";
+            centralAdminNote.innerHTML = "Abrindo painel da <strong>Damas</strong>...";
+        }
+        playerRole = "admin";
+        nameInput.value = "Administrador";
+        roomInput.value = ADMIN_ROOM_CODE;
+        await joinRoom(ADMIN_ROOM_CODE, "Administrador", false);
+    }
+
+    function abrirAdminDominoCentral() {
+        if (centralAdminNote) {
+            centralAdminNote.style.display = "block";
+            centralAdminNote.innerHTML = "<strong>Dominó:</strong> o painel central já está preparado. O próximo passo é ativar o Dominó online com salas no Firebase; depois estes controles vão liberar, bloquear e encerrar salas de Dominó pelo mesmo painel.";
+        }
+    }
+
+    function abrirAdminXadrezCentral() {
+        if (centralAdminNote) {
+            centralAdminNote.style.display = "block";
+            centralAdminNote.innerHTML = "<strong>Xadrez:</strong> modalidade planejada para uma próxima fase.";
+        }
+    }
+
 
     adminLoginBtn.addEventListener('click', async () => {
         const email = String(adminEmailInput.value || '').trim();
@@ -3451,7 +3578,7 @@
             adminLoginBtn.style.display = "none";
             adminLogoutBtn.style.display = "block";
             adminLoginStatus.innerText = `Admin conectado: ${cred.user.email || 'usuário autorizado'}`;
-            await joinRoom(ADMIN_ROOM_CODE, "Administrador", false);
+            mostrarMenuCentralAdmin("Login confirmado. Agora escolha qual jogo deseja administrar.");
         } catch (e) {
             console.error("Erro no login admin:", e);
             let msg = "Não foi possível entrar. Confira o e-mail, a senha e se o login Email/Senha está ativado no Firebase Authentication.";
@@ -3483,10 +3610,26 @@
         adminLoginBtn.style.display = "block";
         adminLogoutBtn.style.display = "none";
         adminLoginStatus.innerText = "Admin desconectado. Jogadores comuns não usam esta área.";
+        if (centralAdminMenu) centralAdminMenu.style.display = "none";
+        if (centralAdminNote) centralAdminNote.style.display = "none";
         adminPanel.style.display = "none";
         gameScreen.style.display = 'none';
-        lobbyScreen.style.display = 'block';
+        lobbyScreen.style.display = 'none';
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hub = document.getElementById('games-hub-panel');
+        if (hub) hub.style.display = 'block';
         iniciarAutenticacaoAnonima();
+    });
+
+    if (centralAdminDamasBtn) centralAdminDamasBtn.addEventListener('click', abrirAdminDamasCentral);
+    if (centralAdminDominoBtn) centralAdminDominoBtn.addEventListener('click', abrirAdminDominoCentral);
+    if (centralAdminXadrezBtn) centralAdminXadrezBtn.addEventListener('click', abrirAdminXadrezCentral);
+    if (centralAdminBackBtn) centralAdminBackBtn.addEventListener('click', () => {
+        if (centralAdminNote) centralAdminNote.style.display = "none";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
@@ -3603,6 +3746,7 @@
                     adminLoginBtn.style.display = "none";
                     adminLogoutBtn.style.display = "block";
                     adminLoginStatus.innerText = `Admin conectado: ${user.email || 'usuário autorizado'}`;
+                    if (centralAdminMenu) centralAdminMenu.style.display = "block";
                 } else {
                     adminLoginStatus.innerText = "Usuário logado por e-mail, mas ainda não autorizado como administrador.";
                 }
@@ -5295,8 +5439,17 @@
         roomId = ""; playerRole = "spectator"; isPracticeMode = false;
         if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); listenerChatAdminAtivo = null; }
         document.getElementById('admin-chat-monitor-container').style.display = "none";
-        adminPanel.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
-        atualizarStatusSistema('Admin saiu do terminal. Jogo continua disponível normalmente.', '#c084fc');
+        adminPanel.style.display = "none"; 
+        gameScreen.style.display = 'none'; 
+        lobbyScreen.style.display = 'none';
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hubAdminExit = document.getElementById('games-hub-panel');
+        if (hubAdminExit) hubAdminExit.style.display = 'block';
+        if (centralAdminMenu) centralAdminMenu.style.display = "block";
+        atualizarStatusSistema('Admin saiu do terminal. Voltou para o menu central da plataforma.', '#c084fc');
     });
 
     // -------------------------------------------------------------------------------------------------------------------------------- //
