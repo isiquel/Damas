@@ -8294,11 +8294,26 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             handEl.innerHTML = '';
             playerHand.forEach((tile, idx) => {
-                const disabled = gameOver || turn !== 'player' || !canPlayTile(tile);
-                const el = createTileElement(tile, { disabled, selected: selectedIndex === idx, playable: !disabled && canPlayTile(tile) });
+                const encaixa = canPlayTile(tile);
+                const bloqueadaPorVez = !gameOver && turn !== 'player';
+                const bloqueadaPorEncaixe = !gameOver && turn === 'player' && !encaixa;
+                const disabled = gameOver || bloqueadaPorVez || bloqueadaPorEncaixe;
+                const el = createTileElement(tile, { disabled, selected: selectedIndex === idx, playable: !gameOver && turn === 'player' && encaixa });
                 el.addEventListener('click', () => {
-                    if (disabled) return;
+                    if (gameOver) {
+                        setStatus(dominoOnlineMode ? 'A rodada online está encerrada. Inicie uma nova rodada.' : 'A partida terminou. Clique em <strong>Novo jogo</strong>.');
+                        return;
+                    }
+                    if (bloqueadaPorVez) {
+                        setStatus(dominoOnlineMode ? '⏳ Aguarde sua vez. Agora é a vez de <strong>' + getNomeAdversarioDominoOnline() + '</strong>.' : '⏳ Aguarde: agora é a vez do robô.');
+                        return;
+                    }
+                    if (bloqueadaPorEncaixe) {
+                        setStatus('Essa pedra não encaixa nas pontas atuais. Escolha uma pedra com <strong>' + leftEnd + '</strong> ou <strong>' + rightEnd + '</strong>.');
+                        return;
+                    }
                     selectedIndex = selectedIndex === idx ? null : idx;
+                    setStatus('Pedra <strong>' + tileKey(tile) + '</strong> selecionada. Agora escolha <strong>Jogar esquerda</strong> ou <strong>Jogar direita</strong>.');
                     renderDomino();
                 });
                 handEl.appendChild(el);
@@ -8315,10 +8330,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('domino-boneyard-count', boneyard.length);
             setText('domino-player-count', playerHand.length);
             setText('domino-bot-count', botHand.length);
-            setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : 'Robô'));
+            setText('domino-turn-label', gameOver ? 'Fim' : (turn === 'player' ? 'Você' : (dominoOnlineMode ? getNomeAdversarioDominoOnline() : 'Robô')));
             atualizarCabecalhoCompactoDomino();
             const leftBtn = $('domino-play-left-btn'), rightBtn = $('domino-play-right-btn'), drawBtn = $('domino-draw-btn'), newBtn = $('domino-new-btn');
-            if (newBtn) newBtn.innerText = dominoOnlineMode ? 'Jogar contra robô' : 'Novo jogo';
+            if (newBtn) newBtn.innerText = dominoOnlineMode ? 'Sair do online e jogar contra robô' : 'Novo jogo';
             if (leftBtn) leftBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'left');
             if (rightBtn) rightBtn.disabled = gameOver || turn !== 'player' || selectedIndex === null || !canPlaySide(playerHand[selectedIndex] || [-1,-1], 'right');
             if (drawBtn) drawBtn.disabled = gameOver || turn !== 'player';
@@ -8405,7 +8420,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             dominoLastFocus = state.lastFocus || 'centro';
             turn = state.turn === dominoOnlineSeat ? 'player' : 'bot';
 
-            setStatus(state.status || (turn === 'player' ? 'Agora é sua vez.' : 'Aguarde a jogada do seu amigo.'));
+            setStatus(state.status || (turn === 'player' ? '✅ Agora é sua vez. Toque em uma peça destacada e escolha esquerda ou direita.' : '⏳ Aguarde: agora é a vez de ' + (players[otherSeat]?.name || 'seu amigo') + '.'));
             atualizarBadgeSalaDominoOnline(`Sala online: <strong>${dominoOnlineRoomCode}</strong><br>Você: <strong>${players[dominoOnlineSeat]?.name || 'Jogador'}</strong> • Adversário: <strong>${players[otherSeat]?.name || 'aguardando...'}</strong><br>🎲 Rodada carregada`);
 
             const soundKey = [dominoOnlineRoomCode, state.roundId || '', state.lastPlayedKey || '', state.turn || '', state.status || ''].join('|');
