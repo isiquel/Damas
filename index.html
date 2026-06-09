@@ -2329,6 +2329,119 @@ body.chess-selected:not(.chess-board-visible) #chess-online-panel button {
     }
 }
 
+
+/* ✅ FASE 15 - TREINO APRENDER DO ZERO COMPLETO */
+.btn-chess-lesson {
+    margin-top: 12px !important;
+    background: linear-gradient(135deg, #0f172a, #334155) !important;
+    border: 1px solid rgba(147,197,253,.28) !important;
+    color: #e0f2fe !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    font-size: .82rem !important;
+    text-transform: none !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 18px rgba(0,0,0,.22) !important;
+}
+
+.btn-chess-lesson:hover:not(:disabled) {
+    background: linear-gradient(135deg, #1e293b, #475569) !important;
+    transform: translateY(-1px) !important;
+}
+
+.chess-pieces-lesson-panel {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at top left, rgba(56,189,248,.14), transparent 36%),
+        linear-gradient(135deg, rgba(15,23,42,.92), rgba(2,6,23,.92));
+    border: 1px solid rgba(147,197,253,.22);
+    box-shadow: 0 12px 28px rgba(0,0,0,.30);
+    text-align: left;
+}
+
+.chess-lesson-title {
+    color: #bfdbfe;
+    font-size: .9rem;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.chess-lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.chess-lesson-item {
+    background: rgba(15,23,42,.78);
+    border: 1px solid rgba(148,163,184,.16);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.chess-lesson-item strong {
+    display: block;
+    color: #fff;
+    font-size: .88rem;
+    margin-bottom: 4px;
+}
+
+.chess-lesson-item span {
+    display: block;
+    color: #cbd5e1;
+    font-size: .74rem;
+    line-height: 1.34;
+}
+
+.chess-color-legend {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(2,6,23,.72);
+    border: 1px solid rgba(148,163,184,.16);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    color: #e2e8f0;
+    font-size: .74rem;
+    line-height: 1.25;
+}
+
+.chess-color-legend b {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    margin-right: 5px;
+    vertical-align: -2px;
+}
+
+.leg-yellow { background: #facc15; box-shadow: 0 0 8px rgba(250,204,21,.55); }
+.leg-green { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.55); }
+.leg-red { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,.55); }
+.leg-blue { background: #3b82f6; box-shadow: 0 0 8px rgba(59,130,246,.55); }
+
+body.chess-board-visible .chess-pieces-lesson-panel {
+    display: none !important;
+}
+
+.chess-training-coach {
+    border-radius: 14px !important;
+    border: 1px solid rgba(168,85,247,.35) !important;
+    border-left: 4px solid #8b5cf6 !important;
+}
+
+@media (max-width: 560px) {
+    .chess-lesson-grid,
+    .chess-color-legend {
+        grid-template-columns: 1fr;
+    }
+}
+
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2359,7 +2472,7 @@ body.chess-selected:not(.chess-board-visible) #chess-online-panel button {
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 14</span>
+                <span class="game-mode-badge">Fase 15</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2405,7 +2518,7 @@ body.chess-selected:not(.chess-board-visible) #chess-online-panel button {
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 14: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
+                Fase 15: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2432,7 +2545,7 @@ body.chess-selected:not(.chess-board-visible) #chess-online-panel button {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 14 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
+                ✅ Fase 15 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -7588,7 +7701,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 14</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 15</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7640,10 +7753,28 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                             <small>Nomes, cores e dicas</small>
                         </button>
                     </div>
+                    <button id="chess-pieces-lesson-btn" class="btn-chess-lesson" type="button">📚 Conhecer as peças antes de jogar</button>
+                    <div id="chess-pieces-lesson-panel" class="chess-pieces-lesson-panel" style="display:none;">
+                        <div class="chess-lesson-title">📚 Aprenda o básico do Xadrez</div>
+                        <div class="chess-lesson-grid">
+                            <div class="chess-lesson-item"><strong>♔ Rei</strong><span>É a peça principal. Anda 1 casa para qualquer lado. Não pode ficar em perigo.</span></div>
+                            <div class="chess-lesson-item"><strong>♕ Dama</strong><span>É a peça mais forte. Anda reto e diagonal, quantas casas estiverem livres.</span></div>
+                            <div class="chess-lesson-item"><strong>♖ Torre</strong><span>Anda em linha reta: para frente, para trás e para os lados.</span></div>
+                            <div class="chess-lesson-item"><strong>♗ Bispo</strong><span>Anda somente na diagonal, quantas casas estiverem livres.</span></div>
+                            <div class="chess-lesson-item"><strong>♘ Cavalo</strong><span>Anda em formato de L. É a única peça que pula por cima das outras.</span></div>
+                            <div class="chess-lesson-item"><strong>♙ Peão</strong><span>Anda para frente, mas captura na diagonal. No primeiro movimento pode andar 2 casas.</span></div>
+                        </div>
+                        <div class="chess-color-legend">
+                            <div><b class="leg-yellow"></b> Amarelo: peça escolhida</div>
+                            <div><b class="leg-green"></b> Verde: pode andar</div>
+                            <div><b class="leg-red"></b> Vermelho: pode capturar</div>
+                            <div><b class="leg-blue"></b> Azul: última jogada</div>
+                        </div>
+                    </div>
                     <div id="chess-training-status" class="chess-training-status">Escolha um modo acima para abrir o tabuleiro.</div>
                     <div id="chess-training-coach" class="chess-training-coach" style="display:none;">
                         <strong>🎓 Professor de Xadrez:</strong>
-                        <span id="chess-training-coach-text">No modo Aprender eu mostro uma boa ideia para sua próxima jogada.</span>
+                        <span id="chess-training-coach-text">No modo Aprender eu explico a peça, mostro as cores e dou uma ideia simples para sua próxima jogada.</span>
                         <button id="chess-training-tip-btn" type="button">Mostrar dica</button>
                     </div>
                     <div id="chess-beginner-box" class="chess-beginner-box" style="display:none;">
@@ -7750,7 +7881,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 14 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
+                warning.innerHTML = '✅ Fase 15 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
             }
         }
 
@@ -8116,7 +8247,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             document.body.classList.add('chess-menu-active');
             selectedSquare = null;
             legalMoves = [];
-            lastMoveMessage = 'Escolha como deseja jogar. O menu do Xadrez está mais profissional e o tabuleiro abrirá só depois de selecionar Online, Treino ou Aprender do Zero.';
+            lastMoveMessage = 'Escolha como deseja jogar. Na parte de treino, você pode conhecer as peças antes de começar. O tabuleiro abrirá só depois de selecionar Online, Treino ou Aprender do Zero.';
             atualizarPainelTreinoXadrez();
             atualizarPainelOnlineXadrez();
         }
@@ -9936,6 +10067,41 @@ Link: ${location.origin}${location.pathname}`;
     })();
 
     // Dominó removido temporariamente para manter a Damas Arena estável.
+
+
+        /* ✅ FASE 15 - AULA DAS PEÇAS NO TREINO DO XADREZ */
+        (function instalarAulaPecasXadrezFase15() {
+            function bindLessonButton() {
+                const btn = document.getElementById('chess-pieces-lesson-btn');
+                const panel = document.getElementById('chess-pieces-lesson-panel');
+                if (!btn || !panel || btn.dataset.boundFase15 === '1') return;
+                btn.dataset.boundFase15 = '1';
+                btn.addEventListener('click', function () {
+                    const aberto = panel.style.display !== 'none';
+                    panel.style.display = aberto ? 'none' : 'block';
+                    btn.textContent = aberto ? '📚 Conhecer as peças antes de jogar' : '📕 Fechar explicação das peças';
+                    if (!aberto) {
+                        const status = document.getElementById('chess-training-status');
+                        if (status) status.textContent = 'Leia as peças abaixo. Depois escolha Fácil, Médio, Difícil ou Aprender do Zero para abrir o tabuleiro.';
+                    }
+                });
+            }
+
+            const antigoEnsure = window.ensureChessOnlinePanel;
+            if (typeof antigoEnsure === 'function') {
+                window.ensureChessOnlinePanel = function () {
+                    const retorno = antigoEnsure.apply(this, arguments);
+                    setTimeout(bindLessonButton, 0);
+                    return retorno;
+                };
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                setTimeout(bindLessonButton, 300);
+            });
+
+            setInterval(bindLessonButton, 1200);
+        })();
 
 </script>
 
