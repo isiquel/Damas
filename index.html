@@ -2146,7 +2146,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 9: Xadrez Online com alerta de vez, som/vibração opcional, tabuleiro fixo/estável, jogadores identificados, espectador, chat, histórico e placar de material.
+                Fase 10: Xadrez Online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar de material.
                 A Damas Arena continua preservada.
             </div>
 
@@ -2172,7 +2172,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 9 ativa: Xadrez Online com alerta de vez, som/vibração opcional, tabuleiro fixo/estável, jogadores branco/preto, espectador, chat separado, histórico e placar. A Damas Arena continua preservada.
+                ✅ Fase 10 ativa: Xadrez Online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar. A Damas Arena continua preservada.
             </div>
         </div>
     </div>
@@ -6866,6 +6866,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessSoundEnabled = false;
         let chessLastRemoteMoveCount = 0;
         let chessLastTurnAlertKey = '';
+        let chessBoardFlipped = false;
 
         function criarPeca(color, type) {
             return { color, type, moved: false };
@@ -6884,7 +6885,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 9 ativa: Xadrez online com alerta de vez, som/vibração opcional, tabuleiro fixo, jogadores, chat, histórico e placar.';
+            lastMoveMessage = 'Fase 10 ativa: Xadrez online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7263,6 +7264,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 .btn-chess-focus {
                     background: #0f766e;
                 }
+                .btn-chess-flip { background: #b45309; }
+                .btn-chess-flip:hover:not(:disabled) { background: #92400e; }
                 .btn-chess-focus:hover:not(:disabled) {
                     background: #0d9488;
                 }
@@ -7313,7 +7316,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 9</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 10</div>
                     <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7325,6 +7328,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                         <button id="chess-online-copy-btn" class="btn-chess-copy-room" type="button">Copiar sala</button>
                         <button id="chess-sound-btn" class="btn-chess-sound off" type="button">Ativar alerta</button>
                         <button id="chess-focus-btn" class="btn-chess-focus" type="button">Foco no tabuleiro</button>
+                        <button id="chess-flip-btn" class="btn-chess-flip" type="button">Virar tabuleiro</button>
                         <button id="chess-online-leave-btn" class="btn-chess-leave-online" type="button">Sair online</button>
                     </div>
                     <div id="chess-online-status" class="chess-online-status">Modo local ativo. O Xadrez online usa o caminho <strong>chessRooms</strong>, separado da Damas.</div>
@@ -7344,7 +7348,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 material.id = 'chess-material-panel';
                 material.className = 'chess-material-panel';
                 material.innerHTML = `
-                    <div class="chess-material-title">⚔️ Placar de material — Fase 9</div>
+                    <div class="chess-material-title">⚔️ Placar de material — Fase 10</div>
                     <div class="chess-material-grid">
                         <div class="chess-material-box">
                             <div class="chess-material-label">⚪ Brancas capturaram</div>
@@ -7415,7 +7419,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 9 ativa: Xadrez online com modo foco no tabuleiro, layout mais confortável, alerta de vez, jogadores identificados, espectadores, chat, histórico e placar. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 10 ativa: Xadrez online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, jogadores identificados, espectadores, chat, histórico e placar. A Damas Arena continua preservada.';
             }
         }
 
@@ -8113,6 +8117,26 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             list.scrollTop = list.scrollHeight;
         }
 
+        function atualizarCoordenadasXadrez() {
+            const letras = chessBoardFlipped ? ['H','G','F','E','D','C','B','A'] : ['A','B','C','D','E','F','G','H'];
+            const numeros = chessBoardFlipped ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
+            document.querySelectorAll('#chess-screen .chess-coords-top span, #chess-screen .chess-coords-bottom span').forEach((el, i) => { el.textContent = letras[i] || ''; });
+            document.querySelectorAll('#chess-screen .chess-coords-left span, #chess-screen .chess-coords-right span').forEach((el, i) => { el.textContent = numeros[i] || ''; });
+            const btn = document.getElementById('chess-flip-btn');
+            if (btn) btn.textContent = chessBoardFlipped ? 'Visão pretas' : 'Visão brancas';
+        }
+
+        function alternarVisaoTabuleiroXadrez() {
+            chessBoardFlipped = !chessBoardFlipped;
+            selectedSquare = null;
+            legalMoves = [];
+            lastMoveMessage = chessBoardFlipped
+                ? 'Tabuleiro virado: visão das pretas ativada.'
+                : 'Tabuleiro normal: visão das brancas ativada.';
+            renderChessBoard();
+            mostrarToastXadrez(chessBoardFlipped ? '🔄 Visão das pretas ativada.' : '🔄 Visão das brancas ativada.');
+        }
+
         function renderChessBoard() {
             const boardEl = document.getElementById('chess-board');
             if (!boardEl) return;
@@ -8128,8 +8152,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const reiEmXeque = reiEstaEmXeque(chessBoard, chessTurn);
             const kingPos = reiEmXeque ? encontrarRei(chessBoard, chessTurn) : null;
 
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
+            atualizarCoordenadasXadrez();
+
+            for (let displayRow = 0; displayRow < 8; displayRow++) {
+                for (let displayCol = 0; displayCol < 8; displayCol++) {
+                    const row = chessBoardFlipped ? 7 - displayRow : displayRow;
+                    const col = chessBoardFlipped ? 7 - displayCol : displayCol;
                     const square = document.createElement('div');
                     square.className = `chess-square ${(row + col) % 2 === 0 ? 'chess-light' : 'chess-dark'}`;
                     square.style.backgroundColor = (row + col) % 2 === 0 ? '#f0d9b5' : '#b58863';
@@ -8308,7 +8336,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     sala.board = estado.board;
                     sala.turn = estado.turn;
                     sala.gameOver = false;
-                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 9 online ativa.';
+                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 10 online ativa.';
                     sala.lastChessMove = null;
                     sala.enPassantTarget = null;
                     sala.moveHistory = [];
@@ -8344,10 +8372,14 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
                 }
 
+                if (chessPlayerColor === 'black') chessBoardFlipped = true;
+                else if (chessPlayerColor === 'white') chessBoardFlipped = false;
+                atualizarCoordenadasXadrez();
+
                 chessRoomPlayers = sala.players;
                 chessRoomSpectators = sala.spectators;
                 if (!sala.lastMoveMessage || /^Fase 5/i.test(String(sala.lastMoveMessage))) {
-                    sala.lastMoveMessage = 'Fase 9 ativa: sala online organizada com brancas, pretas, espectadores, alerta de vez, chat, histórico e placar.';
+                    sala.lastMoveMessage = 'Fase 10 ativa: sala online organizada com visão automática das pretas, botão virar tabuleiro, alerta de vez, chat, histórico e placar.';
                 }
 
                 await set(chessRoomRef, sala);
@@ -8688,6 +8720,7 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-online-copy-btn')?.addEventListener('click', copiarSalaXadrez);
             document.getElementById('chess-sound-btn')?.addEventListener('click', alternarAlertaXadrez);
             document.getElementById('chess-focus-btn')?.addEventListener('click', alternarFocoTabuleiroXadrez);
+            document.getElementById('chess-flip-btn')?.addEventListener('click', alternarVisaoTabuleiroXadrez);
             document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
         }
