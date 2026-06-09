@@ -1939,10 +1939,10 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 1</span>
+                <span class="game-mode-badge">Fase 2</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
-                <div class="game-mode-copy">Módulo separado: tabuleiro, peças e movimentos básicos sem mexer na Damas.</div>
+                <div class="game-mode-copy">Módulo separado: xeque, xeque-mate e movimentos legais sem mexer na Damas.</div>
             </div>
             <div class="game-mode-card admin-entry" id="game-card-admin" role="button" tabindex="0">
                 <span class="game-mode-badge">Dono</span>
@@ -1984,7 +1984,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 1: tabuleiro separado, peças na posição inicial e movimentos básicos.
+                Fase 2: tabuleiro separado, peças na posição inicial e movimentos básicos.
                 Esta área não altera a lógica da Damas Arena.
             </div>
 
@@ -2000,8 +2000,7 @@
             </div>
 
             <div class="chess-warning">
-                ⚠️ Esta é a primeira fase do Xadrez. Ainda não tem xeque, xeque-mate, roque, promoção do peão ou partida online.
-                A ideia é testar primeiro se o módulo abre separado e não interfere na Damas.
+                ✅ Fase 2 ativa: o Xadrez agora detecta xeque, impede jogadas que deixam o próprio rei em xeque, reconhece xeque-mate, empate simples e promove peão automaticamente a dama. Roque, en passant e online ficam para a próxima fase.
             </div>
         </div>
     </div>
@@ -6655,7 +6654,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
     })();
 
 
-    // ♟️ XADREZ ARENA - FASE 1 (módulo isolado da Damas)
+    // ♟️ XADREZ ARENA - FASE 2 (módulo isolado da Damas)
     (function prepararXadrezArenaSeparado() {
         'use strict';
 
@@ -6668,8 +6667,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessTurn = 'white';
         let selectedSquare = null;
         let legalMoves = [];
+        let chessGameOver = false;
+        let lastMoveMessage = '';
 
-        function criarPeca(color, type) { return { color, type }; }
+        function criarPeca(color, type) { return { color, type, moved: false }; }
 
         function criarTabuleiroInicial() {
             const vazio = () => Array(8).fill(null);
@@ -6683,41 +6684,199 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             chessTurn = 'white';
             selectedSquare = null;
             legalMoves = [];
+            chessGameOver = false;
+            lastMoveMessage = '';
         }
 
-        function dentroDoTabuleiro(row, col) { return row >= 0 && row < 8 && col >= 0 && col < 8; }
-        function casaLivre(row, col) { return dentroDoTabuleiro(row, col) && !chessBoard[row][col]; }
-        function casaTemAdversario(row, col, color) { return dentroDoTabuleiro(row, col) && chessBoard[row][col] && chessBoard[row][col].color !== color; }
+        function instalarCssXadrezFase2() {
+            if (document.getElementById('chess-phase2-style')) return;
 
-        function adicionarMovimentoSeValido(moves, row, col, color) {
+            const style = document.createElement('style');
+            style.id = 'chess-phase2-style';
+            style.textContent = `
+                .chess-square.check {
+                    box-shadow: inset 0 0 0 5px rgba(239, 68, 68, 0.95), 0 0 18px rgba(239, 68, 68, 0.8);
+                    animation: chessCheckPulse 0.9s infinite alternate;
+                }
+                .chess-square.last-from {
+                    box-shadow: inset 0 0 0 4px rgba(59, 130, 246, 0.65);
+                }
+                .chess-square.last-to {
+                    box-shadow: inset 0 0 0 4px rgba(34, 197, 94, 0.8);
+                }
+                @keyframes chessCheckPulse {
+                    from { filter: brightness(1); }
+                    to { filter: brightness(1.22); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function clonarTabuleiro(board) {
+            return board.map(row => row.map(piece => piece ? { ...piece } : null));
+        }
+
+        function dentroDoTabuleiro(row, col) {
+            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        function nomeCor(color) {
+            return color === 'white' ? 'brancas' : 'pretas';
+        }
+
+        function corOposta(color) {
+            return color === 'white' ? 'black' : 'white';
+        }
+
+        function nomeVencedor(color) {
+            return color === 'white' ? 'Brancas' : 'Pretas';
+        }
+
+        function casaLivre(row, col, board = chessBoard) {
+            return dentroDoTabuleiro(row, col) && !board[row][col];
+        }
+
+        function casaTemAdversario(row, col, color, board = chessBoard) {
+            return dentroDoTabuleiro(row, col) && board[row][col] && board[row][col].color !== color && board[row][col].type !== 'king';
+        }
+
+        function encontrarRei(board, color) {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const peca = board[row][col];
+                    if (peca && peca.color === color && peca.type === 'king') {
+                        return { row, col };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function adicionarLinhaAtaque(ataques, board, row, col, color, direcoes) {
+            for (const [dr, dc] of direcoes) {
+                let r = row + dr;
+                let c = col + dc;
+
+                while (dentroDoTabuleiro(r, c)) {
+                    ataques.push({ row: r, col: c });
+                    if (board[r][c]) break;
+                    r += dr;
+                    c += dc;
+                }
+            }
+        }
+
+        function ataquesDaPeca(board, row, col) {
+            const peca = board[row][col];
+            if (!peca) return [];
+
+            const ataques = [];
+            const { color, type } = peca;
+
+            if (type === 'pawn') {
+                const dir = color === 'white' ? -1 : 1;
+                for (const dc of [-1, 1]) {
+                    const r = row + dir;
+                    const c = col + dc;
+                    if (dentroDoTabuleiro(r, c)) ataques.push({ row: r, col: c });
+                }
+                return ataques;
+            }
+
+            if (type === 'knight') {
+                for (const [dr, dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) {
+                    const r = row + dr;
+                    const c = col + dc;
+                    if (dentroDoTabuleiro(r, c)) ataques.push({ row: r, col: c });
+                }
+                return ataques;
+            }
+
+            if (type === 'king') {
+                for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+                    const r = row + dr;
+                    const c = col + dc;
+                    if (dentroDoTabuleiro(r, c)) ataques.push({ row: r, col: c });
+                }
+                return ataques;
+            }
+
+            if (type === 'rook') {
+                adicionarLinhaAtaque(ataques, board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1]]);
+                return ataques;
+            }
+
+            if (type === 'bishop') {
+                adicionarLinhaAtaque(ataques, board, row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]]);
+                return ataques;
+            }
+
+            if (type === 'queen') {
+                adicionarLinhaAtaque(ataques, board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+                return ataques;
+            }
+
+            return ataques;
+        }
+
+        function casaAtacada(board, row, col, porCor) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const peca = board[r][c];
+                    if (!peca || peca.color !== porCor) continue;
+
+                    const ataques = ataquesDaPeca(board, r, c);
+                    if (ataques.some(a => a.row === row && a.col === col)) return true;
+                }
+            }
+            return false;
+        }
+
+        function reiEstaEmXeque(board, color) {
+            const rei = encontrarRei(board, color);
+            if (!rei) return false;
+            return casaAtacada(board, rei.row, rei.col, corOposta(color));
+        }
+
+        function adicionarMovimentoSeValido(moves, board, row, col, color) {
             if (!dentroDoTabuleiro(row, col)) return false;
-            const destino = chessBoard[row][col];
+
+            const destino = board[row][col];
+
             if (!destino) {
                 moves.push({ row, col, capture: false });
                 return true;
             }
-            if (destino.color !== color) moves.push({ row, col, capture: true });
+
+            if (destino.color !== color && destino.type !== 'king') {
+                moves.push({ row, col, capture: true });
+            }
+
             return false;
         }
 
-        function movimentosLinha(row, col, color, direcoes) {
+        function movimentosLinha(board, row, col, color, direcoes) {
             const moves = [];
+
             for (const [dr, dc] of direcoes) {
                 let r = row + dr;
                 let c = col + dc;
+
                 while (dentroDoTabuleiro(r, c)) {
-                    const continuar = adicionarMovimentoSeValido(moves, r, c, color);
+                    const continuar = adicionarMovimentoSeValido(moves, board, r, c, color);
                     if (!continuar) break;
                     r += dr;
                     c += dc;
                 }
             }
+
             return moves;
         }
 
-        function calcularMovimentos(row, col) {
-            const peca = chessBoard[row][col];
+        function calcularMovimentosBasicos(row, col, board = chessBoard) {
+            const peca = board[row]?.[col];
             if (!peca) return [];
+
             const { color, type } = peca;
             const moves = [];
 
@@ -6725,35 +6884,37 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 const dir = color === 'white' ? -1 : 1;
                 const startRow = color === 'white' ? 6 : 1;
 
-                if (casaLivre(row + dir, col)) {
+                if (casaLivre(row + dir, col, board)) {
                     moves.push({ row: row + dir, col, capture: false });
-                    if (row === startRow && casaLivre(row + dir * 2, col)) {
+
+                    if (row === startRow && casaLivre(row + dir * 2, col, board)) {
                         moves.push({ row: row + dir * 2, col, capture: false });
                     }
                 }
 
                 for (const dc of [-1, 1]) {
-                    if (casaTemAdversario(row + dir, col + dc, color)) {
+                    if (casaTemAdversario(row + dir, col + dc, color, board)) {
                         moves.push({ row: row + dir, col: col + dc, capture: true });
                     }
                 }
+
                 return moves;
             }
 
-            if (type === 'rook') return movimentosLinha(row, col, color, [[1,0],[-1,0],[0,1],[0,-1]]);
-            if (type === 'bishop') return movimentosLinha(row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]]);
-            if (type === 'queen') return movimentosLinha(row, col, color, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+            if (type === 'rook') return movimentosLinha(board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1]]);
+            if (type === 'bishop') return movimentosLinha(board, row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]]);
+            if (type === 'queen') return movimentosLinha(board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
 
             if (type === 'knight') {
                 for (const [dr, dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) {
-                    adicionarMovimentoSeValido(moves, row + dr, col + dc, color);
+                    adicionarMovimentoSeValido(moves, board, row + dr, col + dc, color);
                 }
                 return moves;
             }
 
             if (type === 'king') {
                 for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
-                    adicionarMovimentoSeValido(moves, row + dr, col + dc, color);
+                    adicionarMovimentoSeValido(moves, board, row + dr, col + dc, color);
                 }
                 return moves;
             }
@@ -6761,11 +6922,86 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return moves;
         }
 
-        function nomeCor(color) { return color === 'white' ? 'brancas' : 'pretas'; }
+        function aplicarMovimentoNoTabuleiro(board, fromRow, fromCol, toRow, toCol) {
+            const novo = clonarTabuleiro(board);
+            const peca = novo[fromRow][fromCol];
+
+            if (!peca) return novo;
+
+            novo[toRow][toCol] = { ...peca, moved: true };
+            novo[fromRow][fromCol] = null;
+
+            if (peca.type === 'pawn' && (toRow === 0 || toRow === 7)) {
+                novo[toRow][toCol] = { color: peca.color, type: 'queen', moved: true, promoted: true };
+            }
+
+            return novo;
+        }
+
+        function calcularMovimentosLegais(row, col, board = chessBoard) {
+            const peca = board[row]?.[col];
+            if (!peca) return [];
+
+            const basicos = calcularMovimentosBasicos(row, col, board);
+
+            return basicos.filter(move => {
+                const simulado = aplicarMovimentoNoTabuleiro(board, row, col, move.row, move.col);
+                return !reiEstaEmXeque(simulado, peca.color);
+            });
+        }
+
+        function todosMovimentosLegais(color, board = chessBoard) {
+            const moves = [];
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const peca = board[row][col];
+                    if (!peca || peca.color !== color) continue;
+
+                    const legais = calcularMovimentosLegais(row, col, board);
+                    for (const move of legais) {
+                        moves.push({ from: { row, col }, to: { row: move.row, col: move.col }, capture: move.capture });
+                    }
+                }
+            }
+
+            return moves;
+        }
+
+        function analisarEstadoDaPartida(mensagemBase = '') {
+            const emXeque = reiEstaEmXeque(chessBoard, chessTurn);
+            const movimentos = todosMovimentosLegais(chessTurn, chessBoard);
+
+            if (emXeque && movimentos.length === 0) {
+                chessGameOver = true;
+                selectedSquare = null;
+                legalMoves = [];
+                return `Xeque-mate! ${nomeVencedor(corOposta(chessTurn))} venceram.`;
+            }
+
+            if (!emXeque && movimentos.length === 0) {
+                chessGameOver = true;
+                selectedSquare = null;
+                legalMoves = [];
+                return 'Empate por afogamento: o jogador da vez não tem movimento legal.';
+            }
+
+            if (emXeque) {
+                return `${mensagemBase ? mensagemBase + ' ' : ''}Xeque no rei das ${nomeCor(chessTurn)}.`;
+            }
+
+            return mensagemBase || '';
+        }
 
         function atualizarStatus(textoExtra) {
             const status = document.getElementById('chess-status');
             if (!status) return;
+
+            if (chessGameOver) {
+                status.textContent = textoExtra || lastMoveMessage || 'Partida encerrada.';
+                return;
+            }
+
             const base = `Vez das ${nomeCor(chessTurn)}.`;
             status.textContent = textoExtra ? `${base} ${textoExtra}` : base;
         }
@@ -6773,7 +7009,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function renderChessBoard() {
             const boardEl = document.getElementById('chess-board');
             if (!boardEl) return;
+
             boardEl.innerHTML = '';
+            const reiEmXeque = reiEstaEmXeque(chessBoard, chessTurn);
+            const posRei = reiEmXeque ? encontrarRei(chessBoard, chessTurn) : null;
 
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
@@ -6785,6 +7024,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     square.setAttribute('aria-label', `Casa ${row + 1}, ${col + 1}`);
 
                     if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) square.classList.add('selected');
+                    if (posRei && posRei.row === row && posRei.col === col) square.classList.add('check');
+
                     const move = legalMoves.find(m => m.row === row && m.col === col);
                     if (move) square.classList.add(move.capture ? 'capture' : 'legal');
 
@@ -6802,19 +7043,35 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
         }
 
+        function moverPeca(fromRow, fromCol, toRow, toCol) {
+            const peca = chessBoard[fromRow][fromCol];
+            const promovendo = peca && peca.type === 'pawn' && (toRow === 0 || toRow === 7);
+
+            chessBoard = aplicarMovimentoNoTabuleiro(chessBoard, fromRow, fromCol, toRow, toCol);
+            chessTurn = corOposta(chessTurn);
+            selectedSquare = null;
+            legalMoves = [];
+
+            const mensagemMovimento = promovendo ? 'Peão promovido automaticamente a dama.' : 'Movimento realizado.';
+            lastMoveMessage = analisarEstadoDaPartida(mensagemMovimento);
+
+            atualizarStatus(lastMoveMessage);
+            renderChessBoard();
+        }
+
         function handleChessSquareClick(row, col) {
+            if (chessGameOver) {
+                atualizarStatus(lastMoveMessage || 'Partida encerrada. Clique em reiniciar para jogar novamente.');
+                return;
+            }
+
             const peca = chessBoard[row][col];
 
             if (selectedSquare) {
                 const move = legalMoves.find(m => m.row === row && m.col === col);
+
                 if (move) {
-                    chessBoard[row][col] = chessBoard[selectedSquare.row][selectedSquare.col];
-                    chessBoard[selectedSquare.row][selectedSquare.col] = null;
-                    chessTurn = chessTurn === 'white' ? 'black' : 'white';
-                    selectedSquare = null;
-                    legalMoves = [];
-                    atualizarStatus('Movimento realizado.');
-                    renderChessBoard();
+                    moverPeca(selectedSquare.row, selectedSquare.col, row, col);
                     return;
                 }
             }
@@ -6836,8 +7093,15 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
             selectedSquare = { row, col };
-            legalMoves = calcularMovimentos(row, col);
-            atualizarStatus(legalMoves.length ? 'Casas possíveis marcadas no tabuleiro.' : 'Essa peça não tem movimento livre agora.');
+            legalMoves = calcularMovimentosLegais(row, col);
+
+            if (legalMoves.length) {
+                atualizarStatus('Casas legais marcadas. O jogo agora impede deixar o próprio rei em xeque.');
+            } else {
+                const emXeque = reiEstaEmXeque(chessBoard, chessTurn);
+                atualizarStatus(emXeque ? 'Essa peça não resolve o xeque. Escolha uma jogada que proteja o rei.' : 'Essa peça não tem movimento legal agora.');
+            }
+
             renderChessBoard();
         }
 
@@ -6856,7 +7120,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (chess) chess.style.display = 'block';
 
             if (!chessBoard.length) criarTabuleiroInicial();
-            atualizarStatus('');
+            lastMoveMessage = analisarEstadoDaPartida('');
+            atualizarStatus(lastMoveMessage);
             renderChessBoard();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -6879,11 +7144,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
         function resetChessGame() {
             criarTabuleiroInicial();
-            atualizarStatus('Partida reiniciada.');
+            atualizarStatus('Partida reiniciada. Fase 2 ativa: xeque, xeque-mate e empate simples.');
             renderChessBoard();
         }
 
         function iniciarModuloXadrez() {
+            instalarCssXadrezFase2();
             criarTabuleiroInicial();
             document.getElementById('chess-back-btn')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-back-btn-bottom')?.addEventListener('click', voltarParaModalidades);
