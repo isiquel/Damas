@@ -6879,7 +6879,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 5.2 ativa: Xadrez online corrigido com restauração forte do tabuleiro e das peças.';
+            lastMoveMessage = 'Fase 5.3 ativa: Xadrez online corrigido sem runTransaction, com entrada forte na sala.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7787,91 +7787,82 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
         async function entrarXadrezOnline(assistir = false) {
             instalarUiXadrezFase5();
+
             const nameInput = document.getElementById('chess-online-name');
             const roomInput = document.getElementById('chess-online-room');
+
             chessPlayerName = normalizarCampoXadrez(nameInput?.value) || normalizarCampoXadrez(document.getElementById('name-input')?.value) || 'Jogador';
             chessRoomId = normalizarSalaXadrez(roomInput?.value) || 'xadrez';
+
             if (nameInput) nameInput.value = chessPlayerName;
             if (roomInput) roomInput.value = chessRoomId;
 
-            await garantirAuthXadrezOnline();
-            const uid = getChessUid();
-
-            sairXadrezOnline(false);
-            chessMode = 'online';
-            chessIsSpectator = assistir;
-            chessPlayerColor = 'spectator';
-            chessRoomRef = ref(db, `chessRooms/${chessRoomId}`);
-
             try {
-                const tx = await runTransaction(chessRoomRef, (room) => {
-                    const agora = Date.now();
-                    const sala = room && typeof room === 'object' ? room : {};
-                    sala.createdAt = sala.createdAt || agora;
-                    sala.updatedAt = agora;
-                    sala.mode = 'xadrez';
+                atualizarStatusOnlineXadrez('Conectando ao Xadrez online...');
 
-                    if (tabuleiroXadrezPrecisaRestaurar(sala.board)) {
-                        criarTabuleiroInicial();
-                        const estado = estadoXadrezParaFirebase();
-                        sala.board = estado.board;
-                        sala.turn = estado.turn;
-                        sala.gameOver = false;
-                        sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez.';
-                        sala.lastChessMove = null;
-                        sala.enPassantTarget = null;
-                        sala.moveHistory = [];
-                        sala.repairedAt = agora;
-                    }
+                await garantirAuthXadrezOnline();
+                const uid = getChessUid();
+                if (!uid) throw new Error('Não consegui gerar o ID do jogador.');
 
-                    sala.players = sala.players || {};
-                    sala.spectators = sala.spectators || {};
+                // Sai de qualquer escuta antiga antes de entrar em uma nova sala.
+                sairXadrezOnline(false);
 
-                    if (assistir) {
-                        sala.spectators[uid] = { id: uid, name: chessPlayerName, connectedAt: agora };
-                        return sala;
-                    }
+                chessMode = 'online';
+                chessIsSpectator = assistir;
+                chessPlayerColor = 'spectator';
+                chessOnlineReady = false;
+                chessRoomRef = ref(db, `chessRooms/${chessRoomId}`);
 
-                    if (sala.players.white?.id === uid) {
-                        sala.players.white.name = chessPlayerName;
-                        sala.players.white.connectedAt = agora;
-                        return sala;
-                    }
+                const agora = Date.now();
+                const snap = await get(chessRoomRef);
+                let sala = snap.exists() && snap.val() && typeof snap.val() === 'object' ? snap.val() : {};
 
-                    if (sala.players.black?.id === uid) {
-                        sala.players.black.name = chessPlayerName;
-                        sala.players.black.connectedAt = agora;
-                        return sala;
-                    }
+                sala.createdAt = sala.createdAt || agora;
+                sala.updatedAt = agora;
+                sala.mode = 'xadrez';
 
-                    if (!sala.players.white || !sala.players.white.id) {
-                        sala.players.white = { id: uid, name: chessPlayerName, connectedAt: agora };
-                        return sala;
-                    }
+                // Se a sala antiga veio vazia, corrompida ou sem reis, restaura forte.
+                if (tabuleiroXadrezPrecisaRestaurar(sala.board)) {
+                    criarTabuleiroInicial();
+                    const estado = estadoXadrezParaFirebase();
+                    sala.board = estado.board;
+                    sala.turn = estado.turn;
+                    sala.gameOver = false;
+                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez.';
+                    sala.lastChessMove = null;
+                    sala.enPassantTarget = null;
+                    sala.moveHistory = [];
+                    sala.repairedAt = agora;
+                }
 
-                    if (!sala.players.black || !sala.players.black.id) {
-                        sala.players.black = { id: uid, name: chessPlayerName, connectedAt: agora };
-                        return sala;
-                    }
+                sala.players = sala.players && typeof sala.players === 'object' ? sala.players : {};
+                sala.spectators = sala.spectators && typeof sala.spectators === 'object' ? sala.spectators : {};
 
+                // Limpa o próprio usuário de posições antigas dentro da mesma sala.
+                if (sala.players.white?.id === uid) delete sala.players.white;
+                if (sala.players.black?.id === uid) delete sala.players.black;
+                if (sala.spectators[uid]) delete sala.spectators[uid];
+
+                if (assistir) {
+                    chessPlayerColor = 'spectator';
+                    chessIsSpectator = true;
                     sala.spectators[uid] = { id: uid, name: chessPlayerName, connectedAt: agora };
-                    return sala;
-                });
-
-                const room = tx.snapshot.val() || {};
-                const players = room.players || {};
-
-                if (players.white?.id === uid && !assistir) {
+                } else if (!sala.players.white || !sala.players.white.id) {
                     chessPlayerColor = 'white';
                     chessIsSpectator = false;
-                } else if (players.black?.id === uid && !assistir) {
+                    sala.players.white = { id: uid, name: chessPlayerName, connectedAt: agora };
+                } else if (!sala.players.black || !sala.players.black.id) {
                     chessPlayerColor = 'black';
                     chessIsSpectator = false;
+                    sala.players.black = { id: uid, name: chessPlayerName, connectedAt: agora };
                 } else {
                     chessPlayerColor = 'spectator';
                     chessIsSpectator = true;
-                    if (!assistir) mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
+                    sala.spectators[uid] = { id: uid, name: chessPlayerName, connectedAt: agora };
+                    mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
                 }
+
+                await set(chessRoomRef, sala);
 
                 try {
                     if (chessPlayerColor === 'white' || chessPlayerColor === 'black') {
@@ -7892,10 +7883,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 iniciarChatXadrezOnline();
                 chessOnlineReady = true;
                 atualizarPainelOnlineXadrez();
-                mostrarToastXadrez(`🌐 Conectado na sala ${chessRoomId}.`);
+                mostrarToastXadrez(`🌐 Conectado na sala ${chessRoomId}. Você está como ${chessIsSpectator ? 'espectador' : nomeCor(chessPlayerColor)}.`);
             } catch (e) {
                 console.error('Erro detalhado ao entrar no Xadrez online:', e);
                 chessMode = 'local';
+                chessRoomRef = null;
                 chessOnlineReady = false;
                 chessIsSpectator = false;
                 chessPlayerColor = 'white';
