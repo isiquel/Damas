@@ -2513,6 +2513,54 @@ body.chess-board-visible .chess-pieces-lesson-panel {
         .chess-result-close-btn { width: auto; padding: 9px 14px; font-size: .76rem; text-transform: none; border-radius: 999px; background: #334155; }
         .chess-result-close-btn:hover:not(:disabled) { background: #475569; }
 
+        /* ♟️ XADREZ ARENA - FASE 17: xeque, xeque-mate e final profissional */
+        .chess-result-panel.mate {
+            border-color: rgba(250,204,21,.95);
+            background:
+                radial-gradient(circle at top, rgba(250,204,21,.26), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(124,58,237,.22), transparent 36%),
+                linear-gradient(135deg, #020617, #111827 58%, #3b2206);
+            box-shadow: 0 22px 60px rgba(0,0,0,.68), 0 0 28px rgba(250,204,21,.16);
+        }
+        .chess-result-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .chess-result-actions button {
+            width: 100%;
+            padding: 10px 8px;
+            font-size: .76rem;
+            text-transform: none;
+            border-radius: 11px;
+            line-height: 1.18;
+        }
+        .btn-chess-result-again { background: #16a34a; }
+        .btn-chess-result-again:hover:not(:disabled) { background: #15803d; }
+        .btn-chess-result-menu { background: #2563eb; }
+        .btn-chess-result-menu:hover:not(:disabled) { background: #1d4ed8; }
+        .chess-status-panel.chess-status-check::before {
+            content: '⚠️ XEQUE! ';
+            color: #fecaca;
+            font-weight: 1000;
+        }
+        .chess-status-panel.chess-status-mate::before {
+            content: '♟️ XEQUE-MATE! ';
+            color: #fef08a;
+            font-weight: 1000;
+        }
+        .chess-square.check .chess-piece {
+            animation: chessKingDangerShake .52s infinite alternate;
+        }
+        @keyframes chessKingDangerShake {
+            from { transform: translateX(-1px) scale(1); }
+            to { transform: translateX(1px) scale(1.05); }
+        }
+        @media (max-width: 560px) {
+            .chess-result-actions { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2543,7 +2591,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 15</span>
+                <span class="game-mode-badge">Fase 17</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2589,7 +2637,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 16: Xadrez com Professor durante a partida: dicas ao clicar nas peças, explicação dos movimentos, aviso bonito de xeque, xeque-mate, vitória, derrota e empate. Vídeo/áudio continua pausado.
+                Fase 17: Xadrez com Professor, aviso profissional de xeque, tela bonita de xeque-mate, vitória, derrota, empate e botões finais. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2606,7 +2654,11 @@ body.chess-board-visible .chess-pieces-lesson-panel {
                 <div id="chess-result-icon" class="chess-result-icon">🏆</div>
                 <div id="chess-result-title" class="chess-result-title">Resultado</div>
                 <div id="chess-result-text" class="chess-result-text">A partida terminou.</div>
-                <button id="chess-result-close-btn" class="chess-result-close-btn" type="button">Continuar olhando o tabuleiro</button>
+                <div class="chess-result-actions">
+                    <button id="chess-result-again-btn" class="btn-chess-result-again" type="button">Jogar novamente</button>
+                    <button id="chess-result-menu-btn" class="btn-chess-result-menu" type="button">Voltar ao menu do Xadrez</button>
+                    <button id="chess-result-close-btn" class="chess-result-close-btn" type="button">Continuar olhando o tabuleiro</button>
+                </div>
             </div>
 
             <div class="chess-board-wrap">
@@ -7355,7 +7407,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 16 ativa: Xadrez limpo com Professor durante a partida, dicas por peça e painel bonito de resultado. Vídeo/áudio pausado.';
+            lastMoveMessage = 'Fase 17 ativa: Xadrez com Professor, aviso profissional de xeque, xeque-mate, vitória, derrota, empate e botões finais. Vídeo/áudio pausado.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -8396,6 +8448,60 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             chessLearnExampleMove = exemplo;
         }
 
+        function jogadaPodeGerarXequeContra(corDefesa) {
+            const atacante = corOposta(corDefesa);
+            const movimentos = todosMovimentosLegais(atacante, chessBoard);
+            for (const item of movimentos) {
+                const temp = clonarTabuleiro(chessBoard);
+                if (!temp) continue;
+                aplicarMovimentoEmBoard(temp, item.from.row, item.from.col, item.to);
+                if (reiEstaEmXeque(temp, corDefesa)) return true;
+            }
+            return false;
+        }
+
+        function feedbackProfessorDepoisDaJogada(peca, fromRow, fromCol, move, estado) {
+            if (!(chessMode === 'training' && chessTrainingLearnMode && peca?.color === chessHumanColor)) return;
+            if (/Xeque-mate/i.test(estado || '')) {
+                atualizarProfessorXadrez('🏆 Excelente! Isso foi xeque-mate. Você protegeu seu Rei e deixou o Rei adversário sem saída.', null);
+                return;
+            }
+            if (/Xeque/i.test(estado || '')) {
+                atualizarProfessorXadrez('🔥 Boa! Você colocou o Rei da máquina em xeque. Agora ela será obrigada a se defender.', null);
+                return;
+            }
+            if (jogadaPodeGerarXequeContra(chessHumanColor)) {
+                atualizarProfessorXadrez('⚠️ Atenção: sua jogada é legal, mas a máquina pode criar ameaça de xeque. Observe bem o Rei antes da próxima jogada.', null);
+                return;
+            }
+            if (move.capture) {
+                atualizarProfessorXadrez('✅ Boa jogada! Você capturou uma peça. Capturar com segurança ajuda a ganhar material e controlar a partida.', null);
+                return;
+            }
+            if (move.castle) {
+                atualizarProfessorXadrez('🛡️ Ótimo roque! Você colocou o Rei em mais segurança e aproximou a Torre do jogo.', null);
+                return;
+            }
+            if (peca.type === 'knight' || peca.type === 'bishop') {
+                atualizarProfessorXadrez('✅ Boa jogada! Você desenvolveu uma peça. No começo da partida, tirar Cavalo e Bispo da posição inicial ajuda muito.', null);
+                return;
+            }
+            if (peca.type === 'pawn' && Math.abs(move.row - fromRow) === 2) {
+                atualizarProfessorXadrez('✅ Bom avanço de peão! Você ganhou espaço. Agora tente desenvolver Cavalos e Bispos.', null);
+                return;
+            }
+            atualizarProfessorXadrez('✅ Jogada feita. Agora observe a resposta da máquina e procure manter seu Rei seguro.', null);
+        }
+
+        function reforcarProfessorXequeXadrez(estado) {
+            if (!/Xeque/i.test(estado || '')) return;
+            if (/Xeque-mate/i.test(estado || '')) {
+                atualizarProfessorXadrez('♟️ Xeque-mate! A partida terminou porque o Rei ameaçado não tem fuga, defesa nem captura possível.', null);
+            } else {
+                atualizarProfessorXadrez('⚠️ Xeque! O Rei está ameaçado. A prioridade é uma destas três: fugir com o Rei, capturar a peça atacante ou bloquear o caminho do ataque.', null);
+            }
+        }
+
         function limparResultadoXadrez() {
             const panel = document.getElementById('chess-result-panel');
             if (panel) {
@@ -8417,26 +8523,32 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             panel.className = 'chess-result-panel';
 
             let tipo = 'draw';
-            let titulo = 'Partida empatada';
+            let titulo = '🤝 Partida empatada';
             let icone = '🤝';
-            if (/Xeque-mate/i.test(textoEstado) || /venceram|venceu|desistência/i.test(textoEstado)) {
+            let textoAmigavel = textoEstado;
+            const terminouPorMate = /Xeque-mate/i.test(textoEstado);
+            if (terminouPorMate || /venceram|venceu|desistência/i.test(textoEstado)) {
                 const brancasVenceram = /brancas/i.test(textoEstado);
                 const pretasVenceram = /pretas/i.test(textoEstado);
+                tipo = terminouPorMate ? 'mate' : 'win';
                 if (chessMode === 'training') {
-                    tipo = brancasVenceram ? 'win' : 'loss';
+                    tipo = brancasVenceram ? (terminouPorMate ? 'mate' : 'win') : 'loss';
                     titulo = brancasVenceram ? '🏆 Você venceu!' : '😔 A máquina venceu';
                     icone = brancasVenceram ? '🏆' : '♟️';
+                    textoAmigavel = brancasVenceram
+                        ? `${textoEstado} Parabéns! Você derrotou a máquina.`
+                        : `${textoEstado} Continue treinando: revise a segurança do Rei e tente novamente.`;
                 } else {
-                    tipo = 'win';
-                    titulo = brancasVenceram ? '🏆 Brancas venceram!' : pretasVenceram ? '🏆 Pretas venceram!' : '🏆 Partida finalizada';
-                    icone = '🏆';
+                    titulo = brancasVenceram ? '♟️ Xeque-mate: Brancas venceram!' : pretasVenceram ? '♟️ Xeque-mate: Pretas venceram!' : '🏆 Partida finalizada';
+                    icone = terminouPorMate ? '♟️' : '🏆';
                 }
             }
             panel.classList.add(tipo);
             if (icon) icon.textContent = icone;
             if (title) title.textContent = titulo;
-            if (text) text.textContent = textoEstado;
+            if (text) text.textContent = textoAmigavel;
             panel.style.display = 'block';
+            try { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
         }
 
         function dicaSelecaoPecaXadrez(peca, row, col, movimentosLegais) {
@@ -9444,6 +9556,7 @@ Link: ${location.origin}${location.pathname}`;
 
             const notation = criarNotacao(peca, fromRow, fromCol, move, promotionType);
             moveHistory.push(notation);
+            const moverColor = peca.color;
 
             selectedSquare = null;
             legalMoves = [];
@@ -9458,10 +9571,11 @@ Link: ${location.origin}${location.pathname}`;
 
             renderChessBoard();
             const estado = avaliarEstadoDoJogo(msg);
-            if (/Xeque-mate/i.test(estado)) mostrarToastXadrez('🏆 ' + estado, 'mate');
+            reforcarProfessorXequeXadrez(estado);
+            if (moverColor === chessHumanColor) feedbackProfessorDepoisDaJogada(peca, fromRow, fromCol, move, estado);
+            if (/Xeque-mate/i.test(estado)) mostrarToastXadrez('♟️ XEQUE-MATE! ' + estado, 'mate');
             else if (/Xeque/i.test(estado)) {
-                atualizarProfessorXadrez('⚠️ Xeque! O Rei está ameaçado. Agora a prioridade é proteger o Rei: mova o Rei, capture a peça atacante ou coloque uma peça no caminho.', null);
-                mostrarToastXadrez('⚠️ ' + estado, 'check');
+                mostrarToastXadrez('⚠️ XEQUE! ' + estado, 'check');
             }
             else if (/Empate|afogamento/i.test(estado)) mostrarToastXadrez('🤝 ' + estado, 'mate');
             else mostrarToastXadrez('✅ ' + msg);
@@ -10174,6 +10288,8 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-training-learn-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', true));
             document.getElementById('chess-training-tip-btn')?.addEventListener('click', atualizarDicaTreinoXadrez);
             document.getElementById('chess-result-close-btn')?.addEventListener('click', () => { const p = document.getElementById('chess-result-panel'); if (p) p.style.display = 'none'; });
+            document.getElementById('chess-result-again-btn')?.addEventListener('click', () => { resetChessGame(); focarTabuleiroXadrez(false); });
+            document.getElementById('chess-result-menu-btn')?.addEventListener('click', () => { limparResultadoXadrez(); ocultarTabuleiroXadrezParaMenu(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
             document.getElementById('central-admin-xadrez-btn')?.addEventListener('click', abrirAdminXadrezCentral);
         }
 
