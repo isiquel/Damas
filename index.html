@@ -2076,9 +2076,9 @@
 
     
 
-        /* ✅ FASE 13.3 - DESTRAVAR E LIMPAR A PARTIDA
-           Mantém o jogo funcionando e remove excesso visual da tela normal do Xadrez.
-           O vídeo/áudio fica pausado para refazer depois usando a base estável da Damas. */
+        /* ✅ FASE 13.4 - RESTAURAÇÃO LIMPA DO XADREZ ONLINE
+           Mantém o Xadrez funcionando, tela limpa e Admin próprio preservado.
+           Vídeo/áudio continua pausado nesta fase para ser refeito depois com a lógica estável da Damas. */
         body:not(.chess-admin-only) #chess-material-panel,
         body:not(.chess-admin-only) #chess-history-panel,
         body:not(.chess-admin-only) .chess-action-note,
@@ -2182,8 +2182,8 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 12.1: Xadrez Online com painel Admin limpo e próprio, sem tabuleiro/placar dentro da administração; salas liberadas/bloqueadas, expulsar jogadores, limpar chat e resetar sala.
-                A Damas Arena continua preservada.
+                Fase 13.5: Xadrez Online restaurado em versão limpa e agora com Modo Treino contra a máquina, separado da Damas. Vídeo/áudio continua pausado para refazer depois com segurança.
+                A Damas Arena continua preservada e não foi alterada.
             </div>
 
             <div id="chess-status" class="chess-status-panel">Vez das brancas.</div>
@@ -2209,7 +2209,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 12.1 ativa: Admin do Xadrez limpo, somente painel administrativo. A Damas Arena continua preservada.
+                ✅ Fase 13.5 ativa: Xadrez Online limpo, destravado, Admin próprio preservado e Modo Treino contra a máquina adicionado somente no Xadrez. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -6909,6 +6909,14 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessAdminUnsubscribeRooms = null;
         let chessAdminUnsubscribeChat = null;
 
+        // ✅ FASE 13.5 - MODO TREINO DO XADREZ
+        // Mantém a Damas preservada. A máquina joga somente dentro do módulo do Xadrez.
+        let chessTrainingActive = false;
+        let chessTrainingDifficulty = 'medio';
+        let chessTrainingLearnMode = false;
+        let chessAiThinking = false;
+        const chessHumanColor = 'white';
+
         function criarPeca(color, type) {
             return { color, type, moved: false };
         }
@@ -6926,7 +6934,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 12 ativa: Xadrez online com painel Admin próprio igual à Damas, controle de salas, desistência, visão das pretas, modo foco, alerta de vez, chat, histórico e placar.';
+            lastMoveMessage = 'Fase 13.5 ativa: Xadrez online limpo, destravado, com Modo Treino contra a máquina. Vídeo/áudio pausado para refazer depois com segurança.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7357,8 +7365,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 12</div>
-                    <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.4</div>
+                    <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir. Vídeo/áudio está pausado nesta fase para manter o jogo estável.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
                         <input id="chess-online-room" type="text" maxlength="18" placeholder="Código da sala, ex: xadrez1">
@@ -7381,6 +7389,35 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 const status = document.getElementById('chess-status');
                 if (status) card.insertBefore(online, status);
                 else card.insertBefore(online, card.firstChild?.nextSibling || null);
+            }
+
+            if (card && !document.getElementById('chess-training-panel')) {
+                const training = document.createElement('div');
+                training.id = 'chess-training-panel';
+                training.className = 'chess-training-panel';
+                training.innerHTML = `
+                    <div class="chess-training-title">🤖 Modo Treino do Xadrez</div>
+                    <div class="chess-training-desc">Jogue contra a máquina igual no treino da Damas. Você joga com as brancas; a máquina responde com as pretas. Não usa Firebase e não mexe na Damas.</div>
+                    <div class="chess-training-actions">
+                        <button id="chess-training-easy-btn" class="btn-chess-training easy" type="button">Fácil</button>
+                        <button id="chess-training-medium-btn" class="btn-chess-training medium" type="button">Médio</button>
+                        <button id="chess-training-hard-btn" class="btn-chess-training hard" type="button">Difícil</button>
+                        <button id="chess-training-learn-btn" class="btn-chess-training learn" type="button">Aprender</button>
+                    </div>
+                    <div id="chess-training-status" class="chess-training-status">Treino desligado. Escolha um nível para começar contra a máquina.</div>
+                    <div id="chess-training-coach" class="chess-training-coach" style="display:none;">
+                        <strong>🎓 Professor de Xadrez:</strong>
+                        <span id="chess-training-coach-text">No modo Aprender eu mostro uma boa ideia para sua próxima jogada.</span>
+                        <button id="chess-training-tip-btn" type="button">Mostrar dica</button>
+                    </div>
+                `;
+                const onlinePanel = document.getElementById('chess-online-panel');
+                if (onlinePanel) onlinePanel.insertAdjacentElement('afterend', training);
+                else {
+                    const status = document.getElementById('chess-status');
+                    if (status) card.insertBefore(training, status);
+                    else card.appendChild(training);
+                }
             }
 
 
@@ -7460,7 +7497,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 13.3 ativa: jogo destravado, tela limpa e Admin do Xadrez preservado. Vídeo/áudio pausado para ser refeito com segurança.';
+                warning.innerHTML = '✅ Fase 13.5 ativa: Xadrez Online restaurado, tela limpa, Admin do Xadrez preservado e Modo Treino contra a máquina adicionado somente no Xadrez. Vídeo/áudio pausado para refazer depois com segurança.';
             }
         }
 
@@ -7785,9 +7822,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (watchBtn) watchBtn.disabled = chessMode === 'online' && chessIsSpectator;
             if (leaveBtn) leaveBtn.disabled = chessMode !== 'online';
 
+            if (chessMode === 'training') {
+                atualizarStatusOnlineXadrez(`🤖 Modo treino ativo no Xadrez. Você joga de <strong>brancas</strong> contra a máquina no nível <strong>${nomeDificuldadeTreinoXadrez()}</strong>. Firebase e Damas não são usados neste modo.`);
+                renderizarListaJogadoresXadrez();
+                atualizarPainelTreinoXadrez();
+                return;
+            }
+
             if (chessMode !== 'online') {
                 atualizarStatusOnlineXadrez('Modo local ativo. O Xadrez online usa o caminho <strong>chessRooms</strong>, separado da Damas.');
                 renderizarListaJogadoresXadrez();
+                atualizarPainelTreinoXadrez();
                 return;
             }
 
@@ -7800,6 +7845,154 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             atualizarStatusOnlineXadrez(`Online na sala <strong>${escapeHtmlXadrez(chessRoomId)}</strong> como <strong>${papel}</strong>. ${vezTexto}${faltando} 👀 Espectadores: <strong>${espectadores}</strong>. 🔔 Alerta: <strong>${chessSoundEnabled ? 'ligado' : 'desligado'}</strong>.`);
             renderizarListaJogadoresXadrez();
+        }
+
+        function nomeDificuldadeTreinoXadrez() {
+            if (chessTrainingLearnMode) return 'Aprender';
+            if (chessTrainingDifficulty === 'facil') return 'Fácil';
+            if (chessTrainingDifficulty === 'dificil') return 'Difícil';
+            return 'Médio';
+        }
+
+        function atualizarPainelTreinoXadrez() {
+            const status = document.getElementById('chess-training-status');
+            const coach = document.getElementById('chess-training-coach');
+            document.querySelectorAll('#chess-training-panel .btn-chess-training').forEach(btn => btn.classList.remove('active'));
+            const id = chessTrainingLearnMode ? 'chess-training-learn-btn' : `chess-training-${chessTrainingDifficulty === 'facil' ? 'easy' : chessTrainingDifficulty === 'dificil' ? 'hard' : 'medium'}-btn`;
+            document.getElementById(id)?.classList.add('active');
+            if (!status) return;
+            if (chessMode !== 'training') {
+                status.textContent = 'Treino desligado. Escolha um nível para começar contra a máquina.';
+                if (coach) coach.style.display = 'none';
+                return;
+            }
+            const vez = chessTurn === chessHumanColor ? 'Sua vez de jogar.' : 'A máquina está pensando...';
+            status.textContent = `Treino ligado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas. ${vez}`;
+            if (coach) coach.style.display = chessTrainingLearnMode ? 'block' : 'none';
+            if (chessTrainingLearnMode && chessTurn === chessHumanColor && !chessGameOver) atualizarDicaTreinoXadrez();
+        }
+
+        function valorPecaTreinoXadrez(type) {
+            return { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 }[type] || 0;
+        }
+
+        function avaliarMaterialTreinoXadrez(board, corMaquina = 'black') {
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r]?.[c];
+                    if (!p) continue;
+                    const v = valorPecaTreinoXadrez(p.type);
+                    score += p.color === corMaquina ? v : -v;
+                }
+            }
+            return score;
+        }
+
+        function pontuarJogadaTreinoXadrez(item, corMaquina = 'black') {
+            const temp = clonarTabuleiro(chessBoard);
+            if (!temp) return -999999;
+            const peca = temp[item.from.row][item.from.col];
+            const capturada = item.to.enPassant && item.to.enPassantCapture
+                ? temp[item.to.enPassantCapture.row]?.[item.to.enPassantCapture.col]
+                : temp[item.to.row]?.[item.to.col];
+            const promotionType = peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7) ? 'queen' : null;
+            aplicarMovimentoEmBoard(temp, item.from.row, item.from.col, item.to, { promotionType });
+
+            let score = avaliarMaterialTreinoXadrez(temp, corMaquina);
+            if (capturada) score += valorPecaTreinoXadrez(capturada.type) * 0.38;
+            if (promotionType) score += 760;
+            if (item.to.castle) score += 55;
+
+            const adversario = corOposta(corMaquina);
+            if (reiEstaEmXeque(temp, adversario)) score += 85;
+            const respostas = todosMovimentosLegais(adversario, temp);
+            if (respostas.length === 0 && reiEstaEmXeque(temp, adversario)) score += 100000;
+            if (respostas.length === 0 && !reiEstaEmXeque(temp, adversario)) score -= 60;
+
+            // Pequeno bônus por centralizar peças no treino.
+            const centro = Math.abs(3.5 - item.to.row) + Math.abs(3.5 - item.to.col);
+            score += Math.max(0, 7 - centro) * 4;
+            score += Math.random() * 18;
+            return score;
+        }
+
+        function escolherJogadaMaquinaXadrez() {
+            const movimentos = todosMovimentosLegais('black', chessBoard);
+            if (!movimentos.length) return null;
+            const avaliados = movimentos.map(m => ({ ...m, score: pontuarJogadaTreinoXadrez(m, 'black') })).sort((a, b) => b.score - a.score);
+            if (chessTrainingDifficulty === 'facil') {
+                return movimentos[Math.floor(Math.random() * movimentos.length)];
+            }
+            if (chessTrainingDifficulty === 'medio') {
+                const limite = Math.max(1, Math.ceil(avaliados.length * 0.38));
+                return avaliados[Math.floor(Math.random() * limite)];
+            }
+            return avaliados[0];
+        }
+
+        function explicarJogadaTreinoXadrez(item) {
+            if (!item) return 'Não encontrei uma jogada segura agora.';
+            const peca = chessBoard[item.from.row]?.[item.from.col];
+            const destino = chessBoard[item.to.row]?.[item.to.col];
+            const nome = nomePeca[peca?.type] || 'Peça';
+            const captura = destino ? ` capturando ${nomePeca[destino.type].toLowerCase()}` : '';
+            const extra = item.to.castle ? ' É uma ideia de roque para proteger o rei.' : item.to.row === 0 && peca?.type === 'pawn' ? ' Também ameaça promoção do peão.' : '';
+            return `Boa ideia: mover ${nome} de ${alg(item.from.row, item.from.col)} para ${alg(item.to.row, item.to.col)}${captura}. Essa jogada melhora sua posição sem deixar o rei em xeque.${extra}`;
+        }
+
+        function atualizarDicaTreinoXadrez() {
+            const texto = document.getElementById('chess-training-coach-text');
+            if (!texto) return;
+            if (chessMode !== 'training' || chessTurn !== chessHumanColor || chessGameOver) {
+                texto.textContent = 'Aguarde sua vez para receber a próxima dica.';
+                return;
+            }
+            const movimentos = todosMovimentosLegais(chessHumanColor, chessBoard);
+            if (!movimentos.length) {
+                texto.textContent = 'Você não tem movimentos legais nesta posição.';
+                return;
+            }
+            const melhores = movimentos.map(m => ({ ...m, score: pontuarJogadaTreinoXadrez(m, chessHumanColor) })).sort((a,b)=>b.score-a.score);
+            texto.textContent = explicarJogadaTreinoXadrez(melhores[0]);
+        }
+
+        async function executarJogadaMaquinaXadrez() {
+            if (chessMode !== 'training' || chessGameOver || chessTurn !== 'black' || chessAiThinking) return;
+            chessAiThinking = true;
+            atualizarPainelTreinoXadrez();
+            mostrarToastXadrez('🤖 Máquina pensando...');
+            await new Promise(resolve => setTimeout(resolve, chessTrainingDifficulty === 'dificil' ? 650 : 420));
+            const escolha = escolherJogadaMaquinaXadrez();
+            if (!escolha) {
+                chessAiThinking = false;
+                avaliarEstadoDoJogo('A máquina não tem movimentos legais.');
+                renderChessBoard();
+                return;
+            }
+            await executarMovimentoXadrez(escolha.from.row, escolha.from.col, escolha.to);
+            chessAiThinking = false;
+            atualizarPainelTreinoXadrez();
+        }
+
+        async function iniciarTreinoXadrez(nivel = 'medio', aprender = false) {
+            try { if (chessMode === 'online') await sairXadrezOnline(false); } catch (_) {}
+            chessMode = 'training';
+            chessTrainingActive = true;
+            chessTrainingDifficulty = nivel;
+            chessTrainingLearnMode = !!aprender;
+            chessAiThinking = false;
+            chessPlayerColor = 'white';
+            chessIsSpectator = false;
+            chessBoardFlipped = false;
+            criarTabuleiroInicial();
+            lastMoveMessage = `Modo Treino iniciado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas e a máquina joga com as pretas.`;
+            selectedSquare = null;
+            legalMoves = [];
+            renderChessBoard();
+            atualizarPainelTreinoXadrez();
+            focarTabuleiroXadrez(false);
+            mostrarToastXadrez(`🤖 Modo Treino ${nomeDificuldadeTreinoXadrez()} iniciado.`);
         }
 
         function salvarEstadoParaDesfazer() {
@@ -8639,7 +8832,7 @@ Link: ${location.origin}${location.pathname}`;
 
             let promotionType = null;
             if (peca.type === 'pawn' && (move.row === 0 || move.row === 7)) {
-                promotionType = await escolherPromocao(peca.color);
+                promotionType = (chessMode === 'training' && peca.color !== chessHumanColor) ? 'queen' : await escolherPromocao(peca.color);
             }
 
             const previousEnPassant = enPassantTarget;
@@ -8680,6 +8873,12 @@ Link: ${location.origin}${location.pathname}`;
             else mostrarToastXadrez('✅ ' + msg);
 
             await publicarEstadoXadrezOnline();
+
+            if (chessMode === 'training' && !chessGameOver && chessTurn === 'black') {
+                setTimeout(() => executarJogadaMaquinaXadrez(), 260);
+            } else if (chessMode === 'training') {
+                atualizarPainelTreinoXadrez();
+            }
         }
 
         async function handleChessSquareClick(row, col) {
@@ -8694,7 +8893,22 @@ Link: ${location.origin}${location.pathname}`;
                     return;
                 }
             }
+            if (chessMode === 'training') {
+                if (chessAiThinking || chessTurn !== chessHumanColor) {
+                    mostrarToastXadrez('🤖 Aguarde a máquina fazer a jogada dela.', 'check');
+                    return;
+                }
+            }
+
             const peca = chessBoard[row][col];
+            if (chessMode === 'training' && peca && peca.color !== chessHumanColor) {
+                mostrarToastXadrez('No treino você joga com as brancas. As pretas são da máquina.', 'check');
+                selectedSquare = null;
+                legalMoves = [];
+                renderChessBoard();
+                return;
+            }
+
             if (chessMode === 'online' && peca && peca.color !== chessPlayerColor) {
                 mostrarToastXadrez(`Você está com as ${nomeCor(chessPlayerColor)}. Não pode mexer peça das ${nomeCor(peca.color)}.`, 'check');
                 selectedSquare = null;
@@ -8756,7 +8970,9 @@ Link: ${location.origin}${location.pathname}`;
         }
 
         function abrirXadrezArena() {
-            document.body.classList.remove('platform-start-active', 'mode-selecting', 'game-selected');
+            // ✅ FASE 13.4: garante que o Xadrez comum nunca herde o modo Admin.
+            // Isso evita tela vazia/travada depois de sair da administração do Xadrez.
+            document.body.classList.remove('platform-start-active', 'mode-selecting', 'game-selected', 'chess-admin-only', 'chess-focus-mode');
             document.body.classList.add('chess-selected');
 
             const hub = document.getElementById('games-hub-panel');
@@ -8776,7 +8992,8 @@ Link: ${location.origin}${location.pathname}`;
         }
 
         function voltarParaModalidades() {
-            document.body.classList.remove('chess-selected', 'game-selected', 'chess-focus-mode');
+            // ✅ FASE 13.4: remove também o modo Admin do Xadrez ao voltar para o hub.
+            document.body.classList.remove('chess-selected', 'game-selected', 'chess-focus-mode', 'chess-admin-only');
             document.body.classList.add('platform-start-active', 'mode-selecting');
 
             const hub = document.getElementById('games-hub-panel');
@@ -8792,9 +9009,16 @@ Link: ${location.origin}${location.pathname}`;
         }
 
         function resetChessGame() {
+            const manterTreino = chessMode === 'training';
             criarTabuleiroInicial();
+            if (manterTreino) {
+                chessMode = 'training';
+                chessTrainingActive = true;
+                lastMoveMessage = `Modo Treino reiniciado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas.`;
+            }
             renderChessBoard();
-            mostrarToastXadrez('♟️ Nova partida de Xadrez iniciada. Brancas começam.');
+            atualizarPainelTreinoXadrez();
+            mostrarToastXadrez(manterTreino ? '🤖 Treino reiniciado. Brancas começam.' : '♟️ Nova partida de Xadrez iniciada. Brancas começam.');
         }
 
 
@@ -8853,6 +9077,82 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
                     .chess-admin-room-row.blocked { border-left-color:#ef4444; }
                     .chess-admin-room-row:hover { background:#172554; }
+                    .chess-training-panel {
+                        max-width: 520px;
+                        margin: 0 auto 14px auto;
+                        background: linear-gradient(135deg, #07111f, #0f172a 60%, #092f2c);
+                        border: 1px solid rgba(46,204,113,.38);
+                        border-radius: 14px;
+                        padding: 12px;
+                        text-align: left;
+                        box-shadow: 0 10px 24px rgba(0,0,0,.36);
+                    }
+                    .chess-training-title {
+                        color: #86efac;
+                        font-weight: 1000;
+                        text-transform: uppercase;
+                        font-size: .84rem;
+                        letter-spacing: .5px;
+                        margin-bottom: 5px;
+                    }
+                    .chess-training-desc {
+                        color: #cbd5e1;
+                        font-size: .78rem;
+                        line-height: 1.35;
+                        margin-bottom: 10px;
+                    }
+                    .chess-training-actions {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 7px;
+                    }
+                    .chess-training-actions button {
+                        padding: 9px 6px;
+                        font-size: .72rem;
+                        text-transform: none;
+                        border-radius: 8px;
+                    }
+                    .btn-chess-training.easy { background:#2563eb; }
+                    .btn-chess-training.medium { background:#d97706; }
+                    .btn-chess-training.hard { background:#dc2626; }
+                    .btn-chess-training.learn { background:#7c3aed; }
+                    .btn-chess-training.active {
+                        outline: 2px solid #86efac;
+                        box-shadow: 0 0 14px rgba(134,239,172,.35);
+                    }
+                    .chess-training-status {
+                        margin-top: 9px;
+                        color: #e2e8f0;
+                        background: #020617;
+                        border-radius: 9px;
+                        padding: 9px;
+                        font-size: .78rem;
+                        line-height: 1.35;
+                        border-left: 4px solid #2ecc71;
+                    }
+                    .chess-training-coach {
+                        margin-top: 9px;
+                        color: #e2e8f0;
+                        background: rgba(124,58,237,.16);
+                        border: 1px solid rgba(216,180,254,.28);
+                        border-radius: 10px;
+                        padding: 9px;
+                        font-size: .79rem;
+                        line-height: 1.38;
+                    }
+                    .chess-training-coach strong { color:#d8b4fe; display:block; margin-bottom: 4px; }
+                    .chess-training-coach button {
+                        margin-top: 8px;
+                        width: auto;
+                        padding: 7px 10px;
+                        font-size: .72rem;
+                        text-transform: none;
+                        border-radius: 7px;
+                        background:#6d28d9;
+                    }
+                    body.chess-admin-only #chess-training-panel { display: none !important; }
+                    @media(max-width:560px){ .chess-training-actions { grid-template-columns: 1fr 1fr; } }
+
                     /* ✅ FASE 12.1: ADMIN LIMPO — esconde tudo que é do jogo quando abrir o Admin do Xadrez */
                     body.chess-admin-only #chess-status,
                     body.chess-admin-only #chess-toast,
@@ -8923,7 +9223,8 @@ Link: ${location.origin}${location.pathname}`;
                 return;
             }
             instalarPainelAdminXadrez();
-            document.body.classList.remove('platform-start-active','mode-selecting','game-selected','domino-selected');
+            // ✅ FASE 13.4: Admin do Xadrez fica isolado e não carrega tabuleiro na administração.
+            document.body.classList.remove('platform-start-active','mode-selecting','game-selected','domino-selected','chess-focus-mode');
             document.body.classList.add('chess-selected', 'chess-admin-only');
             const hub = document.getElementById('games-hub-panel');
             if (hub) hub.style.display = 'none';
@@ -9091,6 +9392,11 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-flip-btn')?.addEventListener('click', alternarVisaoTabuleiroXadrez);
             document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
+            document.getElementById('chess-training-easy-btn')?.addEventListener('click', () => iniciarTreinoXadrez('facil', false));
+            document.getElementById('chess-training-medium-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', false));
+            document.getElementById('chess-training-hard-btn')?.addEventListener('click', () => iniciarTreinoXadrez('dificil', false));
+            document.getElementById('chess-training-learn-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', true));
+            document.getElementById('chess-training-tip-btn')?.addEventListener('click', atualizarDicaTreinoXadrez);
             document.getElementById('central-admin-xadrez-btn')?.addEventListener('click', abrirAdminXadrezCentral);
         }
 
@@ -9099,6 +9405,7 @@ Link: ${location.origin}${location.pathname}`;
         window.desfazerJogadaXadrez = desfazerJogada;
         window.entrarXadrezOnline = entrarXadrezOnline;
         window.sairXadrezOnline = sairXadrezOnline;
+        window.iniciarTreinoXadrez = iniciarTreinoXadrez;
         window.abrirAdminXadrezCentral = abrirAdminXadrezCentral;
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarModuloXadrez);
