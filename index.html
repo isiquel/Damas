@@ -7765,6 +7765,25 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             chessOnlineSyncing = false;
         }
 
+        async function garantirAuthXadrezOnline() {
+            try {
+                if (typeof auth !== 'undefined' && auth.currentUser) {
+                    playerId = auth.currentUser.uid;
+                    return true;
+                }
+
+                if (typeof signInAnonymously === 'function' && typeof auth !== 'undefined') {
+                    const cred = await signInAnonymously(auth);
+                    playerId = cred?.user?.uid || auth.currentUser?.uid || playerId;
+                    return !!playerId;
+                }
+            } catch (e) {
+                console.warn('Auth do Xadrez online ainda não disponível:', e);
+            }
+
+            return !!getChessUid();
+        }
+
         async function entrarXadrezOnline(assistir = false) {
             instalarUiXadrezFase5();
             const nameInput = document.getElementById('chess-online-name');
@@ -7774,50 +7793,94 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (nameInput) nameInput.value = chessPlayerName;
             if (roomInput) roomInput.value = chessRoomId;
 
+            await garantirAuthXadrezOnline();
+            const uid = getChessUid();
+
             sairXadrezOnline(false);
             chessMode = 'online';
             chessIsSpectator = assistir;
             chessPlayerColor = 'spectator';
             chessRoomRef = ref(db, `chessRooms/${chessRoomId}`);
-            const uid = getChessUid();
 
             try {
-                const snap = await get(chessRoomRef);
-                const room = snap.val() || {};
+                const tx = await runTransaction(chessRoomRef, (room) => {
+                    const agora = Date.now();
+                    const sala = room && typeof room === 'object' ? room : {};
+                    sala.createdAt = sala.createdAt || agora;
+                    sala.updatedAt = agora;
+                    sala.mode = 'xadrez';
+
+                    if (tabuleiroXadrezPrecisaRestaurar(sala.board)) {
+                        criarTabuleiroInicial();
+                        const estado = estadoXadrezParaFirebase();
+                        sala.board = estado.board;
+                        sala.turn = estado.turn;
+                        sala.gameOver = false;
+                        sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez.';
+                        sala.lastChessMove = null;
+                        sala.enPassantTarget = null;
+                        sala.moveHistory = [];
+                        sala.repairedAt = agora;
+                    }
+
+                    sala.players = sala.players || {};
+                    sala.spectators = sala.spectators || {};
+
+                    if (assistir) {
+                        sala.spectators[uid] = { id: uid, name: chessPlayerName, connectedAt: agora };
+                        return sala;
+                    }
+
+                    if (sala.players.white?.id === uid) {
+                        sala.players.white.name = chessPlayerName;
+                        sala.players.white.connectedAt = agora;
+                        return sala;
+                    }
+
+                    if (sala.players.black?.id === uid) {
+                        sala.players.black.name = chessPlayerName;
+                        sala.players.black.connectedAt = agora;
+                        return sala;
+                    }
+
+                    if (!sala.players.white || !sala.players.white.id) {
+                        sala.players.white = { id: uid, name: chessPlayerName, connectedAt: agora };
+                        return sala;
+                    }
+
+                    if (!sala.players.black || !sala.players.black.id) {
+                        sala.players.black = { id: uid, name: chessPlayerName, connectedAt: agora };
+                        return sala;
+                    }
+
+                    sala.spectators[uid] = { id: uid, name: chessPlayerName, connectedAt: agora };
+                    return sala;
+                });
+
+                const room = tx.snapshot.val() || {};
                 const players = room.players || {};
 
-                if (!assistir) {
-                    if (!players.white || players.white.id === uid) chessPlayerColor = 'white';
-                    else if (!players.black || players.black.id === uid) chessPlayerColor = 'black';
-                    else {
-                        chessIsSpectator = true;
-                        chessPlayerColor = 'spectator';
-                        mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
-                    }
-                }
-
-                const updates = {
-                    updatedAt: Date.now(),
-                    createdAt: room.createdAt || Date.now(),
-                    mode: 'xadrez'
-                };
-
-                if (tabuleiroXadrezPrecisaRestaurar(room.board)) {
-                    criarTabuleiroInicial();
-                    Object.assign(updates, estadoXadrezParaFirebase(), {
-                        lastMoveMessage: 'Sala criada/restaurada com o tabuleiro inicial do Xadrez.'
-                    });
-                }
-
-                if (chessPlayerColor === 'white' || chessPlayerColor === 'black') {
-                    updates[`players/${chessPlayerColor}`] = { id: uid, name: chessPlayerName, connectedAt: Date.now() };
-                    onDisconnect(ref(db, `chessRooms/${chessRoomId}/players/${chessPlayerColor}`)).remove();
+                if (players.white?.id === uid && !assistir) {
+                    chessPlayerColor = 'white';
+                    chessIsSpectator = false;
+                } else if (players.black?.id === uid && !assistir) {
+                    chessPlayerColor = 'black';
+                    chessIsSpectator = false;
                 } else {
-                    updates[`spectators/${uid}`] = { id: uid, name: chessPlayerName, connectedAt: Date.now() };
-                    onDisconnect(ref(db, `chessRooms/${chessRoomId}/spectators/${uid}`)).remove();
+                    chessPlayerColor = 'spectator';
+                    chessIsSpectator = true;
+                    if (!assistir) mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
                 }
 
-                await update(chessRoomRef, updates);
+                try {
+                    if (chessPlayerColor === 'white' || chessPlayerColor === 'black') {
+                        onDisconnect(ref(db, `chessRooms/${chessRoomId}/players/${chessPlayerColor}`)).remove();
+                    } else {
+                        onDisconnect(ref(db, `chessRooms/${chessRoomId}/spectators/${uid}`)).remove();
+                    }
+                } catch (presenceError) {
+                    console.warn('Presença online do Xadrez não registrada:', presenceError);
+                }
 
                 chessUnsubscribeRoom = onValue(chessRoomRef, (snapshot) => {
                     const data = snapshot.val() || {};
@@ -7830,11 +7893,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 atualizarPainelOnlineXadrez();
                 mostrarToastXadrez(`🌐 Conectado na sala ${chessRoomId}.`);
             } catch (e) {
-                console.error(e);
+                console.error('Erro detalhado ao entrar no Xadrez online:', e);
                 chessMode = 'local';
                 chessOnlineReady = false;
+                chessIsSpectator = false;
+                chessPlayerColor = 'white';
                 atualizarPainelOnlineXadrez();
-                mostrarToastXadrez('⚠️ Erro ao entrar no Xadrez online.', 'check');
+                mostrarToastXadrez('⚠️ Erro ao entrar no Xadrez online. Recarregue a página e tente uma sala nova.', 'check');
             }
         }
 
