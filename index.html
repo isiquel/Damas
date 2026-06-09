@@ -2788,6 +2788,94 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             .chess-training-ranking-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
+
+        /* 🥇 FASE 21 - CONQUISTAS DO XADREZ (separado da Damas) */
+        .chess-achievements-panel {
+            display: block;
+            background: linear-gradient(135deg, #0b1220, #111827 55%, #312e81);
+            border: 1px solid rgba(129, 140, 248, 0.46);
+            border-radius: 16px;
+            padding: 14px;
+            margin: 12px auto 14px auto;
+            max-width: 520px;
+            text-align: left;
+            box-shadow: 0 10px 26px rgba(0,0,0,0.36);
+        }
+        .chess-achievements-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .chess-achievements-title {
+            color: #c4b5fd;
+            font-weight: 1000;
+            font-size: .92rem;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+        .chess-achievements-badge {
+            background: rgba(129, 140, 248, .15);
+            border: 1px solid rgba(129, 140, 248, .45);
+            color: #ddd6fe;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: .68rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+        .chess-achievements-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .chess-achievement-card {
+            background: rgba(2,6,23,.82);
+            border: 1px solid rgba(148,163,184,.18);
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 86px;
+            opacity: .58;
+            filter: grayscale(.65);
+        }
+        .chess-achievement-card.unlocked {
+            opacity: 1;
+            filter: none;
+            border-color: rgba(250,204,21,.5);
+            background: radial-gradient(circle at top left, rgba(250,204,21,.16), transparent 42%), rgba(2,6,23,.86);
+            box-shadow: 0 0 16px rgba(250,204,21,.08);
+        }
+        .chess-achievement-icon { font-size: 1.45rem; line-height: 1; margin-bottom: 6px; }
+        .chess-achievement-name { color: #fff; font-weight: 900; font-size: .78rem; margin-bottom: 3px; }
+        .chess-achievement-desc { color: #94a3b8; font-size: .7rem; line-height: 1.3; }
+        .chess-achievement-card.unlocked .chess-achievement-desc { color: #cbd5e1; }
+        .chess-achievements-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .chess-achievements-actions button {
+            padding: 10px 8px;
+            font-size: .76rem;
+            text-transform: none;
+            border-radius: 10px;
+        }
+        .btn-chess-achievements-refresh { background: #4f46e5; }
+        .btn-chess-achievements-clear { background: #64748b; }
+        .chess-achievements-note {
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: .72rem;
+            line-height: 1.35;
+        }
+        @media (max-width: 520px) {
+            .chess-achievements-head,
+            .chess-achievements-actions { grid-template-columns: 1fr; display: grid; }
+            .chess-achievements-grid { grid-template-columns: 1fr; }
+        }
+
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2818,7 +2906,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 19</span>
+                <span class="game-mode-badge">Fase 21</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2864,7 +2952,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 19: Máquina mais inteligente no treino, com defesa do Rei, captura melhor, busca de xeque-mate e níveis fácil, médio e difícil mais equilibrados. Vídeo/áudio continua pausado.
+                Fase 21: Conquistas do Xadrez com medalhas locais, separadas da Damas, junto do ranking do treino, histórico e professor durante a partida. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -7636,7 +7724,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 20 ativa: Xadrez com ranking separado do treino, histórico e professor durante a partida. Vídeo/áudio pausado.';
+            lastMoveMessage = 'Fase 21 ativa: Xadrez com conquistas, ranking separado do treino, histórico e professor durante a partida. Vídeo/áudio pausado.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -8208,6 +8296,31 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
 
+
+
+            if (card && !document.getElementById('chess-achievements-panel')) {
+                const achievements = document.createElement('div');
+                achievements.id = 'chess-achievements-panel';
+                achievements.className = 'chess-achievements-panel';
+                achievements.innerHTML = `
+                    <div class="chess-achievements-head">
+                        <div class="chess-achievements-title">🥇 Conquistas do Xadrez</div>
+                        <div id="chess-achievements-badge" class="chess-achievements-badge">Separado da Damas</div>
+                    </div>
+                    <div id="chess-achievements-grid" class="chess-achievements-grid">
+                        <div class="chess-achievement-card"><div class="chess-achievement-icon">🔒</div><div class="chess-achievement-name">Carregando...</div><div class="chess-achievement-desc">As medalhas aparecerão aqui.</div></div>
+                    </div>
+                    <div class="chess-achievements-actions">
+                        <button id="chess-achievements-refresh-btn" class="btn-chess-achievements-refresh" type="button">Atualizar conquistas</button>
+                        <button id="chess-achievements-clear-btn" class="btn-chess-achievements-clear" type="button">Limpar conquistas</button>
+                    </div>
+                    <div class="chess-achievements-note">Conquistas locais do Xadrez: primeira vitória, xeque-mate, vencer no médio/difícil, capturar a Dama e sequência de vitórias. Não mistura com a Damas.</div>
+                `;
+                const rankingPanel = document.getElementById('chess-training-ranking-panel');
+                if (rankingPanel) rankingPanel.insertAdjacentElement('afterend', achievements);
+                else card.appendChild(achievements);
+            }
+
             if (card && !document.getElementById('chess-material-panel')) {
                 const material = document.createElement('div');
                 material.id = 'chess-material-panel';
@@ -8256,6 +8369,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
             renderRankingTreinoXadrez();
+            renderConquistasXadrez();
 
             if (card && !document.getElementById('chess-chat-panel')) {
                 const chat = document.createElement('div');
@@ -8295,7 +8409,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 15 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
+                warning.innerHTML = '✅ Fase 21 ativa: Xadrez com conquistas, ranking do treino, histórico recolhível, professor durante a partida e máquina mais inteligente. A Damas continua preservada. Vídeo/áudio pausado.';
             }
         }
 
@@ -8859,6 +8973,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('chess-rank-last', data.lastResult || 'Nenhuma partida finalizada');
             const badge = document.getElementById('chess-training-ranking-badge');
             if (badge) badge.textContent = data.games ? `${data.games} partida${data.games === 1 ? '' : 's'} registrada${data.games === 1 ? '' : 's'}` : 'Separado da Damas';
+            renderConquistasXadrez();
         }
 
         function registrarResultadoRankingTreinoXadrez(textoEstado) {
@@ -8899,6 +9014,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             data.byDifficulty[diff] = bucket;
             data.updatedAt = Date.now();
             salvarRankingTreinoXadrez(data);
+            registrarConquistasPorResultadoXadrez(textoEstado, data, diff);
             chessTrainingResultRecorded = true;
             renderRankingTreinoXadrez();
         }
@@ -8909,6 +9025,115 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             salvarRankingTreinoXadrez(rankingTreinoXadrezPadrao());
             renderRankingTreinoXadrez();
             mostrarToastXadrez('🏆 Ranking do treino de Xadrez limpo.');
+        }
+
+
+
+        function chaveConquistasXadrez() {
+            return 'tabuleiroArena.chessAchievements.v21';
+        }
+
+        function conquistasXadrezPadrao() {
+            return { unlocked: {}, updatedAt: null };
+        }
+
+        function listaConquistasXadrez() {
+            return [
+                { id: 'firstGame', icon: '🎮', name: 'Primeira partida', desc: 'Finalizou uma partida de treino de Xadrez.' },
+                { id: 'firstWin', icon: '🏆', name: 'Primeira vitória', desc: 'Venceu a máquina pela primeira vez.' },
+                { id: 'firstCapture', icon: '⚔️', name: 'Primeira captura', desc: 'Capturou uma peça adversária no Xadrez.' },
+                { id: 'queenHunter', icon: '👑', name: 'Caçador da Dama', desc: 'Capturou a Dama adversária.' },
+                { id: 'firstCheck', icon: '⚠️', name: 'Primeiro xeque', desc: 'Colocou o Rei adversário em xeque.' },
+                { id: 'firstCheckmate', icon: '♟️', name: 'Primeiro xeque-mate', desc: 'Venceu uma partida com xeque-mate.' },
+                { id: 'learnWin', icon: '🎓', name: 'Aprendeu vencendo', desc: 'Venceu no modo Aprender do Zero.' },
+                { id: 'winMedium', icon: '🥈', name: 'Venceu no médio', desc: 'Derrotou a máquina no nível médio.' },
+                { id: 'winHard', icon: '🥇', name: 'Venceu no difícil', desc: 'Derrotou a máquina no nível difícil.' },
+                { id: 'streak3', icon: '🔥', name: 'Sequência 3', desc: 'Conseguiu 3 vitórias seguidas no treino.' },
+                { id: 'points100', icon: '💯', name: '100 pontos', desc: 'Chegou a 100 pontos no ranking do treino.' },
+                { id: 'castleDone', icon: '🏰', name: 'Rei protegido', desc: 'Fez um roque para proteger o Rei.' }
+            ];
+        }
+
+        function carregarConquistasXadrez() {
+            try {
+                const raw = localStorage.getItem(chaveConquistasXadrez());
+                const base = conquistasXadrezPadrao();
+                if (!raw) return base;
+                const data = JSON.parse(raw);
+                return { ...base, ...data, unlocked: { ...base.unlocked, ...(data && data.unlocked ? data.unlocked : {}) } };
+            } catch (_) {
+                return conquistasXadrezPadrao();
+            }
+        }
+
+        function salvarConquistasXadrez(data) {
+            try { localStorage.setItem(chaveConquistasXadrez(), JSON.stringify(data)); } catch (_) {}
+        }
+
+        function desbloquearConquistaXadrez(id, silencioso = false) {
+            const data = carregarConquistasXadrez();
+            if (data.unlocked && data.unlocked[id]) return false;
+            const def = listaConquistasXadrez().find(item => item.id === id);
+            if (!def) return false;
+            data.unlocked[id] = Date.now();
+            data.updatedAt = Date.now();
+            salvarConquistasXadrez(data);
+            renderConquistasXadrez();
+            if (!silencioso) mostrarToastXadrez(`🥇 Nova conquista: ${def.name}!`);
+            return true;
+        }
+
+        function renderConquistasXadrez() {
+            const grid = document.getElementById('chess-achievements-grid');
+            const badge = document.getElementById('chess-achievements-badge');
+            if (!grid) return;
+            const data = carregarConquistasXadrez();
+            const defs = listaConquistasXadrez();
+            const total = defs.length;
+            const unlockedCount = defs.filter(item => data.unlocked && data.unlocked[item.id]).length;
+            if (badge) badge.textContent = `${unlockedCount}/${total} liberadas`;
+            grid.innerHTML = defs.map(item => {
+                const ok = !!(data.unlocked && data.unlocked[item.id]);
+                return `
+                    <div class="chess-achievement-card ${ok ? 'unlocked' : ''}">
+                        <div class="chess-achievement-icon">${ok ? item.icon : '🔒'}</div>
+                        <div class="chess-achievement-name">${escapeHtmlXadrez(item.name)}</div>
+                        <div class="chess-achievement-desc">${escapeHtmlXadrez(ok ? item.desc : 'Bloqueada: continue jogando para liberar.')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function limparConquistasXadrez() {
+            const confirma = window.confirm('Limpar somente as conquistas do Xadrez? A Damas e o ranking não serão alterados.');
+            if (!confirma) return;
+            salvarConquistasXadrez(conquistasXadrezPadrao());
+            renderConquistasXadrez();
+            mostrarToastXadrez('🥇 Conquistas do Xadrez limpas.');
+        }
+
+        function registrarConquistasPorJogadaXadrez(peca, move, capturedPiece, estadoDepois) {
+            if (!peca) return;
+            if (capturedPiece && peca.color === chessHumanColor) desbloquearConquistaXadrez('firstCapture');
+            if (capturedPiece && capturedPiece.type === 'queen' && peca.color === chessHumanColor) desbloquearConquistaXadrez('queenHunter');
+            if (move && move.castle && peca.color === chessHumanColor) desbloquearConquistaXadrez('castleDone');
+            if (/Xeque/i.test(estadoDepois || '') && peca.color === chessHumanColor) desbloquearConquistaXadrez('firstCheck');
+            if (/Xeque-mate/i.test(estadoDepois || '') && peca.color === chessHumanColor) desbloquearConquistaXadrez('firstCheckmate');
+        }
+
+        function registrarConquistasPorResultadoXadrez(textoEstado, dataRanking, diff) {
+            if (chessMode !== 'training' || !textoEstado) return;
+            desbloquearConquistaXadrez('firstGame', true);
+            const brancasVenceram = /brancas/i.test(textoEstado);
+            if (brancasVenceram) {
+                desbloquearConquistaXadrez('firstWin');
+                if (diff === 'aprender') desbloquearConquistaXadrez('learnWin');
+                if (diff === 'medio') desbloquearConquistaXadrez('winMedium');
+                if (diff === 'dificil') desbloquearConquistaXadrez('winHard');
+            }
+            if (/Xeque-mate/i.test(textoEstado) && brancasVenceram) desbloquearConquistaXadrez('firstCheckmate');
+            if ((dataRanking.streak || 0) >= 3) desbloquearConquistaXadrez('streak3');
+            if ((dataRanking.points || 0) >= 100) desbloquearConquistaXadrez('points100');
         }
 
         function limparResultadoXadrez() {
@@ -10237,6 +10462,7 @@ Link: ${location.origin}${location.pathname}`;
             renderChessBoard();
             const estado = avaliarEstadoDoJogo(msg);
             moveHistory.push(criarRegistroHistoricoXadrez(peca, fromRow, fromCol, move, capturedPiece, promotionType, estado) || notation);
+            registrarConquistasPorJogadaXadrez(peca, move, capturedPiece, estado);
             renderHistorico();
             atualizarStatus();
             reforcarProfessorXequeXadrez(estado);
@@ -10955,6 +11181,8 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-history-clear-btn')?.addEventListener('click', limparHistoricoVisualXadrez);
             document.getElementById('chess-ranking-refresh-btn')?.addEventListener('click', () => { renderRankingTreinoXadrez(); mostrarToastXadrez('🏆 Ranking do Xadrez atualizado.'); });
             document.getElementById('chess-ranking-clear-btn')?.addEventListener('click', limparRankingTreinoXadrez);
+            document.getElementById('chess-achievements-refresh-btn')?.addEventListener('click', () => { renderConquistasXadrez(); mostrarToastXadrez('🥇 Conquistas do Xadrez atualizadas.'); });
+            document.getElementById('chess-achievements-clear-btn')?.addEventListener('click', limparConquistasXadrez);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
             document.getElementById('chess-training-easy-btn')?.addEventListener('click', () => iniciarTreinoXadrez('facil', false));
             document.getElementById('chess-training-medium-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', false));
