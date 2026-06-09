@@ -2186,7 +2186,7 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 13.8</span>
+                <span class="game-mode-badge">Fase 13.9</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2232,7 +2232,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 13.8: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
+                Fase 13.9: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2259,7 +2259,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 13.8 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
+                ✅ Fase 13.9 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -7415,7 +7415,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.8</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.9</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7564,7 +7564,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 13.8 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
+                warning.innerHTML = '✅ Fase 13.9 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
             }
         }
 
@@ -9249,34 +9249,71 @@ Link: ${location.origin}${location.pathname}`;
                         gap: 9px;
                     }
                     .chess-training-actions button.btn-chess-training {
-                        min-height: 64px;
-                        padding: 10px 9px !important;
+                        min-height: 74px;
+                        padding: 12px 10px !important;
                         font-size: .82rem !important;
                         text-transform: none !important;
-                        border-radius: 14px !important;
-                        border: 1px solid rgba(255,255,255,.10) !important;
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 8px 18px rgba(0,0,0,.20) !important;
+                        text-align: center !important;
+                        border-radius: 16px !important;
+                        border: 1px solid rgba(255,255,255,.14) !important;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 10px 22px rgba(0,0,0,.24) !important;
                         transform: none !important;
                         display: flex;
                         flex-direction: column;
                         justify-content: center;
                         align-items: center;
-                        gap: 3px;
+                        gap: 6px;
+                        position: relative;
+                        overflow: hidden;
                     }
-                    .btn-chess-training span { font-weight: 1000; color:#fff; }
-                    .btn-chess-training small { font-size: .66rem; color: rgba(226,232,240,.82); font-weight: 700; }
-                    .btn-chess-training.easy { background: linear-gradient(135deg, #0f766e, #115e59) !important; }
-                    .btn-chess-training.medium { background: linear-gradient(135deg, #334155, #1e293b) !important; }
-                    .btn-chess-training.hard { background: linear-gradient(135deg, #7f1d1d, #450a0a) !important; }
-                    .btn-chess-training.learn { background: linear-gradient(135deg, #6d28d9, #312e81) !important; }
+                    .chess-training-actions button.btn-chess-training::before {
+                        content: '';
+                        position: absolute;
+                        inset: 0;
+                        background: linear-gradient(180deg, rgba(255,255,255,.16), transparent 42%);
+                        pointer-events: none;
+                    }
+                    .btn-chess-training span {
+                        position: relative;
+                        z-index: 1;
+                        font-weight: 1000;
+                        color:#fff;
+                        font-size: .98rem;
+                        letter-spacing: .2px;
+                    }
+                    .btn-chess-training small {
+                        position: relative;
+                        z-index: 1;
+                        font-size: .70rem;
+                        color: rgba(226,232,240,.92);
+                        font-weight: 800;
+                        letter-spacing: .2px;
+                        margin-top: 1px;
+                    }
+                    .btn-chess-training.easy {
+                        background: linear-gradient(135deg, #16a34a, #0f766e) !important;
+                        border-color: rgba(110,231,183,.42) !important;
+                    }
+                    .btn-chess-training.medium {
+                        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+                        border-color: rgba(147,197,253,.42) !important;
+                    }
+                    .btn-chess-training.hard {
+                        background: linear-gradient(135deg, #f97316, #dc2626) !important;
+                        border-color: rgba(253,186,116,.42) !important;
+                    }
+                    .btn-chess-training.learn {
+                        background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+                        border-color: rgba(196,181,253,.45) !important;
+                    }
                     .btn-chess-training:hover:not(:disabled) {
-                        transform: translateY(-1px) !important;
-                        border-color: rgba(255,255,255,.25) !important;
-                        filter: brightness(1.08);
+                        transform: translateY(-2px) !important;
+                        border-color: rgba(255,255,255,.30) !important;
+                        filter: brightness(1.06);
                     }
                     .btn-chess-training.active {
-                        outline: 2px solid #86efac !important;
-                        box-shadow: 0 0 0 4px rgba(134,239,172,.12), 0 0 18px rgba(134,239,172,.28) !important;
+                        outline: 2px solid #f8fafc !important;
+                        box-shadow: 0 0 0 4px rgba(255,255,255,.10), 0 0 18px rgba(255,255,255,.16) !important;
                     }
                     .chess-training-status {
                         margin-top: 10px;
