@@ -1886,6 +1886,9 @@
         .btn-chess-back { background: #334155; }
         .btn-chess-back:hover:not(:disabled) { background: #475569; }
 
+        .btn-chess-resign { background: #dc2626; }
+        .btn-chess-resign:hover:not(:disabled) { background: #b91c1c; }
+
         .chess-warning {
             margin-top: 12px;
             color: #facc15;
@@ -2146,7 +2149,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 10: Xadrez Online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar de material.
+                Fase 11: Xadrez Online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar de material.
                 A Damas Arena continua preservada.
             </div>
 
@@ -2167,12 +2170,13 @@
             <div class="chess-actions">
                 <button id="chess-reset-btn" class="btn-chess-reset" type="button">Reiniciar Xadrez</button>
                 <button id="chess-new-btn" class="btn-chess-new" type="button">Nova Partida</button>
+                <button id="chess-resign-btn" class="btn-chess-resign" type="button">Desistir</button>
                 <button id="chess-back-btn-bottom" class="btn-chess-back" type="button">Voltar ao Menu</button>
             </div>
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 10 ativa: Xadrez Online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar. A Damas Arena continua preservada.
+                ✅ Fase 11 ativa: Xadrez Online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar. A Damas Arena continua preservada.
             </div>
         </div>
     </div>
@@ -6885,7 +6889,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 10 ativa: Xadrez online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar.';
+            lastMoveMessage = 'Fase 11 ativa: Xadrez online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7316,7 +7320,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 10</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 11</div>
                     <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7348,7 +7352,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 material.id = 'chess-material-panel';
                 material.className = 'chess-material-panel';
                 material.innerHTML = `
-                    <div class="chess-material-title">⚔️ Placar de material — Fase 10</div>
+                    <div class="chess-material-title">⚔️ Placar de material — Fase 11</div>
                     <div class="chess-material-grid">
                         <div class="chess-material-box">
                             <div class="chess-material-label">⚪ Brancas capturaram</div>
@@ -7419,7 +7423,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 10 ativa: Xadrez online com visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, jogadores identificados, espectadores, chat, histórico e placar. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 11 ativa: Xadrez online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, jogadores identificados, espectadores, chat, histórico e placar. A Damas Arena continua preservada.';
             }
         }
 
@@ -8336,7 +8340,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     sala.board = estado.board;
                     sala.turn = estado.turn;
                     sala.gameOver = false;
-                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 10 online ativa.';
+                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 11 online ativa.';
                     sala.lastChessMove = null;
                     sala.enPassantTarget = null;
                     sala.moveHistory = [];
@@ -8379,7 +8383,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chessRoomPlayers = sala.players;
                 chessRoomSpectators = sala.spectators;
                 if (!sala.lastMoveMessage || /^Fase 5/i.test(String(sala.lastMoveMessage))) {
-                    sala.lastMoveMessage = 'Fase 10 ativa: sala online organizada com visão automática das pretas, botão virar tabuleiro, alerta de vez, chat, histórico e placar.';
+                    sala.lastMoveMessage = 'Fase 11 ativa: sala online organizada com desistência segura, visão automática das pretas, botão virar tabuleiro, alerta de vez, chat, histórico e placar.';
                 }
 
                 await set(chessRoomRef, sala);
@@ -8534,6 +8538,45 @@ Link: ${location.origin}${location.pathname}`;
             const promo = promotionType ? `=${nomePeca[promotionType]}` : '';
             const ep = move.enPassant ? ' e.p.' : '';
             return `${prefix}${alg(fromRow, fromCol)}${capture}${alg(move.row, move.col)}${promo}${ep}`;
+        }
+
+
+        async function desistirXadrez() {
+            if (chessGameOver) {
+                mostrarToastXadrez('A partida já terminou.', 'check');
+                return;
+            }
+            if (chessMode === 'online' && chessIsSpectator) {
+                mostrarToastXadrez('👀 Espectador não pode desistir pela partida.', 'check');
+                return;
+            }
+
+            const corDesistente = chessMode === 'online' ? chessPlayerColor : chessTurn;
+            if (corDesistente !== 'white' && corDesistente !== 'black') {
+                mostrarToastXadrez('Não foi possível identificar o jogador para desistir.', 'check');
+                return;
+            }
+
+            const confirma = window.confirm(`Tem certeza que deseja desistir? As ${nomeVencedor(corOposta(corDesistente))} vencerão a partida.`);
+            if (!confirma) return;
+
+            const vencedor = corOposta(corDesistente);
+            chessGameOver = true;
+            selectedSquare = null;
+            legalMoves = [];
+            lastMoveMessage = `${chessPlayerName || nomeVencedor(corDesistente)} desistiu. ${nomeVencedor(vencedor)} venceram por desistência.`;
+            moveHistory.push(`${nomeVencedor(corDesistente)} desistiram`);
+            renderChessBoard();
+            mostrarToastXadrez(`🏳️ ${lastMoveMessage}`, 'mate');
+
+            await publicarEstadoXadrezOnline({
+                winner: vencedor,
+                resignedBy: {
+                    color: corDesistente,
+                    name: chessPlayerName || nomeVencedor(corDesistente),
+                    at: Date.now()
+                }
+            });
         }
 
         async function executarMovimentoXadrez(fromRow, fromCol, move) {
@@ -8713,6 +8756,7 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-back-btn-bottom')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-reset-btn')?.addEventListener('click', reiniciarXadrezOnlineOuLocal);
             document.getElementById('chess-new-btn')?.addEventListener('click', reiniciarXadrezOnlineOuLocal);
+            document.getElementById('chess-resign-btn')?.addEventListener('click', desistirXadrez);
             document.getElementById('chess-undo-btn')?.addEventListener('click', desfazerJogada);
             document.getElementById('chess-online-join-btn')?.addEventListener('click', () => entrarXadrezOnline(false));
             document.getElementById('chess-online-watch-btn')?.addEventListener('click', () => entrarXadrezOnline(true));
