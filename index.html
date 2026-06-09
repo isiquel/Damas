@@ -2113,7 +2113,7 @@
                 <span class="game-mode-badge">Dono</span>
                 <div class="game-mode-icon">🛡️</div>
                 <div class="game-mode-name">Painel Admin</div>
-                <div class="game-mode-copy">Entre como administrador para controlar a Damas Arena.</div>
+                <div class="game-mode-copy">Entre como administrador para controlar Damas e Xadrez.</div>
             </div>
         </div>
         <div id="admin-login-panel" class="admin-login-panel central-hidden">
@@ -2130,9 +2130,10 @@
 
             <div id="central-admin-menu" class="central-admin-menu">
                 <div class="central-admin-title">🎮 Central do Dono da Plataforma</div>
-                <div class="central-admin-desc">Painel do dono da plataforma. A Damas continua ativa e preservada.</div>
+                <div class="central-admin-desc">Painel do dono da plataforma. A Damas continua ativa e preservada; o Xadrez agora tem administração própria.</div>
                 <div class="central-admin-grid">
                     <button id="central-admin-damas-btn" class="btn-central-admin-damas" type="button">Administrar Damas<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat, ranking e torneios</span></button>
+                    <button id="central-admin-xadrez-btn" class="btn-central-admin-xadrez" type="button">Administrar Xadrez<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat, jogadores e reset</span></button>
                     <button id="central-admin-back-btn" class="btn-central-admin-voltar" type="button">Voltar ao menu<br><span style="font-size:.68rem; opacity:.85;">continuar jogando</span></button>
                 </div>
                 <div id="central-admin-note" class="central-admin-note"></div>
@@ -2149,7 +2150,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 11: Xadrez Online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar de material.
+                Fase 12: Xadrez Online com painel Admin próprio, salas liberadas/bloqueadas, expulsar jogadores, limpar chat, resetar sala, desistência, virar tabuleiro, modo foco, alerta de vez, histórico e placar de material.
                 A Damas Arena continua preservada.
             </div>
 
@@ -2176,7 +2177,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 11 ativa: Xadrez Online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar. A Damas Arena continua preservada.
+                ✅ Fase 12 ativa: Xadrez Online com painel Admin próprio igual à Damas, salas liberadas/bloqueadas, expulsar jogadores, limpar chat, resetar sala, desistência, virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar. A Damas Arena continua preservada.
             </div>
         </div>
     </div>
@@ -3177,6 +3178,7 @@
     const adminLoginStatus = document.getElementById('admin-login-status');
     const centralAdminMenu = document.getElementById('central-admin-menu');
     const centralAdminDamasBtn = document.getElementById('central-admin-damas-btn');
+    const centralAdminXadrezBtn = document.getElementById('central-admin-xadrez-btn');
     const centralAdminBackBtn = document.getElementById('central-admin-back-btn');
     const centralAdminNote = document.getElementById('central-admin-note');
     const adminEntryCard = document.getElementById('game-card-admin');
@@ -6871,6 +6873,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessLastRemoteMoveCount = 0;
         let chessLastTurnAlertKey = '';
         let chessBoardFlipped = false;
+        let chessCurrentRoomData = {};
+        let chessAdminUnsubscribeRooms = null;
+        let chessAdminUnsubscribeChat = null;
 
         function criarPeca(color, type) {
             return { color, type, moved: false };
@@ -6889,7 +6894,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 11 ativa: Xadrez online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar.';
+            lastMoveMessage = 'Fase 12 ativa: Xadrez online com painel Admin próprio igual à Damas, controle de salas, desistência, visão das pretas, modo foco, alerta de vez, chat, histórico e placar.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7320,7 +7325,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 11</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 12</div>
                     <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7352,7 +7357,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 material.id = 'chess-material-panel';
                 material.className = 'chess-material-panel';
                 material.innerHTML = `
-                    <div class="chess-material-title">⚔️ Placar de material — Fase 11</div>
+                    <div class="chess-material-title">⚔️ Placar de material — Fase 12</div>
                     <div class="chess-material-grid">
                         <div class="chess-material-box">
                             <div class="chess-material-label">⚪ Brancas capturaram</div>
@@ -7423,7 +7428,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 11 ativa: Xadrez online com desistência segura, visão automática das pretas, botão virar tabuleiro, modo foco, alerta de vez, jogadores identificados, espectadores, chat, histórico e placar. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 12 ativa: Xadrez online com painel Admin próprio igual à Damas, salas liberadas/bloqueadas, expulsar jogadores, limpar chat, resetar sala, monitorar chat, jogadores identificados, espectadores, desistência, virar tabuleiro, modo foco, alerta de vez, histórico e placar. A Damas Arena continua preservada.';
             }
         }
 
@@ -8241,6 +8246,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
         function aplicarEstadoXadrezRemoto(data) {
             if (!data) return;
+            chessCurrentRoomData = data || {};
             chessOnlineSyncing = true;
             chessRoomPlayers = data.players && typeof data.players === 'object' ? data.players : { white: null, black: null };
             chessRoomSpectators = data.spectators && typeof data.spectators === 'object' ? data.spectators : {};
@@ -8340,7 +8346,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     sala.board = estado.board;
                     sala.turn = estado.turn;
                     sala.gameOver = false;
-                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 11 online ativa.';
+                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 12 online ativa.';
                     sala.lastChessMove = null;
                     sala.enPassantTarget = null;
                     sala.moveHistory = [];
@@ -8351,6 +8357,15 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
                 sala.players = sala.players && typeof sala.players === 'object' ? sala.players : {};
                 sala.spectators = sala.spectators && typeof sala.spectators === 'object' ? sala.spectators : {};
+
+                if (sala.isAuthorized === false && !(await usuarioEhAdminSeguro())) {
+                    chessMode = 'local';
+                    chessRoomRef = null;
+                    chessOnlineReady = false;
+                    atualizarPainelOnlineXadrez();
+                    mostrarToastXadrez('🛡️ Esta sala de Xadrez está bloqueada pelo administrador.', 'check');
+                    return;
+                }
 
                 // Limpa o próprio usuário de posições antigas dentro da mesma sala.
                 if (sala.players.white?.id === uid) delete sala.players.white;
@@ -8383,7 +8398,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chessRoomPlayers = sala.players;
                 chessRoomSpectators = sala.spectators;
                 if (!sala.lastMoveMessage || /^Fase 5/i.test(String(sala.lastMoveMessage))) {
-                    sala.lastMoveMessage = 'Fase 11 ativa: sala online organizada com desistência segura, visão automática das pretas, botão virar tabuleiro, alerta de vez, chat, histórico e placar.';
+                    sala.lastMoveMessage = 'Fase 12 ativa: sala online com painel Admin próprio, controle de salas, desistência, visão das pretas, alerta de vez, chat, histórico e placar.';
                 }
 
                 await set(chessRoomRef, sala);
@@ -8468,6 +8483,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!input || chessMode !== 'online' || !chessRoomId) return;
             const text = input.value.trim();
             if (!text) return;
+            if (chessCurrentRoomData && chessCurrentRoomData.chatBlocked) {
+                mostrarToastXadrez('🔇 O chat desta sala foi travado pelo administrador.', 'check');
+                return;
+            }
             input.value = '';
             await push(ref(db, `chessRooms/${chessRoomId}/chat`), { name: chessPlayerName || 'Jogador', text, createdAt: Date.now() });
         }
@@ -8746,6 +8765,257 @@ Link: ${location.origin}${location.pathname}`;
             mostrarToastXadrez('♟️ Nova partida de Xadrez iniciada. Brancas começam.');
         }
 
+
+        function tabuleiroInicialXadrezAdminSerializado() {
+            const p = (color, type) => ({ color, type, moved: false });
+            const vazio = () => Array(8).fill('');
+            return [
+                [p('black','rook'), p('black','knight'), p('black','bishop'), p('black','queen'), p('black','king'), p('black','bishop'), p('black','knight'), p('black','rook')],
+                Array.from({ length: 8 }, () => p('black','pawn')),
+                vazio(), vazio(), vazio(), vazio(),
+                Array.from({ length: 8 }, () => p('white','pawn')),
+                [p('white','rook'), p('white','knight'), p('white','bishop'), p('white','queen'), p('white','king'), p('white','bishop'), p('white','knight'), p('white','rook')]
+            ];
+        }
+
+        function estadoInicialSalaXadrezAdmin(salaId) {
+            return {
+                id: salaId,
+                mode: 'xadrez',
+                board: tabuleiroInicialXadrezAdminSerializado(),
+                turn: 'white',
+                gameOver: false,
+                lastMoveMessage: 'Fase 12 ativa: sala de Xadrez criada pelo painel Admin.',
+                lastChessMove: null,
+                enPassantTarget: null,
+                moveHistory: [],
+                players: {},
+                spectators: {},
+                chat: null,
+                isAuthorized: true,
+                chatBlocked: false,
+                createdByAdminUid: getChessUid() || (auth.currentUser ? auth.currentUser.uid : ''),
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                lastAdminAction: 'criada_pelo_admin_xadrez',
+                lastAdminAt: Date.now()
+            };
+        }
+
+        function instalarPainelAdminXadrez() {
+            instalarUiXadrezFase5();
+            const card = document.querySelector('#chess-screen .chess-card');
+            if (!card) return;
+
+            if (!document.getElementById('chess-admin-style')) {
+                const style = document.createElement('style');
+                style.id = 'chess-admin-style';
+                style.textContent = `
+                    .chess-admin-panel { display:none; background:linear-gradient(135deg,#1e1233,#0f172a); border:2px dashed #c084fc; border-radius:14px; padding:14px; margin:14px 0; text-align:left; box-shadow:0 10px 28px rgba(0,0,0,.45); }
+                    .chess-admin-title { color:#d8b4fe; font-size:.95rem; font-weight:1000; text-transform:uppercase; margin-bottom:7px; border-bottom:1px solid rgba(216,180,254,.45); padding-bottom:6px; }
+                    .chess-admin-desc { color:#cbd5e1; font-size:.78rem; line-height:1.35; margin-bottom:10px; }
+                    .chess-admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+                    .chess-admin-grid button { padding:10px 7px; font-size:.72rem; text-transform:none; border-radius:8px; }
+                    .chess-admin-panel input { margin:0 0 10px 0; text-align:left; border:1px solid #4c1d95; background:#020617; }
+                    .chess-admin-list, .chess-admin-chat-monitor { background:#020617; border:1px solid #312e81; border-radius:10px; padding:10px; max-height:240px; overflow-y:auto; font-size:.78rem; color:#e2e8f0; margin-top:10px; }
+                    .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
+                    .chess-admin-room-row.blocked { border-left-color:#ef4444; }
+                    .chess-admin-room-row:hover { background:#172554; }
+                    @media(max-width:560px){ .chess-admin-grid { grid-template-columns:1fr; } }
+                `;
+                document.head.appendChild(style);
+            }
+
+            if (!document.getElementById('chess-admin-panel')) {
+                const panel = document.createElement('div');
+                panel.id = 'chess-admin-panel';
+                panel.className = 'chess-admin-panel';
+                panel.innerHTML = `
+                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez — Fase 12</div>
+                    <div class="chess-admin-desc">Controle próprio do Xadrez, igual à Damas, usando o caminho <strong>chessRooms</strong>. A Damas continua preservada.</div>
+                    <input id="chess-admin-room-input" type="text" maxlength="18" placeholder="Código da sala de Xadrez, ex: xadrez10">
+                    <div class="chess-admin-grid">
+                        <button id="chess-admin-create-btn" type="button" style="background:#22c55e;">Liberar / criar sala</button>
+                        <button id="chess-admin-block-btn" type="button" style="background:#dc2626;">Bloquear sala</button>
+                        <button id="chess-admin-chat-btn" type="button" style="background:#f97316;">Travar / destravar chat</button>
+                        <button id="chess-admin-kick-btn" type="button" style="background:#facc15; color:#111;">Expulsar jogadores</button>
+                        <button id="chess-admin-clear-chat-btn" type="button" style="background:#b45309;">Limpar mensagens</button>
+                        <button id="chess-admin-reset-btn" type="button" style="background:#7c3aed;">Resetar tabuleiro</button>
+                        <button id="chess-admin-delete-btn" type="button" style="background:#991b1b;">Excluir sala</button>
+                        <button id="chess-admin-monitor-chat-btn" type="button" style="background:#2563eb;">Monitorar chat</button>
+                    </div>
+                    <div id="chess-admin-panorama" class="chess-admin-desc">📊 Sincronizando salas de Xadrez...</div>
+                    <div id="chess-admin-rooms-list" class="chess-admin-list">Carregando salas...</div>
+                    <div id="chess-admin-chat-monitor" class="chess-admin-chat-monitor" style="display:none;">Selecione uma sala e clique em monitorar chat.</div>
+                `;
+                const online = document.getElementById('chess-online-panel');
+                if (online) online.insertAdjacentElement('afterend', panel);
+                else card.insertBefore(panel, document.getElementById('chess-status') || card.firstChild);
+
+                document.getElementById('chess-admin-create-btn')?.addEventListener('click', adminCriarLiberarSalaXadrez);
+                document.getElementById('chess-admin-block-btn')?.addEventListener('click', adminBloquearSalaXadrez);
+                document.getElementById('chess-admin-chat-btn')?.addEventListener('click', adminAlternarChatXadrez);
+                document.getElementById('chess-admin-kick-btn')?.addEventListener('click', adminExpulsarJogadoresXadrez);
+                document.getElementById('chess-admin-clear-chat-btn')?.addEventListener('click', adminLimparChatXadrez);
+                document.getElementById('chess-admin-reset-btn')?.addEventListener('click', adminResetarSalaXadrez);
+                document.getElementById('chess-admin-delete-btn')?.addEventListener('click', adminExcluirSalaXadrez);
+                document.getElementById('chess-admin-monitor-chat-btn')?.addEventListener('click', adminMonitorarChatXadrez);
+            }
+        }
+
+        async function abrirAdminXadrezCentral() {
+            if (!(await exigirAdminSeguro())) {
+                exibirAlertaDoSistema('Acesso negado 🛡️', 'Entre primeiro com o login do administrador.');
+                return;
+            }
+            instalarPainelAdminXadrez();
+            document.body.classList.remove('platform-start-active','mode-selecting','game-selected','domino-selected');
+            document.body.classList.add('chess-selected');
+            const hub = document.getElementById('games-hub-panel');
+            if (hub) hub.style.display = 'none';
+            const lobby = document.getElementById('lobby-screen');
+            const game = document.getElementById('game-screen');
+            if (lobby) lobby.style.display = 'none';
+            if (game) game.style.display = 'none';
+            const chess = document.getElementById('chess-screen');
+            if (chess) chess.style.display = 'block';
+            const panel = document.getElementById('chess-admin-panel');
+            if (panel) panel.style.display = 'block';
+            const online = document.getElementById('chess-online-panel');
+            if (online) online.style.display = 'none';
+            atualizarStatusOnlineXadrez('🛡️ Modo administrador do Xadrez ativo. Controle as salas pelo painel abaixo.');
+            ativarDashboardAdminXadrez();
+            panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function obterSalaAdminXadrez() {
+            const input = document.getElementById('chess-admin-room-input');
+            const sala = normalizarSalaXadrez(input?.value || '');
+            if (!sala) {
+                exibirAlertaDoSistema('Sala obrigatória', 'Digite ou selecione o código da sala de Xadrez.');
+                return '';
+            }
+            return sala;
+        }
+
+        function ativarDashboardAdminXadrez() {
+            instalarPainelAdminXadrez();
+            if (chessAdminUnsubscribeRooms) chessAdminUnsubscribeRooms();
+            chessAdminUnsubscribeRooms = onValue(ref(db, 'chessRooms'), (snap) => {
+                const list = document.getElementById('chess-admin-rooms-list');
+                const panorama = document.getElementById('chess-admin-panorama');
+                if (!list || !panorama) return;
+                const data = snap.val() || {};
+                const ids = Object.keys(data).sort();
+                if (!ids.length) {
+                    panorama.innerHTML = '📊 PANORAMA XADREZ: 0 salas registradas.';
+                    list.innerHTML = '<div style="color:#94a3b8; font-style:italic;">Nenhuma sala de Xadrez criada ainda.</div>';
+                    return;
+                }
+                let liberadas = 0;
+                list.innerHTML = '';
+                ids.forEach(id => {
+                    const sala = data[id] || {};
+                    const ativa = sala.isAuthorized !== false;
+                    if (ativa) liberadas++;
+                    const white = sala.players?.white?.name || 'Aguardando brancas';
+                    const black = sala.players?.black?.name || 'Aguardando pretas';
+                    const specs = sala.spectators && typeof sala.spectators === 'object' ? Object.keys(sala.spectators).length : 0;
+                    const chat = sala.chatBlocked ? ' • CHAT OFF' : '';
+                    const row = document.createElement('div');
+                    row.className = 'chess-admin-room-row' + (ativa ? '' : ' blocked');
+                    row.innerHTML = `<div><strong>${escapeHtmlXadrez(id.toUpperCase())}</strong><div style="color:#94a3b8; margin-top:3px;">⚪ ${escapeHtmlXadrez(white)} vs ⚫ ${escapeHtmlXadrez(black)} • 👀 ${specs}${chat}</div></div><div style="color:${ativa ? '#22c55e' : '#ef4444'}; font-weight:900;">${ativa ? 'LIBERADA' : 'BLOQUEADA'}</div>`;
+                    row.addEventListener('click', () => {
+                        const input = document.getElementById('chess-admin-room-input');
+                        if (input) input.value = id;
+                    });
+                    list.appendChild(row);
+                });
+                panorama.innerHTML = `📊 PANORAMA XADREZ: ${ids.length} salas | <span style="color:#22c55e;">${liberadas} liberadas</span> | <span style="color:#ef4444;">${ids.length - liberadas} bloqueadas</span>`;
+            });
+        }
+
+        async function adminCriarLiberarSalaXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            const r = ref(db, `chessRooms/${sala}`);
+            const snap = await get(r);
+            if (!snap.exists()) {
+                await set(r, estadoInicialSalaXadrezAdmin(sala));
+                mostrarToastXadrez(`🛡️ Sala ${sala} criada e liberada pelo Admin.`);
+            } else {
+                await update(r, { isAuthorized: true, lastAdminAction: 'liberada_admin_xadrez', lastAdminAt: Date.now(), updatedAt: Date.now() });
+                mostrarToastXadrez(`🛡️ Sala ${sala} liberada.`);
+            }
+        }
+
+        async function adminBloquearSalaXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            await update(ref(db, `chessRooms/${sala}`), { isAuthorized: false, lastAdminAction: 'bloqueada_admin_xadrez', lastAdminAt: Date.now(), updatedAt: Date.now() });
+            mostrarToastXadrez(`🛡️ Sala ${sala} bloqueada.`);
+        }
+
+        async function adminAlternarChatXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            const r = ref(db, `chessRooms/${sala}`);
+            const snap = await get(r);
+            const atual = snap.val()?.chatBlocked === true;
+            await update(r, { chatBlocked: !atual, lastAdminAction: !atual ? 'chat_travado_admin_xadrez' : 'chat_liberado_admin_xadrez', lastAdminAt: Date.now(), updatedAt: Date.now() });
+            mostrarToastXadrez(`💬 Chat da sala ${sala} ${!atual ? 'travado' : 'liberado'}.`);
+        }
+
+        async function adminExpulsarJogadoresXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            await update(ref(db, `chessRooms/${sala}`), { players: {}, spectators: {}, lastAdminAction: 'jogadores_expulsos_admin_xadrez', lastAdminAt: Date.now(), updatedAt: Date.now() });
+            mostrarToastXadrez(`🚪 Jogadores e espectadores removidos da sala ${sala}.`);
+        }
+
+        async function adminLimparChatXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            await update(ref(db, `chessRooms/${sala}`), { chat: null, lastAdminAction: 'chat_limpo_admin_xadrez', lastAdminAt: Date.now(), updatedAt: Date.now() });
+            mostrarToastXadrez(`🧹 Chat da sala ${sala} limpo.`);
+        }
+
+        async function adminResetarSalaXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            const estado = estadoInicialSalaXadrezAdmin(sala);
+            await update(ref(db, `chessRooms/${sala}`), { board: estado.board, turn: 'white', gameOver: false, lastMoveMessage: 'Partida resetada pelo administrador do Xadrez.', lastChessMove: null, enPassantTarget: null, moveHistory: [], updatedAt: Date.now(), lastAdminAction: 'tabuleiro_resetado_admin_xadrez', lastAdminAt: Date.now() });
+            mostrarToastXadrez(`♟️ Tabuleiro da sala ${sala} resetado.`);
+        }
+
+        async function adminExcluirSalaXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            exibirConfirmacao('Excluir sala de Xadrez', `Tem certeza de que deseja excluir a sala <strong>${escapeHtmlXadrez(sala.toUpperCase())}</strong>?`, async () => {
+                await remove(ref(db, `chessRooms/${sala}`));
+                mostrarToastXadrez(`❌ Sala ${sala} excluída.`);
+            });
+        }
+
+        async function adminMonitorarChatXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            const sala = obterSalaAdminXadrez(); if (!sala) return;
+            const monitor = document.getElementById('chess-admin-chat-monitor');
+            if (!monitor) return;
+            monitor.style.display = 'block';
+            monitor.innerHTML = `💬 Monitorando chat da sala <strong>${escapeHtmlXadrez(sala.toUpperCase())}</strong>...`;
+            if (chessAdminUnsubscribeChat) chessAdminUnsubscribeChat();
+            chessAdminUnsubscribeChat = onValue(ref(db, `chessRooms/${sala}/chat`), (snap) => {
+                const msgs = Object.values(snap.val() || {}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(-80);
+                if (!msgs.length) {
+                    monitor.innerHTML = `💬 Sala <strong>${escapeHtmlXadrez(sala.toUpperCase())}</strong>: nenhuma mensagem.`;
+                    return;
+                }
+                monitor.innerHTML = `<div style="color:#38bdf8; font-weight:900; margin-bottom:6px;">💬 Chat da sala ${escapeHtmlXadrez(sala.toUpperCase())}</div>` + msgs.map(m => `<div><strong style="color:#38bdf8;">${escapeHtmlXadrez(m.name || 'Jogador')}:</strong> ${escapeHtmlXadrez(m.text || '')}</div>`).join('');
+                monitor.scrollTop = monitor.scrollHeight;
+            });
+        }
+
         function iniciarModuloXadrez() {
             instalarCssXadrezFase5();
             instalarUiXadrezFase5();
@@ -8767,6 +9037,7 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-flip-btn')?.addEventListener('click', alternarVisaoTabuleiroXadrez);
             document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
+            document.getElementById('central-admin-xadrez-btn')?.addEventListener('click', abrirAdminXadrezCentral);
         }
 
         window.abrirXadrezArena = abrirXadrezArena;
@@ -8774,6 +9045,7 @@ Link: ${location.origin}${location.pathname}`;
         window.desfazerJogadaXadrez = desfazerJogada;
         window.entrarXadrezOnline = entrarXadrezOnline;
         window.sairXadrezOnline = sairXadrezOnline;
+        window.abrirAdminXadrezCentral = abrirAdminXadrezCentral;
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarModuloXadrez);
         else iniciarModuloXadrez();
