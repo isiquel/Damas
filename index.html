@@ -2682,7 +2682,113 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             .chess-history-actions button { width: 100%; }
         }
 
-    </style>
+    
+
+        /* 🏆 FASE 20 - RANKING DO TREINO DE XADREZ (separado da Damas) */
+        .chess-training-ranking-panel {
+            display: block;
+            background: linear-gradient(135deg, #07111f, #0f172a 55%, #1e1b4b);
+            border: 1px solid rgba(250, 204, 21, 0.42);
+            border-radius: 16px;
+            padding: 14px;
+            margin: 12px auto 14px auto;
+            max-width: 520px;
+            text-align: left;
+            box-shadow: 0 10px 26px rgba(0,0,0,0.36);
+        }
+        .chess-training-ranking-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .chess-training-ranking-title {
+            color: #facc15;
+            font-weight: 1000;
+            font-size: .92rem;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+        .chess-training-ranking-badge {
+            background: rgba(46, 204, 113, .14);
+            border: 1px solid rgba(46, 204, 113, .44);
+            color: #86efac;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: .68rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+        .chess-training-ranking-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .chess-training-ranking-stat {
+            background: rgba(2,6,23,.82);
+            border: 1px solid rgba(148,163,184,.18);
+            border-radius: 12px;
+            padding: 9px 8px;
+            text-align: center;
+        }
+        .chess-training-ranking-number {
+            color: #fff;
+            font-size: 1.18rem;
+            font-weight: 1000;
+            line-height: 1.05;
+        }
+        .chess-training-ranking-label {
+            color: #94a3b8;
+            font-size: .68rem;
+            margin-top: 3px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .chess-training-ranking-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .chess-training-ranking-line {
+            background: rgba(15,23,42,.74);
+            border-left: 4px solid rgba(56,189,248,.68);
+            border-radius: 10px;
+            padding: 8px;
+            color: #cbd5e1;
+            font-size: .78rem;
+            line-height: 1.32;
+        }
+        .chess-training-ranking-line strong { color: #fff; }
+        .chess-training-ranking-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .chess-training-ranking-actions button {
+            padding: 10px 8px;
+            font-size: .76rem;
+            text-transform: none;
+            border-radius: 10px;
+        }
+        .btn-chess-ranking-refresh { background: #0f766e; }
+        .btn-chess-ranking-clear { background: #64748b; }
+        .chess-training-ranking-note {
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: .72rem;
+            line-height: 1.35;
+        }
+        @media (max-width: 520px) {
+            .chess-training-ranking-head,
+            .chess-training-ranking-details,
+            .chess-training-ranking-actions { grid-template-columns: 1fr; display: grid; }
+            .chess-training-ranking-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+</style>
 </head>
 <body class="platform-start-active mode-selecting">
 
@@ -7510,6 +7616,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessLastResultShown = '';
         let chessLearnExampleMove = null;
         let chessHistoryPanelOpen = false;
+        let chessTrainingResultRecorded = false;
         const chessHumanColor = 'white';
 
         function criarPeca(color, type) {
@@ -7529,7 +7636,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 19 ativa: Xadrez com histórico de jogadas bonito e recolhível. Vídeo/áudio pausado.';
+            lastMoveMessage = 'Fase 20 ativa: Xadrez com ranking separado do treino, histórico e professor durante a partida. Vídeo/áudio pausado.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7537,6 +7644,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             chessLastResultShown = '';
             chessLearnExampleMove = null;
             chessHistoryPanelOpen = false;
+            chessTrainingResultRecorded = false;
         }
 
         function instalarCssXadrezFase5() {
@@ -7963,7 +8071,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 15</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 20</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -8067,6 +8175,39 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
 
+            if (card && !document.getElementById('chess-training-ranking-panel')) {
+                const ranking = document.createElement('div');
+                ranking.id = 'chess-training-ranking-panel';
+                ranking.className = 'chess-training-ranking-panel';
+                ranking.innerHTML = `
+                    <div class="chess-training-ranking-head">
+                        <div class="chess-training-ranking-title">🏆 Ranking do Treino de Xadrez</div>
+                        <div id="chess-training-ranking-badge" class="chess-training-ranking-badge">Separado da Damas</div>
+                    </div>
+                    <div class="chess-training-ranking-grid">
+                        <div class="chess-training-ranking-stat"><div id="chess-rank-points" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Pontos</div></div>
+                        <div class="chess-training-ranking-stat"><div id="chess-rank-wins" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Vitórias</div></div>
+                        <div class="chess-training-ranking-stat"><div id="chess-rank-games" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Partidas</div></div>
+                        <div class="chess-training-ranking-stat"><div id="chess-rank-losses" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Derrotas</div></div>
+                        <div class="chess-training-ranking-stat"><div id="chess-rank-draws" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Empates</div></div>
+                        <div class="chess-training-ranking-stat"><div id="chess-rank-streak" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Sequência</div></div>
+                    </div>
+                    <div class="chess-training-ranking-details">
+                        <div class="chess-training-ranking-line"><strong>Melhor nível vencido:</strong><br><span id="chess-rank-best">Nenhum ainda</span></div>
+                        <div class="chess-training-ranking-line"><strong>Último resultado:</strong><br><span id="chess-rank-last">Nenhuma partida finalizada</span></div>
+                    </div>
+                    <div class="chess-training-ranking-actions">
+                        <button id="chess-ranking-refresh-btn" class="btn-chess-ranking-refresh" type="button">Atualizar ranking</button>
+                        <button id="chess-ranking-clear-btn" class="btn-chess-ranking-clear" type="button">Limpar ranking</button>
+                    </div>
+                    <div class="chess-training-ranking-note">Pontuação: Aprender +5, Fácil +10, Médio +20 e Difícil +35 por vitória. Empate soma 2 pontos. Este ranking é local e não mistura com a Damas.</div>
+                `;
+                const trainingPanel = document.getElementById('chess-training-panel');
+                if (trainingPanel) trainingPanel.insertAdjacentElement('afterend', ranking);
+                else card.appendChild(ranking);
+            }
+
+
             if (card && !document.getElementById('chess-material-panel')) {
                 const material = document.createElement('div');
                 material.id = 'chess-material-panel';
@@ -8113,6 +8254,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 if (warning) card.insertBefore(history, warning);
                 else card.appendChild(history);
             }
+
+            renderRankingTreinoXadrez();
 
             if (card && !document.getElementById('chess-chat-panel')) {
                 const chat = document.createElement('div');
@@ -8634,6 +8777,140 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
         }
 
+
+        function chaveRankingTreinoXadrez() {
+            return 'tabuleiroArena.chessTrainingRanking.v20';
+        }
+
+        function rankingTreinoXadrezPadrao() {
+            return {
+                points: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                games: 0,
+                streak: 0,
+                bestDifficulty: '',
+                lastResult: 'Nenhuma partida finalizada',
+                byDifficulty: {
+                    aprender: { wins: 0, losses: 0, draws: 0, games: 0 },
+                    facil: { wins: 0, losses: 0, draws: 0, games: 0 },
+                    medio: { wins: 0, losses: 0, draws: 0, games: 0 },
+                    dificil: { wins: 0, losses: 0, draws: 0, games: 0 }
+                }
+            };
+        }
+
+        function carregarRankingTreinoXadrez() {
+            try {
+                const raw = localStorage.getItem(chaveRankingTreinoXadrez());
+                const base = rankingTreinoXadrezPadrao();
+                if (!raw) return base;
+                const data = JSON.parse(raw);
+                return {
+                    ...base,
+                    ...data,
+                    byDifficulty: {
+                        ...base.byDifficulty,
+                        ...(data && data.byDifficulty ? data.byDifficulty : {})
+                    }
+                };
+            } catch (_) {
+                return rankingTreinoXadrezPadrao();
+            }
+        }
+
+        function salvarRankingTreinoXadrez(data) {
+            try { localStorage.setItem(chaveRankingTreinoXadrez(), JSON.stringify(data)); } catch (_) {}
+        }
+
+        function chaveDificuldadeRankingAtual() {
+            if (chessTrainingLearnMode) return 'aprender';
+            if (chessTrainingDifficulty === 'facil') return 'facil';
+            if (chessTrainingDifficulty === 'dificil') return 'dificil';
+            return 'medio';
+        }
+
+        function nomeDificuldadeRankingXadrez(chave) {
+            const nomes = { aprender: 'Aprender do Zero', facil: 'Fácil', medio: 'Médio', dificil: 'Difícil' };
+            return nomes[chave] || 'Médio';
+        }
+
+        function pontosVitoriaRankingXadrez(chave) {
+            const pontos = { aprender: 5, facil: 10, medio: 20, dificil: 35 };
+            return pontos[chave] || 20;
+        }
+
+        function prioridadeDificuldadeRanking(chave) {
+            const ordem = { aprender: 1, facil: 2, medio: 3, dificil: 4 };
+            return ordem[chave] || 0;
+        }
+
+        function renderRankingTreinoXadrez() {
+            const data = carregarRankingTreinoXadrez();
+            const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+            setText('chess-rank-points', data.points || 0);
+            setText('chess-rank-wins', data.wins || 0);
+            setText('chess-rank-losses', data.losses || 0);
+            setText('chess-rank-draws', data.draws || 0);
+            setText('chess-rank-games', data.games || 0);
+            setText('chess-rank-streak', data.streak || 0);
+            setText('chess-rank-best', data.bestDifficulty ? nomeDificuldadeRankingXadrez(data.bestDifficulty) : 'Nenhum ainda');
+            setText('chess-rank-last', data.lastResult || 'Nenhuma partida finalizada');
+            const badge = document.getElementById('chess-training-ranking-badge');
+            if (badge) badge.textContent = data.games ? `${data.games} partida${data.games === 1 ? '' : 's'} registrada${data.games === 1 ? '' : 's'}` : 'Separado da Damas';
+        }
+
+        function registrarResultadoRankingTreinoXadrez(textoEstado) {
+            if (chessMode !== 'training' || !chessGameOver || chessTrainingResultRecorded) return;
+            if (!textoEstado || !/Xeque-mate|Empate|afogamento|venceram|venceu|desistência/i.test(textoEstado)) return;
+
+            const data = carregarRankingTreinoXadrez();
+            const diff = chaveDificuldadeRankingAtual();
+            const bucket = data.byDifficulty[diff] || { wins: 0, losses: 0, draws: 0, games: 0 };
+            const brancasVenceram = /brancas/i.test(textoEstado);
+            const pretasVenceram = /pretas/i.test(textoEstado);
+            const empate = /Empate|afogamento/i.test(textoEstado);
+
+            data.games = (data.games || 0) + 1;
+            bucket.games = (bucket.games || 0) + 1;
+
+            if (empate) {
+                data.draws = (data.draws || 0) + 1;
+                bucket.draws = (bucket.draws || 0) + 1;
+                data.points = (data.points || 0) + 2;
+                data.streak = 0;
+                data.lastResult = `Empate no modo ${nomeDificuldadeRankingXadrez(diff)} (+2 pontos)`;
+            } else if (brancasVenceram && !pretasVenceram) {
+                const pontos = pontosVitoriaRankingXadrez(diff);
+                data.wins = (data.wins || 0) + 1;
+                bucket.wins = (bucket.wins || 0) + 1;
+                data.points = (data.points || 0) + pontos;
+                data.streak = (data.streak || 0) + 1;
+                if (!data.bestDifficulty || prioridadeDificuldadeRanking(diff) > prioridadeDificuldadeRanking(data.bestDifficulty)) data.bestDifficulty = diff;
+                data.lastResult = `Vitória no modo ${nomeDificuldadeRankingXadrez(diff)} (+${pontos} pontos)`;
+            } else {
+                data.losses = (data.losses || 0) + 1;
+                bucket.losses = (bucket.losses || 0) + 1;
+                data.streak = 0;
+                data.lastResult = `Derrota no modo ${nomeDificuldadeRankingXadrez(diff)}`;
+            }
+
+            data.byDifficulty[diff] = bucket;
+            data.updatedAt = Date.now();
+            salvarRankingTreinoXadrez(data);
+            chessTrainingResultRecorded = true;
+            renderRankingTreinoXadrez();
+        }
+
+        function limparRankingTreinoXadrez() {
+            const confirma = window.confirm('Limpar somente o ranking do treino de Xadrez? A Damas não será alterada.');
+            if (!confirma) return;
+            salvarRankingTreinoXadrez(rankingTreinoXadrezPadrao());
+            renderRankingTreinoXadrez();
+            mostrarToastXadrez('🏆 Ranking do treino de Xadrez limpo.');
+        }
+
         function limparResultadoXadrez() {
             const panel = document.getElementById('chess-result-panel');
             if (panel) {
@@ -8648,6 +8925,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!panel || !chessGameOver || !textoEstado) return;
             if (chessLastResultShown === textoEstado) return;
             chessLastResultShown = textoEstado;
+            registrarResultadoRankingTreinoXadrez(textoEstado);
 
             const icon = document.getElementById('chess-result-icon');
             const title = document.getElementById('chess-result-title');
@@ -9003,6 +9281,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             mostrarTabuleiroXadrezAposEscolha();
             renderChessBoard();
             atualizarPainelTreinoXadrez();
+            renderRankingTreinoXadrez();
             focarTabuleiroXadrez(false);
             mostrarToastXadrez(`🤖 Modo Treino ${nomeDificuldadeTreinoXadrez()} iniciado.`);
         }
@@ -9958,6 +10237,8 @@ Link: ${location.origin}${location.pathname}`;
             renderChessBoard();
             const estado = avaliarEstadoDoJogo(msg);
             moveHistory.push(criarRegistroHistoricoXadrez(peca, fromRow, fromCol, move, capturedPiece, promotionType, estado) || notation);
+            renderHistorico();
+            atualizarStatus();
             reforcarProfessorXequeXadrez(estado);
             if (moverColor === chessHumanColor) feedbackProfessorDepoisDaJogada(peca, fromRow, fromCol, move, estado);
             if (/Xeque-mate/i.test(estado)) mostrarToastXadrez('♟️ XEQUE-MATE! ' + estado, 'mate');
@@ -10108,6 +10389,7 @@ Link: ${location.origin}${location.pathname}`;
             if (!chessBoard.length) criarTabuleiroInicial();
             ocultarTabuleiroXadrezParaMenu();
             renderChessBoard();
+            renderRankingTreinoXadrez();
             window.scrollTo({ top: 0, behavior: 'auto' });
         }
 
@@ -10139,6 +10421,7 @@ Link: ${location.origin}${location.pathname}`;
             }
             renderChessBoard();
             atualizarPainelTreinoXadrez();
+            renderRankingTreinoXadrez();
             mostrarToastXadrez(manterTreino ? '🤖 Treino reiniciado. Brancas começam.' : '♟️ Nova partida de Xadrez iniciada. Brancas começam.');
         }
 
@@ -10670,6 +10953,8 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
             document.getElementById('chess-history-toggle-btn')?.addEventListener('click', () => alternarHistoricoXadrez());
             document.getElementById('chess-history-clear-btn')?.addEventListener('click', limparHistoricoVisualXadrez);
+            document.getElementById('chess-ranking-refresh-btn')?.addEventListener('click', () => { renderRankingTreinoXadrez(); mostrarToastXadrez('🏆 Ranking do Xadrez atualizado.'); });
+            document.getElementById('chess-ranking-clear-btn')?.addEventListener('click', limparRankingTreinoXadrez);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
             document.getElementById('chess-training-easy-btn')?.addEventListener('click', () => iniciarTreinoXadrez('facil', false));
             document.getElementById('chess-training-medium-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', false));
