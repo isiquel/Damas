@@ -6879,7 +6879,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 5.4 ativa: Xadrez online corrigido com limpeza forte de peças quebradas e entrada estável na sala.';
+            lastMoveMessage = 'Fase 5.5 ativa: Xadrez online corrigido com salvamento seguro das casas vazias e entrada estável na sala.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7204,7 +7204,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 5.4 ativa: Xadrez online corrigido. Se uma sala antiga estiver com peça quebrada, sem peças, vazia ou corrompida, o tabuleiro e as peças são restaurados automaticamente. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 5.5 ativa: Xadrez online corrigido. Agora as casas vazias são salvas com segurança no Firebase, evitando sala quebrada, linhas vazias e erro ao entrar. A Damas Arena continua preservada.';
             }
         }
 
@@ -7215,21 +7215,58 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function tabuleiroXadrezTemFormatoValido(board) {
-            return Array.isArray(board)
-                && board.length === 8
-                && board.every(row => Array.isArray(row) && row.length === 8);
+            // Firebase Realtime Database apaga valores null dentro de arrays.
+            // Por isso, uma linha vazia pode voltar como "buraco" no array.
+            // Não usamos every/map direto porque eles pulam buracos e deixam passar tabuleiro quebrado.
+            if (!board || typeof board !== 'object') return false;
+            for (let r = 0; r < 8; r++) {
+                const row = board[r];
+                if (!row || typeof row !== 'object') return false;
+                for (let c = 0; c < 8; c++) {
+                    const cell = row[c];
+                    if (cell === null || cell === undefined || cell === '' || cell === 0 || cell === false) continue;
+                    if (!pecaXadrezValida(cell)) return false;
+                }
+            }
+            return true;
         }
 
         function limparTabuleiroXadrezRecebido(board) {
             if (!tabuleiroXadrezTemFormatoValido(board)) return null;
-            return board.map(row => row.map(piece => {
-                if (!pecaXadrezValida(piece)) return null;
-                return {
-                    color: piece.color,
-                    type: piece.type,
-                    moved: !!piece.moved
-                };
-            }));
+            const limpo = Array.from({ length: 8 }, () => Array(8).fill(null));
+            for (let r = 0; r < 8; r++) {
+                const row = board[r] || {};
+                for (let c = 0; c < 8; c++) {
+                    const piece = row[c];
+                    if (!pecaXadrezValida(piece)) {
+                        limpo[r][c] = null;
+                    } else {
+                        limpo[r][c] = {
+                            color: piece.color,
+                            type: piece.type,
+                            moved: !!piece.moved
+                        };
+                    }
+                }
+            }
+            return limpo;
+        }
+
+        function serializarTabuleiroXadrezParaFirebase(board) {
+            const limpo = limparTabuleiroXadrezRecebido(board) || (() => {
+                criarTabuleiroInicial();
+                return limparTabuleiroXadrezRecebido(chessBoard);
+            })();
+            // Nunca enviar null para o Firebase nas casas vazias.
+            // Usamos string vazia para preservar as 8 linhas e as 8 colunas.
+            return Array.from({ length: 8 }, (_, r) =>
+                Array.from({ length: 8 }, (_, c) => {
+                    const piece = limpo?.[r]?.[c];
+                    return pecaXadrezValida(piece)
+                        ? { color: piece.color, type: piece.type, moved: !!piece.moved }
+                        : '';
+                })
+            );
         }
 
         function contarPecasXadrez(board) {
@@ -7732,7 +7769,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
         function estadoXadrezParaFirebase() {
             return {
-                board: chessBoard,
+                board: serializarTabuleiroXadrezParaFirebase(chessBoard),
                 turn: chessTurn,
                 gameOver: chessGameOver,
                 lastMoveMessage,
