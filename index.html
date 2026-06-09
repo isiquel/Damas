@@ -1939,7 +1939,7 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 2</span>
+                <span class="game-mode-badge">Fase 3</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Módulo separado: xeque, xeque-mate e movimentos legais sem mexer na Damas.</div>
@@ -6654,7 +6654,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
     })();
 
 
-    // ♟️ XADREZ ARENA - FASE 2 (módulo isolado da Damas)
+    // ♟️ XADREZ ARENA - FASE 3 (módulo isolado da Damas)
     (function prepararXadrezArenaSeparado() {
         'use strict';
 
@@ -6663,14 +6663,24 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             black: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' }
         };
 
+        const nomePeca = {
+            king: 'Rei', queen: 'Dama', rook: 'Torre', bishop: 'Bispo', knight: 'Cavalo', pawn: 'Peão'
+        };
+
         let chessBoard = [];
         let chessTurn = 'white';
         let selectedSquare = null;
         let legalMoves = [];
         let chessGameOver = false;
         let lastMoveMessage = '';
+        let lastChessMove = null;
+        let enPassantTarget = null;
+        let moveHistory = [];
+        let undoStack = [];
 
-        function criarPeca(color, type) { return { color, type, moved: false }; }
+        function criarPeca(color, type) {
+            return { color, type, moved: false };
+        }
 
         function criarTabuleiroInicial() {
             const vazio = () => Array(8).fill(null);
@@ -6685,198 +6695,364 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = '';
+            lastMoveMessage = 'Fase 3 ativa: roque, en passant, promoção com escolha, histórico e desfazer.';
+            lastChessMove = null;
+            enPassantTarget = null;
+            moveHistory = [];
+            undoStack = [];
         }
 
-        function instalarCssXadrezFase2() {
-            if (document.getElementById('chess-phase2-style')) return;
+        function instalarCssXadrezFase3() {
+            if (document.getElementById('chess-phase3-style')) return;
 
             const style = document.createElement('style');
-            style.id = 'chess-phase2-style';
+            style.id = 'chess-phase3-style';
             style.textContent = `
                 .chess-square.check {
                     box-shadow: inset 0 0 0 5px rgba(239, 68, 68, 0.95), 0 0 18px rgba(239, 68, 68, 0.8);
                     animation: chessCheckPulse 0.9s infinite alternate;
                 }
-                .chess-square.last-from {
-                    box-shadow: inset 0 0 0 4px rgba(59, 130, 246, 0.65);
+                .chess-square.last-from { box-shadow: inset 0 0 0 4px rgba(59, 130, 246, 0.65); }
+                .chess-square.last-to { box-shadow: inset 0 0 0 4px rgba(34, 197, 94, 0.8); }
+                .chess-square.castle::after {
+                    content: '⇄';
+                    position: absolute;
+                    z-index: 3;
+                    color: #0f172a;
+                    background: rgba(250, 204, 21, 0.86);
+                    width: 36%;
+                    height: 36%;
+                    border-radius: 999px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 1000;
+                    box-shadow: 0 0 12px rgba(250, 204, 21, 0.75);
                 }
-                .chess-square.last-to {
-                    box-shadow: inset 0 0 0 4px rgba(34, 197, 94, 0.8);
+                .chess-square.en-passant::after {
+                    content: 'e.p.';
+                    position: absolute;
+                    z-index: 3;
+                    color: #fff;
+                    background: rgba(14, 165, 233, 0.9);
+                    padding: 3px 5px;
+                    border-radius: 999px;
+                    font-size: .62rem;
+                    font-weight: 900;
+                    box-shadow: 0 0 12px rgba(14, 165, 233, 0.72);
                 }
-                @keyframes chessCheckPulse {
-                    from { filter: brightness(1); }
-                    to { filter: brightness(1.22); }
+                @keyframes chessCheckPulse { from { filter: brightness(1); } to { filter: brightness(1.22); } }
+                .chess-history-panel {
+                    max-width: 520px;
+                    margin: 12px auto 0 auto;
+                    background: #020617;
+                    border: 1px solid rgba(56,189,248,0.32);
+                    border-radius: 12px;
+                    padding: 10px;
+                    text-align: left;
                 }
+                .chess-history-title {
+                    color: #38bdf8;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    font-size: .78rem;
+                    letter-spacing: .5px;
+                    margin-bottom: 6px;
+                }
+                .chess-history-list {
+                    max-height: 118px;
+                    overflow-y: auto;
+                    color: #cbd5e1;
+                    font-size: .82rem;
+                    line-height: 1.5;
+                }
+                .chess-history-empty { color: #64748b; font-size: .82rem; }
+                .btn-chess-undo { background: #0ea5e9; }
+                .btn-chess-undo:hover:not(:disabled) { background: #0284c7; }
+                .btn-chess-undo:disabled { opacity: .62; }
+                .chess-promotion-modal {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    z-index: 10050;
+                    background: rgba(2, 6, 23, .86);
+                    backdrop-filter: blur(7px);
+                    align-items: center;
+                    justify-content: center;
+                    padding: 18px;
+                }
+                .chess-promotion-card {
+                    width: min(94vw, 420px);
+                    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+                    border: 1px solid rgba(216,180,254,.5);
+                    border-radius: 18px;
+                    padding: 18px;
+                    box-shadow: 0 20px 70px rgba(0,0,0,.72);
+                    text-align: center;
+                }
+                .chess-promotion-card h2 {
+                    color: #d8b4fe;
+                    margin-bottom: 8px;
+                    font-size: 1.12rem;
+                    text-transform: uppercase;
+                }
+                .chess-promotion-card p { color: #cbd5e1; font-size: .9rem; margin-bottom: 12px; }
+                .chess-promotion-options {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 8px;
+                }
+                .chess-promotion-options button {
+                    min-height: 76px;
+                    padding: 8px;
+                    background: #111827;
+                    border: 1px solid rgba(255,255,255,.1);
+                    border-radius: 12px;
+                    text-transform: none;
+                    font-size: 1.8rem;
+                    line-height: 1;
+                }
+                .chess-promotion-options button span {
+                    display: block;
+                    margin-top: 5px;
+                    font-size: .65rem;
+                    color: #cbd5e1;
+                    font-weight: 800;
+                }
+                @media (max-width: 520px) { .chess-promotion-options { grid-template-columns: repeat(2, 1fr); } }
             `;
             document.head.appendChild(style);
+        }
+
+        function instalarUiXadrezFase3() {
+            const actions = document.querySelector('#chess-screen .chess-actions');
+            if (actions && !document.getElementById('chess-undo-btn')) {
+                const undo = document.createElement('button');
+                undo.id = 'chess-undo-btn';
+                undo.className = 'btn-chess-undo';
+                undo.type = 'button';
+                undo.textContent = 'Desfazer Jogada';
+                actions.insertBefore(undo, actions.children[1] || null);
+                actions.style.gridTemplateColumns = '1fr 1fr 1fr';
+            }
+
+            const card = document.querySelector('#chess-screen .chess-card');
+            if (card && !document.getElementById('chess-history-panel')) {
+                const history = document.createElement('div');
+                history.id = 'chess-history-panel';
+                history.className = 'chess-history-panel';
+                history.innerHTML = `
+                    <div class="chess-history-title">📜 Histórico de jogadas</div>
+                    <div id="chess-history-list" class="chess-history-list"><div class="chess-history-empty">Nenhuma jogada ainda.</div></div>
+                `;
+                const warning = card.querySelector('.chess-warning');
+                if (warning) card.insertBefore(history, warning);
+                else card.appendChild(history);
+            }
+
+            if (!document.getElementById('chess-promotion-modal')) {
+                const modal = document.createElement('div');
+                modal.id = 'chess-promotion-modal';
+                modal.className = 'chess-promotion-modal';
+                modal.innerHTML = `
+                    <div class="chess-promotion-card">
+                        <h2>Promover peão</h2>
+                        <p>Escolha em qual peça o peão será transformado.</p>
+                        <div class="chess-promotion-options">
+                            <button type="button" data-piece="queen">♕<span>Dama</span></button>
+                            <button type="button" data-piece="rook">♖<span>Torre</span></button>
+                            <button type="button" data-piece="bishop">♗<span>Bispo</span></button>
+                            <button type="button" data-piece="knight">♘<span>Cavalo</span></button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            const warning = document.querySelector('#chess-screen .chess-warning');
+            if (warning) {
+                warning.innerHTML = '✅ Fase 3 ativa: roque pequeno/grande, en passant, promoção com escolha, histórico de jogadas e botão desfazer no modo local. A Damas Arena continua preservada.';
+            }
         }
 
         function clonarTabuleiro(board) {
             return board.map(row => row.map(piece => piece ? { ...piece } : null));
         }
 
-        function dentroDoTabuleiro(row, col) {
-            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        function salvarEstadoParaDesfazer() {
+            undoStack.push({
+                board: clonarTabuleiro(chessBoard),
+                turn: chessTurn,
+                gameOver: chessGameOver,
+                lastMove: lastChessMove ? { ...lastChessMove } : null,
+                enPassant: enPassantTarget ? { ...enPassantTarget } : null,
+                history: [...moveHistory],
+                message: lastMoveMessage
+            });
+            if (undoStack.length > 80) undoStack.shift();
         }
 
-        function nomeCor(color) {
-            return color === 'white' ? 'brancas' : 'pretas';
+        function desfazerJogada() {
+            const previous = undoStack.pop();
+            if (!previous) {
+                lastMoveMessage = 'Não há jogada para desfazer.';
+                atualizarStatus();
+                return;
+            }
+            chessBoard = clonarTabuleiro(previous.board);
+            chessTurn = previous.turn;
+            chessGameOver = previous.gameOver;
+            lastChessMove = previous.lastMove;
+            enPassantTarget = previous.enPassant;
+            moveHistory = [...previous.history];
+            selectedSquare = null;
+            legalMoves = [];
+            lastMoveMessage = 'Jogada desfeita.';
+            renderChessBoard();
         }
 
-        function corOposta(color) {
-            return color === 'white' ? 'black' : 'white';
-        }
-
-        function nomeVencedor(color) {
-            return color === 'white' ? 'Brancas' : 'Pretas';
-        }
-
-        function casaLivre(row, col, board = chessBoard) {
-            return dentroDoTabuleiro(row, col) && !board[row][col];
-        }
-
-        function casaTemAdversario(row, col, color, board = chessBoard) {
-            return dentroDoTabuleiro(row, col) && board[row][col] && board[row][col].color !== color && board[row][col].type !== 'king';
-        }
+        function dentroDoTabuleiro(row, col) { return row >= 0 && row < 8 && col >= 0 && col < 8; }
+        function nomeCor(color) { return color === 'white' ? 'brancas' : 'pretas'; }
+        function nomeVencedor(color) { return color === 'white' ? 'Brancas' : 'Pretas'; }
+        function corOposta(color) { return color === 'white' ? 'black' : 'white'; }
+        function casaLivre(row, col, board = chessBoard) { return dentroDoTabuleiro(row, col) && !board[row][col]; }
+        function casaTemAdversario(row, col, color, board = chessBoard) { return dentroDoTabuleiro(row, col) && board[row][col] && board[row][col].color !== color; }
+        function alg(row, col) { return `${String.fromCharCode(97 + col)}${8 - row}`; }
 
         function encontrarRei(board, color) {
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const peca = board[row][col];
-                    if (peca && peca.color === color && peca.type === 'king') {
-                        return { row, col };
-                    }
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r][c];
+                    if (p && p.color === color && p.type === 'king') return { row: r, col: c };
                 }
             }
             return null;
         }
 
-        function adicionarLinhaAtaque(ataques, board, row, col, color, direcoes) {
-            for (const [dr, dc] of direcoes) {
+        function caminhoLivre(board, row, col, dr, dc) {
+            let r = row + dr;
+            let c = col + dc;
+            while (dentroDoTabuleiro(r, c)) {
+                if (board[r][c]) return false;
+                r += dr;
+                c += dc;
+            }
+            return true;
+        }
+
+        function quadradoAtacado(board, row, col, byColor) {
+            const pawnDir = byColor === 'white' ? -1 : 1;
+            for (const dc of [-1, 1]) {
+                const pr = row - pawnDir;
+                const pc = col - dc;
+                if (dentroDoTabuleiro(pr, pc)) {
+                    const p = board[pr][pc];
+                    if (p && p.color === byColor && p.type === 'pawn') return true;
+                }
+            }
+
+            for (const [dr, dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) {
+                const r = row + dr;
+                const c = col + dc;
+                const p = dentroDoTabuleiro(r, c) ? board[r][c] : null;
+                if (p && p.color === byColor && p.type === 'knight') return true;
+            }
+
+            for (const [dr, dc, types] of [
+                [1,0,['rook','queen']], [-1,0,['rook','queen']], [0,1,['rook','queen']], [0,-1,['rook','queen']],
+                [1,1,['bishop','queen']], [1,-1,['bishop','queen']], [-1,1,['bishop','queen']], [-1,-1,['bishop','queen']]
+            ]) {
                 let r = row + dr;
                 let c = col + dc;
-
                 while (dentroDoTabuleiro(r, c)) {
-                    ataques.push({ row: r, col: c });
-                    if (board[r][c]) break;
+                    const p = board[r][c];
+                    if (p) {
+                        if (p.color === byColor && types.includes(p.type)) return true;
+                        break;
+                    }
                     r += dr;
                     c += dc;
                 }
             }
-        }
 
-        function ataquesDaPeca(board, row, col) {
-            const peca = board[row][col];
-            if (!peca) return [];
-
-            const ataques = [];
-            const { color, type } = peca;
-
-            if (type === 'pawn') {
-                const dir = color === 'white' ? -1 : 1;
-                for (const dc of [-1, 1]) {
-                    const r = row + dir;
-                    const c = col + dc;
-                    if (dentroDoTabuleiro(r, c)) ataques.push({ row: r, col: c });
-                }
-                return ataques;
+            for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+                const r = row + dr;
+                const c = col + dc;
+                const p = dentroDoTabuleiro(r, c) ? board[r][c] : null;
+                if (p && p.color === byColor && p.type === 'king') return true;
             }
 
-            if (type === 'knight') {
-                for (const [dr, dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) {
-                    const r = row + dr;
-                    const c = col + dc;
-                    if (dentroDoTabuleiro(r, c)) ataques.push({ row: r, col: c });
-                }
-                return ataques;
-            }
-
-            if (type === 'king') {
-                for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
-                    const r = row + dr;
-                    const c = col + dc;
-                    if (dentroDoTabuleiro(r, c)) ataques.push({ row: r, col: c });
-                }
-                return ataques;
-            }
-
-            if (type === 'rook') {
-                adicionarLinhaAtaque(ataques, board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1]]);
-                return ataques;
-            }
-
-            if (type === 'bishop') {
-                adicionarLinhaAtaque(ataques, board, row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]]);
-                return ataques;
-            }
-
-            if (type === 'queen') {
-                adicionarLinhaAtaque(ataques, board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
-                return ataques;
-            }
-
-            return ataques;
-        }
-
-        function casaAtacada(board, row, col, porCor) {
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const peca = board[r][c];
-                    if (!peca || peca.color !== porCor) continue;
-
-                    const ataques = ataquesDaPeca(board, r, c);
-                    if (ataques.some(a => a.row === row && a.col === col)) return true;
-                }
-            }
             return false;
         }
 
         function reiEstaEmXeque(board, color) {
-            const rei = encontrarRei(board, color);
-            if (!rei) return false;
-            return casaAtacada(board, rei.row, rei.col, corOposta(color));
+            const king = encontrarRei(board, color);
+            if (!king) return false;
+            return quadradoAtacado(board, king.row, king.col, corOposta(color));
         }
 
-        function adicionarMovimentoSeValido(moves, board, row, col, color) {
+        function adicionarMovimentoSeValido(moves, row, col, color, board = chessBoard, extra = {}) {
             if (!dentroDoTabuleiro(row, col)) return false;
-
             const destino = board[row][col];
-
             if (!destino) {
-                moves.push({ row, col, capture: false });
+                moves.push({ row, col, capture: false, ...extra });
                 return true;
             }
-
-            if (destino.color !== color && destino.type !== 'king') {
-                moves.push({ row, col, capture: true });
-            }
-
+            if (destino.color !== color) moves.push({ row, col, capture: true, ...extra });
             return false;
         }
 
-        function movimentosLinha(board, row, col, color, direcoes) {
+        function movimentosLinha(row, col, color, direcoes, board = chessBoard) {
             const moves = [];
-
             for (const [dr, dc] of direcoes) {
                 let r = row + dr;
                 let c = col + dc;
-
                 while (dentroDoTabuleiro(r, c)) {
-                    const continuar = adicionarMovimentoSeValido(moves, board, r, c, color);
+                    const continuar = adicionarMovimentoSeValido(moves, r, c, color, board);
                     if (!continuar) break;
                     r += dr;
                     c += dc;
                 }
             }
-
             return moves;
         }
 
-        function calcularMovimentosBasicos(row, col, board = chessBoard) {
+        function adicionarRoques(row, col, color, board, moves) {
+            const king = board[row][col];
+            if (!king || king.type !== 'king' || king.moved) return;
+            if (reiEstaEmXeque(board, color)) return;
+
+            const opponent = corOposta(color);
+
+            const tryCastle = (side) => {
+                const rookCol = side === 'king' ? 7 : 0;
+                const rookToCol = side === 'king' ? 5 : 3;
+                const kingToCol = side === 'king' ? 6 : 2;
+                const emptyCols = side === 'king' ? [5, 6] : [1, 2, 3];
+                const safeCols = side === 'king' ? [5, 6] : [3, 2];
+                const rook = board[row][rookCol];
+
+                if (!rook || rook.color !== color || rook.type !== 'rook' || rook.moved) return;
+                if (emptyCols.some(c => board[row][c])) return;
+                if (safeCols.some(c => quadradoAtacado(board, row, c, opponent))) return;
+
+                moves.push({
+                    row,
+                    col: kingToCol,
+                    capture: false,
+                    castle: side,
+                    rookFrom: { row, col: rookCol },
+                    rookTo: { row, col: rookToCol }
+                });
+            };
+
+            tryCastle('king');
+            tryCastle('queen');
+        }
+
+        function calcularMovimentosBasicos(row, col, board = chessBoard, incluirRoque = true) {
             const peca = board[row]?.[col];
             if (!peca) return [];
-
             const { color, type } = peca;
             const moves = [];
 
@@ -6886,9 +7062,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
                 if (casaLivre(row + dir, col, board)) {
                     moves.push({ row: row + dir, col, capture: false });
-
                     if (row === startRow && casaLivre(row + dir * 2, col, board)) {
-                        moves.push({ row: row + dir * 2, col, capture: false });
+                        moves.push({ row: row + dir * 2, col, capture: false, doublePawn: true });
                     }
                 }
 
@@ -6898,121 +7073,146 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     }
                 }
 
+                if (enPassantTarget && enPassantTarget.color !== color) {
+                    if (row === enPassantTarget.pawnRow && Math.abs(col - enPassantTarget.pawnCol) === 1) {
+                        const targetRow = row + dir;
+                        if (targetRow === enPassantTarget.row && enPassantTarget.col === enPassantTarget.pawnCol) {
+                            moves.push({
+                                row: enPassantTarget.row,
+                                col: enPassantTarget.col,
+                                capture: true,
+                                enPassant: true,
+                                enPassantCapture: { row: enPassantTarget.pawnRow, col: enPassantTarget.pawnCol }
+                            });
+                        }
+                    }
+                }
+
                 return moves;
             }
 
-            if (type === 'rook') return movimentosLinha(board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1]]);
-            if (type === 'bishop') return movimentosLinha(board, row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]]);
-            if (type === 'queen') return movimentosLinha(board, row, col, color, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+            if (type === 'rook') return movimentosLinha(row, col, color, [[1,0],[-1,0],[0,1],[0,-1]], board);
+            if (type === 'bishop') return movimentosLinha(row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]], board);
+            if (type === 'queen') return movimentosLinha(row, col, color, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]], board);
 
             if (type === 'knight') {
                 for (const [dr, dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) {
-                    adicionarMovimentoSeValido(moves, board, row + dr, col + dc, color);
+                    adicionarMovimentoSeValido(moves, row + dr, col + dc, color, board);
                 }
                 return moves;
             }
 
             if (type === 'king') {
                 for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
-                    adicionarMovimentoSeValido(moves, board, row + dr, col + dc, color);
+                    adicionarMovimentoSeValido(moves, row + dr, col + dc, color, board);
                 }
+                if (incluirRoque) adicionarRoques(row, col, color, board, moves);
                 return moves;
             }
 
             return moves;
         }
 
-        function aplicarMovimentoNoTabuleiro(board, fromRow, fromCol, toRow, toCol) {
-            const novo = clonarTabuleiro(board);
-            const peca = novo[fromRow][fromCol];
+        function aplicarMovimentoEmBoard(board, fromRow, fromCol, move, options = {}) {
+            const peca = board[fromRow][fromCol];
+            if (!peca) return board;
 
-            if (!peca) return novo;
+            board[move.row][move.col] = { ...peca, moved: true };
+            board[fromRow][fromCol] = null;
 
-            novo[toRow][toCol] = { ...peca, moved: true };
-            novo[fromRow][fromCol] = null;
-
-            if (peca.type === 'pawn' && (toRow === 0 || toRow === 7)) {
-                novo[toRow][toCol] = { color: peca.color, type: 'queen', moved: true, promoted: true };
+            if (move.enPassant && move.enPassantCapture) {
+                board[move.enPassantCapture.row][move.enPassantCapture.col] = null;
             }
 
-            return novo;
+            if (move.castle && move.rookFrom && move.rookTo) {
+                const rook = board[move.rookFrom.row][move.rookFrom.col];
+                if (rook) {
+                    board[move.rookTo.row][move.rookTo.col] = { ...rook, moved: true };
+                    board[move.rookFrom.row][move.rookFrom.col] = null;
+                }
+            }
+
+            if (options.promotionType && peca.type === 'pawn' && (move.row === 0 || move.row === 7)) {
+                board[move.row][move.col] = { color: peca.color, type: options.promotionType, moved: true };
+            }
+
+            return board;
         }
 
         function calcularMovimentosLegais(row, col, board = chessBoard) {
             const peca = board[row]?.[col];
             if (!peca) return [];
-
-            const basicos = calcularMovimentosBasicos(row, col, board);
-
-            return basicos.filter(move => {
-                const simulado = aplicarMovimentoNoTabuleiro(board, row, col, move.row, move.col);
-                return !reiEstaEmXeque(simulado, peca.color);
+            const pseudo = calcularMovimentosBasicos(row, col, board, true);
+            return pseudo.filter(move => {
+                const temp = clonarTabuleiro(board);
+                aplicarMovimentoEmBoard(temp, row, col, move);
+                return !reiEstaEmXeque(temp, peca.color);
             });
         }
 
         function todosMovimentosLegais(color, board = chessBoard) {
-            const moves = [];
-
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const peca = board[row][col];
-                    if (!peca || peca.color !== color) continue;
-
-                    const legais = calcularMovimentosLegais(row, col, board);
-                    for (const move of legais) {
-                        moves.push({ from: { row, col }, to: { row: move.row, col: move.col }, capture: move.capture });
+            let moves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r][c];
+                    if (p && p.color === color) {
+                        moves = moves.concat(calcularMovimentosLegais(r, c, board).map(m => ({ from: { row: r, col: c }, to: m })));
                     }
                 }
             }
-
             return moves;
         }
 
-        function analisarEstadoDaPartida(mensagemBase = '') {
+        function avaliarEstadoDoJogo(mensagemBase = '') {
             const emXeque = reiEstaEmXeque(chessBoard, chessTurn);
             const movimentos = todosMovimentosLegais(chessTurn, chessBoard);
-
-            if (emXeque && movimentos.length === 0) {
+            if (movimentos.length === 0 && emXeque) {
                 chessGameOver = true;
-                selectedSquare = null;
-                legalMoves = [];
                 return `Xeque-mate! ${nomeVencedor(corOposta(chessTurn))} venceram.`;
             }
-
-            if (!emXeque && movimentos.length === 0) {
+            if (movimentos.length === 0 && !emXeque) {
                 chessGameOver = true;
-                selectedSquare = null;
-                legalMoves = [];
                 return 'Empate por afogamento: o jogador da vez não tem movimento legal.';
             }
-
-            if (emXeque) {
-                return `${mensagemBase ? mensagemBase + ' ' : ''}Xeque no rei das ${nomeCor(chessTurn)}.`;
-            }
-
+            if (emXeque) return `${mensagemBase ? mensagemBase + ' ' : ''}Xeque no rei das ${nomeCor(chessTurn)}.`;
             return mensagemBase || '';
         }
 
-        function atualizarStatus(textoExtra) {
+        function atualizarStatus(mensagemExtra = null) {
             const status = document.getElementById('chess-status');
             if (!status) return;
+            const textoEstado = avaliarEstadoDoJogo(mensagemExtra ?? lastMoveMessage);
+            if (chessGameOver) status.textContent = textoEstado;
+            else status.textContent = `Vez das ${nomeCor(chessTurn)}.${textoEstado ? ' ' + textoEstado : ''}`;
 
-            if (chessGameOver) {
-                status.textContent = textoExtra || lastMoveMessage || 'Partida encerrada.';
+            const undo = document.getElementById('chess-undo-btn');
+            if (undo) undo.disabled = undoStack.length === 0;
+        }
+
+        function renderHistorico() {
+            const list = document.getElementById('chess-history-list');
+            if (!list) return;
+            if (!moveHistory.length) {
+                list.innerHTML = '<div class="chess-history-empty">Nenhuma jogada ainda.</div>';
                 return;
             }
-
-            const base = `Vez das ${nomeCor(chessTurn)}.`;
-            status.textContent = textoExtra ? `${base} ${textoExtra}` : base;
+            const pares = [];
+            for (let i = 0; i < moveHistory.length; i += 2) {
+                const n = Math.floor(i / 2) + 1;
+                const whiteMove = moveHistory[i] || '';
+                const blackMove = moveHistory[i + 1] || '';
+                pares.push(`<div><strong>${n}.</strong> ${whiteMove} ${blackMove ? ' | ' + blackMove : ''}</div>`);
+            }
+            list.innerHTML = pares.slice(-30).join('');
+            list.scrollTop = list.scrollHeight;
         }
 
         function renderChessBoard() {
             const boardEl = document.getElementById('chess-board');
             if (!boardEl) return;
-
             boardEl.innerHTML = '';
             const reiEmXeque = reiEstaEmXeque(chessBoard, chessTurn);
-            const posRei = reiEmXeque ? encontrarRei(chessBoard, chessTurn) : null;
+            const kingPos = reiEmXeque ? encontrarRei(chessBoard, chessTurn) : null;
 
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
@@ -7021,13 +7221,19 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     square.dataset.row = String(row);
                     square.dataset.col = String(col);
                     square.setAttribute('role', 'button');
-                    square.setAttribute('aria-label', `Casa ${row + 1}, ${col + 1}`);
+                    square.setAttribute('aria-label', `Casa ${alg(row, col)}`);
 
                     if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) square.classList.add('selected');
-                    if (posRei && posRei.row === row && posRei.col === col) square.classList.add('check');
+                    if (lastChessMove && lastChessMove.from.row === row && lastChessMove.from.col === col) square.classList.add('last-from');
+                    if (lastChessMove && lastChessMove.to.row === row && lastChessMove.to.col === col) square.classList.add('last-to');
+                    if (kingPos && kingPos.row === row && kingPos.col === col) square.classList.add('check');
 
                     const move = legalMoves.find(m => m.row === row && m.col === col);
-                    if (move) square.classList.add(move.capture ? 'capture' : 'legal');
+                    if (move) {
+                        square.classList.add(move.capture ? 'capture' : 'legal');
+                        if (move.castle) square.classList.add('castle');
+                        if (move.enPassant) square.classList.add('en-passant');
+                    }
 
                     const peca = chessBoard[row][col];
                     if (peca) {
@@ -7041,37 +7247,99 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     boardEl.appendChild(square);
                 }
             }
+            renderHistorico();
+            atualizarStatus();
         }
 
-        function moverPeca(fromRow, fromCol, toRow, toCol) {
-            const peca = chessBoard[fromRow][fromCol];
-            const promovendo = peca && peca.type === 'pawn' && (toRow === 0 || toRow === 7);
+        function escolherPromocao(color) {
+            return new Promise(resolve => {
+                const modal = document.getElementById('chess-promotion-modal');
+                if (!modal) return resolve('queen');
 
-            chessBoard = aplicarMovimentoNoTabuleiro(chessBoard, fromRow, fromCol, toRow, toCol);
-            chessTurn = corOposta(chessTurn);
+                const botoes = modal.querySelectorAll('[data-piece]');
+                botoes.forEach(btn => {
+                    const type = btn.getAttribute('data-piece');
+                    const symbol = pecasUnicode[color][type] || '';
+                    btn.firstChild.textContent = symbol;
+                });
+
+                modal.style.display = 'flex';
+
+                const onClick = (event) => {
+                    const btn = event.target.closest('[data-piece]');
+                    if (!btn) return;
+                    const choice = btn.getAttribute('data-piece') || 'queen';
+                    modal.style.display = 'none';
+                    modal.removeEventListener('click', onClick);
+                    resolve(choice);
+                };
+
+                modal.addEventListener('click', onClick);
+            });
+        }
+
+        function criarNotacao(peca, fromRow, fromCol, move, promotionType = null) {
+            if (move.castle) return move.castle === 'king' ? 'O-O' : 'O-O-O';
+            const prefix = peca.type === 'pawn' ? '' : nomePeca[peca.type][0];
+            const capture = move.capture ? 'x' : '-';
+            const promo = promotionType ? `=${nomePeca[promotionType]}` : '';
+            const ep = move.enPassant ? ' e.p.' : '';
+            return `${prefix}${alg(fromRow, fromCol)}${capture}${alg(move.row, move.col)}${promo}${ep}`;
+        }
+
+        async function executarMovimentoXadrez(fromRow, fromCol, move) {
+            if (chessGameOver) return;
+            const peca = chessBoard[fromRow][fromCol];
+            if (!peca) return;
+
+            salvarEstadoParaDesfazer();
+
+            let promotionType = null;
+            if (peca.type === 'pawn' && (move.row === 0 || move.row === 7)) {
+                promotionType = await escolherPromocao(peca.color);
+            }
+
+            const previousEnPassant = enPassantTarget;
+            aplicarMovimentoEmBoard(chessBoard, fromRow, fromCol, move, { promotionType });
+
+            lastChessMove = { from: { row: fromRow, col: fromCol }, to: { row: move.row, col: move.col } };
+
+            enPassantTarget = null;
+            if (peca.type === 'pawn' && move.doublePawn) {
+                const dir = peca.color === 'white' ? -1 : 1;
+                enPassantTarget = {
+                    row: fromRow + dir,
+                    col: fromCol,
+                    pawnRow: move.row,
+                    pawnCol: move.col,
+                    color: peca.color
+                };
+            }
+
+            const notation = criarNotacao(peca, fromRow, fromCol, move, promotionType);
+            moveHistory.push(notation);
+
             selectedSquare = null;
             legalMoves = [];
+            chessTurn = corOposta(chessTurn);
 
-            const mensagemMovimento = promovendo ? 'Peão promovido automaticamente a dama.' : 'Movimento realizado.';
-            lastMoveMessage = analisarEstadoDaPartida(mensagemMovimento);
+            let msg = `${nomePeca[peca.type]} ${alg(fromRow, fromCol)} para ${alg(move.row, move.col)}.`;
+            if (move.castle) msg = move.castle === 'king' ? 'Roque pequeno realizado.' : 'Roque grande realizado.';
+            if (move.enPassant) msg = 'Captura en passant realizada.';
+            if (promotionType) msg = `Peão promovido para ${nomePeca[promotionType]}.`;
+            lastMoveMessage = msg;
 
-            atualizarStatus(lastMoveMessage);
             renderChessBoard();
         }
 
-        function handleChessSquareClick(row, col) {
-            if (chessGameOver) {
-                atualizarStatus(lastMoveMessage || 'Partida encerrada. Clique em reiniciar para jogar novamente.');
-                return;
-            }
-
+        async function handleChessSquareClick(row, col) {
+            if (chessGameOver) return;
             const peca = chessBoard[row][col];
 
             if (selectedSquare) {
                 const move = legalMoves.find(m => m.row === row && m.col === col);
-
                 if (move) {
-                    moverPeca(selectedSquare.row, selectedSquare.col, row, col);
+                    await executarMovimentoXadrez(selectedSquare.row, selectedSquare.col, move);
                     return;
                 }
             }
@@ -7079,7 +7347,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!peca) {
                 selectedSquare = null;
                 legalMoves = [];
-                atualizarStatus('Escolha uma peça da sua cor.');
+                lastMoveMessage = 'Escolha uma peça da sua cor.';
                 renderChessBoard();
                 return;
             }
@@ -7087,21 +7355,16 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (peca.color !== chessTurn) {
                 selectedSquare = null;
                 legalMoves = [];
-                atualizarStatus(`Agora é a vez das ${nomeCor(chessTurn)}.`);
+                lastMoveMessage = `Agora é a vez das ${nomeCor(chessTurn)}.`;
                 renderChessBoard();
                 return;
             }
 
             selectedSquare = { row, col };
-            legalMoves = calcularMovimentosLegais(row, col);
-
-            if (legalMoves.length) {
-                atualizarStatus('Casas legais marcadas. O jogo agora impede deixar o próprio rei em xeque.');
-            } else {
-                const emXeque = reiEstaEmXeque(chessBoard, chessTurn);
-                atualizarStatus(emXeque ? 'Essa peça não resolve o xeque. Escolha uma jogada que proteja o rei.' : 'Essa peça não tem movimento legal agora.');
-            }
-
+            legalMoves = calcularMovimentosLegais(row, col, chessBoard);
+            lastMoveMessage = legalMoves.length
+                ? 'Casas possíveis marcadas. Roque aparece com ⇄ e en passant com e.p.'
+                : 'Essa peça não tem movimento legal agora.';
             renderChessBoard();
         }
 
@@ -7119,9 +7382,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (game) game.style.display = 'none';
             if (chess) chess.style.display = 'block';
 
+            instalarUiXadrezFase3();
             if (!chessBoard.length) criarTabuleiroInicial();
-            lastMoveMessage = analisarEstadoDaPartida('');
-            atualizarStatus(lastMoveMessage);
             renderChessBoard();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -7144,24 +7406,27 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
         function resetChessGame() {
             criarTabuleiroInicial();
-            atualizarStatus('Partida reiniciada. Fase 2 ativa: xeque, xeque-mate e empate simples.');
             renderChessBoard();
         }
 
         function iniciarModuloXadrez() {
-            instalarCssXadrezFase2();
+            instalarCssXadrezFase3();
+            instalarUiXadrezFase3();
             criarTabuleiroInicial();
             document.getElementById('chess-back-btn')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-back-btn-bottom')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-reset-btn')?.addEventListener('click', resetChessGame);
+            document.getElementById('chess-undo-btn')?.addEventListener('click', desfazerJogada);
         }
 
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
+        window.desfazerJogadaXadrez = desfazerJogada;
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarModuloXadrez);
         else iniciarModuloXadrez();
     })();
+
 
     // 🎲 Tabuleiro Arena: seletor de modalidades sem mexer na lógica da Damas
     (function prepararHubTabuleiroArena() {
