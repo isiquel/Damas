@@ -2514,6 +2514,8 @@ body.chess-board-visible .chess-pieces-lesson-panel {
         .chess-result-close-btn:hover:not(:disabled) { background: #475569; }
 
         /* ♟️ XADREZ ARENA - FASE 17: xeque, xeque-mate e final profissional */
+
+        /* ♟️ XADREZ ARENA - FASE 18: máquina mais inteligente no treino */
         .chess-result-panel.mate {
             border-color: rgba(250,204,21,.95);
             background:
@@ -2591,7 +2593,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 17</span>
+                <span class="game-mode-badge">Fase 18</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2637,7 +2639,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 17: Xadrez com Professor, aviso profissional de xeque, tela bonita de xeque-mate, vitória, derrota, empate e botões finais. Vídeo/áudio continua pausado.
+                Fase 18: Máquina mais inteligente no treino, com defesa do Rei, captura melhor, busca de xeque-mate e níveis fácil, médio e difícil mais equilibrados. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2680,7 +2682,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 16 ativa: Xadrez com Professor durante a partida, dicas por peça, exemplos simples de movimento e painel bonito de resultado. Vídeo/áudio continua pausado.
+                ✅ Fase 18 ativa: Xadrez com Professor, final profissional e máquina mais inteligente no treino. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -7407,7 +7409,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 17 ativa: Xadrez com Professor, aviso profissional de xeque, xeque-mate, vitória, derrota, empate e botões finais. Vídeo/áudio pausado.';
+            lastMoveMessage = 'Fase 18 ativa: Xadrez com Professor, final profissional e máquina mais inteligente no treino. Vídeo/áudio pausado.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -8566,59 +8568,247 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 }[type] || 0;
         }
 
+        function valorPosicionalTreinoXadrez(peca, row, col, board = chessBoard) {
+            if (!peca) return 0;
+            const centro = Math.abs(3.5 - row) + Math.abs(3.5 - col);
+            let bonus = Math.max(0, 7 - centro) * 3;
+            const avancado = peca.color === 'black' ? row : (7 - row);
+
+            if (peca.type === 'pawn') bonus += avancado * 7;
+            if (peca.type === 'knight' || peca.type === 'bishop') {
+                bonus += Math.max(0, 6 - centro) * 7;
+                const casaInicial = peca.color === 'black' ? row === 0 : row === 7;
+                if (casaInicial) bonus -= 16;
+            }
+            if (peca.type === 'rook') {
+                const colunaAberta = !board.some(linha => linha[col]?.type === 'pawn');
+                if (colunaAberta) bonus += 18;
+            }
+            if (peca.type === 'queen') {
+                const saiuMuitoCedo = peca.color === 'black' ? row > 1 : row < 6;
+                if (saiuMuitoCedo) bonus -= 10;
+            }
+            if (peca.type === 'king') {
+                const linhaSegura = peca.color === 'black' ? row <= 1 : row >= 6;
+                if (linhaSegura) bonus += 20;
+                if (col === 6 || col === 2) bonus += 35; // rei rocado
+                if (row >= 2 && row <= 5 && col >= 2 && col <= 5) bonus -= 45;
+            }
+            return bonus;
+        }
+
         function avaliarMaterialTreinoXadrez(board, corMaquina = 'black') {
             let score = 0;
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const p = board[r]?.[c];
                     if (!p) continue;
-                    const v = valorPecaTreinoXadrez(p.type);
+                    const v = valorPecaTreinoXadrez(p.type) + valorPosicionalTreinoXadrez(p, r, c, board);
                     score += p.color === corMaquina ? v : -v;
                 }
             }
             return score;
         }
 
-        function pontuarJogadaTreinoXadrez(item, corMaquina = 'black') {
-            const temp = clonarTabuleiro(chessBoard);
-            if (!temp) return -999999;
-            const peca = temp[item.from.row][item.from.col];
-            const capturada = item.to.enPassant && item.to.enPassantCapture
-                ? temp[item.to.enPassantCapture.row]?.[item.to.enPassantCapture.col]
-                : temp[item.to.row]?.[item.to.col];
-            const promotionType = peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7) ? 'queen' : null;
-            aplicarMovimentoEmBoard(temp, item.from.row, item.from.col, item.to, { promotionType });
-
-            let score = avaliarMaterialTreinoXadrez(temp, corMaquina);
-            if (capturada) score += valorPecaTreinoXadrez(capturada.type) * 0.38;
-            if (promotionType) score += 760;
-            if (item.to.castle) score += 55;
-
+        function avaliarSegurancaReiTreinoXadrez(board, corMaquina = 'black') {
             const adversario = corOposta(corMaquina);
-            if (reiEstaEmXeque(temp, adversario)) score += 85;
-            const respostas = todosMovimentosLegais(adversario, temp);
-            if (respostas.length === 0 && reiEstaEmXeque(temp, adversario)) score += 100000;
-            if (respostas.length === 0 && !reiEstaEmXeque(temp, adversario)) score -= 60;
+            let score = 0;
+            if (reiEstaEmXeque(board, adversario)) score += 95;
+            if (reiEstaEmXeque(board, corMaquina)) score -= 180;
 
-            // Pequeno bônus por centralizar peças no treino.
-            const centro = Math.abs(3.5 - item.to.row) + Math.abs(3.5 - item.to.col);
-            score += Math.max(0, 7 - centro) * 4;
-            score += Math.random() * 18;
+            const reiMaquina = encontrarRei(board, corMaquina);
+            const reiHumano = encontrarRei(board, adversario);
+            const avaliarEscudo = (king, color) => {
+                if (!king) return 0;
+                const dir = color === 'black' ? 1 : -1;
+                let escudo = 0;
+                for (const dc of [-1, 0, 1]) {
+                    const r = king.row + dir;
+                    const c = king.col + dc;
+                    if (dentroDoTabuleiro(r, c) && board[r][c]?.type === 'pawn' && board[r][c]?.color === color) escudo += 14;
+                }
+                return escudo;
+            };
+            score += avaliarEscudo(reiMaquina, corMaquina);
+            score -= avaliarEscudo(reiHumano, adversario);
+            return score;
+        }
+
+        function avaliarMobilidadeTreinoXadrez(board, corMaquina = 'black') {
+            const adversario = corOposta(corMaquina);
+            const mobMaquina = todosMovimentosLegais(corMaquina, board).length;
+            const mobHumano = todosMovimentosLegais(adversario, board).length;
+            return (mobMaquina - mobHumano) * 3;
+        }
+
+        function avaliarPecasAmeaçadasTreinoXadrez(board, corMaquina = 'black') {
+            const adversario = corOposta(corMaquina);
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r]?.[c];
+                    if (!p || p.type === 'king') continue;
+                    const valor = valorPecaTreinoXadrez(p.type);
+                    if (p.color === corMaquina && quadradoAtacado(board, r, c, adversario)) score -= valor * 0.22;
+                    if (p.color === adversario && quadradoAtacado(board, r, c, corMaquina)) score += valor * 0.18;
+                }
+            }
+            return score;
+        }
+
+        function avaliarPosicaoTreinoXadrez(board, corMaquina = 'black') {
+            const adversario = corOposta(corMaquina);
+            const movMaquina = todosMovimentosLegais(corMaquina, board);
+            const movAdversario = todosMovimentosLegais(adversario, board);
+            if (!movAdversario.length && reiEstaEmXeque(board, adversario)) return 999999;
+            if (!movMaquina.length && reiEstaEmXeque(board, corMaquina)) return -999999;
+            if (!movAdversario.length && !reiEstaEmXeque(board, adversario)) return -90;
+            if (!movMaquina.length && !reiEstaEmXeque(board, corMaquina)) return 0;
+            return avaliarMaterialTreinoXadrez(board, corMaquina)
+                + avaliarSegurancaReiTreinoXadrez(board, corMaquina)
+                + avaliarMobilidadeTreinoXadrez(board, corMaquina)
+                + avaliarPecasAmeaçadasTreinoXadrez(board, corMaquina);
+        }
+
+        function aplicarMovimentoTreinoEmClone(board, item, promotionType = 'queen') {
+            const temp = clonarTabuleiro(board);
+            if (!temp) return null;
+            const peca = temp[item.from.row]?.[item.from.col];
+            const promover = peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7) ? promotionType : null;
+            aplicarMovimentoEmBoard(temp, item.from.row, item.from.col, item.to, { promotionType: promover });
+            return temp;
+        }
+
+        function detectarMateEmUmTreinoXadrez(cor, board = chessBoard) {
+            const adversario = corOposta(cor);
+            const movimentos = todosMovimentosLegais(cor, board);
+            for (const item of movimentos) {
+                const temp = aplicarMovimentoTreinoEmClone(board, item);
+                if (!temp) continue;
+                const respostas = todosMovimentosLegais(adversario, temp);
+                if (!respostas.length && reiEstaEmXeque(temp, adversario)) return item;
+            }
+            return null;
+        }
+
+        function ordenarMovimentosTreinoXadrez(movimentos, board = chessBoard, corMaquina = 'black') {
+            return movimentos.map(item => {
+                const peca = board[item.from.row]?.[item.from.col];
+                const capturada = item.to.enPassant && item.to.enPassantCapture
+                    ? board[item.to.enPassantCapture.row]?.[item.to.enPassantCapture.col]
+                    : board[item.to.row]?.[item.to.col];
+                let ordem = 0;
+                if (capturada) ordem += valorPecaTreinoXadrez(capturada.type) * 10 - valorPecaTreinoXadrez(peca?.type) * 0.4;
+                if (item.to.castle) ordem += 90;
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) ordem += 900;
+                const temp = aplicarMovimentoTreinoEmClone(board, item);
+                if (temp && reiEstaEmXeque(temp, corOposta(corMaquina))) ordem += 160;
+                return { ...item, orderScore: ordem };
+            }).sort((a, b) => b.orderScore - a.orderScore);
+        }
+
+        function minimaxTreinoXadrez(board, depth, alpha, beta, maximizando, corMaquina = 'black') {
+            const corDaVez = maximizando ? corMaquina : corOposta(corMaquina);
+            const movimentosBase = todosMovimentosLegais(corDaVez, board);
+            if (depth === 0 || !movimentosBase.length) return avaliarPosicaoTreinoXadrez(board, corMaquina);
+
+            const movimentos = ordenarMovimentosTreinoXadrez(movimentosBase, board, corDaVez).slice(0, depth >= 2 ? 18 : 28);
+            if (maximizando) {
+                let melhor = -Infinity;
+                for (const item of movimentos) {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item);
+                    if (!temp) continue;
+                    const valor = minimaxTreinoXadrez(temp, depth - 1, alpha, beta, false, corMaquina);
+                    melhor = Math.max(melhor, valor);
+                    alpha = Math.max(alpha, valor);
+                    if (beta <= alpha) break;
+                }
+                return melhor;
+            }
+            let pior = Infinity;
+            for (const item of movimentos) {
+                const temp = aplicarMovimentoTreinoEmClone(board, item);
+                if (!temp) continue;
+                const valor = minimaxTreinoXadrez(temp, depth - 1, alpha, beta, true, corMaquina);
+                pior = Math.min(pior, valor);
+                beta = Math.min(beta, valor);
+                if (beta <= alpha) break;
+            }
+            return pior;
+        }
+
+        function pontuarJogadaTreinoXadrez(item, corMaquina = 'black', board = chessBoard) {
+            const temp = aplicarMovimentoTreinoEmClone(board, item);
+            if (!temp) return -999999;
+            const peca = board[item.from.row]?.[item.from.col];
+            const capturada = item.to.enPassant && item.to.enPassantCapture
+                ? board[item.to.enPassantCapture.row]?.[item.to.enPassantCapture.col]
+                : board[item.to.row]?.[item.to.col];
+            const adversario = corOposta(corMaquina);
+
+            let score = avaliarPosicaoTreinoXadrez(temp, corMaquina);
+            if (capturada) score += valorPecaTreinoXadrez(capturada.type) * 0.45;
+            if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 820;
+            if (item.to.castle) score += 90;
+
+            // Evita entregar peça importante de graça, principalmente Dama e Torre.
+            if (peca && peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
+                const defendida = quadradoAtacado(temp, item.to.row, item.to.col, corMaquina);
+                const penalidade = valorPecaTreinoXadrez(peca.type) * (defendida ? 0.28 : 0.62);
+                score -= penalidade;
+            }
+
+            const mateHumanoEmUm = detectarMateEmUmTreinoXadrez(adversario, temp);
+            if (mateHumanoEmUm) score -= 80000;
+
+            const mateMaquinaEmUm = detectarMateEmUmTreinoXadrez(corMaquina, board);
+            if (mateMaquinaEmUm && mateMaquinaEmUm.from.row === item.from.row && mateMaquinaEmUm.from.col === item.from.col && mateMaquinaEmUm.to.row === item.to.row && mateMaquinaEmUm.to.col === item.to.col) {
+                score += 120000;
+            }
+
+            score += Math.random() * 8;
             return score;
         }
 
         function escolherJogadaMaquinaXadrez() {
             const movimentos = todosMovimentosLegais('black', chessBoard);
             if (!movimentos.length) return null;
-            const avaliados = movimentos.map(m => ({ ...m, score: pontuarJogadaTreinoXadrez(m, 'black') })).sort((a, b) => b.score - a.score);
+
+            // Prioridade 1: se tiver xeque-mate em 1, a máquina finaliza.
+            const mateAgora = detectarMateEmUmTreinoXadrez('black', chessBoard);
+            if (mateAgora) return mateAgora;
+
+            const avaliadosRapidos = movimentos.map(m => ({ ...m, score: pontuarJogadaTreinoXadrez(m, 'black', chessBoard) })).sort((a, b) => b.score - a.score);
+
             if (chessTrainingDifficulty === 'facil') {
-                return movimentos[Math.floor(Math.random() * movimentos.length)];
+                // Fácil continua humano: às vezes joga aleatório, mas evita entregar a dama/rei de forma absurda.
+                const aceitaveis = avaliadosRapidos.filter(m => m.score > avaliadosRapidos[0].score - 900);
+                const pool = Math.random() < 0.65 ? movimentos : (aceitaveis.length ? aceitaveis : avaliadosRapidos);
+                return pool[Math.floor(Math.random() * pool.length)];
             }
+
             if (chessTrainingDifficulty === 'medio') {
-                const limite = Math.max(1, Math.ceil(avaliados.length * 0.38));
-                return avaliados[Math.floor(Math.random() * limite)];
+                // Médio olha as melhores opções, prioriza capturas boas, defesa do rei e xeque.
+                const limite = Math.max(2, Math.ceil(avaliadosRapidos.length * 0.28));
+                const melhores = avaliadosRapidos.slice(0, limite);
+                return melhores[Math.floor(Math.random() * melhores.length)];
             }
-            return avaliados[0];
+
+            // Difícil: usa uma busca curta de 2 lances para não cair em armadilhas simples.
+            const candidatos = ordenarMovimentosTreinoXadrez(movimentos, chessBoard, 'black').slice(0, 18);
+            let melhor = null;
+            let melhorScore = -Infinity;
+            for (const item of candidatos) {
+                const temp = aplicarMovimentoTreinoEmClone(chessBoard, item);
+                if (!temp) continue;
+                let score = minimaxTreinoXadrez(temp, 2, -Infinity, Infinity, false, 'black');
+                score += pontuarJogadaTreinoXadrez(item, 'black', chessBoard) * 0.08;
+                if (score > melhorScore) {
+                    melhorScore = score;
+                    melhor = item;
+                }
+            }
+            return melhor || avaliadosRapidos[0];
         }
 
         function explicarJogadaTreinoXadrez(item) {
