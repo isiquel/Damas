@@ -2146,7 +2146,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 7: Xadrez Online com sala separada da Damas, jogadores identificados, espectador, chat, histórico e placar de material.
+                Fase 7.1: Xadrez Online com tabuleiro fixo/estável, sala separada da Damas, jogadores identificados, espectador, chat, histórico e placar de material.
                 A Damas Arena continua preservada.
             </div>
 
@@ -2172,7 +2172,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 7 ativa: Xadrez Online com jogadores branco/preto, espectador, chat separado, histórico de jogadas e placar de peças capturadas. A Damas Arena continua preservada.
+                ✅ Fase 7.1 ativa: Xadrez Online com tabuleiro fixo/estável, jogadores branco/preto, espectador, chat separado, histórico de jogadas e placar de peças capturadas. A Damas Arena continua preservada.
             </div>
         </div>
     </div>
@@ -6881,7 +6881,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 7 ativa: Xadrez online com painel de jogadores, turno travado, chat, histórico e placar de material.';
+            lastMoveMessage = 'Fase 7.1 ativa: Xadrez online com tabuleiro fixo, painel de jogadores, turno travado, chat, histórico e placar de material.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7198,6 +7198,47 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     font-size: .68rem;
                     font-weight: 900;
                 }
+
+
+                /* ✅ FASE 7.1 - TABULEIRO FIXO: evita a tela ficar pulando quando atualiza status, chat, placar ou Firebase */
+                #chess-screen, #chess-screen .chess-card, #chess-screen .chess-board-wrap, #chess-screen .chess-board {
+                    overflow-anchor: none;
+                }
+                #chess-screen .chess-card {
+                    contain: layout paint;
+                }
+                #chess-screen .chess-board-wrap {
+                    position: relative;
+                    min-height: min(520px, calc(100vw - 52px));
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                #chess-screen .chess-coord-shell {
+                    width: 100%;
+                }
+                #chess-screen .chess-board {
+                    flex: 0 0 auto;
+                    transform: translateZ(0);
+                    will-change: auto;
+                }
+                #chess-status {
+                    min-height: 58px;
+                    display: flex;
+                    align-items: center;
+                }
+                #chess-online-status {
+                    min-height: 44px;
+                }
+                #chess-room-players-panel {
+                    min-height: 104px;
+                }
+                #chess-material-panel {
+                    min-height: 132px;
+                }
+                #chess-history-panel {
+                    min-height: 152px;
+                }
                 @media (max-width: 520px) {
                     .chess-promotion-options { grid-template-columns: repeat(2, 1fr); }
                     .chess-online-grid, .chess-online-actions, .chess-material-grid { grid-template-columns: 1fr; }
@@ -7225,7 +7266,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 7</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 7.1</div>
                     <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7254,7 +7295,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 material.id = 'chess-material-panel';
                 material.className = 'chess-material-panel';
                 material.innerHTML = `
-                    <div class="chess-material-title">⚔️ Placar de material — Fase 7</div>
+                    <div class="chess-material-title">⚔️ Placar de material — Fase 7.1</div>
                     <div class="chess-material-grid">
                         <div class="chess-material-box">
                             <div class="chess-material-label">⚪ Brancas capturaram</div>
@@ -7967,6 +8008,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function renderChessBoard() {
             const boardEl = document.getElementById('chess-board');
             if (!boardEl) return;
+            const boardRectBefore = boardEl.getBoundingClientRect();
+            const shouldKeepBoardStill = document.body.classList.contains('chess-selected') && boardRectBefore.top > -80 && boardRectBefore.top < window.innerHeight;
             garantirTabuleiroXadrezPronto('Tabuleiro restaurado automaticamente. Entre em uma sala nova ou clique em Nova Partida se a sala antiga estava vazia.');
             boardEl.innerHTML = '';
             boardEl.style.display = 'grid';
@@ -8021,6 +8064,15 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             renderHistorico();
             renderizarPlacarMaterialXadrez();
             atualizarStatus();
+            if (shouldKeepBoardStill) {
+                requestAnimationFrame(() => {
+                    const boardRectAfter = boardEl.getBoundingClientRect();
+                    const diff = boardRectAfter.top - boardRectBefore.top;
+                    if (Math.abs(diff) > 1 && Math.abs(diff) < window.innerHeight) {
+                        window.scrollTo({ top: window.scrollY + diff, behavior: 'auto' });
+                    }
+                });
+            }
         }
 
 
@@ -8460,7 +8512,7 @@ Link: ${location.origin}${location.pathname}`;
             instalarUiXadrezFase5();
             if (!chessBoard.length) criarTabuleiroInicial();
             renderChessBoard();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'auto' });
         }
 
         function voltarParaModalidades() {
