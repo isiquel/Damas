@@ -1907,6 +1907,168 @@
 
 
 
+
+
+        /* ♟️ XADREZ ARENA - FASE 4: acabamento visual local */
+        .chess-status-panel.chess-status-check {
+            border-color: rgba(239, 68, 68, 0.9);
+            background: linear-gradient(135deg, rgba(127, 29, 29, 0.55), #020617);
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.22);
+            color: #fee2e2;
+        }
+
+        .chess-status-panel.chess-status-mate {
+            border-color: rgba(250, 204, 21, 0.95);
+            background: linear-gradient(135deg, rgba(120, 53, 15, 0.65), #020617);
+            box-shadow: 0 0 22px rgba(250, 204, 21, 0.25);
+            color: #fef3c7;
+            font-weight: 900;
+        }
+
+        .chess-status-panel.chess-status-draw {
+            border-color: rgba(148, 163, 184, 0.85);
+            background: linear-gradient(135deg, rgba(51, 65, 85, 0.72), #020617);
+            color: #e2e8f0;
+            font-weight: 800;
+        }
+
+        .chess-coord-shell {
+            display: grid;
+            grid-template-columns: 22px 1fr 22px;
+            grid-template-rows: 22px 1fr 22px;
+            gap: 5px;
+            align-items: stretch;
+        }
+
+        .chess-coords-top,
+        .chess-coords-bottom {
+            grid-column: 2;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            align-items: center;
+            color: #f8e7c9;
+            font-size: 0.72rem;
+            font-weight: 1000;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 3px rgba(0,0,0,.45);
+        }
+
+        .chess-coords-left,
+        .chess-coords-right {
+            display: grid;
+            grid-template-rows: repeat(8, 1fr);
+            align-items: center;
+            color: #f8e7c9;
+            font-size: 0.72rem;
+            font-weight: 1000;
+            text-shadow: 0 2px 3px rgba(0,0,0,.45);
+        }
+
+        .chess-coords-left { grid-column: 1; grid-row: 2; }
+        .chess-coords-right { grid-column: 3; grid-row: 2; }
+        .chess-coords-top { grid-row: 1; }
+        .chess-coords-bottom { grid-row: 3; }
+        .chess-board { grid-column: 2; grid-row: 2; }
+
+        .chess-square.last-from {
+            box-shadow: inset 0 0 0 4px rgba(56, 189, 248, .75);
+        }
+
+        .chess-square.last-to {
+            box-shadow: inset 0 0 0 4px rgba(34, 197, 94, .82);
+        }
+
+        .chess-square.check {
+            background: radial-gradient(circle, rgba(239,68,68,.72), rgba(181,136,99,.95));
+            animation: chessCheckPulse 0.9s infinite ease-in-out;
+        }
+
+        @keyframes chessCheckPulse {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.28); }
+            100% { filter: brightness(1); }
+        }
+
+        .chess-piece {
+            transition: transform .16s ease, filter .16s ease;
+        }
+
+        .chess-square:hover .chess-piece {
+            transform: scale(1.06);
+            filter: drop-shadow(0 7px 7px rgba(0,0,0,0.55));
+        }
+
+        .chess-action-note {
+            max-width: 520px;
+            margin: 10px auto 0 auto;
+            padding: 9px 10px;
+            border-radius: 10px;
+            background: rgba(2, 6, 23, .55);
+            border: 1px solid rgba(56,189,248,.18);
+            color: #cbd5e1;
+            font-size: .75rem;
+            line-height: 1.35;
+            text-align: left;
+        }
+
+        .btn-chess-new { background: #0f766e; }
+        .btn-chess-new:hover:not(:disabled) { background: #0d9488; }
+
+        .chess-history-list div {
+            padding: 4px 6px;
+            border-radius: 7px;
+        }
+
+        .chess-history-list div:nth-child(odd) {
+            background: rgba(255,255,255,.035);
+        }
+
+        .chess-history-move-no {
+            color: #facc15;
+            font-weight: 1000;
+        }
+
+        .chess-history-white {
+            color: #f8fafc;
+            font-weight: 800;
+        }
+
+        .chess-history-black {
+            color: #cbd5e1;
+            font-weight: 800;
+        }
+
+        .chess-toast {
+            display: none;
+            max-width: 520px;
+            margin: 0 auto 12px auto;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #020617, #0f172a);
+            border: 1px solid rgba(56, 189, 248, .35);
+            color: #e2e8f0;
+            font-size: .84rem;
+            text-align: left;
+            box-shadow: 0 8px 22px rgba(0,0,0,.34);
+        }
+
+        .chess-toast.show { display: block; }
+
+        @media (max-width: 560px) {
+            .chess-coord-shell {
+                grid-template-columns: 16px 1fr 16px;
+                grid-template-rows: 18px 1fr 18px;
+                gap: 3px;
+            }
+            .chess-coords-top,
+            .chess-coords-bottom,
+            .chess-coords-left,
+            .chess-coords-right {
+                font-size: .62rem;
+            }
+        }
+
+
         /* Dominó removido temporariamente para preservar a Damas Arena. */
 
     </style>
@@ -1926,7 +2088,7 @@
 <div class="container">
     <div class="brand-kicker">🎲 Plataforma de jogos clássicos</div>
     <h1>Tabuleiro Arena</h1>
-    <div class="platform-subtitle">Jogue, aprenda e dispute torneios online. <strong>Damas Arena</strong> continua preservada — e o <strong>Xadrez Arena</strong> começa em módulo separado.</div>
+    <div class="platform-subtitle">Jogue, aprenda e dispute torneios online. <strong>Damas Arena</strong> continua preservada — e o <strong>Xadrez Arena</strong> avança em módulo separado.</div>
 
     <div id="games-hub-panel" class="games-hub-panel">
         <div class="games-hub-title">Escolha a modalidade</div>
@@ -1939,10 +2101,10 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 3</span>
+                <span class="game-mode-badge">Fase 4</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
-                <div class="game-mode-copy">Módulo separado: xeque, xeque-mate e movimentos legais sem mexer na Damas.</div>
+                <div class="game-mode-copy">Módulo separado: regras completas locais, coordenadas, histórico e acabamento visual.</div>
             </div>
             <div class="game-mode-card admin-entry" id="game-card-admin" role="button" tabindex="0">
                 <span class="game-mode-badge">Dono</span>
@@ -1984,23 +2146,33 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 2: tabuleiro separado, peças na posição inicial e movimentos básicos.
-                Esta área não altera a lógica da Damas Arena.
+                Fase 4: acabamento do modo local com coordenadas, histórico melhorado, avisos visuais e nova partida.
+                Esta área continua separada e não altera a lógica da Damas Arena.
             </div>
 
             <div id="chess-status" class="chess-status-panel">Vez das brancas.</div>
 
+            <div id="chess-toast" class="chess-toast">♟️ Xadrez pronto para jogar.</div>
+
             <div class="chess-board-wrap">
-                <div id="chess-board" class="chess-board" aria-label="Tabuleiro de xadrez"></div>
+                <div class="chess-coord-shell" aria-label="Área do tabuleiro com coordenadas">
+                    <div class="chess-coords-top"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+                    <div class="chess-coords-left"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                    <div id="chess-board" class="chess-board" aria-label="Tabuleiro de xadrez"></div>
+                    <div class="chess-coords-right"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                    <div class="chess-coords-bottom"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+                </div>
             </div>
 
             <div class="chess-actions">
                 <button id="chess-reset-btn" class="btn-chess-reset" type="button">Reiniciar Xadrez</button>
+                <button id="chess-new-btn" class="btn-chess-new" type="button">Nova Partida</button>
                 <button id="chess-back-btn-bottom" class="btn-chess-back" type="button">Voltar ao Menu</button>
             </div>
+            <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 2 ativa: o Xadrez agora detecta xeque, impede jogadas que deixam o próprio rei em xeque, reconhece xeque-mate, empate simples e promove peão automaticamente a dama. Roque, en passant e online ficam para a próxima fase.
+                ✅ Fase 4 ativa: Xadrez local com xeque, xeque-mate, empate, roque, en passant, promoção com escolha, desfazer, histórico melhorado, coordenadas e acabamento visual. Online fica para a próxima fase.
             </div>
         </div>
     </div>
@@ -6654,7 +6826,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
     })();
 
 
-    // ♟️ XADREZ ARENA - FASE 3 (módulo isolado da Damas)
+    // ♟️ XADREZ ARENA - FASE 4 (módulo isolado da Damas)
     (function prepararXadrezArenaSeparado() {
         'use strict';
 
@@ -6695,7 +6867,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 3 ativa: roque, en passant, promoção com escolha, histórico e desfazer.';
+            lastMoveMessage = 'Fase 4 ativa: coordenadas, histórico melhorado, avisos visuais, nova partida e acabamento local.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -6833,7 +7005,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 undo.type = 'button';
                 undo.textContent = 'Desfazer Jogada';
                 actions.insertBefore(undo, actions.children[1] || null);
-                actions.style.gridTemplateColumns = '1fr 1fr 1fr';
+                actions.style.gridTemplateColumns = 'repeat(auto-fit, minmax(130px, 1fr))';
             }
 
             const card = document.querySelector('#chess-screen .chess-card');
@@ -6871,7 +7043,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 3 ativa: roque pequeno/grande, en passant, promoção com escolha, histórico de jogadas e botão desfazer no modo local. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 4 ativa: coordenadas A-H/1-8, histórico melhorado, nova partida, avisos visuais de xeque/xeque-mate/empate, roque, en passant, promoção com escolha e botão desfazer. A Damas Arena continua preservada.';
             }
         }
 
@@ -7178,12 +7350,35 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return mensagemBase || '';
         }
 
+
+        function mostrarToastXadrez(texto, tipo = 'info') {
+            const toast = document.getElementById('chess-toast');
+            if (!toast) return;
+            toast.textContent = texto;
+            toast.className = 'chess-toast show';
+            if (tipo === 'check') toast.style.borderColor = 'rgba(239,68,68,.75)';
+            else if (tipo === 'mate') toast.style.borderColor = 'rgba(250,204,21,.85)';
+            else toast.style.borderColor = 'rgba(56,189,248,.35)';
+            clearTimeout(mostrarToastXadrez._t);
+            mostrarToastXadrez._t = setTimeout(() => toast.classList.remove('show'), 3600);
+        }
+
         function atualizarStatus(mensagemExtra = null) {
             const status = document.getElementById('chess-status');
             if (!status) return;
+
+            status.classList.remove('chess-status-check', 'chess-status-mate', 'chess-status-draw');
+
             const textoEstado = avaliarEstadoDoJogo(mensagemExtra ?? lastMoveMessage);
-            if (chessGameOver) status.textContent = textoEstado;
-            else status.textContent = `Vez das ${nomeCor(chessTurn)}.${textoEstado ? ' ' + textoEstado : ''}`;
+            const textoFinal = chessGameOver
+                ? textoEstado
+                : `Vez das ${nomeCor(chessTurn)}.${textoEstado ? ' ' + textoEstado : ''}`;
+
+            status.textContent = textoFinal;
+
+            if (/Xeque-mate/i.test(textoFinal)) status.classList.add('chess-status-mate');
+            else if (/Empate|afogamento/i.test(textoFinal)) status.classList.add('chess-status-draw');
+            else if (/Xeque/i.test(textoFinal)) status.classList.add('chess-status-check');
 
             const undo = document.getElementById('chess-undo-btn');
             if (undo) undo.disabled = undoStack.length === 0;
@@ -7201,7 +7396,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 const n = Math.floor(i / 2) + 1;
                 const whiteMove = moveHistory[i] || '';
                 const blackMove = moveHistory[i + 1] || '';
-                pares.push(`<div><strong>${n}.</strong> ${whiteMove} ${blackMove ? ' | ' + blackMove : ''}</div>`);
+                pares.push(`<div><span class="chess-history-move-no">${n}.</span> <span class="chess-history-white">Brancas: ${whiteMove || '...'}</span>${blackMove ? ` <span class="chess-history-black">Pretas: ${blackMove}</span>` : ''}</div>`);
             }
             list.innerHTML = pares.slice(-30).join('');
             list.scrollTop = list.scrollHeight;
@@ -7330,6 +7525,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             lastMoveMessage = msg;
 
             renderChessBoard();
+            const estado = avaliarEstadoDoJogo(msg);
+            if (/Xeque-mate/i.test(estado)) mostrarToastXadrez('🏆 ' + estado, 'mate');
+            else if (/Xeque/i.test(estado)) mostrarToastXadrez('⚠️ ' + estado, 'check');
+            else if (/Empate|afogamento/i.test(estado)) mostrarToastXadrez('🤝 ' + estado, 'mate');
+            else mostrarToastXadrez('✅ ' + msg);
         }
 
         async function handleChessSquareClick(row, col) {
@@ -7407,6 +7607,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function resetChessGame() {
             criarTabuleiroInicial();
             renderChessBoard();
+            mostrarToastXadrez('♟️ Nova partida de Xadrez iniciada. Brancas começam.');
         }
 
         function iniciarModuloXadrez() {
@@ -7416,6 +7617,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             document.getElementById('chess-back-btn')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-back-btn-bottom')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-reset-btn')?.addEventListener('click', resetChessGame);
+            document.getElementById('chess-new-btn')?.addEventListener('click', resetChessGame);
             document.getElementById('chess-undo-btn')?.addEventListener('click', desfazerJogada);
         }
 
