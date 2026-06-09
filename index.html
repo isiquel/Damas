@@ -2534,6 +2534,7 @@
     const firebaseConfig = {
         apiKey: "AIzaSyAyjusKD0t6DOtI93bxYbWRSiSHe0jvStA",
         authDomain: "damas-57b07.firebaseapp.com",
+        databaseURL: "https://damas-57b07-default-rtdb.firebaseio.com",
         projectId: "damas-57b07",
         storageBucket: "damas-57b07.firebasestorage.app",
         messagingSenderId: "178140626924",
@@ -2541,7 +2542,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const db = getDatabase(app, firebaseConfig.databaseURL);
     const auth = getAuth(app);
 
     let playerId = null; 
@@ -7899,7 +7900,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chessIsSpectator = false;
                 chessPlayerColor = 'white';
                 atualizarPainelOnlineXadrez();
-                mostrarToastXadrez('⚠️ Erro ao entrar no Xadrez online. Recarregue a página e tente uma sala nova.', 'check');
+                const detalheErroXadrez = e?.code || e?.message || 'erro desconhecido';
+                mostrarToastXadrez(`⚠️ Erro ao entrar no Xadrez online: ${escapeHtmlXadrez(detalheErroXadrez)}`, 'check');
             }
         }
 
