@@ -2515,7 +2515,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
 
         /* ♟️ XADREZ ARENA - FASE 17: xeque, xeque-mate e final profissional */
 
-        /* ♟️ XADREZ ARENA - FASE 18: máquina mais inteligente no treino */
+        /* ♟️ XADREZ ARENA - FASE 19: máquina mais inteligente no treino */
         .chess-result-panel.mate {
             border-color: rgba(250,204,21,.95);
             background:
@@ -2563,6 +2563,125 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             .chess-result-actions { grid-template-columns: 1fr; }
         }
 
+
+        /* ♟️ XADREZ ARENA - FASE 19: histórico de jogadas bonito e recolhível */
+        body.chess-board-visible:not(.chess-admin-only) #chess-history-panel {
+            display: block !important;
+        }
+        body.chess-selected:not(.chess-board-visible) #chess-history-panel,
+        body.chess-menu-active #chess-history-panel,
+        body.chess-admin-only #chess-history-panel {
+            display: none !important;
+        }
+        #chess-history-panel.chess-history-panel {
+            max-width: 520px;
+            margin: 12px auto 0 auto;
+            background: linear-gradient(135deg, #020617, #0f172a 65%, #111827);
+            border: 1px solid rgba(56,189,248,0.34);
+            border-radius: 14px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+        }
+        .chess-history-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 12px;
+            background: rgba(15,23,42,0.86);
+            border-bottom: 1px solid rgba(148,163,184,0.12);
+        }
+        .chess-history-title {
+            color: #38bdf8;
+            font-weight: 1000;
+            text-transform: uppercase;
+            font-size: .78rem;
+            letter-spacing: .5px;
+            margin: 0;
+        }
+        .chess-history-actions {
+            display: flex;
+            gap: 7px;
+            align-items: center;
+        }
+        .chess-history-actions button {
+            width: auto;
+            min-height: 0;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: .68rem;
+            line-height: 1;
+            text-transform: none;
+            background: #334155;
+        }
+        .chess-history-actions button:hover:not(:disabled) { background: #475569; transform: translateY(-1px); }
+        .chess-history-actions .btn-history-toggle { background: #0ea5e9; }
+        .chess-history-actions .btn-history-clear { background: #64748b; }
+        .chess-history-body {
+            display: block;
+            padding: 10px;
+        }
+        .chess-history-collapsed .chess-history-body {
+            display: none;
+        }
+        .chess-history-list {
+            max-height: 170px;
+            overflow-y: auto;
+            color: #cbd5e1;
+            font-size: .82rem;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .chess-history-row {
+            display: grid;
+            grid-template-columns: 32px 1fr;
+            gap: 7px;
+            align-items: start;
+            padding: 7px 8px;
+            border-radius: 10px;
+            background: rgba(15,23,42,0.74);
+            border: 1px solid rgba(148,163,184,0.09);
+        }
+        .chess-history-row:nth-child(odd) { background: rgba(30,41,59,0.64); }
+        .chess-history-move-no {
+            color: #facc15;
+            font-weight: 1000;
+            white-space: nowrap;
+        }
+        .chess-history-turns {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+        .chess-history-white,
+        .chess-history-black {
+            display: block;
+            overflow-wrap: anywhere;
+        }
+        .chess-history-white { color: #f8fafc; }
+        .chess-history-black { color: #cbd5e1; }
+        .chess-history-empty {
+            color: #94a3b8;
+            font-size: .82rem;
+            padding: 8px;
+            text-align: center;
+        }
+        .chess-history-note {
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: .72rem;
+            line-height: 1.35;
+        }
+        @media (max-width: 560px) {
+            .chess-history-head { flex-direction: column; align-items: stretch; }
+            .chess-history-actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .chess-history-actions button { width: 100%; }
+        }
+
     </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2593,7 +2712,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 18</span>
+                <span class="game-mode-badge">Fase 19</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2639,7 +2758,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 18: Máquina mais inteligente no treino, com defesa do Rei, captura melhor, busca de xeque-mate e níveis fácil, médio e difícil mais equilibrados. Vídeo/áudio continua pausado.
+                Fase 19: Máquina mais inteligente no treino, com defesa do Rei, captura melhor, busca de xeque-mate e níveis fácil, médio e difícil mais equilibrados. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2682,7 +2801,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 18 ativa: Xadrez com Professor, final profissional e máquina mais inteligente no treino. Vídeo/áudio continua pausado.
+                ✅ Fase 19 ativa: Xadrez com Professor, final profissional e máquina mais inteligente no treino. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -7390,6 +7509,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessAiThinking = false;
         let chessLastResultShown = '';
         let chessLearnExampleMove = null;
+        let chessHistoryPanelOpen = false;
         const chessHumanColor = 'white';
 
         function criarPeca(color, type) {
@@ -7409,13 +7529,14 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 18 ativa: Xadrez com Professor, final profissional e máquina mais inteligente no treino. Vídeo/áudio pausado.';
+            lastMoveMessage = 'Fase 19 ativa: Xadrez com histórico de jogadas bonito e recolhível. Vídeo/áudio pausado.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
             undoStack = [];
             chessLastResultShown = '';
             chessLearnExampleMove = null;
+            chessHistoryPanelOpen = false;
         }
 
         function instalarCssXadrezFase5() {
@@ -7976,8 +8097,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 history.id = 'chess-history-panel';
                 history.className = 'chess-history-panel';
                 history.innerHTML = `
-                    <div class="chess-history-title">📜 Histórico de jogadas</div>
-                    <div id="chess-history-list" class="chess-history-list"><div class="chess-history-empty">Nenhuma jogada ainda.</div></div>
+                    <div class="chess-history-head">
+                        <div class="chess-history-title">📜 Histórico de jogadas</div>
+                        <div class="chess-history-actions">
+                            <button id="chess-history-toggle-btn" class="btn-history-toggle" type="button">Ver jogadas</button>
+                            <button id="chess-history-clear-btn" class="btn-history-clear" type="button">Limpar visual</button>
+                        </div>
+                    </div>
+                    <div class="chess-history-body">
+                        <div id="chess-history-list" class="chess-history-list"><div class="chess-history-empty">Nenhuma jogada ainda.</div></div>
+                        <div class="chess-history-note">O histórico mostra as jogadas da partida atual de forma simples. Limpar visual não volta a jogada.</div>
+                    </div>
                 `;
                 const warning = card.querySelector('.chess-warning');
                 if (warning) card.insertBefore(history, warning);
@@ -8568,7 +8698,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 }[type] || 0;
         }
 
-        function valorPosicionalTreinoXadrez(peca, row, col, board = chessBoard) {
+        function valorPosicionalTreinoXadrez(peca, row, col) {
             if (!peca) return 0;
             const centro = Math.abs(3.5 - row) + Math.abs(3.5 - col);
             let bonus = Math.max(0, 7 - centro) * 3;
@@ -8581,7 +8711,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 if (casaInicial) bonus -= 16;
             }
             if (peca.type === 'rook') {
-                const colunaAberta = !board.some(linha => linha[col]?.type === 'pawn');
+                const colunaAberta = !chessBoard.some(linha => linha[col]?.type === 'pawn');
                 if (colunaAberta) bonus += 18;
             }
             if (peca.type === 'queen') {
@@ -8603,7 +8733,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 for (let c = 0; c < 8; c++) {
                     const p = board[r]?.[c];
                     if (!p) continue;
-                    const v = valorPecaTreinoXadrez(p.type) + valorPosicionalTreinoXadrez(p, r, c, board);
+                    const v = valorPecaTreinoXadrez(p.type) + valorPosicionalTreinoXadrez(p, r, c);
                     score += p.color === corMaquina ? v : -v;
                 }
             }
@@ -9218,20 +9348,35 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function renderHistorico() {
+            const panel = document.getElementById('chess-history-panel');
             const list = document.getElementById('chess-history-list');
+            const btn = document.getElementById('chess-history-toggle-btn');
             if (!list) return;
+
+            if (panel) panel.classList.toggle('chess-history-collapsed', !chessHistoryPanelOpen);
+            if (btn) btn.textContent = chessHistoryPanelOpen ? 'Ocultar jogadas' : 'Ver jogadas';
+
             if (!moveHistory.length) {
-                list.innerHTML = '<div class="chess-history-empty">Nenhuma jogada ainda.</div>';
+                list.innerHTML = '<div class="chess-history-empty">Nenhuma jogada ainda. Quando a partida começar, as jogadas aparecerão aqui.</div>';
                 return;
             }
+
             const pares = [];
             for (let i = 0; i < moveHistory.length; i += 2) {
                 const n = Math.floor(i / 2) + 1;
                 const whiteMove = moveHistory[i] || '';
                 const blackMove = moveHistory[i + 1] || '';
-                pares.push(`<div><span class="chess-history-move-no">${n}.</span> <span class="chess-history-white">Brancas: ${whiteMove || '...'}</span>${blackMove ? ` <span class="chess-history-black">Pretas: ${blackMove}</span>` : ''}</div>`);
+                pares.push(`
+                    <div class="chess-history-row">
+                        <span class="chess-history-move-no">${n}.</span>
+                        <div class="chess-history-turns">
+                            <span class="chess-history-white">⚪ ${escapeHtmlXadrez(whiteMove || 'Aguardando jogada das brancas...')}</span>
+                            ${blackMove ? `<span class="chess-history-black">⚫ ${escapeHtmlXadrez(blackMove)}</span>` : '<span class="chess-history-black">⚫ Aguardando resposta das pretas...</span>'}
+                        </div>
+                    </div>
+                `);
             }
-            list.innerHTML = pares.slice(-30).join('');
+            list.innerHTML = pares.slice(-40).join('');
             list.scrollTop = list.scrollHeight;
         }
 
@@ -9667,6 +9812,55 @@ Link: ${location.origin}${location.pathname}`;
             });
         }
 
+        function textoPecaComCor(peca) {
+            if (!peca) return 'peça';
+            return `${nomePeca[peca.type]} ${peca.color === 'white' ? 'branco' : 'preto'}`;
+        }
+
+        function criarRegistroHistoricoXadrez(peca, fromRow, fromCol, move, capturedPiece = null, promotionType = null, estadoDepois = '') {
+            const cor = peca.color === 'white' ? 'Brancas' : 'Pretas';
+            const origem = alg(fromRow, fromCol);
+            const destino = alg(move.row, move.col);
+            let texto = `${cor}: ${nomePeca[peca.type]} ${origem} → ${destino}`;
+
+            if (move.castle) {
+                texto = `${cor}: Rei fez ${move.castle === 'king' ? 'roque pequeno' : 'roque grande'}`;
+            } else if (capturedPiece) {
+                texto = `${cor}: ${nomePeca[peca.type]} ${origem} capturou ${textoPecaComCor(capturedPiece)} em ${destino}`;
+            } else if (move.enPassant) {
+                texto = `${cor}: Peão ${origem} capturou en passant em ${destino}`;
+            }
+
+            if (promotionType) texto += ` e virou ${nomePeca[promotionType]}`;
+            if (/Xeque-mate/i.test(estadoDepois)) texto += ' — xeque-mate!';
+            else if (/Xeque/i.test(estadoDepois)) texto += ' — xeque!';
+            else if (/Empate|afogamento/i.test(estadoDepois)) texto += ' — empate.';
+
+            if (chessTrainingLearnMode && peca.color === chessHumanColor) {
+                if (capturedPiece) texto += ' Boa captura: você ganhou material.';
+                else if (peca.type === 'pawn') texto += ' Peões ajudam a abrir caminho para as peças.';
+                else if (peca.type === 'knight' || peca.type === 'bishop') texto += ' Boa ideia: desenvolver Cavalo e Bispo ajuda no começo.';
+                else if (peca.type === 'king' && move.castle) texto += ' Excelente: o roque ajuda a proteger o Rei.';
+            }
+            return texto;
+        }
+
+        function alternarHistoricoXadrez(forcar = null) {
+            const panel = document.getElementById('chess-history-panel');
+            const btn = document.getElementById('chess-history-toggle-btn');
+            if (typeof forcar === 'boolean') chessHistoryPanelOpen = forcar;
+            else chessHistoryPanelOpen = !chessHistoryPanelOpen;
+            if (panel) panel.classList.toggle('chess-history-collapsed', !chessHistoryPanelOpen);
+            if (btn) btn.textContent = chessHistoryPanelOpen ? 'Ocultar jogadas' : 'Ver jogadas';
+            if (chessHistoryPanelOpen) renderHistorico();
+        }
+
+        function limparHistoricoVisualXadrez() {
+            const list = document.getElementById('chess-history-list');
+            if (list) list.innerHTML = '<div class="chess-history-empty">Histórico visual limpo. As jogadas continuam salvas na partida.</div>';
+            mostrarToastXadrez('📜 Histórico visual limpo. A partida não foi alterada.');
+        }
+
         function criarNotacao(peca, fromRow, fromCol, move, promotionType = null) {
             if (move.castle) return move.castle === 'king' ? 'O-O' : 'O-O-O';
             const prefix = peca.type === 'pawn' ? '' : nomePeca[peca.type][0];
@@ -9728,6 +9922,9 @@ Link: ${location.origin}${location.pathname}`;
             }
 
             const previousEnPassant = enPassantTarget;
+            const capturedPiece = move.enPassant
+                ? (chessBoard[fromRow] ? chessBoard[fromRow][move.col] : null)
+                : (chessBoard[move.row] ? chessBoard[move.row][move.col] : null);
             aplicarMovimentoEmBoard(chessBoard, fromRow, fromCol, move, { promotionType });
 
             lastChessMove = { from: { row: fromRow, col: fromCol }, to: { row: move.row, col: move.col } };
@@ -9745,7 +9942,6 @@ Link: ${location.origin}${location.pathname}`;
             }
 
             const notation = criarNotacao(peca, fromRow, fromCol, move, promotionType);
-            moveHistory.push(notation);
             const moverColor = peca.color;
 
             selectedSquare = null;
@@ -9761,6 +9957,7 @@ Link: ${location.origin}${location.pathname}`;
 
             renderChessBoard();
             const estado = avaliarEstadoDoJogo(msg);
+            moveHistory.push(criarRegistroHistoricoXadrez(peca, fromRow, fromCol, move, capturedPiece, promotionType, estado) || notation);
             reforcarProfessorXequeXadrez(estado);
             if (moverColor === chessHumanColor) feedbackProfessorDepoisDaJogada(peca, fromRow, fromCol, move, estado);
             if (/Xeque-mate/i.test(estado)) mostrarToastXadrez('♟️ XEQUE-MATE! ' + estado, 'mate');
@@ -10471,6 +10668,8 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-focus-btn')?.addEventListener('click', alternarFocoTabuleiroXadrez);
             document.getElementById('chess-flip-btn')?.addEventListener('click', alternarVisaoTabuleiroXadrez);
             document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
+            document.getElementById('chess-history-toggle-btn')?.addEventListener('click', () => alternarHistoricoXadrez());
+            document.getElementById('chess-history-clear-btn')?.addEventListener('click', limparHistoricoVisualXadrez);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
             document.getElementById('chess-training-easy-btn')?.addEventListener('click', () => iniciarTreinoXadrez('facil', false));
             document.getElementById('chess-training-medium-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', false));
