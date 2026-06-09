@@ -6861,6 +6861,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessUnsubscribeChat = null;
         let chessOnlineSyncing = false;
         let chessOnlineReady = false;
+        let chessRoomPlayers = { white: null, black: null };
+        let chessRoomSpectators = {};
 
         function criarPeca(color, type) {
             return { color, type, moved: false };
@@ -6879,7 +6881,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 5.5 ativa: Xadrez online corrigido com salvamento seguro das casas vazias e entrada estável na sala.';
+            lastMoveMessage = 'Fase 6 ativa: Xadrez online com painel de jogadores, turno travado por cor, saída limpa e sala mais organizada.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7063,6 +7065,37 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     border-radius: 8px;
                     padding: 8px;
                 }
+                .chess-room-players-panel {
+                    margin-top: 8px;
+                    display: none;
+                    background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(2,6,23,.92));
+                    border: 1px solid rgba(56,189,248,.28);
+                    border-radius: 10px;
+                    padding: 9px;
+                    color: #e2e8f0;
+                    font-size: .76rem;
+                    line-height: 1.35;
+                }
+                .chess-room-players-title {
+                    color: #38bdf8;
+                    font-weight: 1000;
+                    text-transform: uppercase;
+                    letter-spacing: .45px;
+                    font-size: .72rem;
+                    margin-bottom: 6px;
+                }
+                .chess-room-player-row {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 8px;
+                    border-bottom: 1px solid rgba(255,255,255,.06);
+                    padding: 4px 0;
+                }
+                .chess-room-player-row:last-child { border-bottom: none; }
+                .chess-room-player-label { color: #94a3b8; font-weight: 900; }
+                .chess-room-player-name { color: #fff; text-align: right; word-break: break-word; }
+                .chess-room-player-name.empty { color: #facc15; }
+                .chess-room-player-name.me { color: #86efac; font-weight: 1000; }
                 .chess-chat-panel {
                     display: none;
                     max-width: 520px;
@@ -7147,6 +7180,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                         <button id="chess-online-leave-btn" class="btn-chess-leave-online" type="button">Sair online</button>
                     </div>
                     <div id="chess-online-status" class="chess-online-status">Modo local ativo. O Xadrez online usa o caminho <strong>chessRooms</strong>, separado da Damas.</div>
+                    <div id="chess-room-players-panel" class="chess-room-players-panel">
+                        <div class="chess-room-players-title">👥 Jogadores da sala</div>
+                        <div id="chess-room-players-list"></div>
+                    </div>
                 `;
                 const status = document.getElementById('chess-status');
                 if (status) card.insertBefore(online, status);
@@ -7204,7 +7241,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 5.5 ativa: Xadrez online corrigido. Agora as casas vazias são salvas com segurança no Firebase, evitando sala quebrada, linhas vazias e erro ao entrar. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 6 ativa: Xadrez online com jogadores brancas/pretas identificados, espectadores listados, turno travado por cor, saída limpa da sala e sincronização preservada. A Damas Arena continua preservada.';
             }
         }
 
@@ -7339,17 +7376,83 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (el) el.innerHTML = texto;
         }
 
+        function nomeJogadorSalaXadrez(jogador) {
+            return jogador && jogador.name ? escapeHtmlXadrez(jogador.name) : '';
+        }
+
+        function jogadorAtualEh(jogador) {
+            const uid = getChessUid();
+            return !!(jogador && jogador.id && jogador.id === uid);
+        }
+
+        function contarEspectadoresXadrez() {
+            return Object.values(chessRoomSpectators || {}).filter(s => s && s.id).length;
+        }
+
+        function renderizarListaJogadoresXadrez() {
+            const panel = document.getElementById('chess-room-players-panel');
+            const list = document.getElementById('chess-room-players-list');
+            if (!panel || !list) return;
+
+            if (chessMode !== 'online') {
+                panel.style.display = 'none';
+                list.innerHTML = '';
+                return;
+            }
+
+            panel.style.display = 'block';
+            const white = chessRoomPlayers?.white || null;
+            const black = chessRoomPlayers?.black || null;
+            const spectators = Object.values(chessRoomSpectators || {}).filter(s => s && s.id);
+            const specNames = spectators.map(s => nomeJogadorSalaXadrez(s)).filter(Boolean);
+
+            const whiteName = white ? nomeJogadorSalaXadrez(white) : 'Aguardando jogador...';
+            const blackName = black ? nomeJogadorSalaXadrez(black) : 'Aguardando jogador...';
+            const specText = specNames.length ? specNames.join(', ') : 'Nenhum espectador';
+
+            list.innerHTML = `
+                <div class="chess-room-player-row">
+                    <span class="chess-room-player-label">⚪ Brancas</span>
+                    <span class="chess-room-player-name ${white ? '' : 'empty'} ${jogadorAtualEh(white) ? 'me' : ''}">${whiteName}${jogadorAtualEh(white) ? ' (você)' : ''}</span>
+                </div>
+                <div class="chess-room-player-row">
+                    <span class="chess-room-player-label">⚫ Pretas</span>
+                    <span class="chess-room-player-name ${black ? '' : 'empty'} ${jogadorAtualEh(black) ? 'me' : ''}">${blackName}${jogadorAtualEh(black) ? ' (você)' : ''}</span>
+                </div>
+                <div class="chess-room-player-row">
+                    <span class="chess-room-player-label">👀 Espectadores</span>
+                    <span class="chess-room-player-name">${specText}</span>
+                </div>
+            `;
+        }
+
         function atualizarPainelOnlineXadrez() {
             const chat = document.getElementById('chess-chat-panel');
             if (chat) chat.style.display = chessMode === 'online' ? 'block' : 'none';
             const undo = document.getElementById('chess-undo-btn');
             if (undo) undo.disabled = chessMode === 'online' || undoStack.length === 0;
+            const joinBtn = document.getElementById('chess-online-join-btn');
+            const watchBtn = document.getElementById('chess-online-watch-btn');
+            const leaveBtn = document.getElementById('chess-online-leave-btn');
+            if (joinBtn) joinBtn.disabled = chessMode === 'online' && !chessIsSpectator;
+            if (watchBtn) watchBtn.disabled = chessMode === 'online' && chessIsSpectator;
+            if (leaveBtn) leaveBtn.disabled = chessMode !== 'online';
+
             if (chessMode !== 'online') {
                 atualizarStatusOnlineXadrez('Modo local ativo. O Xadrez online usa o caminho <strong>chessRooms</strong>, separado da Damas.');
+                renderizarListaJogadoresXadrez();
                 return;
             }
+
             const papel = chessIsSpectator ? 'espectador' : (chessPlayerColor === 'white' ? 'brancas' : 'pretas');
-            atualizarStatusOnlineXadrez(`Online na sala <strong>${escapeHtmlXadrez(chessRoomId)}</strong> como <strong>${papel}</strong>. ${chessIsSpectator ? 'Você apenas assiste.' : 'Jogue somente na sua vez.'}`);
+            const vezTexto = chessIsSpectator
+                ? 'Você apenas assiste.'
+                : (chessPlayerColor === chessTurn ? 'É a sua vez de jogar.' : `Aguarde a vez das ${nomeCor(chessTurn)}.`);
+            const faltando = !chessRoomPlayers?.black?.id ? ' Aguardando segundo jogador entrar como pretas.' : '';
+            const espectadores = contarEspectadoresXadrez();
+
+            atualizarStatusOnlineXadrez(`Online na sala <strong>${escapeHtmlXadrez(chessRoomId)}</strong> como <strong>${papel}</strong>. ${vezTexto}${faltando} 👀 Espectadores: <strong>${espectadores}</strong>.`);
+            renderizarListaJogadoresXadrez();
         }
 
         function salvarEstadoParaDesfazer() {
@@ -7793,6 +7896,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function aplicarEstadoXadrezRemoto(data) {
             if (!data) return;
             chessOnlineSyncing = true;
+            chessRoomPlayers = data.players && typeof data.players === 'object' ? data.players : { white: null, black: null };
+            chessRoomSpectators = data.spectators && typeof data.spectators === 'object' ? data.spectators : {};
 
             const remotoLimpo = clonarTabuleiro(data.board);
             if (remotoLimpo && !tabuleiroXadrezPrecisaRestaurar(remotoLimpo)) {
@@ -7886,7 +7991,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     sala.board = estado.board;
                     sala.turn = estado.turn;
                     sala.gameOver = false;
-                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez.';
+                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 6 online ativa.';
                     sala.lastChessMove = null;
                     sala.enPassantTarget = null;
                     sala.moveHistory = [];
@@ -7920,6 +8025,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     chessIsSpectator = true;
                     sala.spectators[uid] = { id: uid, name: chessPlayerName, connectedAt: agora };
                     mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
+                }
+
+                chessRoomPlayers = sala.players;
+                chessRoomSpectators = sala.spectators;
+                if (!sala.lastMoveMessage || /^Fase 5/i.test(String(sala.lastMoveMessage))) {
+                    sala.lastMoveMessage = 'Fase 6 ativa: sala online organizada com brancas, pretas, espectadores e turno protegido.';
                 }
 
                 await set(chessRoomRef, sala);
@@ -7974,6 +8085,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             chessOnlineReady = false;
             chessIsSpectator = false;
             chessPlayerColor = 'white';
+            chessRoomPlayers = { white: null, black: null };
+            chessRoomSpectators = {};
             atualizarPainelOnlineXadrez();
             if (mostrarMensagem) mostrarToastXadrez('Modo local ativado. Você saiu da sala online.');
         }
@@ -8132,6 +8245,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 }
             }
             const peca = chessBoard[row][col];
+            if (chessMode === 'online' && peca && peca.color !== chessPlayerColor) {
+                mostrarToastXadrez(`Você está com as ${nomeCor(chessPlayerColor)}. Não pode mexer peça das ${nomeCor(peca.color)}.`, 'check');
+                selectedSquare = null;
+                legalMoves = [];
+                renderChessBoard();
+                return;
+            }
 
             if (selectedSquare) {
                 const move = legalMoves.find(m => m.row === row && m.col === col);
