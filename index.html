@@ -6878,7 +6878,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 5.1 ativa: Xadrez online corrigido com restauração automática do tabuleiro.';
+            lastMoveMessage = 'Fase 5.2 ativa: Xadrez online corrigido com restauração forte do tabuleiro e das peças.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7203,7 +7203,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 5.1 ativa: Xadrez online corrigido. Se uma sala antiga estiver vazia/corrompida, o tabuleiro é restaurado automaticamente. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 5.2 ativa: Xadrez online corrigido. Se uma sala antiga estiver sem peças, vazia ou corrompida, o tabuleiro e as peças são restaurados automaticamente. A Damas Arena continua preservada.';
             }
         }
 
@@ -7213,13 +7213,42 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 && board.every(row => Array.isArray(row) && row.length === 8);
         }
 
+        function contarPecasXadrez(board) {
+            if (!tabuleiroXadrezTemFormatoValido(board)) return 0;
+            let total = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] && board[r][c].color && board[r][c].type) total++;
+                }
+            }
+            return total;
+        }
+
+        function temReisDoXadrez(board) {
+            if (!tabuleiroXadrezTemFormatoValido(board)) return false;
+            let whiteKing = false;
+            let blackKing = false;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r][c];
+                    if (p && p.type === 'king' && p.color === 'white') whiteKing = true;
+                    if (p && p.type === 'king' && p.color === 'black') blackKing = true;
+                }
+            }
+            return whiteKing && blackKing;
+        }
+
+        function tabuleiroXadrezPrecisaRestaurar(board) {
+            return !tabuleiroXadrezTemFormatoValido(board) || !temReisDoXadrez(board) || contarPecasXadrez(board) < 2;
+        }
+
         function clonarTabuleiro(board) {
             if (!tabuleiroXadrezTemFormatoValido(board)) return null;
             return board.map(row => row.map(piece => piece ? { ...piece } : null));
         }
 
         function garantirTabuleiroXadrezPronto(motivo = '') {
-            if (tabuleiroXadrezTemFormatoValido(chessBoard)) return false;
+            if (!tabuleiroXadrezPrecisaRestaurar(chessBoard)) return false;
             criarTabuleiroInicial();
             if (motivo) lastMoveMessage = motivo;
             return true;
@@ -7626,6 +7655,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!boardEl) return;
             garantirTabuleiroXadrezPronto('Tabuleiro restaurado automaticamente. Entre em uma sala nova ou clique em Nova Partida se a sala antiga estava vazia.');
             boardEl.innerHTML = '';
+            boardEl.style.display = 'grid';
+            boardEl.style.gridTemplateColumns = 'repeat(8, 1fr)';
+            boardEl.style.gridTemplateRows = 'repeat(8, 1fr)';
+            boardEl.style.width = '100%';
+            boardEl.style.aspectRatio = '1 / 1';
             const reiEmXeque = reiEstaEmXeque(chessBoard, chessTurn);
             const kingPos = reiEmXeque ? encontrarRei(chessBoard, chessTurn) : null;
 
@@ -7633,6 +7667,9 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 for (let col = 0; col < 8; col++) {
                     const square = document.createElement('div');
                     square.className = `chess-square ${(row + col) % 2 === 0 ? 'chess-light' : 'chess-dark'}`;
+                    square.style.backgroundColor = (row + col) % 2 === 0 ? '#f0d9b5' : '#b58863';
+                    square.style.minWidth = '0';
+                    square.style.minHeight = '0';
                     square.dataset.row = String(row);
                     square.dataset.col = String(col);
                     square.setAttribute('role', 'button');
@@ -7654,6 +7691,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     if (peca) {
                         const span = document.createElement('span');
                         span.className = `chess-piece ${peca.color}`;
+                        span.style.fontSize = 'clamp(2rem, 8vw, 3.7rem)';
+                        span.style.lineHeight = '1';
+                        span.style.position = 'relative';
+                        span.style.zIndex = '2';
+                        span.style.color = peca.color === 'white' ? '#ffffff' : '#111827';
                         span.textContent = pecasUnicode[peca.color][peca.type];
                         square.appendChild(span);
                     }
@@ -7694,12 +7736,21 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (!data) return;
             chessOnlineSyncing = true;
 
-            if (tabuleiroXadrezTemFormatoValido(data.board)) {
+            if (!tabuleiroXadrezPrecisaRestaurar(data.board)) {
                 const remoto = clonarTabuleiro(data.board);
                 if (remoto) chessBoard = remoto;
             } else {
                 criarTabuleiroInicial();
-                lastMoveMessage = 'A sala online estava sem tabuleiro válido. O Xadrez restaurou a posição inicial automaticamente.';
+                lastMoveMessage = 'A sala online estava sem peças ou sem tabuleiro válido. O Xadrez restaurou a posição inicial automaticamente.';
+                if (chessRoomRef) {
+                    setTimeout(() => {
+                        try {
+                            update(chessRoomRef, { ...estadoXadrezParaFirebase(), repairedAt: Date.now() });
+                        } catch (e) {
+                            console.warn('Não consegui reparar a sala online no Firebase:', e);
+                        }
+                    }, 80);
+                }
             }
 
             chessTurn = data.turn === 'black' ? 'black' : 'white';
@@ -7751,7 +7802,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     mode: 'xadrez'
                 };
 
-                if (!tabuleiroXadrezTemFormatoValido(room.board)) {
+                if (tabuleiroXadrezPrecisaRestaurar(room.board)) {
                     criarTabuleiroInicial();
                     Object.assign(updates, estadoXadrezParaFirebase(), {
                         lastMoveMessage: 'Sala criada/restaurada com o tabuleiro inicial do Xadrez.'
