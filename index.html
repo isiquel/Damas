@@ -2876,6 +2876,72 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             .chess-achievements-grid { grid-template-columns: 1fr; }
         }
 
+
+
+        /* ♟️ FASE 23 - TELA DE PARTIDA LIMPA NO XADREZ
+           Ranking e conquistas aparecem somente no menu do Xadrez, antes do tabuleiro abrir. */
+        body.chess-board-visible #chess-training-ranking-panel,
+        body.chess-board-visible #chess-achievements-panel,
+        body.chess-board-visible .chess-training-ranking-panel,
+        body.chess-board-visible .chess-achievements-panel {
+            display: none !important;
+        }
+
+        body.chess-board-visible #chess-screen .chess-card {
+            padding-top: 14px;
+        }
+
+        body.chess-board-visible #chess-screen .chess-subtitle {
+            display: none !important;
+        }
+
+        body.chess-board-visible #chess-screen .chess-title {
+            margin-bottom: 10px;
+        }
+
+        body.chess-board-visible #chess-screen .chess-warning {
+            display: none !important;
+        }
+
+        body.chess-board-visible #chess-status {
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        body.chess-board-visible #chess-history-panel,
+        body.chess-board-visible #chess-chat-panel,
+        body.chess-board-visible #chess-call-panel {
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        body.chess-selected:not(.chess-board-visible) #chess-training-ranking-panel,
+        body.chess-selected:not(.chess-board-visible) #chess-achievements-panel {
+            display: block;
+        }
+
+        .chess-clean-game-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin: 4px auto 12px auto;
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: rgba(46,204,113,.12);
+            border: 1px solid rgba(46,204,113,.42);
+            color: #86efac;
+            font-size: .72rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+        }
+
+        body.chess-selected:not(.chess-board-visible) .chess-clean-game-pill {
+            display: none !important;
+        }
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2951,8 +3017,9 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <button id="chess-back-btn" class="back-to-games-btn btn-chess-back" type="button">← Voltar às modalidades</button>
 
             <div class="chess-title">♟️ Xadrez Arena</div>
+            <div class="chess-clean-game-pill">🎯 Tela limpa de partida</div>
             <div class="chess-subtitle">
-                Fase 22: Conquistas do Xadrez com medalhas locais, separadas da Damas, junto do ranking do treino, histórico e professor durante a partida. Vídeo/áudio continua pausado.
+                Fase 23: tela de jogo limpa. Ranking e conquistas ficam no menu do Xadrez antes de abrir o tabuleiro; durante a partida aparece somente o necessário. Vídeo/áudio do Xadrez está separado da Damas.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2995,7 +3062,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 19 ativa: Xadrez com Professor, final profissional e máquina mais inteligente no treino. Vídeo/áudio continua pausado.
+                ✅ Fase 23 ativa: tela de partida limpa. Ranking e conquistas ficam no menu inicial do Xadrez; durante o jogo aparece só o necessário.
             </div>
         </div>
     </div>
