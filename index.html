@@ -2150,7 +2150,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 12: Xadrez Online com painel Admin próprio, salas liberadas/bloqueadas, expulsar jogadores, limpar chat, resetar sala, desistência, virar tabuleiro, modo foco, alerta de vez, histórico e placar de material.
+                Fase 12.1: Xadrez Online com painel Admin limpo e próprio, sem tabuleiro/placar dentro da administração; salas liberadas/bloqueadas, expulsar jogadores, limpar chat e resetar sala.
                 A Damas Arena continua preservada.
             </div>
 
@@ -2177,7 +2177,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 12 ativa: Xadrez Online com painel Admin próprio igual à Damas, salas liberadas/bloqueadas, expulsar jogadores, limpar chat, resetar sala, desistência, virar tabuleiro, modo foco, alerta de vez, chat, histórico e placar. A Damas Arena continua preservada.
+                ✅ Fase 12.1 ativa: Admin do Xadrez limpo, somente painel administrativo. A Damas Arena continua preservada.
             </div>
         </div>
     </div>
@@ -8821,6 +8821,28 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
                     .chess-admin-room-row.blocked { border-left-color:#ef4444; }
                     .chess-admin-room-row:hover { background:#172554; }
+                    /* ✅ FASE 12.1: ADMIN LIMPO — esconde tudo que é do jogo quando abrir o Admin do Xadrez */
+                    body.chess-admin-only #chess-status,
+                    body.chess-admin-only #chess-toast,
+                    body.chess-admin-only .chess-board-wrap,
+                    body.chess-admin-only #chess-material-panel,
+                    body.chess-admin-only #chess-history-panel,
+                    body.chess-admin-only .chess-actions,
+                    body.chess-admin-only .chess-action-note,
+                    body.chess-admin-only .chess-warning {
+                        display: none !important;
+                    }
+                    body.chess-admin-only #chess-admin-panel {
+                        display: block !important;
+                    }
+                    body.chess-admin-only .chess-card {
+                        max-width: 660px;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    body.chess-admin-only .chess-subtitle {
+                        margin-bottom: 10px;
+                    }
                     @media(max-width:560px){ .chess-admin-grid { grid-template-columns:1fr; } }
                 `;
                 document.head.appendChild(style);
@@ -8831,8 +8853,8 @@ Link: ${location.origin}${location.pathname}`;
                 panel.id = 'chess-admin-panel';
                 panel.className = 'chess-admin-panel';
                 panel.innerHTML = `
-                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez — Fase 12</div>
-                    <div class="chess-admin-desc">Controle próprio do Xadrez, igual à Damas, usando o caminho <strong>chessRooms</strong>. A Damas continua preservada.</div>
+                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez — Fase 12.1</div>
+                    <div class="chess-admin-desc">Controle próprio do Xadrez, igual à Damas, usando o caminho <strong>chessRooms</strong>. Esta tela é somente administração: sem tabuleiro, sem placar e sem histórico do jogo. A Damas continua preservada.</div>
                     <input id="chess-admin-room-input" type="text" maxlength="18" placeholder="Código da sala de Xadrez, ex: xadrez10">
                     <div class="chess-admin-grid">
                         <button id="chess-admin-create-btn" type="button" style="background:#22c55e;">Liberar / criar sala</button>
@@ -8870,7 +8892,7 @@ Link: ${location.origin}${location.pathname}`;
             }
             instalarPainelAdminXadrez();
             document.body.classList.remove('platform-start-active','mode-selecting','game-selected','domino-selected');
-            document.body.classList.add('chess-selected');
+            document.body.classList.add('chess-selected', 'chess-admin-only');
             const hub = document.getElementById('games-hub-panel');
             if (hub) hub.style.display = 'none';
             const lobby = document.getElementById('lobby-screen');
@@ -8883,7 +8905,7 @@ Link: ${location.origin}${location.pathname}`;
             if (panel) panel.style.display = 'block';
             const online = document.getElementById('chess-online-panel');
             if (online) online.style.display = 'none';
-            atualizarStatusOnlineXadrez('🛡️ Modo administrador do Xadrez ativo. Controle as salas pelo painel abaixo.');
+            atualizarStatusOnlineXadrez('🛡️ Fase 12.1 ativa: modo administrador limpo do Xadrez. Só o painel administrativo fica visível.');
             ativarDashboardAdminXadrez();
             panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
