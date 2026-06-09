@@ -2106,6 +2106,56 @@
             }
         }
 
+
+
+        /* ✅ FASE 13.8 - XADREZ: menu separado do tabuleiro, sem tabuleiro aparecendo atrás/embaixo */
+        body.chess-selected.chess-menu-active #chess-status,
+        body.chess-selected.chess-menu-active #chess-toast,
+        body.chess-selected.chess-menu-active #chess-screen .chess-board-wrap,
+        body.chess-selected.chess-menu-active #chess-screen .chess-actions,
+        body.chess-selected.chess-menu-active #chess-screen .chess-action-note,
+        body.chess-selected.chess-menu-active #chess-screen .chess-warning {
+            display: none !important;
+        }
+
+        body.chess-selected.chess-game-active #chess-online-panel,
+        body.chess-selected.chess-game-active #chess-training-panel {
+            display: none !important;
+        }
+
+        body.chess-selected.chess-menu-active #chess-screen .chess-card {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        body.chess-selected.chess-game-active #chess-screen .chess-card {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        body.chess-selected.chess-menu-active .chess-subtitle {
+            margin-bottom: 16px;
+        }
+
+        .chess-training-actions.modern {
+            align-items: stretch;
+        }
+
+        .chess-training-actions button.btn-chess-training span,
+        .btn-chess-training span {
+            display: block;
+            line-height: 1.15;
+            margin-bottom: 2px;
+        }
+
+        .chess-training-actions button.btn-chess-training small,
+        .btn-chess-training small {
+            display: block;
+            line-height: 1.15;
+            opacity: .86;
+        }
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2136,10 +2186,10 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 5</span>
+                <span class="game-mode-badge">Fase 13.8</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
-                <div class="game-mode-copy">Módulo separado: regras completas locais, coordenadas, histórico e acabamento visual.</div>
+                <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
             </div>
             <div class="game-mode-card admin-entry" id="game-card-admin" role="button" tabindex="0">
                 <span class="game-mode-badge">Dono</span>
@@ -2182,7 +2232,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 13.7: Xadrez com menu inicial limpo, Modo Treino mais moderno e tabuleiro aparecendo somente depois de escolher online, treino ou aprender. Vídeo/áudio continua pausado.
+                Fase 13.8: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2209,7 +2259,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 13.7 ativa: Xadrez limpo, menu moderno, captura funcionando e tabuleiro oculto até escolher o modo. Vídeo/áudio continua pausado.
+                ✅ Fase 13.8 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -7365,7 +7415,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.7</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.8</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7514,7 +7564,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 13.7 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
+                warning.innerHTML = '✅ Fase 13.8 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
             }
         }
 
@@ -7865,7 +7915,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function mostrarTabuleiroXadrezAposEscolha() {
-            document.body.classList.add('chess-board-visible');
+            document.body.classList.add('chess-board-visible', 'chess-game-active');
+            document.body.classList.remove('chess-menu-active');
             const status = document.getElementById('chess-status');
             if (status) status.style.display = '';
             const wrap = document.querySelector('#chess-screen .chess-board-wrap');
@@ -7875,7 +7926,8 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function ocultarTabuleiroXadrezParaMenu() {
-            document.body.classList.remove('chess-board-visible');
+            document.body.classList.remove('chess-board-visible', 'chess-game-active');
+            document.body.classList.add('chess-menu-active');
             selectedSquare = null;
             legalMoves = [];
             lastMoveMessage = 'Escolha como deseja jogar. O tabuleiro abrirá depois de selecionar Online, Treino ou Aprender do Zero.';
@@ -9040,8 +9092,8 @@ Link: ${location.origin}${location.pathname}`;
         function abrirXadrezArena() {
             // ✅ FASE 13.4: garante que o Xadrez comum nunca herde o modo Admin.
             // Isso evita tela vazia/travada depois de sair da administração do Xadrez.
-            document.body.classList.remove('platform-start-active', 'mode-selecting', 'game-selected', 'chess-admin-only', 'chess-focus-mode', 'chess-board-visible');
-            document.body.classList.add('chess-selected');
+            document.body.classList.remove('platform-start-active', 'mode-selecting', 'game-selected', 'chess-admin-only', 'chess-focus-mode', 'chess-board-visible', 'chess-game-active');
+            document.body.classList.add('chess-selected', 'chess-menu-active');
 
             const hub = document.getElementById('games-hub-panel');
             const lobby = document.getElementById('lobby-screen');
@@ -9062,7 +9114,7 @@ Link: ${location.origin}${location.pathname}`;
 
         function voltarParaModalidades() {
             // ✅ FASE 13.4: remove também o modo Admin do Xadrez ao voltar para o hub.
-            document.body.classList.remove('chess-selected', 'game-selected', 'chess-focus-mode', 'chess-admin-only', 'chess-beginner-mode', 'chess-board-visible');
+            document.body.classList.remove('chess-selected', 'game-selected', 'chess-focus-mode', 'chess-admin-only', 'chess-beginner-mode', 'chess-board-visible', 'chess-menu-active', 'chess-game-active');
             document.body.classList.add('platform-start-active', 'mode-selecting');
 
             const hub = document.getElementById('games-hub-panel');
@@ -9146,7 +9198,7 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
                     .chess-admin-room-row.blocked { border-left-color:#ef4444; }
                     .chess-admin-room-row:hover { background:#172554; }
-                    /* ✅ FASE 13.7 - MENU LIMPO DO XADREZ: tabuleiro aparece só depois da escolha */
+                    /* ✅ FASE 13.8 - MENU LIMPO DO XADREZ: tabuleiro aparece só depois da escolha */
                     body.chess-selected:not(.chess-board-visible) #chess-status,
                     body.chess-selected:not(.chess-board-visible) #chess-toast,
                     body.chess-selected:not(.chess-board-visible) #chess-screen .chess-board-wrap,
@@ -9412,6 +9464,7 @@ Link: ${location.origin}${location.pathname}`;
             instalarPainelAdminXadrez();
             // ✅ FASE 13.4: Admin do Xadrez fica isolado e não carrega tabuleiro na administração.
             document.body.classList.remove('platform-start-active','mode-selecting','game-selected','domino-selected','chess-focus-mode','chess-beginner-mode');
+            document.body.classList.remove('chess-menu-active', 'chess-game-active', 'chess-board-visible');
             document.body.classList.add('chess-selected', 'chess-admin-only');
             const hub = document.getElementById('games-hub-panel');
             if (hub) hub.style.display = 'none';
@@ -9618,7 +9671,7 @@ Link: ${location.origin}${location.pathname}`;
             document.body.classList.add('platform-start-active');
             document.body.classList.add('mode-selecting');
             document.body.classList.remove('game-selected');
-            document.body.classList.remove('chess-selected', 'chess-focus-mode');
+            document.body.classList.remove('chess-selected', 'chess-focus-mode', 'chess-menu-active', 'chess-game-active', 'chess-board-visible');
             const chessScreen = document.getElementById('chess-screen');
             if (chessScreen) chessScreen.style.display = 'none';
             const gameScreen = document.getElementById('game-screen');
