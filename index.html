@@ -2101,7 +2101,7 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 4</span>
+                <span class="game-mode-badge">Fase 5</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Módulo separado: regras completas locais, coordenadas, histórico e acabamento visual.</div>
@@ -2146,8 +2146,8 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 4: acabamento do modo local com coordenadas, histórico melhorado, avisos visuais e nova partida.
-                Esta área continua separada e não altera a lógica da Damas Arena.
+                Fase 5: Xadrez Online com sala separada da Damas, jogador branco/preto, espectador e chat próprio.
+                A Damas Arena continua preservada.
             </div>
 
             <div id="chess-status" class="chess-status-panel">Vez das brancas.</div>
@@ -2172,7 +2172,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 4 ativa: Xadrez local com xeque, xeque-mate, empate, roque, en passant, promoção com escolha, desfazer, histórico melhorado, coordenadas e acabamento visual. Online fica para a próxima fase.
+                ✅ Fase 5 ativa: Xadrez local completo e Xadrez Online com salas próprias no Firebase, jogadores branco/preto, espectador, chat separado e sincronização de jogadas. A Damas Arena continua preservada.
             </div>
         </div>
     </div>
@@ -6850,6 +6850,17 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let moveHistory = [];
         let undoStack = [];
 
+        let chessMode = 'local';
+        let chessRoomId = '';
+        let chessPlayerName = '';
+        let chessPlayerColor = 'white';
+        let chessIsSpectator = false;
+        let chessRoomRef = null;
+        let chessUnsubscribeRoom = null;
+        let chessUnsubscribeChat = null;
+        let chessOnlineSyncing = false;
+        let chessOnlineReady = false;
+
         function criarPeca(color, type) {
             return { color, type, moved: false };
         }
@@ -6867,18 +6878,18 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 4 ativa: coordenadas, histórico melhorado, avisos visuais, nova partida e acabamento local.';
+            lastMoveMessage = 'Fase 5 ativa: Xadrez local completo e Xadrez Online separado da Damas.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
             undoStack = [];
         }
 
-        function instalarCssXadrezFase3() {
-            if (document.getElementById('chess-phase3-style')) return;
+        function instalarCssXadrezFase5() {
+            if (document.getElementById('chess-phase5-style')) return;
 
             const style = document.createElement('style');
-            style.id = 'chess-phase3-style';
+            style.id = 'chess-phase5-style';
             style.textContent = `
                 .chess-square.check {
                     box-shadow: inset 0 0 0 5px rgba(239, 68, 68, 0.95), 0 0 18px rgba(239, 68, 68, 0.8);
@@ -6991,12 +7002,120 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     color: #cbd5e1;
                     font-weight: 800;
                 }
-                @media (max-width: 520px) { .chess-promotion-options { grid-template-columns: repeat(2, 1fr); } }
+                .chess-online-panel {
+                    max-width: 520px;
+                    margin: 0 auto 14px auto;
+                    background: linear-gradient(135deg, #020617, #111827);
+                    border: 1px solid rgba(34,197,94,.32);
+                    border-radius: 14px;
+                    padding: 12px;
+                    text-align: left;
+                }
+                .chess-online-title {
+                    color: #86efac;
+                    font-weight: 1000;
+                    text-transform: uppercase;
+                    font-size: .82rem;
+                    letter-spacing: .55px;
+                    margin-bottom: 6px;
+                }
+                .chess-online-desc {
+                    color: #cbd5e1;
+                    font-size: .78rem;
+                    line-height: 1.35;
+                    margin-bottom: 10px;
+                }
+                .chess-online-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                }
+                .chess-online-grid input {
+                    margin: 0;
+                    text-align: left;
+                    font-size: .86rem;
+                    padding: 10px 12px;
+                }
+                .chess-online-actions {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 7px;
+                }
+                .chess-online-actions button {
+                    text-transform: none;
+                    padding: 9px 7px;
+                    font-size: .72rem;
+                    border-radius: 9px;
+                }
+                .btn-chess-online { background: #16a34a; }
+                .btn-chess-watch { background: #2563eb; }
+                .btn-chess-leave-online { background: #64748b; }
+                .btn-chess-copy-room { background: #7c3aed; }
+                .chess-online-status {
+                    margin-top: 8px;
+                    color: #cbd5e1;
+                    font-size: .76rem;
+                    line-height: 1.35;
+                    background: rgba(15,23,42,.72);
+                    border-left: 4px solid #22c55e;
+                    border-radius: 8px;
+                    padding: 8px;
+                }
+                .chess-chat-panel {
+                    display: none;
+                    max-width: 520px;
+                    margin: 12px auto 0 auto;
+                    background: #020617;
+                    border: 1px solid rgba(148,163,184,.28);
+                    border-radius: 12px;
+                    padding: 10px;
+                    text-align: left;
+                }
+                .chess-chat-title {
+                    color: #93c5fd;
+                    font-weight: 900;
+                    font-size: .78rem;
+                    text-transform: uppercase;
+                    margin-bottom: 6px;
+                }
+                .chess-chat-messages {
+                    height: 110px;
+                    overflow-y: auto;
+                    background: #0f172a;
+                    border-radius: 8px;
+                    padding: 8px;
+                    color: #dbeafe;
+                    font-size: .8rem;
+                    line-height: 1.45;
+                    margin-bottom: 8px;
+                }
+                .chess-chat-row { word-break: break-word; margin-bottom: 4px; }
+                .chess-chat-row strong { color: #38bdf8; }
+                .chess-chat-input-row { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
+                .chess-chat-input-row input { margin: 0; text-align: left; padding: 9px 10px; font-size: .84rem; }
+                .chess-chat-input-row button { width: auto; padding: 9px 13px; font-size: .76rem; text-transform: none; }
+                .chess-status-online-pill {
+                    display: inline-block;
+                    margin-left: 6px;
+                    padding: 2px 8px;
+                    border-radius: 999px;
+                    background: rgba(34,197,94,.14);
+                    border: 1px solid rgba(34,197,94,.4);
+                    color: #86efac;
+                    font-size: .68rem;
+                    font-weight: 900;
+                }
+                @media (max-width: 520px) {
+                    .chess-promotion-options { grid-template-columns: repeat(2, 1fr); }
+                    .chess-online-grid, .chess-online-actions { grid-template-columns: 1fr; }
+                    .chess-chat-input-row { grid-template-columns: 1fr; }
+                }
             `;
             document.head.appendChild(style);
         }
 
-        function instalarUiXadrezFase3() {
+        function instalarUiXadrezFase5() {
             const actions = document.querySelector('#chess-screen .chess-actions');
             if (actions && !document.getElementById('chess-undo-btn')) {
                 const undo = document.createElement('button');
@@ -7009,6 +7128,30 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
 
             const card = document.querySelector('#chess-screen .chess-card');
+            if (card && !document.getElementById('chess-online-panel')) {
+                const online = document.createElement('div');
+                online.id = 'chess-online-panel';
+                online.className = 'chess-online-panel';
+                online.innerHTML = `
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 5</div>
+                    <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
+                    <div class="chess-online-grid">
+                        <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
+                        <input id="chess-online-room" type="text" maxlength="18" placeholder="Código da sala, ex: xadrez1">
+                    </div>
+                    <div class="chess-online-actions">
+                        <button id="chess-online-join-btn" class="btn-chess-online" type="button">Entrar/Jogar</button>
+                        <button id="chess-online-watch-btn" class="btn-chess-watch" type="button">Assistir</button>
+                        <button id="chess-online-copy-btn" class="btn-chess-copy-room" type="button">Copiar sala</button>
+                        <button id="chess-online-leave-btn" class="btn-chess-leave-online" type="button">Sair online</button>
+                    </div>
+                    <div id="chess-online-status" class="chess-online-status">Modo local ativo. O Xadrez online usa o caminho <strong>chessRooms</strong>, separado da Damas.</div>
+                `;
+                const status = document.getElementById('chess-status');
+                if (status) card.insertBefore(online, status);
+                else card.insertBefore(online, card.firstChild?.nextSibling || null);
+            }
+
             if (card && !document.getElementById('chess-history-panel')) {
                 const history = document.createElement('div');
                 history.id = 'chess-history-panel';
@@ -7020,6 +7163,23 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 const warning = card.querySelector('.chess-warning');
                 if (warning) card.insertBefore(history, warning);
                 else card.appendChild(history);
+            }
+
+            if (card && !document.getElementById('chess-chat-panel')) {
+                const chat = document.createElement('div');
+                chat.id = 'chess-chat-panel';
+                chat.className = 'chess-chat-panel';
+                chat.innerHTML = `
+                    <div class="chess-chat-title">💬 Chat da sala de Xadrez</div>
+                    <div id="chess-chat-messages" class="chess-chat-messages"><div class="chess-chat-row"><strong>Sistema:</strong> Entre em uma sala online para usar o chat.</div></div>
+                    <div class="chess-chat-input-row">
+                        <input id="chess-chat-input" type="text" maxlength="180" placeholder="Digite sua mensagem...">
+                        <button id="chess-chat-send-btn" type="button">Enviar</button>
+                    </div>
+                `;
+                const warning = card.querySelector('.chess-warning');
+                if (warning) card.insertBefore(chat, warning);
+                else card.appendChild(chat);
             }
 
             if (!document.getElementById('chess-promotion-modal')) {
@@ -7043,7 +7203,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 4 ativa: coordenadas A-H/1-8, histórico melhorado, nova partida, avisos visuais de xeque/xeque-mate/empate, roque, en passant, promoção com escolha e botão desfazer. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 5 ativa: Xadrez local completo + online com salas separadas no Firebase, jogador branco/preto, espectador e chat próprio. A Damas Arena continua preservada.';
             }
         }
 
@@ -7051,7 +7211,48 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             return board.map(row => row.map(piece => piece ? { ...piece } : null));
         }
 
+        function normalizarCampoXadrez(valor) {
+            return String(valor || '').trim().replace(/\s+/g, ' ').slice(0, 18);
+        }
+
+        function normalizarSalaXadrez(valor) {
+            return String(valor || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '').slice(0, 24);
+        }
+
+        function escapeHtmlXadrez(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function getChessUid() {
+            if (typeof playerId !== 'undefined' && playerId) return playerId;
+            let id = localStorage.getItem('tabuleiroArenaChessUid');
+            if (!id) {
+                id = 'local-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+                localStorage.setItem('tabuleiroArenaChessUid', id);
+            }
+            return id;
+        }
+
+        function atualizarStatusOnlineXadrez(texto) {
+            const el = document.getElementById('chess-online-status');
+            if (el) el.innerHTML = texto;
+        }
+
+        function atualizarPainelOnlineXadrez() {
+            const chat = document.getElementById('chess-chat-panel');
+            if (chat) chat.style.display = chessMode === 'online' ? 'block' : 'none';
+            const undo = document.getElementById('chess-undo-btn');
+            if (undo) undo.disabled = chessMode === 'online' || undoStack.length === 0;
+            if (chessMode !== 'online') {
+                atualizarStatusOnlineXadrez('Modo local ativo. O Xadrez online usa o caminho <strong>chessRooms</strong>, separado da Damas.');
+                return;
+            }
+            const papel = chessIsSpectator ? 'espectador' : (chessPlayerColor === 'white' ? 'brancas' : 'pretas');
+            atualizarStatusOnlineXadrez(`Online na sala <strong>${escapeHtmlXadrez(chessRoomId)}</strong> como <strong>${papel}</strong>. ${chessIsSpectator ? 'Você apenas assiste.' : 'Jogue somente na sua vez.'}`);
+        }
+
         function salvarEstadoParaDesfazer() {
+            if (chessMode === 'online') return;
             undoStack.push({
                 board: clonarTabuleiro(chessBoard),
                 turn: chessTurn,
@@ -7380,8 +7581,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             else if (/Empate|afogamento/i.test(textoFinal)) status.classList.add('chess-status-draw');
             else if (/Xeque/i.test(textoFinal)) status.classList.add('chess-status-check');
 
+            const onlinePill = chessMode === 'online' ? ` <span class="chess-status-online-pill">ONLINE ${chessIsSpectator ? 'ESPECTADOR' : (chessPlayerColor === 'white' ? 'BRANCAS' : 'PRETAS')}</span>` : '';
+            if (onlinePill) status.innerHTML = escapeHtmlXadrez(textoFinal) + onlinePill;
+
             const undo = document.getElementById('chess-undo-btn');
-            if (undo) undo.disabled = undoStack.length === 0;
+            if (undo) undo.disabled = chessMode === 'online' || undoStack.length === 0;
+            atualizarPainelOnlineXadrez();
         }
 
         function renderHistorico() {
@@ -7444,6 +7649,191 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             }
             renderHistorico();
             atualizarStatus();
+        }
+
+
+        function estadoXadrezParaFirebase() {
+            return {
+                board: chessBoard,
+                turn: chessTurn,
+                gameOver: chessGameOver,
+                lastMoveMessage,
+                lastChessMove,
+                enPassantTarget,
+                moveHistory,
+                updatedAt: Date.now()
+            };
+        }
+
+        async function publicarEstadoXadrezOnline(extra = {}) {
+            if (chessMode !== 'online' || !chessRoomRef || chessOnlineSyncing) return;
+            try {
+                await update(chessRoomRef, { ...estadoXadrezParaFirebase(), ...extra });
+            } catch (e) {
+                console.warn('Erro ao sincronizar Xadrez online:', e);
+                mostrarToastXadrez('⚠️ Não consegui sincronizar a jogada online.', 'check');
+            }
+        }
+
+        function aplicarEstadoXadrezRemoto(data) {
+            if (!data) return;
+            chessOnlineSyncing = true;
+            chessBoard = data.board || chessBoard;
+            chessTurn = data.turn || chessTurn;
+            chessGameOver = !!data.gameOver;
+            lastMoveMessage = data.lastMoveMessage || '';
+            lastChessMove = data.lastChessMove || null;
+            enPassantTarget = data.enPassantTarget || null;
+            moveHistory = Array.isArray(data.moveHistory) ? data.moveHistory : [];
+            selectedSquare = null;
+            legalMoves = [];
+            renderChessBoard();
+            chessOnlineSyncing = false;
+        }
+
+        async function entrarXadrezOnline(assistir = false) {
+            instalarUiXadrezFase5();
+            const nameInput = document.getElementById('chess-online-name');
+            const roomInput = document.getElementById('chess-online-room');
+            chessPlayerName = normalizarCampoXadrez(nameInput?.value) || normalizarCampoXadrez(document.getElementById('name-input')?.value) || 'Jogador';
+            chessRoomId = normalizarSalaXadrez(roomInput?.value) || 'xadrez';
+            if (nameInput) nameInput.value = chessPlayerName;
+            if (roomInput) roomInput.value = chessRoomId;
+
+            sairXadrezOnline(false);
+            chessMode = 'online';
+            chessIsSpectator = assistir;
+            chessPlayerColor = 'spectator';
+            chessRoomRef = ref(db, `chessRooms/${chessRoomId}`);
+            const uid = getChessUid();
+
+            try {
+                const snap = await get(chessRoomRef);
+                const room = snap.val() || {};
+                const players = room.players || {};
+
+                if (!assistir) {
+                    if (!players.white || players.white.id === uid) chessPlayerColor = 'white';
+                    else if (!players.black || players.black.id === uid) chessPlayerColor = 'black';
+                    else {
+                        chessIsSpectator = true;
+                        chessPlayerColor = 'spectator';
+                        mostrarToastXadrez('👀 Sala cheia. Você entrou como espectador.');
+                    }
+                }
+
+                const updates = {
+                    updatedAt: Date.now(),
+                    createdAt: room.createdAt || Date.now(),
+                    mode: 'xadrez'
+                };
+
+                if (!room.board) {
+                    criarTabuleiroInicial();
+                    Object.assign(updates, estadoXadrezParaFirebase());
+                }
+
+                if (chessPlayerColor === 'white' || chessPlayerColor === 'black') {
+                    updates[`players/${chessPlayerColor}`] = { id: uid, name: chessPlayerName, connectedAt: Date.now() };
+                    onDisconnect(ref(db, `chessRooms/${chessRoomId}/players/${chessPlayerColor}`)).remove();
+                } else {
+                    updates[`spectators/${uid}`] = { id: uid, name: chessPlayerName, connectedAt: Date.now() };
+                    onDisconnect(ref(db, `chessRooms/${chessRoomId}/spectators/${uid}`)).remove();
+                }
+
+                await update(chessRoomRef, updates);
+
+                chessUnsubscribeRoom = onValue(chessRoomRef, (snapshot) => {
+                    const data = snapshot.val() || {};
+                    aplicarEstadoXadrezRemoto(data);
+                    atualizarPainelOnlineXadrez();
+                });
+
+                iniciarChatXadrezOnline();
+                chessOnlineReady = true;
+                atualizarPainelOnlineXadrez();
+                mostrarToastXadrez(`🌐 Conectado na sala ${chessRoomId}.`);
+            } catch (e) {
+                console.error(e);
+                chessMode = 'local';
+                chessOnlineReady = false;
+                atualizarPainelOnlineXadrez();
+                mostrarToastXadrez('⚠️ Erro ao entrar no Xadrez online.', 'check');
+            }
+        }
+
+        function sairXadrezOnline(mostrarMensagem = true) {
+            try {
+                if (chessUnsubscribeRoom) chessUnsubscribeRoom();
+                if (chessUnsubscribeChat) chessUnsubscribeChat();
+                chessUnsubscribeRoom = null;
+                chessUnsubscribeChat = null;
+                const uid = getChessUid();
+                if (chessRoomId && chessMode === 'online') {
+                    if (chessPlayerColor === 'white' || chessPlayerColor === 'black') remove(ref(db, `chessRooms/${chessRoomId}/players/${chessPlayerColor}`));
+                    if (chessIsSpectator) remove(ref(db, `chessRooms/${chessRoomId}/spectators/${uid}`));
+                }
+            } catch (e) { console.warn('Erro ao sair do Xadrez online:', e); }
+            chessMode = 'local';
+            chessRoomRef = null;
+            chessOnlineReady = false;
+            chessIsSpectator = false;
+            chessPlayerColor = 'white';
+            atualizarPainelOnlineXadrez();
+            if (mostrarMensagem) mostrarToastXadrez('Modo local ativado. Você saiu da sala online.');
+        }
+
+        function iniciarChatXadrezOnline() {
+            const box = document.getElementById('chess-chat-messages');
+            if (!box || !chessRoomId) return;
+            if (chessUnsubscribeChat) chessUnsubscribeChat();
+            chessUnsubscribeChat = onValue(ref(db, `chessRooms/${chessRoomId}/chat`), (snap) => {
+                const data = snap.val() || {};
+                const msgs = Object.values(data).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)).slice(-60);
+                if (!msgs.length) {
+                    box.innerHTML = '<div class="chess-chat-row"><strong>Sistema:</strong> Nenhuma mensagem ainda.</div>';
+                    return;
+                }
+                box.innerHTML = msgs.map(m => `<div class="chess-chat-row"><strong>${escapeHtmlXadrez(m.name || 'Jogador')}:</strong> ${escapeHtmlXadrez(m.text || '')}</div>`).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        async function enviarChatXadrezOnline() {
+            const input = document.getElementById('chess-chat-input');
+            if (!input || chessMode !== 'online' || !chessRoomId) return;
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            await push(ref(db, `chessRooms/${chessRoomId}/chat`), { name: chessPlayerName || 'Jogador', text, createdAt: Date.now() });
+        }
+
+        async function reiniciarXadrezOnlineOuLocal() {
+            if (chessMode !== 'online') {
+                resetChessGame();
+                return;
+            }
+            if (chessIsSpectator) {
+                mostrarToastXadrez('👀 Espectador não pode reiniciar a partida.', 'check');
+                return;
+            }
+            criarTabuleiroInicial();
+            await publicarEstadoXadrezOnline({ restartedBy: chessPlayerName || chessPlayerColor, restartedAt: Date.now() });
+            await push(ref(db, `chessRooms/${chessRoomId}/chat`), { name: 'Sistema', text: `${chessPlayerName || 'Jogador'} reiniciou a partida.`, createdAt: Date.now() });
+            renderChessBoard();
+            mostrarToastXadrez('♟️ Partida online reiniciada.');
+        }
+
+        async function copiarSalaXadrez() {
+            const roomInput = document.getElementById('chess-online-room');
+            const sala = normalizarSalaXadrez(roomInput?.value) || chessRoomId || 'xadrez';
+            const texto = `Entre no Tabuleiro Arena e acesse Xadrez Arena. Código da sala: ${sala}`;
+            try {
+                await navigator.clipboard.writeText(texto);
+                mostrarToastXadrez('📋 Código da sala copiado.');
+            } catch (_) {
+                mostrarToastXadrez(`Sala: ${sala}`);
+            }
         }
 
         function escolherPromocao(color) {
@@ -7530,10 +7920,22 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             else if (/Xeque/i.test(estado)) mostrarToastXadrez('⚠️ ' + estado, 'check');
             else if (/Empate|afogamento/i.test(estado)) mostrarToastXadrez('🤝 ' + estado, 'mate');
             else mostrarToastXadrez('✅ ' + msg);
+
+            await publicarEstadoXadrezOnline();
         }
 
         async function handleChessSquareClick(row, col) {
             if (chessGameOver) return;
+            if (chessMode === 'online') {
+                if (chessIsSpectator) {
+                    mostrarToastXadrez('👀 Espectador apenas assiste a partida.', 'check');
+                    return;
+                }
+                if (chessPlayerColor !== chessTurn) {
+                    mostrarToastXadrez(`Aguarde. Agora é a vez das ${nomeCor(chessTurn)}.`, 'check');
+                    return;
+                }
+            }
             const peca = chessBoard[row][col];
 
             if (selectedSquare) {
@@ -7582,7 +7984,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (game) game.style.display = 'none';
             if (chess) chess.style.display = 'block';
 
-            instalarUiXadrezFase3();
+            instalarUiXadrezFase5();
             if (!chessBoard.length) criarTabuleiroInicial();
             renderChessBoard();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -7611,19 +8013,27 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         }
 
         function iniciarModuloXadrez() {
-            instalarCssXadrezFase3();
-            instalarUiXadrezFase3();
+            instalarCssXadrezFase5();
+            instalarUiXadrezFase5();
             criarTabuleiroInicial();
             document.getElementById('chess-back-btn')?.addEventListener('click', voltarParaModalidades);
             document.getElementById('chess-back-btn-bottom')?.addEventListener('click', voltarParaModalidades);
-            document.getElementById('chess-reset-btn')?.addEventListener('click', resetChessGame);
-            document.getElementById('chess-new-btn')?.addEventListener('click', resetChessGame);
+            document.getElementById('chess-reset-btn')?.addEventListener('click', reiniciarXadrezOnlineOuLocal);
+            document.getElementById('chess-new-btn')?.addEventListener('click', reiniciarXadrezOnlineOuLocal);
             document.getElementById('chess-undo-btn')?.addEventListener('click', desfazerJogada);
+            document.getElementById('chess-online-join-btn')?.addEventListener('click', () => entrarXadrezOnline(false));
+            document.getElementById('chess-online-watch-btn')?.addEventListener('click', () => entrarXadrezOnline(true));
+            document.getElementById('chess-online-leave-btn')?.addEventListener('click', () => sairXadrezOnline(true));
+            document.getElementById('chess-online-copy-btn')?.addEventListener('click', copiarSalaXadrez);
+            document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
+            document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
         }
 
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
         window.desfazerJogadaXadrez = desfazerJogada;
+        window.entrarXadrezOnline = entrarXadrezOnline;
+        window.sairXadrezOnline = sairXadrezOnline;
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarModuloXadrez);
         else iniciarModuloXadrez();
