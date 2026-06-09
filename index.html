@@ -2156,6 +2156,179 @@
             line-height: 1.15;
             opacity: .86;
         }
+
+/* ✅ FASE 14 - MENU PROFISSIONAL DO XADREZ */
+body.chess-selected:not(.chess-board-visible) #chess-screen .chess-card {
+    max-width: 720px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 22px !important;
+    border-radius: 24px !important;
+    background:
+        radial-gradient(circle at top left, rgba(56,189,248,.16), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(124,58,237,.18), transparent 36%),
+        linear-gradient(135deg, rgba(15,23,42,.94), rgba(2,6,23,.92)) !important;
+    border: 1px solid rgba(148,163,184,.18) !important;
+    box-shadow: 0 24px 70px rgba(0,0,0,.52) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-title {
+    font-size: clamp(1.35rem, 4vw, 2rem) !important;
+    margin-bottom: 8px !important;
+    letter-spacing: 1.4px !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-subtitle {
+    max-width: 590px !important;
+    margin: 0 auto 18px auto !important;
+    color: #dbeafe !important;
+    font-size: .88rem !important;
+    line-height: 1.45 !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-online-panel,
+body.chess-selected:not(.chess-board-visible) .chess-training-panel {
+    max-width: 620px !important;
+    border-radius: 20px !important;
+    padding: 16px !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-online-panel {
+    border-color: rgba(56,189,248,.45) !important;
+    background:
+        linear-gradient(135deg, rgba(14,116,144,.22), rgba(2,6,23,.88)) !important;
+    box-shadow: 0 14px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-training-panel {
+    border-color: rgba(255,255,255,.10) !important;
+    background:
+        linear-gradient(135deg, rgba(15,23,42,.92), rgba(30,41,59,.70)) !important;
+    box-shadow: 0 14px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+.chess-section-kicker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    border-radius: 999px;
+    color: #bfdbfe;
+    background: rgba(37,99,235,.16);
+    border: 1px solid rgba(147,197,253,.22);
+    font-size: .68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-training-title {
+    color: #fff !important;
+    font-size: 1.05rem !important;
+    text-align: center !important;
+    margin-bottom: 6px !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-training-desc {
+    text-align: center !important;
+    max-width: 510px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    color: #cbd5e1 !important;
+    font-size: .84rem !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-training-actions.modern {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-top: 14px !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-training-actions button.btn-chess-training {
+    min-height: 92px !important;
+    border-radius: 20px !important;
+    padding: 15px 12px !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    overflow: hidden !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .btn-chess-training span {
+    font-size: 1.05rem !important;
+    width: 100% !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .btn-chess-training small {
+    font-size: .73rem !important;
+    line-height: 1.25 !important;
+    opacity: .94 !important;
+    width: 100% !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .btn-chess-training.easy {
+    background:
+        radial-gradient(circle at top right, rgba(187,247,208,.28), transparent 42%),
+        linear-gradient(135deg, #16a34a, #047857) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .btn-chess-training.medium {
+    background:
+        radial-gradient(circle at top right, rgba(191,219,254,.30), transparent 42%),
+        linear-gradient(135deg, #2563eb, #1e40af) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .btn-chess-training.hard {
+    background:
+        radial-gradient(circle at top right, rgba(254,215,170,.30), transparent 42%),
+        linear-gradient(135deg, #f97316, #b91c1c) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .btn-chess-training.learn {
+    background:
+        radial-gradient(circle at top right, rgba(221,214,254,.32), transparent 42%),
+        linear-gradient(135deg, #8b5cf6, #5b21b6) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) .chess-training-status {
+    margin-top: 12px !important;
+    text-align: center !important;
+    border-left: none !important;
+    border-color: rgba(148,163,184,.20) !important;
+    background: rgba(15,23,42,.68) !important;
+    color: #cbd5e1 !important;
+}
+
+body.chess-selected:not(.chess-board-visible) #chess-online-panel input {
+    border: 1px solid rgba(148,163,184,.18) !important;
+    background: rgba(15,23,42,.84) !important;
+}
+
+body.chess-selected:not(.chess-board-visible) #chess-online-panel button {
+    border-radius: 12px !important;
+    text-transform: none !important;
+    font-size: .78rem !important;
+    padding: 10px 11px !important;
+}
+
+@media (max-width: 560px) {
+    body.chess-selected:not(.chess-board-visible) #chess-screen .chess-card {
+        padding: 16px !important;
+        border-radius: 20px !important;
+    }
+    body.chess-selected:not(.chess-board-visible) .chess-training-actions.modern {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    body.chess-selected:not(.chess-board-visible) .chess-training-actions button.btn-chess-training {
+        min-height: 78px !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+}
+
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -2186,7 +2359,7 @@
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
             <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 13.9</span>
+                <span class="game-mode-badge">Fase 14</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -2232,7 +2405,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 13.9: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
+                Fase 14: Xadrez com menu inicial separado do tabuleiro: primeiro escolhe Online, Treino ou Aprender; depois o tabuleiro abre sozinho. Vídeo/áudio continua pausado.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -2259,7 +2432,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 13.9 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
+                ✅ Fase 14 ativa: Xadrez com menu limpo separado do tabuleiro, captura funcionando e modo aprender organizado. Vídeo/áudio continua pausado.
             </div>
         </div>
     </div>
@@ -7415,7 +7588,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.9</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 14</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7446,13 +7619,26 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 training.id = 'chess-training-panel';
                 training.className = 'chess-training-panel';
                 training.innerHTML = `
-                    <div class="chess-training-title">🤖 Treino contra a máquina</div>
-                    <div class="chess-training-desc">Escolha um modo abaixo. O tabuleiro só aparece depois da escolha, para a tela ficar mais limpa. Você joga com as brancas e a máquina joga com as pretas.</div>
+                    <div class="chess-section-kicker">Treino do Xadrez</div>
+                    <div class="chess-training-title">🤖 Escolha como treinar</div>
+                    <div class="chess-training-desc">O tabuleiro só abre depois da escolha. Você joga com as brancas e a máquina responde com as pretas.</div>
                     <div class="chess-training-actions modern">
-                        <button id="chess-training-easy-btn" class="btn-chess-training easy" type="button"><span>🌱 Fácil</span><small>para começar</small></button>
-                        <button id="chess-training-medium-btn" class="btn-chess-training medium" type="button"><span>⚔️ Médio</span><small>mais equilibrado</small></button>
-                        <button id="chess-training-hard-btn" class="btn-chess-training hard" type="button"><span>🔥 Difícil</span><small>máquina mais forte</small></button>
-                        <button id="chess-training-learn-btn" class="btn-chess-training learn" type="button"><span>🎓 Aprender do Zero</span><small>com nomes e dicas</small></button>
+                        <button id="chess-training-easy-btn" class="btn-chess-training easy" type="button">
+                            <span>🌱 Fácil</span>
+                            <small>Para começar sem pressão</small>
+                        </button>
+                        <button id="chess-training-medium-btn" class="btn-chess-training medium" type="button">
+                            <span>🔵 Médio</span>
+                            <small>Mais equilibrado</small>
+                        </button>
+                        <button id="chess-training-hard-btn" class="btn-chess-training hard" type="button">
+                            <span>🔥 Difícil</span>
+                            <small>Máquina mais forte</small>
+                        </button>
+                        <button id="chess-training-learn-btn" class="btn-chess-training learn" type="button">
+                            <span>🎓 Aprender do Zero</span>
+                            <small>Nomes, cores e dicas</small>
+                        </button>
                     </div>
                     <div id="chess-training-status" class="chess-training-status">Escolha um modo acima para abrir o tabuleiro.</div>
                     <div id="chess-training-coach" class="chess-training-coach" style="display:none;">
@@ -7564,7 +7750,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 13.9 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
+                warning.innerHTML = '✅ Fase 14 ativa: Xadrez Online restaurado, menu limpo, Modo Treino moderno, captura funcionando e tabuleiro oculto até o jogador escolher o modo. A Damas continua preservada. Vídeo/áudio pausado.';
             }
         }
 
@@ -7930,7 +8116,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             document.body.classList.add('chess-menu-active');
             selectedSquare = null;
             legalMoves = [];
-            lastMoveMessage = 'Escolha como deseja jogar. O tabuleiro abrirá depois de selecionar Online, Treino ou Aprender do Zero.';
+            lastMoveMessage = 'Escolha como deseja jogar. O menu do Xadrez está mais profissional e o tabuleiro abrirá só depois de selecionar Online, Treino ou Aprender do Zero.';
             atualizarPainelTreinoXadrez();
             atualizarPainelOnlineXadrez();
         }
