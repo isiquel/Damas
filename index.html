@@ -2942,6 +2942,165 @@ body.chess-board-visible .chess-pieces-lesson-panel {
         body.chess-selected:not(.chess-board-visible) .chess-clean-game-pill {
             display: none !important;
         }
+
+
+        /* ✅ FASE 24 - MENU DO XADREZ MAIS ORGANIZADO
+           Organiza o menu em blocos: Jogar, Aprender e Meu desempenho, sem mexer na Damas. */
+        .chess-menu-organizer {
+            display: none;
+            max-width: 640px;
+            margin: 0 auto 14px auto;
+            padding: 14px;
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 38%),
+                linear-gradient(135deg, rgba(2,6,23,.92), rgba(15,23,42,.78));
+            border: 1px solid rgba(147,197,253,.24);
+            box-shadow: 0 14px 34px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.06);
+            text-align: left;
+        }
+
+        body.chess-selected:not(.chess-board-visible) .chess-menu-organizer {
+            display: block !important;
+        }
+
+        body.chess-board-visible .chess-menu-organizer {
+            display: none !important;
+        }
+
+        .chess-menu-organizer-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .chess-menu-organizer-title {
+            color: #fff;
+            font-weight: 1000;
+            font-size: .96rem;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .chess-menu-organizer-badge {
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: rgba(46,204,113,.13);
+            border: 1px solid rgba(46,204,113,.45);
+            color: #86efac;
+            font-size: .66rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .chess-menu-organizer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .chess-menu-card {
+            border: 1px solid rgba(148,163,184,.16);
+            background: rgba(15,23,42,.68);
+            border-radius: 16px;
+            padding: 12px;
+            min-height: 122px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+        }
+
+        .chess-menu-card-icon {
+            font-size: 1.55rem;
+            line-height: 1;
+            margin-bottom: 7px;
+        }
+
+        .chess-menu-card-title {
+            color: #fff;
+            font-size: .88rem;
+            font-weight: 1000;
+            margin-bottom: 4px;
+        }
+
+        .chess-menu-card-text {
+            color: #cbd5e1;
+            font-size: .72rem;
+            line-height: 1.32;
+            margin-bottom: 10px;
+        }
+
+        .chess-menu-card button {
+            padding: 8px 9px;
+            border-radius: 10px;
+            font-size: .72rem;
+            text-transform: none;
+            width: 100%;
+        }
+
+        .btn-chess-go-play { background: #2563eb; }
+        .btn-chess-go-learn { background: #7c3aed; }
+        .btn-chess-go-performance { background: #b45309; }
+
+        .chess-menu-section-label {
+            max-width: 620px;
+            margin: 16px auto 8px auto;
+            padding: 9px 12px;
+            border-radius: 14px;
+            background: rgba(2,6,23,.62);
+            border: 1px solid rgba(148,163,184,.14);
+            color: #e2e8f0;
+            font-size: .82rem;
+            font-weight: 1000;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            text-align: left;
+        }
+
+        .chess-menu-section-label span {
+            color: #38bdf8;
+        }
+
+        body.chess-board-visible .chess-menu-section-label {
+            display: none !important;
+        }
+
+        body.chess-selected:not(.chess-board-visible) #chess-online-panel,
+        body.chess-selected:not(.chess-board-visible) #chess-training-panel,
+        body.chess-selected:not(.chess-board-visible) #chess-training-ranking-panel,
+        body.chess-selected:not(.chess-board-visible) #chess-achievements-panel {
+            scroll-margin-top: 18px;
+        }
+
+        body.chess-selected:not(.chess-board-visible) #chess-training-ranking-panel,
+        body.chess-selected:not(.chess-board-visible) #chess-achievements-panel {
+            max-width: 620px;
+        }
+
+        body.chess-selected:not(.chess-board-visible) #chess-training-ranking-panel {
+            margin-top: 12px;
+        }
+
+        body.chess-selected:not(.chess-board-visible) #chess-achievements-panel {
+            margin-top: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .chess-menu-organizer-grid {
+                grid-template-columns: 1fr;
+            }
+            .chess-menu-card {
+                min-height: auto;
+            }
+            .chess-menu-organizer-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -3017,9 +3176,9 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <button id="chess-back-btn" class="back-to-games-btn btn-chess-back" type="button">← Voltar às modalidades</button>
 
             <div class="chess-title">♟️ Xadrez Arena</div>
-            <div class="chess-clean-game-pill">🎯 Tela limpa de partida</div>
+            <div class="chess-clean-game-pill">🧭 Menu organizado + tela limpa</div>
             <div class="chess-subtitle">
-                Fase 23: tela de jogo limpa. Ranking e conquistas ficam no menu do Xadrez antes de abrir o tabuleiro; durante a partida aparece somente o necessário. Vídeo/áudio do Xadrez está separado da Damas.
+                Fase 24: menu do Xadrez mais organizado. Agora o menu separa Jogar, Aprender e Meu desempenho antes de abrir o tabuleiro. Durante a partida continua aparecendo somente o necessário.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -3062,7 +3221,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 23 ativa: tela de partida limpa. Ranking e conquistas ficam no menu inicial do Xadrez; durante o jogo aparece só o necessário.
+                ✅ Fase 24 ativa: menu do Xadrez organizado em Jogar, Aprender e Meu desempenho; durante a partida aparece só o necessário.
             </div>
         </div>
     </div>
@@ -8494,6 +8653,74 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 if (rankingPanel) rankingPanel.insertAdjacentElement('afterend', achievements);
                 else card.appendChild(achievements);
             }
+
+            // ✅ FASE 24 - Menu do Xadrez organizado em blocos antes do tabuleiro abrir.
+            if (card && !document.getElementById('chess-menu-organizer')) {
+                const organizer = document.createElement('div');
+                organizer.id = 'chess-menu-organizer';
+                organizer.className = 'chess-menu-organizer';
+                organizer.innerHTML = `
+                    <div class="chess-menu-organizer-head">
+                        <div class="chess-menu-organizer-title">🧭 Menu rápido do Xadrez</div>
+                        <div class="chess-menu-organizer-badge">Fase 24</div>
+                    </div>
+                    <div class="chess-menu-organizer-grid">
+                        <div class="chess-menu-card">
+                            <div>
+                                <div class="chess-menu-card-icon">♟️</div>
+                                <div class="chess-menu-card-title">1. Jogar</div>
+                                <div class="chess-menu-card-text">Treino contra máquina, Xadrez online, assistir partida e convite da sala.</div>
+                            </div>
+                            <button id="chess-go-play-btn" class="btn-chess-go-play" type="button">Ir para Jogar</button>
+                        </div>
+                        <div class="chess-menu-card">
+                            <div>
+                                <div class="chess-menu-card-icon">🎓</div>
+                                <div class="chess-menu-card-title">2. Aprender</div>
+                                <div class="chess-menu-card-text">Aprender do zero, conhecer peças, cores do tabuleiro e dicas para iniciantes.</div>
+                            </div>
+                            <button id="chess-go-learn-btn" class="btn-chess-go-learn" type="button">Ir para Aprender</button>
+                        </div>
+                        <div class="chess-menu-card">
+                            <div>
+                                <div class="chess-menu-card-icon">🏆</div>
+                                <div class="chess-menu-card-title">3. Meu desempenho</div>
+                                <div class="chess-menu-card-text">Ranking do treino, pontos, vitórias, conquistas e medalhas do Xadrez.</div>
+                            </div>
+                            <button id="chess-go-performance-btn" class="btn-chess-go-performance" type="button">Ver desempenho</button>
+                        </div>
+                    </div>
+                `;
+                const onlinePanel = document.getElementById('chess-online-panel');
+                if (onlinePanel) card.insertBefore(organizer, onlinePanel);
+                else {
+                    const status = document.getElementById('chess-status');
+                    if (status) card.insertBefore(organizer, status);
+                    else card.appendChild(organizer);
+                }
+            }
+
+            const addChessMenuLabel = (id, html, beforeId) => {
+                if (!card || document.getElementById(id)) return;
+                const label = document.createElement('div');
+                label.id = id;
+                label.className = 'chess-menu-section-label';
+                label.innerHTML = html;
+                const beforeEl = document.getElementById(beforeId);
+                if (beforeEl) card.insertBefore(label, beforeEl);
+                else card.appendChild(label);
+            };
+            addChessMenuLabel('chess-menu-play-label', '<span>1.</span> Jogar — online, assistir ou treinar', 'chess-online-panel');
+            addChessMenuLabel('chess-menu-learn-label', '<span>2.</span> Aprender — modos de treino e peças', 'chess-training-panel');
+            addChessMenuLabel('chess-menu-performance-label', '<span>3.</span> Meu desempenho — ranking e conquistas', 'chess-training-ranking-panel');
+
+            const scrollChessMenuTo = (targetId) => {
+                const el = document.getElementById(targetId);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            document.getElementById('chess-go-play-btn')?.addEventListener('click', () => scrollChessMenuTo('chess-menu-play-label'));
+            document.getElementById('chess-go-learn-btn')?.addEventListener('click', () => scrollChessMenuTo('chess-menu-learn-label'));
+            document.getElementById('chess-go-performance-btn')?.addEventListener('click', () => scrollChessMenuTo('chess-menu-performance-label'));
 
             if (card && !document.getElementById('chess-material-panel')) {
                 const material = document.createElement('div');
