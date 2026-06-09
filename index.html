@@ -1988,6 +1988,47 @@
         .btn-chess-call-toggle { background: #475569; }
         .btn-chess-call-toggle.off { background: #991b1b; }
         body.chess-admin-only #chess-call-panel { display: none !important; }
+
+        /* ✅ FASE 13.1 - CHAMADA COMPACTA: sem poluir a tela antes de conectar */
+        .chess-call-panel {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .chess-call-panel:not(.call-running) .chess-call-videos {
+            display: none !important;
+        }
+        .chess-call-panel:not(.call-running) .chess-call-header {
+            margin-bottom: 8px;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .chess-call-panel:not(.call-running) .chess-call-controls {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .chess-call-panel:not(.call-running) #chess-toggle-mic-btn,
+        .chess-call-panel:not(.call-running) #chess-toggle-camera-btn,
+        .chess-call-panel:not(.call-running) #chess-unlock-audio-btn,
+        .chess-call-panel:not(.call-running) #chess-end-call-btn {
+            display: none;
+        }
+        .chess-call-panel.call-running .chess-call-videos {
+            display: grid;
+        }
+        .chess-call-panel.call-running .chess-video-tile {
+            aspect-ratio: 16 / 9;
+            min-height: 135px;
+        }
+        .chess-call-panel.call-running .chess-call-title::after {
+            content: ' • conectado';
+            color: #86efac;
+            font-size: .68rem;
+        }
+        @media (max-width: 560px) {
+            .chess-call-panel:not(.call-running) .chess-call-controls { grid-template-columns: 1fr 1fr; }
+            .chess-call-panel.call-running .chess-call-videos { grid-template-columns: 1fr; }
+            .chess-call-panel.call-running .chess-video-tile { min-height: 180px; }
+        }
+
         @media (max-width: 560px) {
             .chess-call-videos { grid-template-columns: 1fr; }
             .chess-call-controls { grid-template-columns: 1fr 1fr; }
@@ -2168,7 +2209,84 @@
 
         /* Dominó removido temporariamente para preservar a Damas Arena. */
 
-    </style>
+    
+
+        /* ✅ FASE 13.2 - TELA DE PARTIDA LIMPA E CHAMADA MAIS DIRETA */
+        body.chess-selected:not(.chess-admin-only) #chess-material-panel,
+        body.chess-selected:not(.chess-admin-only) #chess-history-panel,
+        body.chess-selected:not(.chess-admin-only) #chess-undo-btn,
+        body.chess-selected:not(.chess-admin-only) #chess-new-btn,
+        body.chess-selected:not(.chess-admin-only) #chess-screen .chess-action-note,
+        body.chess-selected:not(.chess-admin-only) #chess-screen .chess-warning {
+            display: none !important;
+        }
+        body.chess-selected:not(.chess-admin-only) #chess-screen .chess-actions {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            max-width: 520px !important;
+            margin-top: 10px !important;
+        }
+        body.chess-selected:not(.chess-admin-only) #chess-reset-btn,
+        body.chess-selected:not(.chess-admin-only) #chess-resign-btn,
+        body.chess-selected:not(.chess-admin-only) #chess-back-btn-bottom {
+            display: block !important;
+            min-height: 48px !important;
+            padding: 10px 8px !important;
+            font-size: .78rem !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-panel {
+            padding: 10px !important;
+            margin: 10px auto 12px auto !important;
+            max-width: 520px !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-header {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 4px !important;
+            margin-bottom: 8px !important;
+            padding-bottom: 7px !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-title {
+            font-size: .82rem !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-status {
+            text-align: left !important;
+            font-size: .72rem !important;
+            line-height: 1.3 !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-panel:not(.call-running) .chess-call-videos {
+            display: none !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-panel.call-running .chess-call-videos {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 7px !important;
+            margin-bottom: 8px !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-panel.call-running .chess-video-tile {
+            min-height: 130px !important;
+            aspect-ratio: 4 / 3 !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-controls {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+        }
+        body.chess-selected:not(.chess-admin-only) .chess-call-controls button {
+            min-height: 42px !important;
+            padding: 8px 6px !important;
+            font-size: .72rem !important;
+        }
+        @media (max-width: 560px) {
+            body.chess-selected:not(.chess-admin-only) #chess-screen .chess-actions,
+            body.chess-selected:not(.chess-admin-only) .chess-call-controls {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            body.chess-selected:not(.chess-admin-only) .chess-call-panel.call-running .chess-call-videos {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+</style>
 </head>
 <body class="platform-start-active mode-selecting">
 
@@ -2244,7 +2362,7 @@
 
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-subtitle">
-                Fase 13: Xadrez Online com vídeo e áudio entre jogadores, painel Admin limpo, salas liberadas/bloqueadas, expulsar jogadores, limpar chat e resetar sala.
+                Fase 13.2: Xadrez Online com vídeo/áudio corrigido, chamada com clique direto e tela de partida mais limpa.
                 A Damas Arena continua preservada.
             </div>
 
@@ -2254,7 +2372,7 @@
 
             <div id="chess-call-panel" class="chess-call-panel">
                 <div class="chess-call-header">
-                    <div class="chess-call-title">📹 Vídeo e áudio do Xadrez — Fase 13</div>
+                    <div class="chess-call-title">📹 Vídeo e áudio — Fase 13.2</div>
                     <div id="chess-call-status" class="chess-call-status">Entre em uma sala online para usar a chamada.</div>
                 </div>
                 <div class="chess-call-videos">
@@ -2268,12 +2386,12 @@
                     </div>
                 </div>
                 <div class="chess-call-controls">
-                    <button id="chess-start-video-call-btn" class="btn-chess-call-start" type="button">Iniciar vídeo</button>
-                    <button id="chess-start-audio-call-btn" class="btn-chess-call-audio" type="button">Só áudio</button>
-                    <button id="chess-unlock-audio-btn" class="btn-chess-call-toggle" type="button">🔊 Som</button>
+                    <button id="chess-start-video-call-btn" class="btn-chess-call-start" type="button" onclick="window.iniciarVideoXadrezAgora && window.iniciarVideoXadrezAgora()">Iniciar vídeo</button>
+                    <button id="chess-start-audio-call-btn" class="btn-chess-call-audio" type="button" onclick="window.iniciarAudioXadrezAgora && window.iniciarAudioXadrezAgora()">Só áudio</button>
+                    <button id="chess-unlock-audio-btn" class="btn-chess-call-toggle" type="button" onclick="window.liberarSomXadrezAgora && window.liberarSomXadrezAgora()">🔊 Som</button>
                     <button id="chess-toggle-mic-btn" class="btn-chess-call-toggle" type="button">🎙️ Mic</button>
                     <button id="chess-toggle-camera-btn" class="btn-chess-call-toggle" type="button">📷 Cam</button>
-                    <button id="chess-end-call-btn" class="btn-chess-call-end" type="button">Encerrar</button>
+                    <button id="chess-end-call-btn" class="btn-chess-call-end" type="button" onclick="window.encerrarChamadaXadrezAgora && window.encerrarChamadaXadrezAgora()">Encerrar</button>
                 </div>
             </div>
 
@@ -2297,7 +2415,7 @@
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 13 ativa: Xadrez Online com vídeo/áudio entre brancas e pretas, painel Admin limpo e Damas preservada.
+                ✅ Fase 13.2 ativa: vídeo/áudio corrigido com clique direto, tela limpa e Damas preservada.
             </div>
         </div>
     </div>
@@ -7024,7 +7142,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 13 ativa: Xadrez online com vídeo/áudio entre jogadores, painel Admin limpo, controle de salas, desistência, visão das pretas, modo foco, alerta de vez, chat, histórico e placar.';
+            lastMoveMessage = 'Fase 13.1 ativa: Xadrez online com vídeo/áudio entre jogadores, painel Admin limpo, controle de salas, desistência, visão das pretas, modo foco, alerta de vez, chat, histórico e placar.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -7455,7 +7573,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 12</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 13.2</div>
                     <div class="chess-online-desc">Crie uma sala separada da Damas. O primeiro jogador entra como brancas, o segundo como pretas e os demais podem assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -7487,7 +7605,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 material.id = 'chess-material-panel';
                 material.className = 'chess-material-panel';
                 material.innerHTML = `
-                    <div class="chess-material-title">⚔️ Placar de material — Fase 12</div>
+                    <div class="chess-material-title">⚔️ Placar de material</div>
                     <div class="chess-material-grid">
                         <div class="chess-material-box">
                             <div class="chess-material-label">⚪ Brancas capturaram</div>
@@ -7558,7 +7676,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 13 ativa: Xadrez online com painel Admin próprio igual à Damas, salas liberadas/bloqueadas, expulsar jogadores, limpar chat, resetar sala, monitorar chat, jogadores identificados, espectadores, desistência, virar tabuleiro, modo foco, alerta de vez, histórico e placar. A Damas Arena continua preservada.';
+                warning.innerHTML = '✅ Fase 13.2 ativa: vídeo/áudio corrigido com clique direto, partida limpa sem placar/histórico/amarelo, Admin do Xadrez preservado e Damas preservada.';
             }
         }
 
@@ -8529,7 +8647,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chessRoomPlayers = sala.players;
                 chessRoomSpectators = sala.spectators;
                 if (!sala.lastMoveMessage || /^Fase 5/i.test(String(sala.lastMoveMessage))) {
-                    sala.lastMoveMessage = 'Fase 13 ativa: sala online com vídeo/áudio, painel Admin próprio, controle de salas, desistência, visão das pretas, alerta de vez, chat, histórico e placar.';
+                    sala.lastMoveMessage = 'Fase 13.1 ativa: sala online com vídeo/áudio, painel Admin próprio, controle de salas, desistência, visão das pretas, alerta de vez, chat, histórico e placar.';
                 }
 
                 await set(chessRoomRef, sala);
@@ -9192,6 +9310,7 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-chat-send-btn')?.addEventListener('click', enviarChatXadrezOnline);
             document.getElementById('chess-chat-input')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') enviarChatXadrezOnline(); });
             document.getElementById('central-admin-xadrez-btn')?.addEventListener('click', abrirAdminXadrezCentral);
+            instalarEventosChamadaXadrez();
         }
 
 
@@ -9221,14 +9340,20 @@ Link: ${location.origin}${location.pathname}`;
             const startVideo = chessCallEl('chess-start-video-call-btn');
             const startAudio = chessCallEl('chess-start-audio-call-btn');
             const endBtn = chessCallEl('chess-end-call-btn');
+            const panel = chessCallEl('chess-call-panel');
+            if (panel) panel.classList.add('call-running');
             const micBtn = chessCallEl('chess-toggle-mic-btn');
             const camBtn = chessCallEl('chess-toggle-camera-btn');
             const unlockBtn = chessCallEl('chess-unlock-audio-btn');
             const localLabel = panel.querySelector('.chess-video-tile:first-child .chess-video-label');
             const remoteLabel = panel.querySelector('.chess-video-tile:nth-child(2) .chess-video-label');
+            const localVideoEl = chessCallEl('chess-local-video');
+            const remoteVideoEl = chessCallEl('chess-remote-video');
+            const temMidiaAtiva = !!chessLocalCallStream || !!(remoteVideoEl && remoteVideoEl.srcObject);
+            panel.classList.toggle('call-running', temMidiaAtiva);
 
             if (chessMode !== 'online') {
-                panel.classList.remove('active');
+                panel.classList.remove('active', 'call-running');
                 atualizarStatusChamadaXadrez('Entre em uma sala online para usar a chamada.');
                 return;
             }
@@ -9257,7 +9382,7 @@ Link: ${location.origin}${location.pathname}`;
             if (unlockBtn) unlockBtn.disabled = false;
 
             if (!ativo) {
-                atualizarStatusChamadaXadrez('Toque em Iniciar vídeo ou Só áudio para chamar o oponente.');
+                atualizarStatusChamadaXadrez('Chamada pronta. Toque em Iniciar vídeo ou Só áudio.');
             }
         }
 
@@ -9272,18 +9397,22 @@ Link: ${location.origin}${location.pathname}`;
 
         async function prepararMidiaLocalXadrez(somenteAudio = false) {
             if (chessLocalCallStream) return chessLocalCallStream;
+            atualizarStatusChamadaXadrez(somenteAudio ? 'Abrindo microfone... aguarde a permissão do navegador.' : 'Abrindo câmera e microfone... aguarde a permissão do navegador.');
+            const panel = chessCallEl('chess-call-panel');
+            if (panel) panel.classList.add('call-running');
             try {
                 if (somenteAudio) {
-                    chessLocalCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                    chessLocalCallStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 } else {
                     try {
-                        chessLocalCallStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 640 } }, audio: true });
+                        chessLocalCallStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                     } catch (erroVideo) {
-                        chessLocalCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                        mostrarToastXadrez('🎙️ Câmera não liberada. Chamada iniciada só com áudio.');
+                        chessLocalCallStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                        mostrarToastXadrez('🎙️ A câmera não abriu, mas o microfone abriu.');
                     }
                 }
             } catch (erroMidia) {
+                if (panel) panel.classList.remove('call-running');
                 throw new Error(explicarErroMidiaXadrez(erroMidia));
             }
 
@@ -9292,12 +9421,15 @@ Link: ${location.origin}${location.pathname}`;
             const localVideo = chessCallEl('chess-local-video');
             if (localVideo) {
                 localVideo.srcObject = chessLocalCallStream;
+                localVideo.muted = true;
+                localVideo.playsInline = true;
                 localVideo.play?.().catch(() => {});
             }
             const micBtn = chessCallEl('chess-toggle-mic-btn');
             const camBtn = chessCallEl('chess-toggle-camera-btn');
             if (micBtn) { micBtn.innerText = '🎙️ Mic'; micBtn.classList.remove('off'); }
             if (camBtn) { camBtn.innerText = chessLocalCameraEnabled ? '📷 Cam' : '📷 Sem cam'; camBtn.classList.toggle('off', !chessLocalCameraEnabled); }
+            atualizarStatusChamadaXadrez(chessLocalCameraEnabled ? 'Sua câmera abriu ✅ aguardando o outro jogador.' : 'Seu microfone abriu ✅ aguardando o outro jogador.');
             return chessLocalCallStream;
         }
 
@@ -9316,6 +9448,8 @@ Link: ${location.origin}${location.pathname}`;
                     }
                 }
                 remoteVideo.srcObject = stream;
+                const panel = chessCallEl('chess-call-panel');
+                if (panel) panel.classList.add('call-running');
                 remoteVideo.muted = false;
                 remoteVideo.volume = 1;
                 remoteVideo.play?.().catch(() => atualizarStatusChamadaXadrez('Vídeo conectado. Toque em 🔊 Som para liberar o áudio.'));
@@ -9385,8 +9519,10 @@ Link: ${location.origin}${location.pathname}`;
                 atualizarStatusChamadaXadrez(chessPlayerColor === 'white' ? 'Aguardando as pretas iniciarem/aceitarem a chamada...' : 'Aguardando convite das brancas...');
                 mostrarToastXadrez('📹 Chamada do Xadrez iniciada.');
             } catch (e) {
+                const msgErro = e.message || 'não foi possível iniciar.';
                 encerrarChamadaXadrez(false);
-                mostrarToastXadrez(`⚠️ Erro na chamada: ${e.message || 'não foi possível iniciar.'}`, 'check');
+                atualizarStatusChamadaXadrez(`Erro: ${msgErro}`);
+                mostrarToastXadrez(`⚠️ Erro na chamada: ${msgErro}`, 'check');
             }
         }
 
@@ -9412,7 +9548,7 @@ Link: ${location.origin}${location.pathname}`;
                         await pc.setLocalDescription(offer);
                         await set(ref(db, `chessRooms/${chessRoomId}/call/offer`), { type: offer.type, sdp: offer.sdp, fromRole: 'white', sessionId: chessCallSessionId, createdAt: Date.now() });
                         atualizarStatusChamadaXadrez('Convite enviado. Esperando resposta das pretas...');
-                    } catch (e) { console.warn('Erro criando oferta do Xadrez:', e); }
+                    } catch (e) { console.warn('Erro criando oferta do Xadrez:', e); atualizarStatusChamadaXadrez('Erro criando convite. Encerre e tente de novo nos dois aparelhos.'); }
                 }
 
                 if (chessLocalCallStream && chessPlayerColor === 'black' && callData.offer?.sdp && !chessCallRemoteDescriptionApplied) {
@@ -9424,7 +9560,7 @@ Link: ${location.origin}${location.pathname}`;
                         await pc.setLocalDescription(answer);
                         await set(ref(db, `chessRooms/${chessRoomId}/call/answer`), { type: answer.type, sdp: answer.sdp, fromRole: 'black', sessionId: chessCallSessionId, createdAt: Date.now() });
                         atualizarStatusChamadaXadrez('Resposta enviada. Conectando...');
-                    } catch (e) { console.warn('Erro respondendo chamada do Xadrez:', e); }
+                    } catch (e) { console.warn('Erro respondendo chamada do Xadrez:', e); atualizarStatusChamadaXadrez('Erro respondendo chamada. Encerre e tente de novo nos dois aparelhos.'); }
                 }
 
                 if (chessLocalCallStream && chessPlayerColor === 'white' && callData.answer?.sdp && !chessCallRemoteDescriptionApplied) {
@@ -9433,7 +9569,7 @@ Link: ${location.origin}${location.pathname}`;
                         await pc.setRemoteDescription(new RTCSessionDescription({ type: callData.answer.type, sdp: callData.answer.sdp }));
                         chessCallRemoteDescriptionApplied = true;
                         atualizarStatusChamadaXadrez('Resposta recebida. Conectando...');
-                    } catch (e) { console.warn('Erro aplicando resposta do Xadrez:', e); }
+                    } catch (e) { console.warn('Erro aplicando resposta do Xadrez:', e); atualizarStatusChamadaXadrez('Erro finalizando conexão. Encerre e tente novamente.'); }
                 }
 
                 if (chessLocalCallStream && callData.candidates) {
@@ -9461,6 +9597,8 @@ Link: ${location.origin}${location.pathname}`;
             const remoteVideo = chessCallEl('chess-remote-video');
             if (localVideo) localVideo.srcObject = null;
             if (remoteVideo) remoteVideo.srcObject = null;
+            const panel = chessCallEl('chess-call-panel');
+            if (panel) panel.classList.remove('call-running');
             chessCallProcessedCandidates = new Set();
             chessCallRemoteDescriptionApplied = false;
             chessCallStarted = false;
@@ -9489,10 +9627,10 @@ Link: ${location.origin}${location.pathname}`;
             const micBtn = chessCallEl('chess-toggle-mic-btn');
             const camBtn = chessCallEl('chess-toggle-camera-btn');
             const unlockBtn = chessCallEl('chess-unlock-audio-btn');
-            if (startVideo && !startVideo.dataset.boundChessCall) { startVideo.dataset.boundChessCall = '1'; startVideo.addEventListener('click', () => iniciarChamadaXadrez(false)); }
-            if (startAudio && !startAudio.dataset.boundChessCall) { startAudio.dataset.boundChessCall = '1'; startAudio.addEventListener('click', () => iniciarChamadaXadrez(true)); }
-            if (endBtn && !endBtn.dataset.boundChessCall) { endBtn.dataset.boundChessCall = '1'; endBtn.addEventListener('click', () => encerrarChamadaXadrez(true)); }
-            if (unlockBtn && !unlockBtn.dataset.boundChessCall) { unlockBtn.dataset.boundChessCall = '1'; unlockBtn.addEventListener('click', liberarSomChamadaXadrez); }
+            if (startVideo && !startVideo.dataset.boundChessCall) { startVideo.dataset.boundChessCall = '1'; startVideo.addEventListener('click', () => window.iniciarVideoXadrezAgora()); }
+            if (startAudio && !startAudio.dataset.boundChessCall) { startAudio.dataset.boundChessCall = '1'; startAudio.addEventListener('click', () => window.iniciarAudioXadrezAgora()); }
+            if (endBtn && !endBtn.dataset.boundChessCall) { endBtn.dataset.boundChessCall = '1'; endBtn.addEventListener('click', () => window.encerrarChamadaXadrezAgora()); }
+            if (unlockBtn && !unlockBtn.dataset.boundChessCall) { unlockBtn.dataset.boundChessCall = '1'; unlockBtn.addEventListener('click', () => window.liberarSomXadrezAgora()); }
             if (micBtn && !micBtn.dataset.boundChessCall) {
                 micBtn.dataset.boundChessCall = '1';
                 micBtn.addEventListener('click', () => {
@@ -9517,6 +9655,12 @@ Link: ${location.origin}${location.pathname}`;
             }
             atualizarPainelChamadaXadrez();
         }
+
+        // Fase 13.2: wrappers globais para garantir que os botões funcionem mesmo se o navegador perder listeners dinâmicos.
+        window.iniciarVideoXadrezAgora = function() { iniciarChamadaXadrez(false); };
+        window.iniciarAudioXadrezAgora = function() { iniciarChamadaXadrez(true); };
+        window.liberarSomXadrezAgora = function() { liberarSomChamadaXadrez(); };
+        window.encerrarChamadaXadrezAgora = function() { encerrarChamadaXadrez(true); };
 
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
