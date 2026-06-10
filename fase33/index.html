@@ -14570,5 +14570,314 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
     setInterval(moverCameraParaDentroDaPartida, 900);
 })();
 </script>
+    <!-- ✅ FASE 34.3 - CÂMERA DO XADREZ ARRASTÁVEL E REDIMENSIONÁVEL
+     Corrige a janelinha da chamada no celular e no computador.
+     Não altera a Damas. Não altera o site principal. Atua somente na /fase33. -->
+
+<style id="fase34-3-camera-arrastavel-css">
+    body.chess-selected #chess-call-panel.call-active {
+        position: fixed !important;
+        z-index: 10020 !important;
+        width: min(var(--fase343-call-width, 300px), calc(100vw - 14px)) !important;
+        max-width: calc(100vw - 14px) !important;
+        min-width: 220px !important;
+        left: 50% !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        border-radius: 15px !important;
+        overflow: hidden !important;
+        touch-action: none !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active.fase343-movida {
+        bottom: auto !important;
+        transform: none !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-header {
+        display: flex !important;
+        cursor: grab !important;
+        touch-action: none !important;
+        user-select: none !important;
+        padding: 6px 8px !important;
+        margin-bottom: 5px !important;
+        border-bottom: 1px solid rgba(255,255,255,.08) !important;
+        background: rgba(15,23,42,.92) !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-header:active {
+        cursor: grabbing !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-title::after {
+        content: " • arraste";
+        color: #94a3b8;
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-videos {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 5px !important;
+        margin-bottom: 5px !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-controls {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-controls button {
+        min-width: 0 !important;
+        padding: 7px 5px !important;
+        font-size: .6rem !important;
+        line-height: 1.1 !important;
+        border-radius: 8px !important;
+        white-space: normal !important;
+        text-transform: none !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active #chess-end-call-btn,
+    body.chess-selected #chess-call-panel.call-active [id*="end-call"] {
+        grid-column: 1 / -1 !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .video-tile,
+    body.chess-selected #chess-call-panel.call-active .chess-video-tile {
+        aspect-ratio: 16 / 10 !important;
+        min-height: 82px !important;
+    }
+
+    @media (max-width: 560px) {
+        body.chess-selected #chess-call-panel.call-active {
+            width: min(var(--fase343-call-width, 285px), calc(100vw - 12px)) !important;
+            max-width: calc(100vw - 12px) !important;
+        }
+
+        body.chess-selected #chess-call-panel.call-active .chess-call-controls {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+
+        body.chess-selected #chess-call-panel.call-active .chess-call-controls button {
+            font-size: .56rem !important;
+            padding: 6px 4px !important;
+        }
+    }
+</style>
+
+<script id="fase34-3-camera-arrastavel-js">
+(function () {
+    if (window.__fase343CameraArrastavelOk) return;
+    window.__fase343CameraArrastavelOk = true;
+
+    let larguraAtual = 300;
+    let arrastando = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    function painel() {
+        return document.getElementById('chess-call-panel');
+    }
+
+    function clamp(valor, min, max) {
+        return Math.max(min, Math.min(max, valor));
+    }
+
+    function larguraMaxima() {
+        return Math.max(230, window.innerWidth - 14);
+    }
+
+    function aplicarLargura(novaLargura) {
+        const p = painel();
+        if (!p) return;
+
+        larguraAtual = clamp(novaLargura, 220, Math.min(430, larguraMaxima()));
+        p.style.setProperty('--fase343-call-width', larguraAtual + 'px');
+
+        if (p.classList.contains('fase343-movida')) {
+            manterDentroDaTela();
+        }
+    }
+
+    function manterDentroDaTela() {
+        const p = painel();
+        if (!p || !p.classList.contains('call-active')) return;
+
+        const rect = p.getBoundingClientRect();
+        const margem = 6;
+
+        let left = rect.left;
+        let top = rect.top;
+
+        left = clamp(left, margem, window.innerWidth - rect.width - margem);
+        top = clamp(top, margem, window.innerHeight - rect.height - margem);
+
+        p.classList.add('fase343-movida');
+        p.style.left = left + 'px';
+        p.style.top = top + 'px';
+        p.style.right = 'auto';
+        p.style.bottom = 'auto';
+        p.style.transform = 'none';
+    }
+
+    function iniciarArraste(e) {
+        const p = painel();
+        if (!p || !p.classList.contains('call-active')) return;
+
+        const alvo = e.target;
+        if (alvo && alvo.closest && alvo.closest('button, input, video')) return;
+
+        const rect = p.getBoundingClientRect();
+        const ponto = e.touches ? e.touches[0] : e;
+
+        arrastando = true;
+        offsetX = ponto.clientX - rect.left;
+        offsetY = ponto.clientY - rect.top;
+
+        p.classList.add('fase343-movida');
+        p.style.left = rect.left + 'px';
+        p.style.top = rect.top + 'px';
+        p.style.right = 'auto';
+        p.style.bottom = 'auto';
+        p.style.transform = 'none';
+
+        e.preventDefault();
+    }
+
+    function moverArraste(e) {
+        if (!arrastando) return;
+
+        const p = painel();
+        if (!p) return;
+
+        const ponto = e.touches ? e.touches[0] : e;
+        const rect = p.getBoundingClientRect();
+        const margem = 6;
+
+        let left = ponto.clientX - offsetX;
+        let top = ponto.clientY - offsetY;
+
+        left = clamp(left, margem, window.innerWidth - rect.width - margem);
+        top = clamp(top, margem, window.innerHeight - rect.height - margem);
+
+        p.style.left = left + 'px';
+        p.style.top = top + 'px';
+        p.style.right = 'auto';
+        p.style.bottom = 'auto';
+        p.style.transform = 'none';
+
+        e.preventDefault();
+    }
+
+    function pararArraste() {
+        arrastando = false;
+    }
+
+    function configurarArraste() {
+        const p = painel();
+        if (!p || p.dataset.fase343DragOk === '1') return;
+
+        p.dataset.fase343DragOk = '1';
+
+        const header = p.querySelector('.chess-call-header') || p;
+
+        header.addEventListener('mousedown', iniciarArraste);
+        header.addEventListener('touchstart', iniciarArraste, { passive: false });
+
+        document.addEventListener('mousemove', moverArraste);
+        document.addEventListener('touchmove', moverArraste, { passive: false });
+
+        document.addEventListener('mouseup', pararArraste);
+        document.addEventListener('touchend', pararArraste);
+        document.addEventListener('touchcancel', pararArraste);
+    }
+
+    function textoBotao(btn) {
+        return ((btn.innerText || btn.textContent || '') + ' ' + (btn.id || '') + ' ' + (btn.className || '')).toLowerCase();
+    }
+
+    function configurarBotoesTamanho() {
+        const p = painel();
+        if (!p) return;
+
+        const botoes = Array.from(p.querySelectorAll('button'));
+
+        botoes.forEach(function (btn) {
+            if (btn.dataset.fase343SizeOk === '1') return;
+
+            const texto = textoBotao(btn);
+            const ehMenor = texto.includes('menor') || texto.includes('minus') || texto.includes('size-minus') || texto.trim() === '−' || texto.trim() === '-';
+            const ehMaior = texto.includes('maior') || texto.includes('plus') || texto.includes('size-plus') || texto.trim() === '+';
+
+            if (!ehMenor && !ehMaior) return;
+
+            btn.dataset.fase343SizeOk = '1';
+
+            btn.addEventListener('click', function (e) {
+                if (!p.classList.contains('call-active')) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (ehMenor) {
+                    aplicarLargura(larguraAtual - 35);
+                }
+
+                if (ehMaior) {
+                    aplicarLargura(larguraAtual + 35);
+                }
+            }, true);
+        });
+    }
+
+    function quandoAtivarChamada() {
+        const p = painel();
+        if (!p) return;
+
+        configurarArraste();
+        configurarBotoesTamanho();
+
+        if (p.classList.contains('call-active')) {
+            aplicarLargura(larguraAtual);
+
+            if (!p.classList.contains('fase343-posicao-inicial-ok') && !p.classList.contains('fase343-movida')) {
+                p.classList.add('fase343-posicao-inicial-ok');
+
+                setTimeout(function () {
+                    const rect = p.getBoundingClientRect();
+                    const left = Math.round((window.innerWidth - rect.width) / 2);
+                    const top = Math.max(8, window.innerHeight - rect.height - 12);
+
+                    p.classList.add('fase343-movida');
+                    p.style.left = left + 'px';
+                    p.style.top = top + 'px';
+                    p.style.right = 'auto';
+                    p.style.bottom = 'auto';
+                    p.style.transform = 'none';
+                }, 250);
+            }
+        } else {
+            p.classList.remove('fase343-posicao-inicial-ok');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', quandoAtivarChamada);
+    window.addEventListener('load', quandoAtivarChamada);
+    window.addEventListener('resize', manterDentroDaTela);
+
+    document.addEventListener('click', function () {
+        setTimeout(quandoAtivarChamada, 100);
+        setTimeout(quandoAtivarChamada, 500);
+    });
+
+    setInterval(quandoAtivarChamada, 700);
+})();
+</script>
 </body>
 </html>
