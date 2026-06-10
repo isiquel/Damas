@@ -13554,6 +13554,521 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
   }
 }
 -->
+<!-- ✅ FASE 34 - LIMPEZA FINAL DO XADREZ NA ÁREA SEGURA /fase33
+     Não altera a Damas. Não altera o site principal. Atua somente na tela do Xadrez. -->
 
+<style id="fase34-xadrez-limpo-css">
+    /* ===== FASE 34: TABULEIRO MAIS CENTRALIZADO E SEM TOQUINHOS ===== */
+    body.chess-selected,
+    body.chess-selected * {
+        scroll-behavior: auto !important;
+    }
+
+    body.chess-selected #chess-screen,
+    body.chess-selected #chess-screen .chess-card,
+    body.chess-selected #chess-screen .chess-board-wrap,
+    body.chess-selected #chess-screen .chess-board,
+    body.chess-selected #chess-screen .chess-coord-shell {
+        overflow-anchor: none !important;
+    }
+
+    body.chess-selected.chess-board-visible {
+        justify-content: flex-start !important;
+        align-items: center !important;
+        overflow-x: hidden !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    body.chess-selected.chess-board-visible .container {
+        width: 100% !important;
+        max-width: 640px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    body.chess-selected.chess-board-visible #chess-screen .chess-card {
+        width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    body.chess-selected.chess-board-visible #chess-screen .chess-board-wrap {
+        width: 100% !important;
+        max-width: min(520px, calc(100vw - 18px)) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        transform: none !important;
+    }
+
+    body.chess-selected.chess-board-visible #chess-screen .chess-square {
+        touch-action: manipulation !important;
+    }
+
+    @media (max-width: 560px) {
+        body.chess-selected.chess-board-visible {
+            padding: 6px !important;
+        }
+
+        body.chess-selected.chess-board-visible #chess-screen .chess-card {
+            padding: 8px !important;
+            border-radius: 16px !important;
+        }
+
+        body.chess-selected.chess-board-visible #chess-screen .chess-board-wrap {
+            max-width: calc(100vw - 14px) !important;
+            padding: 7px !important;
+            border-radius: 14px !important;
+        }
+
+        body.chess-selected.chess-board-visible #chess-screen .chess-coord-shell {
+            grid-template-columns: 15px minmax(0, 1fr) 15px !important;
+            grid-template-rows: 15px minmax(0, 1fr) 15px !important;
+            gap: 3px !important;
+        }
+    }
+
+    /* ===== FASE 34: RANKING DO TREINO RECOLHIDO COM + ===== */
+    #chess-training-ranking-panel.fase34-rank-closed:not(.fase34-rank-open),
+    .chess-training-ranking-panel.fase34-rank-closed:not(.fase34-rank-open) {
+        padding: 11px 13px !important;
+        margin-top: 10px !important;
+    }
+
+    #chess-training-ranking-panel.fase34-rank-closed:not(.fase34-rank-open) > :not(.chess-training-ranking-head),
+    .chess-training-ranking-panel.fase34-rank-closed:not(.fase34-rank-open) > :not(.chess-training-ranking-head) {
+        display: none !important;
+    }
+
+    #chess-training-ranking-panel .chess-training-ranking-head,
+    .chess-training-ranking-panel .chess-training-ranking-head {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        margin-bottom: 0 !important;
+    }
+
+    .fase34-mini-plus {
+        width: 38px !important;
+        height: 34px !important;
+        min-width: 38px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        background: #0ea5e9 !important;
+        color: #fff !important;
+        font-size: 1.25rem !important;
+        line-height: 1 !important;
+        text-transform: none !important;
+        box-shadow: 0 8px 18px rgba(0,0,0,.28) !important;
+    }
+
+    .fase34-rank-toggle {
+        background: #b45309 !important;
+    }
+
+    body.chess-board-visible.chess-mode-online #chess-training-ranking-panel,
+    body.chess-board-visible.chess-mode-online .chess-training-ranking-panel {
+        display: none !important;
+    }
+
+    /* ===== FASE 34: CHAMADA DO XADREZ RECOLHIDA E CENTRALIZADA ===== */
+    #chess-call-panel.fase34-call-closed:not(.call-active) {
+        padding: 10px 12px !important;
+        margin-top: 10px !important;
+        border-radius: 14px !important;
+    }
+
+    #chess-call-panel.fase34-call-closed:not(.call-active) .chess-call-videos,
+    #chess-call-panel.fase34-call-closed:not(.call-active) .chess-call-controls,
+    #chess-call-panel.fase34-call-closed:not(.call-active) .chess-call-note {
+        display: none !important;
+    }
+
+    #chess-call-panel.fase34-call-closed:not(.call-active) .chess-call-header {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+        border-bottom: 0 !important;
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    #chess-call-panel.call-active {
+        position: fixed !important;
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        transform: translateX(-50%) !important;
+        width: min(300px, calc(100vw - 18px)) !important;
+        max-width: calc(100vw - 18px) !important;
+        z-index: 950 !important;
+        border-radius: 15px !important;
+        overflow: hidden !important;
+    }
+
+    #chess-call-panel.call-active .chess-call-controls {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    #chess-call-panel.call-active .chess-call-controls button {
+        min-width: 0 !important;
+        padding: 7px 5px !important;
+        font-size: .58rem !important;
+        white-space: normal !important;
+    }
+
+    #chess-call-panel.call-active #chess-end-call-btn {
+        grid-column: 1 / -1 !important;
+    }
+
+    #chess-call-panel.call-active .chess-call-videos {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    /* ===== FASE 34: MODAL PROFISSIONAL NO XADREZ ===== */
+    .fase34-xadrez-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(2, 6, 23, .82);
+        backdrop-filter: blur(10px);
+    }
+
+    .fase34-xadrez-modal.show {
+        display: flex;
+    }
+
+    .fase34-xadrez-modal-card {
+        width: min(92vw, 430px);
+        border-radius: 22px;
+        padding: 22px 18px;
+        text-align: center;
+        background:
+            radial-gradient(circle at top, rgba(56, 189, 248, .18), transparent 42%),
+            linear-gradient(135deg, #020617, #111827 65%, #1e1b4b);
+        border: 1px solid rgba(56, 189, 248, .42);
+        box-shadow: 0 28px 85px rgba(0,0,0,.82), 0 0 32px rgba(56,189,248,.13);
+    }
+
+    .fase34-xadrez-modal-title {
+        color: #facc15;
+        font-size: 1.25rem;
+        font-weight: 1000;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        margin-bottom: 10px;
+    }
+
+    .fase34-xadrez-modal-text {
+        color: #e2e8f0;
+        font-size: .98rem;
+        line-height: 1.55;
+        margin-bottom: 18px;
+    }
+
+    .fase34-xadrez-modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .fase34-xadrez-modal-actions button {
+        width: auto !important;
+        min-width: 118px;
+        border-radius: 999px !important;
+        text-transform: none !important;
+        padding: 11px 18px !important;
+        font-size: .9rem !important;
+    }
+
+    .fase34-confirm-yes {
+        background: #dc2626 !important;
+    }
+
+    .fase34-confirm-no {
+        background: #334155 !important;
+    }
+
+    /* ===== FASE 34: XEQUE-MATE / FINAL MAIS BONITO ===== */
+    body.chess-board-visible #chess-result-panel.show-front,
+    body.chess-board-visible #chess-result-panel.fase34-front {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 9998 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 100dvh !important;
+        margin: 0 !important;
+        padding: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(2, 6, 23, .78) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #chess-result-panel.show-front .chess-result-card,
+    #chess-result-panel.fase34-front .chess-result-card {
+        width: min(92vw, 460px) !important;
+        border-radius: 24px !important;
+        padding: 24px 18px 18px !important;
+        text-align: center !important;
+        background:
+            radial-gradient(circle at top, rgba(250, 204, 21, .22), transparent 44%),
+            linear-gradient(135deg, #020617, #111827 58%, #241044) !important;
+        border: 1px solid rgba(250, 204, 21, .48) !important;
+        box-shadow: 0 28px 85px rgba(0,0,0,.82), 0 0 34px rgba(250,204,21,.18) !important;
+    }
+
+    #chess-result-panel.show-front .chess-result-icon,
+    #chess-result-panel.fase34-front .chess-result-icon {
+        font-size: clamp(3.2rem, 13vw, 5rem) !important;
+        margin-bottom: 10px !important;
+    }
+
+    #chess-result-panel.show-front .chess-result-title,
+    #chess-result-panel.fase34-front .chess-result-title {
+        font-size: clamp(1.35rem, 6vw, 2.05rem) !important;
+        line-height: 1.12 !important;
+        margin-bottom: 10px !important;
+    }
+
+    #chess-result-panel.show-front .chess-result-text,
+    #chess-result-panel.fase34-front .chess-result-text {
+        font-size: clamp(.94rem, 3.7vw, 1.12rem) !important;
+        line-height: 1.45 !important;
+        max-width: 330px;
+        margin: 0 auto 14px auto !important;
+    }
+</style>
+
+<script id="fase34-xadrez-limpo-js">
+(function () {
+    if (window.__fase34XadrezLimpoInstalado) return;
+    window.__fase34XadrezLimpoInstalado = true;
+
+    const alertaOriginal = window.alert ? window.alert.bind(window) : null;
+    const confirmacaoOriginal = window.exibirConfirmacao;
+
+    function xadrezVisivel() {
+        const tela = document.getElementById('chess-screen');
+        return document.body.classList.contains('chess-selected') ||
+            (tela && getComputedStyle(tela).display !== 'none');
+    }
+
+    function criarModalFase34() {
+        let modal = document.getElementById('fase34-xadrez-modal');
+        if (modal) return modal;
+
+        modal = document.createElement('div');
+        modal.id = 'fase34-xadrez-modal';
+        modal.className = 'fase34-xadrez-modal';
+        modal.innerHTML = `
+            <div class="fase34-xadrez-modal-card">
+                <div id="fase34-xadrez-modal-title" class="fase34-xadrez-modal-title">Aviso</div>
+                <div id="fase34-xadrez-modal-text" class="fase34-xadrez-modal-text">Mensagem</div>
+                <div class="fase34-xadrez-modal-actions">
+                    <button id="fase34-xadrez-modal-yes" class="fase34-confirm-yes" type="button">Confirmar</button>
+                    <button id="fase34-xadrez-modal-no" class="fase34-confirm-no" type="button">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    function abrirModalFase34(titulo, texto, confirmar, aoConfirmar) {
+        const modal = criarModalFase34();
+        const title = document.getElementById('fase34-xadrez-modal-title');
+        const text = document.getElementById('fase34-xadrez-modal-text');
+        const yes = document.getElementById('fase34-xadrez-modal-yes');
+        const no = document.getElementById('fase34-xadrez-modal-no');
+
+        title.textContent = titulo || 'Tabuleiro Arena';
+        text.innerHTML = String(texto || '').replace(/\n/g, '<br>');
+
+        yes.style.display = confirmar ? 'inline-flex' : 'none';
+        no.textContent = confirmar ? 'Cancelar' : 'OK';
+
+        yes.onclick = function () {
+            modal.classList.remove('show');
+            if (typeof aoConfirmar === 'function') aoConfirmar();
+        };
+
+        no.onclick = function () {
+            modal.classList.remove('show');
+        };
+
+        modal.classList.add('show');
+    }
+
+    window.alert = function (mensagem) {
+        if (xadrezVisivel()) {
+            abrirModalFase34('Tabuleiro Arena', mensagem, false);
+            return;
+        }
+        if (alertaOriginal) alertaOriginal(mensagem);
+    };
+
+    if (typeof confirmacaoOriginal === 'function') {
+        window.exibirConfirmacao = function (titulo, texto, aoConfirmar) {
+            if (xadrezVisivel()) {
+                abrirModalFase34(titulo || 'Confirmação', texto || 'Deseja confirmar?', true, aoConfirmar);
+                return;
+            }
+            return confirmacaoOriginal.apply(this, arguments);
+        };
+    }
+
+    function prepararRankingRecolhido() {
+        const paineis = Array.from(document.querySelectorAll('#chess-training-ranking-panel, .chess-training-ranking-panel'));
+        paineis.forEach(function (panel) {
+            if (!panel || panel.dataset.fase34RankingOk === '1') return;
+            panel.dataset.fase34RankingOk = '1';
+            panel.classList.add('fase34-rank-closed');
+
+            let head = panel.querySelector('.chess-training-ranking-head');
+            if (!head) {
+                head = document.createElement('div');
+                head.className = 'chess-training-ranking-head';
+                const titulo = document.createElement('div');
+                titulo.className = 'chess-training-ranking-title';
+                titulo.textContent = '🏆 Ranking do Treino';
+                head.appendChild(titulo);
+                panel.prepend(head);
+            }
+
+            let btn = head.querySelector('.fase34-rank-toggle, .chess-ranking-toggle-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'fase34-mini-plus fase34-rank-toggle';
+                btn.textContent = '+';
+                head.appendChild(btn);
+            } else {
+                btn.classList.add('fase34-mini-plus', 'fase34-rank-toggle');
+            }
+
+            function atualizar() {
+                const aberto = panel.classList.contains('fase34-rank-open');
+                btn.textContent = aberto ? '−' : '+';
+                btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+            }
+
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                panel.classList.toggle('fase34-rank-open');
+                atualizar();
+            });
+
+            atualizar();
+        });
+    }
+
+    function prepararChamadaCompacta() {
+        const panel = document.getElementById('chess-call-panel');
+        if (!panel || panel.dataset.fase34CallOk === '1') return;
+
+        panel.dataset.fase34CallOk = '1';
+        panel.classList.add('fase34-call-closed');
+
+        let header = panel.querySelector('.chess-call-header');
+        if (!header) return;
+
+        let btn = header.querySelector('.fase34-call-toggle');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'fase34-mini-plus fase34-call-toggle';
+            btn.textContent = '+';
+            header.appendChild(btn);
+        }
+
+        function atualizar() {
+            const fechado = panel.classList.contains('fase34-call-closed') && !panel.classList.contains('call-active');
+            btn.textContent = fechado ? '+' : '−';
+            btn.setAttribute('aria-expanded', fechado ? 'false' : 'true');
+        }
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (panel.classList.contains('call-active')) return;
+
+            panel.classList.toggle('fase34-call-closed');
+            atualizar();
+        });
+
+        setInterval(function () {
+            if (panel.classList.contains('call-active')) {
+                panel.classList.remove('fase34-call-closed');
+            }
+            atualizar();
+        }, 800);
+
+        atualizar();
+    }
+
+    function melhorarResultadoFinal() {
+        const panel = document.getElementById('chess-result-panel');
+        if (!panel) return;
+
+        const visivel = panel.style.display !== 'none' &&
+            panel.offsetParent !== null &&
+            document.body.classList.contains('chess-board-visible');
+
+        if (visivel) {
+            panel.classList.add('fase34-front');
+        }
+    }
+
+    function atualizarTextosFase34() {
+        const seletores = [
+            '.game-mode-badge',
+            '.current-game-strip',
+            '.system-status-text',
+            '.chess-subtitle',
+            '.chess-warning'
+        ];
+
+        document.querySelectorAll(seletores.join(',')).forEach(function (el) {
+            if (!el || !el.textContent) return;
+            if (/Fase\s+\d+/i.test(el.textContent)) {
+                el.textContent = el.textContent.replace(/Fase\s+\d+/gi, 'Fase 34');
+            }
+        });
+    }
+
+    function aplicarFase34() {
+        prepararRankingRecolhido();
+        prepararChamadaCompacta();
+        melhorarResultadoFinal();
+        atualizarTextosFase34();
+    }
+
+    document.addEventListener('DOMContentLoaded', aplicarFase34);
+    window.addEventListener('load', aplicarFase34);
+    document.addEventListener('click', function () {
+        setTimeout(aplicarFase34, 120);
+    });
+
+    setInterval(aplicarFase34, 1500);
+})();
+</script>
 </body>
 </html>
