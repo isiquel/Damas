@@ -14292,5 +14292,283 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
     setInterval(prepararVideoAudioXadrez, 1200);
 })();
 </script>
+    <!-- ✅ FASE 34.2 - CÂMERA DO XADREZ DENTRO DA PARTIDA ONLINE
+     Move o botão de vídeo/áudio para perto do tabuleiro quando a partida online abre.
+     Não altera a Damas. Não altera o site principal. Atua somente na /fase33. -->
+
+<style id="fase34-2-camera-dentro-da-partida-css">
+    /* Esconde a chamada antiga no menu para ela não aparecer fora do lugar */
+    body.chess-selected:not(.fase342-online-board) #chess-call-panel:not(.call-active) {
+        display: none !important;
+    }
+
+    /* Botão pequeno que fica dentro da partida online, perto do tabuleiro */
+    #fase342-camera-dock {
+        display: none;
+        width: 100%;
+        max-width: 520px;
+        margin: 8px auto 10px auto;
+        padding: 9px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(56, 189, 248, .45);
+        background: linear-gradient(135deg, rgba(2,6,23,.96), rgba(15,23,42,.94));
+        box-shadow: 0 8px 20px rgba(0,0,0,.32);
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        text-align: left;
+    }
+
+    body.chess-selected.chess-board-visible.fase342-online-board #fase342-camera-dock {
+        display: flex !important;
+    }
+
+    .fase342-camera-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .fase342-camera-title {
+        color: #38bdf8;
+        font-size: .82rem;
+        font-weight: 1000;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .fase342-camera-sub {
+        color: #94a3b8;
+        font-size: .68rem;
+        line-height: 1.2;
+    }
+
+    #fase342-camera-toggle {
+        width: 42px !important;
+        height: 36px !important;
+        min-width: 42px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        background: #0ea5e9 !important;
+        color: #fff !important;
+        font-size: 1.35rem !important;
+        line-height: 1 !important;
+        text-transform: none !important;
+        box-shadow: 0 8px 18px rgba(0,0,0,.28) !important;
+    }
+
+    /* Painel real da chamada agora fica escondido até apertar + */
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro:not(.fase342-aberto):not(.call-active) {
+        display: none !important;
+    }
+
+    /* Quando abrir no +, aparece abaixo do botão da câmera */
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) {
+        display: block !important;
+        position: static !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: 520px !important;
+        margin: 0 auto 10px auto !important;
+        padding: 11px !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(56,189,248,.45) !important;
+        background: linear-gradient(135deg, #020617, #111827) !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,.32) !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-header {
+        display: none !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-videos {
+        display: none !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-controls {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-top: 0 !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-controls button {
+        padding: 10px 8px !important;
+        font-size: .78rem !important;
+        border-radius: 10px !important;
+        text-transform: none !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-note {
+        display: block !important;
+        margin-top: 8px !important;
+        font-size: .72rem !important;
+        color: #94a3b8 !important;
+        line-height: 1.35 !important;
+    }
+
+    /* Remove botões + antigos dentro do painel para não duplicar */
+    body.chess-selected #chess-call-panel .fase34-video-toggle,
+    body.chess-selected #chess-call-panel .fase34-call-toggle {
+        display: none !important;
+    }
+
+    /* Quando a chamada realmente começa, ela vira janelinha flutuante */
+    body.chess-selected #chess-call-panel.call-active {
+        display: block !important;
+        position: fixed !important;
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        transform: translateX(-50%) !important;
+        width: min(300px, calc(100vw - 18px)) !important;
+        max-width: calc(100vw - 18px) !important;
+        z-index: 950 !important;
+        border-radius: 15px !important;
+        overflow: hidden !important;
+    }
+
+    @media (max-width: 560px) {
+        #fase342-camera-dock {
+            margin-top: 7px;
+            padding: 8px 9px;
+        }
+
+        .fase342-camera-title {
+            font-size: .76rem;
+        }
+
+        .fase342-camera-sub {
+            font-size: .64rem;
+        }
+
+        body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-controls {
+            grid-template-columns: 1fr 1fr !important;
+        }
+    }
+</style>
+
+<script id="fase34-2-camera-dentro-da-partida-js">
+(function () {
+    if (window.__fase342CameraDentroDaPartidaOk) return;
+    window.__fase342CameraDentroDaPartidaOk = true;
+
+    function telaXadrezVisivel() {
+        const tela = document.getElementById('chess-screen');
+        return document.body.classList.contains('chess-selected') ||
+            (tela && getComputedStyle(tela).display !== 'none');
+    }
+
+    function tabuleiroXadrezAberto() {
+        return document.body.classList.contains('chess-board-visible') ||
+            document.body.classList.contains('chess-game-active');
+    }
+
+    function partidaOnlineAtiva() {
+        const panel = document.getElementById('chess-call-panel');
+        const onlineStatus = document.getElementById('chess-online-status');
+        const statusGeral = document.getElementById('chess-status');
+
+        if (panel && panel.classList.contains('online-visible')) return true;
+
+        const textoOnline = onlineStatus ? (onlineStatus.innerText || '').toLowerCase() : '';
+        const textoStatus = statusGeral ? (statusGeral.innerText || '').toLowerCase() : '';
+
+        if (textoOnline.includes('online na sala')) return true;
+        if (textoOnline.includes('como brancas')) return true;
+        if (textoOnline.includes('como pretas')) return true;
+        if (textoStatus.includes('online')) return true;
+
+        return false;
+    }
+
+    function criarDockCamera() {
+        let dock = document.getElementById('fase342-camera-dock');
+        if (dock) return dock;
+
+        dock = document.createElement('div');
+        dock.id = 'fase342-camera-dock';
+        dock.innerHTML = `
+            <div class="fase342-camera-info">
+                <div class="fase342-camera-title">📹 Câmera e áudio</div>
+                <div class="fase342-camera-sub">Chamada do Xadrez Online</div>
+            </div>
+            <button id="fase342-camera-toggle" type="button" aria-label="Abrir câmera e áudio">+</button>
+        `;
+
+        const btn = dock.querySelector('#fase342-camera-toggle');
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const panel = document.getElementById('chess-call-panel');
+            if (!panel) return;
+
+            if (panel.classList.contains('call-active')) return;
+
+            panel.classList.toggle('fase342-aberto');
+            btn.textContent = panel.classList.contains('fase342-aberto') ? '−' : '+';
+        });
+
+        return dock;
+    }
+
+    function moverCameraParaDentroDaPartida() {
+        if (!telaXadrezVisivel()) return;
+
+        const panel = document.getElementById('chess-call-panel');
+        const boardWrap = document.querySelector('#chess-screen .chess-board-wrap');
+        const card = document.querySelector('#chess-screen .chess-card');
+
+        if (!panel || !boardWrap || !card) return;
+
+        const online = tabuleiroXadrezAberto() && partidaOnlineAtiva();
+
+        document.body.classList.toggle('fase342-online-board', !!online);
+
+        panel.classList.add('fase342-panel-no-tabuleiro');
+
+        const dock = criarDockCamera();
+
+        if (online) {
+            if (dock.parentElement !== card) {
+                card.insertBefore(dock, boardWrap);
+            } else if (dock.nextElementSibling !== panel && panel.parentElement !== card) {
+                card.insertBefore(panel, boardWrap);
+            }
+
+            if (panel.parentElement !== card || panel.previousElementSibling !== dock) {
+                dock.insertAdjacentElement('afterend', panel);
+            }
+
+            const btn = document.getElementById('fase342-camera-toggle');
+            if (btn) {
+                btn.textContent = panel.classList.contains('fase342-aberto') || panel.classList.contains('call-active') ? '−' : '+';
+            }
+        } else {
+            panel.classList.remove('fase342-aberto');
+
+            const btn = document.getElementById('fase342-camera-toggle');
+            if (btn) btn.textContent = '+';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', moverCameraParaDentroDaPartida);
+    window.addEventListener('load', moverCameraParaDentroDaPartida);
+
+    document.addEventListener('click', function () {
+        setTimeout(moverCameraParaDentroDaPartida, 80);
+        setTimeout(moverCameraParaDentroDaPartida, 400);
+        setTimeout(moverCameraParaDentroDaPartida, 900);
+    });
+
+    setInterval(moverCameraParaDentroDaPartida, 900);
+})();
+</script>
 </body>
 </html>
