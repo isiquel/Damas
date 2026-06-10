@@ -2078,7 +2078,7 @@
 
         /* ✅ FASE 13.4 - RESTAURAÇÃO LIMPA DO XADREZ ONLINE
            Mantém o Xadrez funcionando, tela limpa e Admin próprio preservado.
-           Vídeo/áudio continua pausado nesta fase para ser refeito depois com a lógica estável da Damas. */
+           Vídeo/áudio do Xadrez restaurado com painel próprio, sem mexer na Damas. */
         body:not(.chess-admin-only) #chess-material-panel,
         body:not(.chess-admin-only) #chess-history-panel,
         body:not(.chess-admin-only) .chess-action-note,
@@ -3101,6 +3101,62 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             }
         }
 
+
+        /* ✅ FASE 25 - XADREZ ONLINE: tela limpa com câmera e áudio restaurados */
+        body.chess-selected.chess-game-active #chess-call-panel,
+        body.chess-board-visible #chess-call-panel.online-visible {
+            display: block !important;
+        }
+
+        body.chess-board-visible:not(.chess-admin-only) #chess-history-panel,
+        body.chess-board-visible:not(.chess-admin-only) #chess-material-panel,
+        body.chess-board-visible:not(.chess-admin-only) .chess-action-note,
+        body.chess-board-visible:not(.chess-admin-only) .chess-warning {
+            display: none !important;
+        }
+
+        body.chess-board-visible #chess-call-panel {
+            max-width: 520px;
+            margin: 12px auto 12px auto;
+        }
+
+        body.chess-board-visible #chess-call-panel:not(.call-active) {
+            background: linear-gradient(135deg, rgba(2,6,23,.96), rgba(8,47,73,.72));
+            border: 1px solid rgba(56,189,248,.68);
+            box-shadow: 0 12px 28px rgba(0,0,0,.42);
+        }
+
+        body.chess-board-visible #chess-call-panel:not(.call-active) .chess-call-title::after {
+            content: ' • jogadores online';
+            color: #86efac;
+            font-weight: 800;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        body.chess-board-visible #chess-call-panel:not(.call-active) .chess-call-note {
+            display: block;
+            color: #cbd5e1;
+        }
+
+        body.chess-board-visible #chess-call-panel:not(.call-active) .chess-call-controls {
+            grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+        }
+
+        body.chess-board-visible #chess-call-panel:not(.call-active) #chess-toggle-mic-btn,
+        body.chess-board-visible #chess-call-panel:not(.call-active) #chess-toggle-camera-btn,
+        body.chess-board-visible #chess-call-panel:not(.call-active) #chess-unlock-audio-btn,
+        body.chess-board-visible #chess-call-panel:not(.call-active) #chess-call-size-minus-btn,
+        body.chess-board-visible #chess-call-panel:not(.call-active) #chess-call-size-plus-btn,
+        body.chess-board-visible #chess-call-panel:not(.call-active) #chess-end-call-btn {
+            display: none;
+        }
+
+        body.chess-board-visible #chess-chat-panel {
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -3176,9 +3232,9 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <button id="chess-back-btn" class="back-to-games-btn btn-chess-back" type="button">← Voltar às modalidades</button>
 
             <div class="chess-title">♟️ Xadrez Arena</div>
-            <div class="chess-clean-game-pill">🧭 Menu organizado + tela limpa</div>
+            <div class="chess-clean-game-pill">📹 Tela limpa + vídeo/áudio</div>
             <div class="chess-subtitle">
-                Fase 24: menu do Xadrez mais organizado. Agora o menu separa Jogar, Aprender e Meu desempenho antes de abrir o tabuleiro. Durante a partida continua aparecendo somente o necessário.
+                Fase 25: tela limpa com vídeo e áudio restaurados no Xadrez Online. O menu continua separado em Jogar, Aprender e Meu desempenho; durante a partida aparece o tabuleiro, os botões essenciais, o chat e a chamada compacta.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -3221,7 +3277,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 24 ativa: menu do Xadrez organizado em Jogar, Aprender e Meu desempenho; durante a partida aparece só o necessário.
+                ✅ Fase 25 ativa: Xadrez Online com tela limpa e câmera/áudio restaurados sem mexer na Damas.
             </div>
         </div>
     </div>
@@ -7950,7 +8006,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 22 ativa: Xadrez com conquistas, ranking separado do treino, histórico e professor durante a partida. Vídeo/áudio pausado.';
+            lastMoveMessage = 'Fase 22 ativa: Xadrez com conquistas, ranking separado do treino, histórico e professor durante a partida. Vídeo/áudio restaurado com painel compacto.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -8464,7 +8520,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 22</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 25</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -8516,7 +8572,10 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 const status = document.getElementById('chess-status');
                 if (status) card.insertBefore(online, status);
                 else card.insertBefore(online, card.firstChild?.nextSibling || null);
+                reposicionarPainelChamadaXadrez();
             }
+
+            reposicionarPainelChamadaXadrez();
 
             if (card && !document.getElementById('chess-training-panel')) {
                 const training = document.createElement('div');
@@ -8810,7 +8869,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 22 ativa: Xadrez com conquistas, ranking do treino, histórico recolhível, professor durante a partida e máquina mais inteligente. A Damas continua preservada. Vídeo/áudio pausado.';
+                warning.innerHTML = '✅ Fase 25 ativa: Xadrez Online com tela limpa e chamada de vídeo/áudio restaurada. Ranking, conquistas e desempenho ficam no menu. A Damas continua preservada.';
             }
         }
 
@@ -11625,7 +11684,26 @@ Link: ${location.origin}${location.pathname}`;
             if (remoteLabel) remoteLabel.innerText = chessPlayerColor === 'white' ? 'Oponente • Pretas' : 'Oponente • Brancas';
         }
 
+
+        function reposicionarPainelChamadaXadrez() {
+            const card = document.querySelector('#chess-screen .chess-card');
+            const panel = document.getElementById('chess-call-panel');
+            if (!card || !panel) return;
+
+            // Fase 25: o painel de vídeo/áudio não pode ficar dentro do painel online,
+            // porque o painel online é escondido quando a partida abre para manter a tela limpa.
+            // Por isso a chamada vira irmã do tabuleiro, aparecendo abaixo do tabuleiro e acima dos botões.
+            const boardWrap = card.querySelector('.chess-board-wrap');
+            const actions = card.querySelector('.chess-actions');
+            if (boardWrap && panel.previousElementSibling !== boardWrap) {
+                boardWrap.insertAdjacentElement('afterend', panel);
+            } else if (!boardWrap && actions && panel.nextElementSibling !== actions) {
+                card.insertBefore(panel, actions);
+            }
+        }
+
         function atualizarPainelChamadaXadrez() {
+            reposicionarPainelChamadaXadrez();
             const els = chessCallElements();
             if (!els.panel) return;
             const online = chessMode === 'online' && !!chessRoomId;
