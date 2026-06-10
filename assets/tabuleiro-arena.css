@@ -3809,3 +3809,43 @@ body.page-xadrez-direct #chess-screen {
     text-transform: uppercase;
     letter-spacing: .5px;
 }
+/* ✅ FASE 32.1 - CORREÇÃO DA ABERTURA DIRETA
+   Corrige damas.html e xadrez.html abrindo somente com o título.
+   Não altera a Damas, não altera o Xadrez, apenas libera a tela certa. */
+
+body.page-damas-direct {
+    display: flex !important;
+}
+
+body.page-damas-direct #games-hub-panel,
+body.page-damas-direct #chess-screen,
+body.page-damas-direct #game-screen,
+body.page-damas-direct #countdown-screen {
+    display: none !important;
+}
+
+body.page-damas-direct #lobby-screen {
+    display: block !important;
+}
+
+body.page-xadrez-direct {
+    display: flex !important;
+}
+
+body.page-xadrez-direct #games-hub-panel,
+body.page-xadrez-direct #lobby-screen,
+body.page-xadrez-direct #game-screen,
+body.page-xadrez-direct #countdown-screen {
+    display: none !important;
+}
+
+body.page-xadrez-direct #chess-screen {
+    display: block !important;
+}
+
+body.page-damas-direct .brand-kicker,
+body.page-damas-direct .platform-subtitle,
+body.page-xadrez-direct .brand-kicker,
+body.page-xadrez-direct .platform-subtitle {
+    display: none !important;
+}
