@@ -14879,5 +14879,284 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
     setInterval(quandoAtivarChamada, 700);
 })();
 </script>
+    <!-- ✅ FASE 34.4 - ARRASTE REAL DA CÂMERA NO CELULAR
+     Adiciona uma barra própria para arrastar a chamada do Xadrez.
+     Também adiciona botões pequenos de posição para tirar a câmera da frente do tabuleiro.
+     Não altera a Damas. Não altera o site principal. Atua somente na /fase33. -->
+
+<style id="fase34-4-arraste-real-camera-css">
+    body.chess-selected #chess-call-panel.call-active {
+        position: fixed !important;
+        z-index: 12000 !important;
+        touch-action: none !important;
+        user-select: none !important;
+    }
+
+    #fase344-drag-handle {
+        display: none;
+    }
+
+    body.chess-selected #chess-call-panel.call-active #fase344-drag-handle {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+        width: 100% !important;
+        padding: 7px 8px !important;
+        margin: 0 0 5px 0 !important;
+        border-radius: 11px !important;
+        background: linear-gradient(90deg, #0ea5e9, #2563eb) !important;
+        color: #fff !important;
+        font-size: .68rem !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        letter-spacing: .25px !important;
+        cursor: grab !important;
+        touch-action: none !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-touch-callout: none !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active #fase344-drag-handle:active {
+        cursor: grabbing !important;
+    }
+
+    .fase344-drag-text {
+        flex: 1;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        pointer-events: none;
+    }
+
+    .fase344-move-buttons {
+        display: flex;
+        gap: 3px;
+        flex-shrink: 0;
+    }
+
+    .fase344-move-buttons button {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        background: rgba(2, 6, 23, .35) !important;
+        color: #fff !important;
+        font-size: .75rem !important;
+        line-height: 1 !important;
+        text-transform: none !important;
+        box-shadow: none !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active .chess-call-header {
+        cursor: default !important;
+        touch-action: auto !important;
+    }
+
+    @media (max-width: 560px) {
+        body.chess-selected #chess-call-panel.call-active {
+            width: min(var(--fase343-call-width, 260px), calc(100vw - 10px)) !important;
+            max-width: calc(100vw - 10px) !important;
+        }
+
+        body.chess-selected #chess-call-panel.call-active #fase344-drag-handle {
+            padding: 8px !important;
+            font-size: .64rem !important;
+        }
+
+        .fase344-move-buttons button {
+            width: 25px !important;
+            height: 25px !important;
+            min-width: 25px !important;
+        }
+    }
+</style>
+
+<script id="fase34-4-arraste-real-camera-js">
+(function () {
+    if (window.__fase344ArrasteRealCameraOk) return;
+    window.__fase344ArrasteRealCameraOk = true;
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    function painel() {
+        return document.getElementById('chess-call-panel');
+    }
+
+    function limitar(valor, min, max) {
+        return Math.max(min, Math.min(max, valor));
+    }
+
+    function aplicarPosicao(left, top) {
+        const p = painel();
+        if (!p) return;
+
+        const margem = 6;
+        const rect = p.getBoundingClientRect();
+        const largura = rect.width || 280;
+        const altura = rect.height || 220;
+
+        const novoLeft = limitar(left, margem, window.innerWidth - largura - margem);
+        const novoTop = limitar(top, margem, window.innerHeight - altura - margem);
+
+        p.classList.add('fase343-movida');
+        p.classList.add('fase344-posicao-manual');
+
+        p.style.left = novoLeft + 'px';
+        p.style.top = novoTop + 'px';
+        p.style.right = 'auto';
+        p.style.bottom = 'auto';
+        p.style.transform = 'none';
+    }
+
+    function moverPorBotao(dx, dy) {
+        const p = painel();
+        if (!p) return;
+
+        const rect = p.getBoundingClientRect();
+        aplicarPosicao(rect.left + dx, rect.top + dy);
+    }
+
+    function criarHandle() {
+        const p = painel();
+        if (!p || p.dataset.fase344HandleOk === '1') return;
+
+        p.dataset.fase344HandleOk = '1';
+
+        const handle = document.createElement('div');
+        handle.id = 'fase344-drag-handle';
+        handle.innerHTML = `
+            <span class="fase344-drag-text">↔ arraste a câmera</span>
+            <span class="fase344-move-buttons">
+                <button type="button" data-move="left">←</button>
+                <button type="button" data-move="up">↑</button>
+                <button type="button" data-move="down">↓</button>
+                <button type="button" data-move="right">→</button>
+            </span>
+        `;
+
+        p.insertBefore(handle, p.firstChild);
+
+        handle.querySelectorAll('button[data-move]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const dir = btn.getAttribute('data-move');
+                const passo = 45;
+
+                if (dir === 'left') moverPorBotao(-passo, 0);
+                if (dir === 'right') moverPorBotao(passo, 0);
+                if (dir === 'up') moverPorBotao(0, -passo);
+                if (dir === 'down') moverPorBotao(0, passo);
+            });
+        });
+
+        function pegarPonto(e) {
+            if (e.touches && e.touches[0]) return e.touches[0];
+            if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0];
+            return e;
+        }
+
+        function iniciar(e) {
+            const alvo = e.target;
+
+            if (alvo && alvo.closest && alvo.closest('button')) {
+                return;
+            }
+
+            const ponto = pegarPonto(e);
+            const rect = p.getBoundingClientRect();
+
+            dragging = true;
+            startX = ponto.clientX;
+            startY = ponto.clientY;
+            startLeft = rect.left;
+            startTop = rect.top;
+
+            p.classList.add('fase343-movida');
+            p.classList.add('fase344-posicao-manual');
+
+            p.style.left = startLeft + 'px';
+            p.style.top = startTop + 'px';
+            p.style.right = 'auto';
+            p.style.bottom = 'auto';
+            p.style.transform = 'none';
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function mover(e) {
+            if (!dragging) return;
+
+            const ponto = pegarPonto(e);
+            const dx = ponto.clientX - startX;
+            const dy = ponto.clientY - startY;
+
+            aplicarPosicao(startLeft + dx, startTop + dy);
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function parar() {
+            dragging = false;
+        }
+
+        handle.addEventListener('pointerdown', iniciar);
+        window.addEventListener('pointermove', mover);
+        window.addEventListener('pointerup', parar);
+        window.addEventListener('pointercancel', parar);
+
+        handle.addEventListener('touchstart', iniciar, { passive: false });
+        window.addEventListener('touchmove', mover, { passive: false });
+        window.addEventListener('touchend', parar);
+        window.addEventListener('touchcancel', parar);
+
+        handle.addEventListener('mousedown', iniciar);
+        window.addEventListener('mousemove', mover);
+        window.addEventListener('mouseup', parar);
+    }
+
+    function posicionarMelhorNoCelular() {
+        const p = painel();
+        if (!p || !p.classList.contains('call-active')) return;
+
+        criarHandle();
+
+        if (p.classList.contains('fase344-posicao-manual')) return;
+
+        const rect = p.getBoundingClientRect();
+
+        if (window.innerWidth <= 560) {
+            const left = window.innerWidth - rect.width - 8;
+            const top = 8;
+            aplicarPosicao(left, top);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', criarHandle);
+    window.addEventListener('load', criarHandle);
+
+    document.addEventListener('click', function () {
+        setTimeout(criarHandle, 100);
+        setTimeout(posicionarMelhorNoCelular, 300);
+        setTimeout(posicionarMelhorNoCelular, 900);
+    });
+
+    setInterval(function () {
+        criarHandle();
+        posicionarMelhorNoCelular();
+    }, 800);
+})();
+</script>
 </body>
 </html>
