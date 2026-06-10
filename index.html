@@ -3157,6 +3157,139 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             margin-left: auto;
             margin-right: auto;
         }
+
+        /* ✅ FASE 26 - XADREZ: partida realmente limpa + vídeo fixo abaixo do tabuleiro */
+        body.chess-board-visible #chess-screen .chess-card {
+            padding: 10px !important;
+        }
+
+        body.chess-board-visible #chess-screen .chess-title,
+        body.chess-board-visible #chess-screen .chess-clean-game-pill,
+        body.chess-board-visible #chess-screen #chess-back-btn,
+        body.chess-board-visible #chess-screen #chess-menu-organizer,
+        body.chess-board-visible #chess-screen .chess-menu-section-label,
+        body.chess-board-visible #chess-screen #chess-online-panel,
+        body.chess-board-visible #chess-screen #chess-training-panel,
+        body.chess-board-visible #chess-screen #chess-training-ranking-panel,
+        body.chess-board-visible #chess-screen #chess-achievements-panel,
+        body.chess-board-visible #chess-screen #chess-history-panel,
+        body.chess-board-visible #chess-screen #chess-material-panel,
+        body.chess-board-visible #chess-screen #chess-chat-panel,
+        body.chess-board-visible #chess-screen .chess-warning,
+        body.chess-board-visible #chess-screen .chess-action-note {
+            display: none !important;
+        }
+
+        body.chess-board-visible #chess-status {
+            max-width: 520px !important;
+            margin: 0 auto 8px auto !important;
+            padding: 8px 10px !important;
+            font-size: 0.84rem !important;
+            border-radius: 10px !important;
+        }
+
+        body.chess-board-visible #chess-screen .chess-board-wrap {
+            margin-bottom: 10px !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.online-visible,
+        body.chess-board-visible #chess-call-panel.call-active {
+            display: block !important;
+            position: static !important;
+            left: auto !important;
+            right: auto !important;
+            top: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: 520px !important;
+            margin: 0 auto 10px auto !important;
+            padding: 10px !important;
+            z-index: 1 !important;
+            border-radius: 14px !important;
+            text-align: left !important;
+            user-select: auto !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active .chess-call-header {
+            cursor: default !important;
+            touch-action: auto !important;
+            justify-content: space-between !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active .chess-call-title::after {
+            content: ' • ao vivo' !important;
+            color: #86efac !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active .chess-call-status {
+            display: block !important;
+            font-size: 0.68rem !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active .chess-call-videos {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 7px !important;
+            margin-bottom: 8px !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active .chess-video-tile {
+            aspect-ratio: 16 / 10 !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active .chess-call-controls {
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 6px !important;
+        }
+
+        body.chess-board-visible #chess-call-panel.call-active #chess-end-call-btn {
+            grid-column: auto !important;
+        }
+
+        body.chess-board-visible #chess-screen .chess-actions {
+            max-width: 520px !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 8px !important;
+            margin-top: 2px !important;
+        }
+
+        body.chess-board-visible #chess-screen .chess-actions button {
+            padding: 10px 8px !important;
+            font-size: 0.74rem !important;
+        }
+
+        body.chess-board-visible #chess-new-btn {
+            display: none !important;
+        }
+
+        @media (max-width: 520px) {
+            body.chess-board-visible #chess-screen .chess-card { padding: 8px !important; }
+            body.chess-board-visible #chess-status { font-size: 0.78rem !important; }
+            body.chess-board-visible #chess-call-panel.online-visible,
+            body.chess-board-visible #chess-call-panel.call-active {
+                max-width: 100% !important;
+                padding: 8px !important;
+            }
+            body.chess-board-visible #chess-call-panel .chess-call-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 4px !important;
+            }
+            body.chess-board-visible #chess-call-panel.call-active .chess-call-videos {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            body.chess-board-visible #chess-call-panel.call-active .chess-call-controls {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            body.chess-board-visible #chess-screen .chess-actions {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            body.chess-board-visible #chess-screen .chess-actions button {
+                font-size: 0.72rem !important;
+            }
+        }
+
 </style>
 </head>
 <body class="platform-start-active mode-selecting">
@@ -3186,8 +3319,8 @@ body.chess-board-visible .chess-pieces-lesson-panel {
                 <div class="game-mode-name">Damas Arena</div>
                 <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
             </div>
-            <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
-                <span class="game-mode-badge">Fase 22</span>
+            <div class="game-mode-card active" id="game-card-xadrez" role="button" tabindex="0">
+                <span class="game-mode-badge">Ativo</span>
                 <div class="game-mode-icon">♟️</div>
                 <div class="game-mode-name">Xadrez Arena</div>
                 <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
@@ -3234,7 +3367,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-clean-game-pill">📹 Tela limpa + vídeo/áudio</div>
             <div class="chess-subtitle">
-                Fase 25: tela limpa com vídeo e áudio restaurados no Xadrez Online. O menu continua separado em Jogar, Aprender e Meu desempenho; durante a partida aparece o tabuleiro, os botões essenciais, o chat e a chamada compacta.
+                Xadrez Online com menu separado, tela de partida mais limpa e chamada de vídeo/áudio integrada abaixo do tabuleiro.
                 A Damas Arena continua preservada e não foi alterada.
             </div>
 
@@ -3277,7 +3410,7 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
 
             <div class="chess-warning">
-                ✅ Fase 25 ativa: Xadrez Online com tela limpa e câmera/áudio restaurados sem mexer na Damas.
+                ✅ Xadrez Online ativo com tela limpa e câmera/áudio restaurados sem mexer na Damas.
             </div>
         </div>
     </div>
@@ -8006,7 +8139,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 22 ativa: Xadrez com conquistas, ranking separado do treino, histórico e professor durante a partida. Vídeo/áudio restaurado com painel compacto.';
+            lastMoveMessage = 'Xadrez Online ativo: sala sincronizada, tela limpa e vídeo/áudio disponível para os jogadores.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -8520,7 +8653,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 25</div>
+                    <div class="chess-online-title">🌐 Xadrez Online</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -8566,7 +8699,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                             <button id="chess-call-size-plus-btn" type="button">➕ Maior</button>
                             <button id="chess-end-call-btn" class="btn-chess-call-end" type="button">Encerrar</button>
                         </div>
-                        <div class="chess-call-note">A chamada usa <strong>chessRooms/sala/call</strong>, separada da Damas. Vídeo/áudio só aparece para jogadores; espectador fica sem câmera e microfone.</div>
+                        <div class="chess-call-note">Chamada separada da Damas. Vídeo/áudio só aparece para jogadores; espectador fica sem câmera e microfone.</div>
                     </div>
                 `;
                 const status = document.getElementById('chess-status');
@@ -8721,7 +8854,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 organizer.innerHTML = `
                     <div class="chess-menu-organizer-head">
                         <div class="chess-menu-organizer-title">🧭 Menu rápido do Xadrez</div>
-                        <div class="chess-menu-organizer-badge">Fase 24</div>
+                        <div class="chess-menu-organizer-badge">Ativo</div>
                     </div>
                     <div class="chess-menu-organizer-grid">
                         <div class="chess-menu-card">
@@ -8869,7 +9002,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
             const warning = document.querySelector('#chess-screen .chess-warning');
             if (warning) {
-                warning.innerHTML = '✅ Fase 25 ativa: Xadrez Online com tela limpa e chamada de vídeo/áudio restaurada. Ranking, conquistas e desempenho ficam no menu. A Damas continua preservada.';
+                warning.innerHTML = '✅ Xadrez Online ativo: chamada de vídeo/áudio restaurada, ranking e conquistas ficam no menu. A Damas continua preservada.';
             }
         }
 
