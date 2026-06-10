@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
+    <!-- ✅ PWA / INSTALAR NO CELULAR - TABULEIRO ARENA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#e94560">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
     <style>
         :root {
@@ -7986,7 +7994,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 });
 
                 document.getElementById('phase5-app-mode-btn')?.addEventListener('click', () => {
-                    const msg = `O modo app grátis já foi preparado nesta versão por meio de configurações no navegador.\n\nPara instalar no celular:\n\nAndroid/Chrome: toque nos três pontinhos > Adicionar à tela inicial.\n\niPhone/Safari: toque em compartilhar > Adicionar à Tela de Início.\n\nIsso não usa serviço pago e deixa o jogo com aparência de aplicativo.`;
+                    const msg = `O modo app já foi preparado nesta versão com manifest.json, ícones e Service Worker.\n\nPara instalar no celular:\n\nAndroid/Chrome: toque nos três pontinhos > Adicionar à tela inicial.\n\niPhone/Safari: toque em compartilhar > Adicionar à Tela de Início.\n\nIsso não usa serviço pago e deixa o jogo com aparência de aplicativo.`;
                     if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Modo app grátis', msg.replace(/\n/g, '<br>'));
                     else alert(msg);
                 });
@@ -12461,6 +12469,22 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
   }
 }
 -->
+
+
+<!-- ✅ SERVICE WORKER - NECESSÁRIO PARA INSTALAR COMO APP NO CELULAR -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js')
+                .then(function () {
+                    console.log('Tabuleiro Arena: Service Worker registrado com sucesso.');
+                })
+                .catch(function (error) {
+                    console.warn('Tabuleiro Arena: não foi possível registrar o Service Worker.', error);
+                });
+        });
+    }
+</script>
 
 </body>
 </html>
