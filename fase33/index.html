@@ -14070,5 +14070,227 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
     setInterval(aplicarFase34, 1500);
 })();
 </script>
+    <!-- ✅ FASE 34.1 - VÍDEO E ÁUDIO DO XADREZ VISÍVEL COM BOTÃO +
+     Mostra o painel compacto de vídeo/áudio sem poluir a tela.
+     Não altera a Damas. Atua somente no Xadrez dentro da /fase33. -->
+
+<style id="fase34-1-video-audio-xadrez-css">
+    body.chess-selected #chess-call-panel {
+        display: block !important;
+        max-width: 520px !important;
+        margin: 10px auto 12px auto !important;
+    }
+
+    body.chess-selected #chess-call-panel:not(.call-active) {
+        position: static !important;
+        transform: none !important;
+        width: 100% !important;
+        padding: 10px 12px !important;
+        border-radius: 14px !important;
+        background: linear-gradient(135deg, #020617, #111827) !important;
+        border: 1px solid rgba(56,189,248,.45) !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,.32) !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-fechado:not(.call-active) .chess-call-videos,
+    body.chess-selected #chess-call-panel.fase34-video-fechado:not(.call-active) .chess-call-controls,
+    body.chess-selected #chess-call-panel.fase34-video-fechado:not(.call-active) .chess-call-note {
+        display: none !important;
+    }
+
+    body.chess-selected #chess-call-panel:not(.call-active) .chess-call-header {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        gap: 10px !important;
+        align-items: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-bottom: 0 !important;
+    }
+
+    body.chess-selected #chess-call-panel:not(.call-active) .chess-call-title {
+        color: #38bdf8 !important;
+        font-size: .86rem !important;
+        font-weight: 1000 !important;
+        text-transform: uppercase !important;
+        letter-spacing: .45px !important;
+    }
+
+    body.chess-selected #chess-call-panel:not(.call-active) .chess-call-status {
+        display: none !important;
+    }
+
+    .fase34-video-toggle {
+        width: 42px !important;
+        height: 36px !important;
+        min-width: 42px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        background: #0ea5e9 !important;
+        color: #fff !important;
+        font-size: 1.28rem !important;
+        line-height: 1 !important;
+        text-transform: none !important;
+        box-shadow: 0 8px 18px rgba(0,0,0,.28) !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) {
+        padding: 12px !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-header {
+        padding-bottom: 8px !important;
+        margin-bottom: 10px !important;
+        border-bottom: 1px solid rgba(255,255,255,.08) !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-status {
+        display: block !important;
+        color: #cbd5e1 !important;
+        font-size: .74rem !important;
+        line-height: 1.25 !important;
+        text-align: right !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-videos {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-top: 8px !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-controls {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-top: 10px !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-note {
+        display: block !important;
+    }
+
+    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-controls button {
+        padding: 10px 8px !important;
+        font-size: .78rem !important;
+        border-radius: 10px !important;
+        text-transform: none !important;
+    }
+
+    body.chess-selected #chess-call-panel.call-active {
+        display: block !important;
+        position: fixed !important;
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        transform: translateX(-50%) !important;
+        width: min(300px, calc(100vw - 18px)) !important;
+        max-width: calc(100vw - 18px) !important;
+        z-index: 950 !important;
+        border-radius: 15px !important;
+        overflow: hidden !important;
+    }
+
+    body.chess-board-visible.chess-mode-training #chess-call-panel,
+    body.chess-board-visible.chess-mode-practice #chess-call-panel {
+        display: none !important;
+    }
+</style>
+
+<script id="fase34-1-video-audio-xadrez-js">
+(function () {
+    if (window.__fase341VideoAudioXadrezOk) return;
+    window.__fase341VideoAudioXadrezOk = true;
+
+    function xadrezAberto() {
+        const tela = document.getElementById('chess-screen');
+        return document.body.classList.contains('chess-selected') ||
+            (tela && getComputedStyle(tela).display !== 'none');
+    }
+
+    function estaOnlineXadrez() {
+        const status = document.getElementById('chess-online-status');
+        const panel = document.getElementById('chess-call-panel');
+
+        if (panel && panel.classList.contains('online-visible')) return true;
+
+        if (status) {
+            const txt = (status.innerText || '').toLowerCase();
+            if (txt.includes('online na sala') || txt.includes('sala') && !txt.includes('modo local ativo')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function mostrarAvisoVideo() {
+        if (typeof window.alert === 'function') {
+            window.alert('Entre/Jogue em uma sala online primeiro. Depois o vídeo e áudio do Xadrez serão liberados para os dois jogadores.');
+        }
+    }
+
+    function prepararVideoAudioXadrez() {
+        if (!xadrezAberto()) return;
+
+        const panel = document.getElementById('chess-call-panel');
+        if (!panel) return;
+
+        const header = panel.querySelector('.chess-call-header');
+        if (!header) return;
+
+        let btn = header.querySelector('.fase34-video-toggle');
+
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'fase34-video-toggle';
+            btn.textContent = '+';
+            btn.setAttribute('aria-label', 'Abrir vídeo e áudio do Xadrez');
+            header.appendChild(btn);
+
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (panel.classList.contains('call-active')) return;
+
+                if (!estaOnlineXadrez()) {
+                    panel.classList.remove('fase34-video-aberto');
+                    panel.classList.add('fase34-video-fechado');
+                    btn.textContent = '+';
+                    mostrarAvisoVideo();
+                    return;
+                }
+
+                panel.classList.toggle('fase34-video-aberto');
+                panel.classList.toggle('fase34-video-fechado', !panel.classList.contains('fase34-video-aberto'));
+                btn.textContent = panel.classList.contains('fase34-video-aberto') ? '−' : '+';
+            });
+        }
+
+        if (!panel.classList.contains('fase34-video-aberto') && !panel.classList.contains('call-active')) {
+            panel.classList.add('fase34-video-fechado');
+        }
+
+        btn.textContent = panel.classList.contains('fase34-video-aberto') || panel.classList.contains('call-active') ? '−' : '+';
+
+        const status = document.getElementById('chess-call-status');
+        if (status && !estaOnlineXadrez()) {
+            status.innerText = 'Entre em uma sala online para liberar câmera e microfone.';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', prepararVideoAudioXadrez);
+    window.addEventListener('load', prepararVideoAudioXadrez);
+    document.addEventListener('click', function () {
+        setTimeout(prepararVideoAudioXadrez, 120);
+        setTimeout(prepararVideoAudioXadrez, 600);
+    });
+
+    setInterval(prepararVideoAudioXadrez, 1200);
+})();
+</script>
 </body>
 </html>
