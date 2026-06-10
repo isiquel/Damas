@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xadrez Arena - Fase 32</title>
+    <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
+    <link rel="stylesheet" href="assets/tabuleiro-arena.css">
+</head>
+<body class="platform-start-active mode-selecting page-xadrez-direct">
+<script>window.TABULEIRO_ARENA_PAGE = "xadrez";</script>
+
+<div id="countdown-screen" class="countdown-overlay" aria-live="polite">
+    <div class="countdown-card">
+        <div class="countdown-sync-label">Preparando a partida</div>
+        <div id="countdown-num" class="countdown-number">5</div>
+        <div id="countdown-txt" class="countdown-text">Sincronizando o tabuleiro online</div>
+        <div id="countdown-subtxt" class="countdown-subtext">A partida começará em instantes para jogadores e espectadores.</div>
+        <div class="countdown-loader"><span></span></div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="brand-kicker">🎲 Plataforma de jogos clássicos</div>
+    <h1>Tabuleiro Arena</h1>
+    <div class="platform-subtitle">Jogue, aprenda e dispute torneios online. <strong>Damas Arena</strong> continua preservada — e o <strong>Xadrez Arena</strong> avança em módulo separado.</div>
+
+    <div id="games-hub-panel" class="games-hub-panel">
+        <div class="games-hub-title">Escolha a modalidade</div>
+        <div class="games-hub-desc">Escolha uma das modalidades para continuar.</div>
+        <div class="game-mode-grid">
+            <div class="game-mode-card active" id="game-card-damas" role="button" tabindex="0">
+                <span class="game-mode-badge">Ativo</span>
+                <div class="game-mode-icon">⚫🔴</div>
+                <div class="game-mode-name">Damas Arena</div>
+                <div class="game-mode-copy">Online, treino, modo aprender, ranking, torneios, espectador e vídeo/áudio.</div>
+            </div>
+            <div class="game-mode-card soon" id="game-card-xadrez" role="button" tabindex="0">
+                <span class="game-mode-badge">Fase 32</span>
+                <div class="game-mode-icon">♟️</div>
+                <div class="game-mode-name">Xadrez Arena</div>
+                <div class="game-mode-copy">Online, treino contra robô e modo aprender. O tabuleiro abre só depois da escolha.</div>
+            </div>
+            <div class="game-mode-card admin-entry" id="game-card-admin" role="button" tabindex="0">
+                <span class="game-mode-badge">Dono</span>
+                <div class="game-mode-icon">🛡️</div>
+                <div class="game-mode-name">Painel Admin</div>
+                <div class="game-mode-copy">Entre como administrador para controlar Damas e Xadrez.</div>
+            </div>
+        </div>
+        <div id="admin-login-panel" class="admin-login-panel central-hidden">
+            <div class="admin-login-title">🛡️ Entrada do Administrador</div>
+            <div class="admin-login-desc">Área exclusiva do dono do jogo. Entre com o e-mail e a senha cadastrados no Firebase para abrir o painel de controle.</div>
+            <div class="admin-login-row">
+                <input type="email" id="admin-email-input" placeholder="E-mail do administrador" autocomplete="username">
+                <input type="password" id="admin-password-input" placeholder="Senha do administrador" autocomplete="current-password">
+            </div>
+            <button id="admin-login-btn" class="btn-admin-login" type="button">Entrar no Painel Admin</button>
+            <button id="admin-login-back-btn" class="btn-admin-login-back" type="button">← Voltar às modalidades</button>
+            <button id="admin-logout-btn" class="btn-admin-logout" type="button" style="display:none;">Sair do Admin</button>
+            <div id="admin-login-status" class="admin-login-status">Jogadores comuns não usam esta área.</div>
+
+            <div id="central-admin-menu" class="central-admin-menu">
+                <div class="central-admin-title">🎮 Central do Dono da Plataforma</div>
+                <div class="central-admin-desc">Painel do dono da plataforma. A Damas continua ativa e preservada; o Xadrez agora tem administração própria.</div>
+                <div class="central-admin-grid">
+                    <button id="central-admin-damas-btn" class="btn-central-admin-damas" type="button">Administrar Damas<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat, ranking e torneios</span></button>
+                    <button id="central-admin-xadrez-btn" class="btn-central-admin-xadrez" type="button">Administrar Xadrez<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat, jogadores e reset</span></button>
+                    <button id="central-admin-back-btn" class="btn-central-admin-voltar" type="button">Voltar ao menu<br><span style="font-size:.68rem; opacity:.85;">continuar jogando</span></button>
+                </div>
+                <div id="central-admin-note" class="central-admin-note"></div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- ♟️ TELA DO XADREZ ARENA - SEPARADA DA DAMAS -->
+    <div id="chess-screen">
+        <div class="chess-card">
+            <button id="chess-back-btn" class="back-to-games-btn btn-chess-back" type="button">← Voltar às modalidades</button>
+
+            <div class="chess-title">♟️ Xadrez Arena</div>
+            <div class="chess-clean-game-pill">✨ Tela limpa + tabuleiro estável</div>
+            <div class="chess-subtitle">
+                Fase 32: Xadrez Online com menu mais limpo, ranking recolhível, chamada compacta e centralizada, confirmações profissionais e xeque-mate com visual premium. O tabuleiro permanece grande e estável.
+                A Damas Arena continua preservada e não foi alterada.
+            </div>
+
+            <div id="chess-status" class="chess-status-panel">Vez das brancas.</div>
+
+            <div id="chess-toast" class="chess-toast">♟️ Xadrez pronto para jogar.</div>
+
+            <div id="chess-live-coach" class="chess-live-coach" style="display:none;">
+                <div class="chess-live-coach-title">🎓 Professor de Xadrez</div>
+                <div id="chess-live-coach-text" class="chess-live-coach-text">Clique em uma peça branca para receber uma explicação simples antes de jogar.</div>
+            </div>
+
+            <div id="chess-result-panel" class="chess-result-panel" style="display:none;">
+                <div class="chess-result-card">
+                    <div id="chess-result-icon" class="chess-result-icon">🏆</div>
+                    <div id="chess-result-title" class="chess-result-title">Resultado</div>
+                    <div id="chess-result-text" class="chess-result-text">A partida terminou.</div>
+                    <div class="chess-result-actions">
+                        <button id="chess-result-again-btn" class="btn-chess-result-again" type="button">Jogar novamente</button>
+                        <button id="chess-result-menu-btn" class="btn-chess-result-menu" type="button">Voltar ao menu do Xadrez</button>
+                        <button id="chess-result-close-btn" class="chess-result-close-btn" type="button">Continuar olhando o tabuleiro</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chess-board-wrap">
+                <div class="chess-coord-shell" aria-label="Área do tabuleiro com coordenadas">
+                    <div class="chess-coords-top"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+                    <div class="chess-coords-left"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                    <div id="chess-board" class="chess-board" aria-label="Tabuleiro de xadrez"></div>
+                    <div class="chess-coords-right"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                    <div class="chess-coords-bottom"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+                </div>
+            </div>
+
+            <div class="chess-actions">
+                <button id="chess-reset-btn" class="btn-chess-reset" type="button">Reiniciar Xadrez</button>
+                <button id="chess-new-btn" class="btn-chess-new" type="button">Nova Partida</button>
+                <button id="chess-resign-btn" class="btn-chess-resign" type="button">Desistir</button>
+                <button id="chess-back-btn-bottom" class="btn-chess-back" type="button">Voltar ao Menu</button>
+            </div>
+            <div class="chess-action-note">Dica: as casas azuis/verdes mostram a última jogada. Se o rei entrar em xeque, a casa dele fica destacada e o aviso muda de cor.</div>
+
+            <div class="chess-warning">
+                ✅ Fase 32 ativa: Xadrez Online com tela mais limpa, ranking recolhível, chamada compacta e centralizada, confirmações profissionais e xeque-mate premium. Damas preservada.
+            </div>
+        </div>
+    </div>
+
+
+    <div id="lobby-screen" class="card" style="display:none;">
+        <button id="back-to-games-btn" class="back-to-games-btn" type="button">← Escolher outra modalidade</button>
+        <div class="current-game-strip"><strong>Modalidade ativa:</strong> Damas Arena — jogue online, treine contra a máquina, aprenda estratégias e dispute torneios.</div>
+        <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
+        <div class="live-podium" style="display:none !important;">
+            <div class="podium-title">🏆 Top Campeões do Sistema</div>
+            <div id="live-podium-content">
+                <div style="font-size:0.85rem; color:#aaa; padding:5px 0;">Carregando os donos do tabuleiro...</div>
+            </div>
+            <div class="call-to-arms" id="motivate-box">
+                ⚔️ Carregando convocação de batalha...
+            </div>
+        </div>
+
+        <div class="practice-ranking-panel" style="display:none !important;">
+            <div class="practice-ranking-title">🤖 Ranking Contra a Máquina</div>
+            <div id="practice-podium-content">
+                <div style="font-size:0.85rem; color:#aaa; padding:5px 0;">Carregando guerreiros do modo treino...</div>
+            </div>
+            <button id="practice-rank-btn-lobby" class="btn-practice-ranking" disabled>Ver Ranking do Treino</button>
+        </div>
+
+        <label for="name-input">Seu Nome:</label>
+        <input type="text" id="name-input" placeholder="Digite seu nome" maxlength="15" disabled>
+
+        <label for="room-input">Código da Sala:</label>
+        <input type="text" id="room-input" placeholder="Ex: pai" maxlength="15" disabled>
+
+        <label for="whatsapp-input">WhatsApp para avisos de torneio:</label>
+        <input type="tel" id="whatsapp-input" placeholder="Ex: 44991711936" maxlength="16" disabled>
+        <label class="phone-consent-row">
+            <input type="checkbox" id="whatsapp-consent" disabled>
+            <span>Aceito receber avisos manuais no WhatsApp sobre torneios, salas liberadas e partidas ao vivo. Posso pedir para sair da lista quando quiser.</span>
+        </label>
+        
+        <div class="btn-group">
+            <button id="join-btn" disabled>Jogar Online (Multiplayer)</button>
+            <button id="spectate-btn" class="btn-spectate" disabled>Assistir Jogo (Espectador)</button>
+            <button id="practice-btn" class="btn-secondary" disabled>Contra a Máquina (Modo Treino)</button>
+            
+            <div id="difficulty-box" class="difficulty-selector-box">
+                <div class="difficulty-selector-title">Escolha o Nível para Jogar:</div>
+                <div class="difficulty-buttons-row">
+                    <button class="btn-diff-select" id="btn-choose-easy" style="background-color: #3498db;">Fácil</button>
+                    <button class="btn-diff-select" id="btn-choose-medium" style="background-color: #f39c12;">Médio</button>
+                    <button class="btn-diff-select" id="btn-choose-hard" style="background-color: #e74c3c;">Difícil</button>
+                    <button class="btn-diff-select" id="btn-choose-learn" style="background-color: #9b59b6;">Aprender</button>
+                </div>
+            </div>
+
+            <button id="rules-btn-lobby" class="btn-info" disabled>Regras Oficiais Detalhadas</button>
+            <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Rankings</button>
+            <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
+        </div>
+
+        <div class="tournament-lobby-panel">
+            <div class="tournament-title">🏆 Torneios Abertos</div>
+            <div class="tournament-desc">Veja campeonatos marcados pelo administrador e acompanhe as salas oficiais.</div>
+            <div id="tournament-lobby-list">
+                <div class="tiny-muted">Carregando torneios...</div>
+            </div>
+        </div>
+
+        <div class="community-panel">
+            <div class="community-title">🔥 Partidas Ao Vivo</div>
+            <div class="community-desc">Quando uma sala liberada estiver em jogo, ela aparece aqui para você assistir como espectador.</div>
+            <div id="live-games-lobby-list">
+                <div class="tiny-muted">Nenhuma partida ao vivo no momento.</div>
+            </div>
+        </div>
+
+        <!-- 🔥 NOVA CENTRAL DE FEEDBACK DIRETO PARA O SEU WHATSAPP -->
+        <div class="feedback-panel">
+            <div class="feedback-title">📣 Sugestões & Feedback</div>
+            <div class="feedback-desc">Gostou do jogo? Tem alguma ideia nova ou quer sugerir alguma mudança? Deixe seu comentário abaixo!</div>
+            <div class="feedback-input-group">
+                <input type="text" id="feedback-text-input" class="feedback-input" placeholder="Ex: O jogo tá ótimo, seria massa ter pecinhas neon...">
+                <button id="btn-submit-feedback" style="width: auto; padding: 0 15px; font-size: 0.85rem; background-color: #3498db;">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dominó removido temporariamente. A Damas Arena permanece preservada. -->
+
+    <div id="game-screen">
+        <div id="normal-game-status" class="status-panel">
+            <div class="status-row">
+                <div>Sala: <span id="display-room" style="color: var(--accent-color);"></span></div>
+                <div id="game-timer" style="color: #f1c40f; font-family: monospace; font-size: 1.1rem;">⏱️ 00:00</div>
+                <div id="turn-indicator">Carregando turno...</div>
+            </div>
+            <div class="status-row" style="border-top: 1px solid #333; padding-top: 5px; margin-top: 5px; font-size:0.85rem; color:#aaa;">
+                <div id="players-names">Vermelho vs Preto</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span id="live-spectators" style="color: #3498db;">👁️ 0 assistindo</span>
+                    <div>Você é: <span id="player-badge" class="badge">Espectador</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="voice-video-call-panel" class="call-panel">
+            <div class="call-header">
+                <div class="call-title">📹 Chamada de vídeo e áudio</div>
+                <div id="call-status-text" class="call-status">Disponível para os dois jogadores da sala.</div>
+            </div>
+            <div class="call-videos">
+                <div class="video-tile">
+                    <video id="local-video" autoplay muted playsinline></video>
+                    <div class="video-label">Você</div>
+                </div>
+                <div class="video-tile">
+                    <video id="remote-video" autoplay playsinline></video>
+                    <audio id="remote-audio" autoplay playsinline></audio>
+                    <div class="video-label">Oponente</div>
+                </div>
+            </div>
+            <div class="call-controls">
+                <button id="start-call-btn" class="btn-call-start" type="button">Iniciar chamada</button>
+                <button id="start-audio-call-btn" class="btn-call-start" type="button">Somente áudio</button>
+                <button id="toggle-mic-btn" type="button">🎙️ Microfone</button>
+                <button id="toggle-camera-btn" type="button">📷 Câmera</button>
+                <button id="unlock-audio-btn" class="btn-call-size" type="button">🔊 Som</button>
+                <button id="call-size-minus-btn" class="btn-call-size" type="button">➖ Menor</button>
+                <button id="call-size-plus-btn" class="btn-call-size" type="button">➕ Maior</button>
+                <button id="end-call-btn" class="btn-call-end" type="button">Encerrar</button>
+            </div>
+        </div>
+
+        <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
+            <div style="font-size: 1.1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #9b59b6; padding-bottom: 6px;">🛡️ Painel de Controle de Salas</div>
+            
+            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Código da Sala que deseja gerenciar:</label>
+            <input type="text" id="admin-target-room" class="admin-input-control" placeholder="Digite o código da sala (ex: sala10)">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+                <button id="btn-adm-liberar" style="background-color: #2ecc71; font-size: 0.75rem; padding: 12px 5px;">LIBERAR / CRIAR SALA</button>
+                <button id="btn-adm-bloquear" style="background-color: #e74c3c; font-size: 0.75rem; padding: 12px 5px;">BLOQUEAR SALA</button>
+
+                <button id="btn-adm-travar-chat" style="background-color: #e67e22; font-size: 0.75rem; padding: 12px 5px;">TRAVAR / DESTRAVAR CHAT</button>
+                <button id="btn-adm-expulsar" style="background-color: #f1c40f; color: #111; font-size: 0.75rem; padding: 12px 5px;">EXPULSAR JOGADORES</button>
+                
+                <button id="btn-adm-limpar-chat" style="background-color: #d35400; font-size: 0.75rem; padding: 12px 5px;">LIMPAR MENSAGENS</button>
+                <button id="btn-adm-reset" style="background-color: #9b59b6; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
+            </div>
+
+            <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ (Limpar do Sistema)</button>
+            <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL (Nova Temporada)</button>
+            
+            <button id="btn-adm-monitorar-chat" style="background-color: #3498db; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 5px;">💬 MONITORAR CHAT DA SALA</button>
+
+            <div class="admin-tournament-box">
+                <div class="admin-tournament-title">🏆 Central de Torneios e Avisos</div>
+                <div class="admin-small-grid">
+                    <input type="text" id="tournament-name-input" class="admin-input-control admin-full" placeholder="Nome do torneio. Ex: Torneio de Sábado">
+                    <input type="datetime-local" id="tournament-date-input" class="admin-input-control">
+                    <input type="text" id="tournament-room-input" class="admin-input-control" placeholder="Sala principal. Ex: final10">
+                    <textarea id="tournament-message-input" class="admin-input-control admin-full" rows="3" placeholder="Mensagem do aviso para WhatsApp"></textarea>
+                </div>
+                <button id="btn-adm-criar-torneio" style="background-color:#2563eb; font-size:0.82rem; padding:12px; width:100%; margin-bottom:8px;">CRIAR / PUBLICAR TORNEIO</button>
+                <button id="btn-adm-listar-participantes" style="background-color:#25d366; font-size:0.82rem; padding:12px; width:100%; margin-bottom:8px;">📲 GERAR AVISOS NO WHATSAPP</button>
+                <div id="admin-tournament-list" style="margin-top:8px; max-height:180px; overflow-y:auto;">
+                    <div class="tiny-muted">Torneios criados aparecerão aqui.</div>
+                </div>
+                <div id="admin-whatsapp-participants" style="margin-top:8px; max-height:220px; overflow-y:auto;"></div>
+            </div>
+
+            <div id="admin-chat-monitor-container" class="admin-chat-monitor-box">
+                <div id="admin-chat-monitor-title" class="admin-chat-monitor-title">💬 ESCUTA ATIVA: SALA ESPIONADA</div>
+                <div id="admin-chat-monitor-feed" class="admin-chat-monitor-feed">
+                    <div style="color: #666; font-style: italic;">Selecione uma sala ativa acima e clique em monitorar...</div>
+                </div>
+            </div>
+
+            <div class="admin-dashboard-box">
+                <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando Servidores...</div>
+                <div class="admin-dashboard-title">📋 Lista Geral de Servidores (Salas Ativas e Vazias)</div>
+                <div id="admin-rooms-dashboard-list">
+                    <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade nos servidores...</div>
+                </div>
+            </div>
+            
+            <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
+        </div>
+
+        <div id="learning-coach-box" class="learning-coach-box">
+            <div class="learning-coach-title">🎓 Professor de Damas</div>
+            <div id="learning-coach-text" class="learning-coach-text">Quando for sua vez, eu vou destacar uma boa jogada e explicar a lógica dela.</div>
+            <div class="learning-actions">
+                <button id="btn-learning-refresh" type="button">Mostrar melhor dica</button>
+                <button id="btn-learning-toggle" type="button">Ocultar dicas</button>
+            </div>
+        </div>
+
+        <div id="normal-board-wrapper" class="board-outer-container">
+            <div class="coord-row-top">
+                <div class="coord-space">A</div><div class="coord-space">B</div><div class="coord-space">C</div><div class="coord-space">D</div>
+                <div class="coord-space">E</div><div class="coord-space">F</div><div class="coord-space">G</div><div class="coord-space">H</div>
+            </div>
+            
+            <div class="coord-col-left">
+                <div class="coord-space">8</div><div class="coord-space">7</div><div class="coord-space">6</div><div class="coord-space">5</div>
+                <div class="coord-space">4</div><div class="coord-space">3</div><div class="coord-space">2</div><div class="coord-space">1</div>
+            </div>
+
+            <div class="board-wrapper">
+                <div id="board" class="board"></div>
+            </div>
+
+            <div class="coord-col-right">
+                <div class="coord-space">8</div><div class="coord-space">7</div><div class="coord-space">6</div><div class="coord-space">5</div>
+                <div class="coord-space">4</div><div class="coord-space">3</div><div class="coord-space">2</div><div class="coord-space">1</div>
+            </div>
+
+            <div class="coord-row-bottom">
+                <div class="coord-space">A</div><div class="coord-space">B</div><div class="coord-space">C</div><div class="coord-space">D</div>
+                <div class="coord-space">E</div><div class="coord-space">F</div><div class="coord-space">G</div><div class="coord-space">H</div>
+            </div>
+        </div>
+
+        <div id="normal-controls" class="control-box">
+            <button id="leave-btn" style="background-color: #555;">Sair</button>
+            <button id="reset-room-btn" style="background-color: #d35400;">Resetar</button>
+            <button id="draw-btn" style="background-color: #cca43b;">Empate</button>
+            <button id="rules-btn-game" class="btn-info">Regras</button>
+            <button id="flip-board-btn" style="background-color: #0f766e;">Virar</button>
+        </div>
+
+        <div id="normal-chat-wrapper" class="chat-container">
+            <div class="chat-header">
+                <span>💬 Chat em Tempo Real</span>
+                <button id="toggle-chat-visibility" class="toggle-chat-btn" style="display: none;">Desligar Chat</button>
+            </div>
+            <div id="chat-box-messages" class="chat-messages">
+                <div style="color: #7f8c8d; font-style: italic;">O chat está ativo. Seja amigável!</div>
+            </div>
+            <div id="chat-input-wrapper" class="chat-input-box">
+                <input type="text" id="chat-input-field" placeholder="Escreva sua mensagem..." maxlength="80">
+                <button id="chat-send-btn">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="custom-alert-modal" class="modal">
+    <div class="modal-content" style="max-width: 420px; text-align: center;">
+        <h2 id="custom-alert-title" class="custom-alert-title">Aviso do Sistema</h2>
+        <div id="custom-alert-text" class="custom-alert-text">Mensagem...</div>
+        <button id="close-alert-btn" style="background-color: var(--accent-color); width: auto; padding: 10px 30px;">OK</button>
+    </div>
+</div>
+
+<div id="custom-confirm-modal" class="modal">
+    <div class="modal-content" style="max-width: 440px; text-align: center;">
+        <h2 id="custom-confirm-title" style="color: #cca43b; border-bottom: 2px solid #cca43b;">Confirmação de Segurança</h2>
+        <div id="custom-confirm-text" style="font-size: 1.05rem; line-height: 1.5; margin: 15px 0; color: #e2e8f0;">
+            Mensagem de confirmação...
+        </div>
+        <div class="confirm-buttons-box">
+            <button id="btn-confirm-yes" class="btn-confirm-yes">Sim, Confirmar</button>
+            <button id="btn-confirm-no" class="btn-confirm-no">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div id="rules-modal" class="modal">
+    <div class="modal-content">
+        <h2>Regras Oficiais do Jogo de Damas</h2>
+        <ul style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
+            <li><strong>Captura Obrigatória (Comer Peça):</strong> No jogo de Damas, se houver uma oportunidade de capturar uma peça adversária, você é **obrigado** a efetuar a jogada. O sistema destaca e força esses movimentos automaticamente.</li>
+            <li><strong>Capturas Múltiplas Oficiais:</strong> Se ao comer uma peça o seu movimento parar em um lugar que permita comer outra peça consecutiva da pessoa na diagonal, você continuará jogando com a mesma peça até esgotar as capturas.</li>
+            <li><strong>Regra do Bloqueio Total (Encurralado):</strong> Se chegar a sua vez de jogar e todas as suas peças sobreviventes estiverem cercadas e trancadas, sem nenhuma casa livre para andar, **você perdeu a partida por falta de movimentos válidos**. O jogo detectará isso na hora e dará a vitória ao rival.</li>
+            <li><strong>Como Empatar o Jogo:</strong> Se o tabuleiro ficar travado em uma position repetitiva e nenhum dos lados conseguir vencer ou avançar por estarem sem chances de ataque, clique no botão <strong>"EMPATE"</strong> para decretar o fim amigável de cavalheiros e resetar.</li>
+            <li><strong>Movimentação Comum:</strong> Peças normais andam apenas 1 casa para frente pelas diagonais escuras do tabuleiro.</li>
+            <li><strong>Poder da Dama (👑):</strong> Ao alcançar a última linha do campo oposto, sua peça ganha uma coroa. A Dama anda em linhas longas (múltiplas casas livres) para frente e para trás, tornando-se a peça mais forte do jogo.</li>
+        </ul>
+        <button id="close-rules-btn">Entendido, Fechar</button>
+    </div>
+</div>
+
+<div id="rank-modal" class="modal">
+    <div class="modal-content" style="max-width: 650px;">
+        <h2>Rankings do Jogo</h2>
+        <div style="font-size:0.82rem; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">Veja em uma única tela o ranking online dos campeões e o ranking do modo treino contra a máquina.</div>
+
+        <h3 style="color:#38bdf8; font-size:0.95rem; text-transform:uppercase; margin:8px 0;">🏆 Top Campeões do Sistema</h3>
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Jogador</th>
+                    <th>Vitórias</th>
+                    <th>Derrotas</th>
+                    <th>Aproveitamento</th>
+                </tr>
+            </thead>
+            <tbody id="rank-table-body">
+                <tr><td colspan='5'>Carregando dados dos competidores...</td></tr>
+            </tbody>
+        </table>
+
+        <h3 style="color:#2ecc71; font-size:0.95rem; text-transform:uppercase; margin:14px 0 8px 0;">🤖 Ranking Contra a Máquina</h3>
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Jogador</th>
+                    <th>Vitórias</th>
+                    <th>Derrotas</th>
+                    <th>Melhor nível</th>
+                    <th>Pontos</th>
+                </tr>
+            </thead>
+            <tbody id="combined-practice-rank-table-body">
+                <tr><td colspan="6">Carregando ranking do treino...</td></tr>
+            </tbody>
+        </table>
+        <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:12px; line-height:1.4;">Vitória no Fácil vale 1 ponto, no Médio 3 pontos e no Difícil 6 pontos.</div>
+
+        <button id="close-rank-btn" style="background-color: #555;">Fechar Janela</button>
+    </div>
+</div>
+
+
+<div id="practice-rank-modal" class="modal" style="display:none !important;">
+    <div class="modal-content" style="max-width: 610px;">
+        <h2>Ranking Contra a Máquina</h2>
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Jogador</th>
+                    <th>Vitórias</th>
+                    <th>Derrotas</th>
+                    <th>Melhor nível</th>
+                    <th>Pontos</th>
+                </tr>
+            </thead>
+            <tbody id="practice-rank-table-body">
+                <tr><td colspan="6">Carregando ranking do treino...</td></tr>
+            </tbody>
+        </table>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px; line-height:1.4;">
+            Pontuação: vitória no Fácil vale 1 ponto, no Médio vale 3 pontos e no Difícil vale 6 pontos. Derrotas ficam registradas para mostrar o aproveitamento real.
+        </div>
+        <button id="close-practice-rank-btn" style="background-color: #555;">Fechar Janela</button>
+    </div>
+</div>
+
+<script type="module" src="assets/tabuleiro-arena.js"></script>
+
+
+
+
+<!--
+============================================================
+REGRAS SUGERIDAS PARA FIREBASE REALTIME DATABASE
+Cole no console do Firebase > Realtime Database > Rules.
+Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
+============================================================
+{
+  "rules": {
+    ".read": "auth != null",
+    "admins": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (!root.child('admins').exists() || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "adminLogs": {
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+    "practiceLeaderboard": {
+      ".read": true,
+      "$playerKey": {
+        ".write": "auth != null"
+      }
+    },
+    "leaderboard": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "rooms": {
+      ".read": "auth != null",
+      "$room": {
+        ".write": "auth != null",
+        "isAuthorized": { ".write": "root.child('admins').child(auth.uid).val() === true" },
+        "chatBlocked": { ".write": "root.child('admins').child(auth.uid).val() === true" }
+      }
+    }
+  }
+}
+-->
+
+</body>
+</html>
