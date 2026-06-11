@@ -1,1 +1,1 @@
-Fase 36.10 - Correção real testada dos controles online: Sair da sala e Câmera/áudio aparecem no tabuleiro online. Corrigida a detecção que confundia online com treino por causa de texto escondido. Base 36.9, Damas preservada.
+Fase 36.11 - Base limpa 36.5 + controles online no tabuleiro. Sem acumular 36.6 a 36.10. Damas preservada.
