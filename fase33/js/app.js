@@ -9463,3 +9463,162 @@ Link: ${location.origin}${location.pathname}`;
         }, 80);
     });
 })();
+
+
+/* ======================================================================
+   FASE 36.2 - RESULTADO DO XADREZ COMO MODAL REAL
+   Definitivo: tira o painel de resultado de dentro do card do Xadrez e
+   coloca no body. Assim ele não fica mais cortado nem por cima do tabuleiro.
+   Não altera Damas.
+   ====================================================================== */
+(function instalarFase362ModalResultadoDefinitivo() {
+    if (window.__tabuleiroArenaFase362ModalResultadoDefinitivo) return;
+    window.__tabuleiroArenaFase362ModalResultadoDefinitivo = true;
+
+    let ultimoTextoResultado362 = '';
+    let fechadoManualmente362 = false;
+    let observador362 = null;
+
+    function painel() {
+        return document.getElementById('chess-result-panel');
+    }
+
+    function cartao() {
+        const p = painel();
+        return p ? p.querySelector('.chess-result-card') : null;
+    }
+
+    function textoAtualResultado() {
+        const t = document.getElementById('chess-result-title')?.textContent || '';
+        const d = document.getElementById('chess-result-text')?.textContent || '';
+        return (t + '|' + d).trim();
+    }
+
+    function resultadoTemConteudoReal() {
+        const txt = textoAtualResultado();
+        return txt && !/^Resultado\|A partida terminou\.?$/i.test(txt);
+    }
+
+    function jogoXadrezVisivel() {
+        return document.body.classList.contains('chess-selected') || document.body.classList.contains('chess-board-visible');
+    }
+
+    function moverResultadoParaBody() {
+        const p = painel();
+        if (!p) return null;
+        if (p.parentElement !== document.body) {
+            document.body.appendChild(p);
+        }
+        return p;
+    }
+
+    function aplicarEstiloInlineModal(p) {
+        if (!p) return;
+        p.style.setProperty('position', 'fixed', 'important');
+        p.style.setProperty('inset', '0', 'important');
+        p.style.setProperty('left', '0', 'important');
+        p.style.setProperty('top', '0', 'important');
+        p.style.setProperty('right', '0', 'important');
+        p.style.setProperty('bottom', '0', 'important');
+        p.style.setProperty('transform', 'none', 'important');
+        p.style.setProperty('z-index', '2147483000', 'important');
+        p.style.setProperty('width', '100vw', 'important');
+        p.style.setProperty('max-width', 'none', 'important');
+        p.style.setProperty('min-height', '100dvh', 'important');
+        p.style.setProperty('margin', '0', 'important');
+        p.style.setProperty('padding', '18px', 'important');
+        p.style.setProperty('display', 'flex', 'important');
+        p.style.setProperty('align-items', 'center', 'important');
+        p.style.setProperty('justify-content', 'center', 'important');
+        p.style.setProperty('background', 'rgba(2, 6, 23, .82)', 'important');
+        p.style.setProperty('backdrop-filter', 'blur(10px)', 'important');
+        p.style.setProperty('border', '0', 'important');
+        p.style.setProperty('border-radius', '0', 'important');
+        p.style.setProperty('box-shadow', 'none', 'important');
+        p.style.setProperty('overflow-y', 'auto', 'important');
+    }
+
+    function abrirModalResultado362() {
+        const p = moverResultadoParaBody();
+        if (!p || !jogoXadrezVisivel() || !resultadoTemConteudoReal()) return;
+
+        const txt = textoAtualResultado();
+        if (txt !== ultimoTextoResultado362) {
+            fechadoManualmente362 = false;
+            ultimoTextoResultado362 = txt;
+        }
+        if (fechadoManualmente362) return;
+
+        p.classList.add('show-front', 'ta-result-front');
+        document.body.classList.add('ta-chess-result-open');
+        aplicarEstiloInlineModal(p);
+
+        const c = cartao();
+        if (c) {
+            c.style.setProperty('width', 'min(92vw, 470px)', 'important');
+            c.style.setProperty('max-width', '470px', 'important');
+            c.style.setProperty('margin', 'auto', 'important');
+            c.style.setProperty('position', 'relative', 'important');
+            c.style.setProperty('transform', 'none', 'important');
+        }
+    }
+
+    function fecharModalResultado362() {
+        const p = painel();
+        if (!p) return;
+        p.classList.remove('show-front', 'ta-result-front');
+        document.body.classList.remove('ta-chess-result-open');
+        p.style.setProperty('display', 'none', 'important');
+    }
+
+    function prepararResultado362() {
+        const p = moverResultadoParaBody();
+        if (!p) return;
+        if (observador362) return;
+        observador362 = new MutationObserver(function () {
+            const pAtual = painel();
+            if (!pAtual) return;
+            const display = (pAtual.getAttribute('style') || '') + '|' + getComputedStyle(pAtual).display;
+            const temTentativaDeAbrir = /display\s*:\s*(block|flex)|\|block|\|flex/i.test(display) || pAtual.classList.contains('show-front');
+            if (temTentativaDeAbrir && resultadoTemConteudoReal()) {
+                requestAnimationFrame(abrirModalResultado362);
+            }
+        });
+        observador362.observe(p, { attributes: true, attributeFilter: ['style', 'class'], childList: true, subtree: true });
+    }
+
+    document.addEventListener('click', function (ev) {
+        const alvo = ev.target;
+        if (!alvo || !alvo.closest) return;
+
+        if (alvo.closest('#chess-result-close-btn')) {
+            fechadoManualmente362 = true;
+            setTimeout(fecharModalResultado362, 0);
+        }
+
+        if (alvo.closest('#chess-result-again-btn, #chess-result-menu-btn, #chess-reset-btn, #chess-new-btn, #chess-resign-btn, #chess-back-btn, #chess-back-btn-bottom, #chess-training-easy-btn, #chess-training-medium-btn, #chess-training-hard-btn, #chess-training-learn-btn, #chess-online-join-btn, #chess-online-watch-btn')) {
+            fechadoManualmente362 = false;
+            ultimoTextoResultado362 = '';
+            setTimeout(fecharModalResultado362, 0);
+        }
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        prepararResultado362();
+        fecharModalResultado362();
+    });
+
+    setTimeout(prepararResultado362, 100);
+    setTimeout(prepararResultado362, 600);
+
+    // Leve e seguro: só observa o painel de resultado. Não mexe no tabuleiro.
+    setInterval(function () {
+        prepararResultado362();
+        const p = painel();
+        if (!p) return;
+        const display = getComputedStyle(p).display;
+        if ((display === 'block' || display === 'flex' || p.classList.contains('show-front')) && resultadoTemConteudoReal()) {
+            abrirModalResultado362();
+        }
+    }, 500);
+})();

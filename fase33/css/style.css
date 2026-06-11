@@ -3954,3 +3954,125 @@ body.chess-board-visible #chess-result-panel.show-front .chess-result-card {
         width: min(94vw, 420px) !important;
     }
 }
+
+
+/* ======================================================================
+   FASE 36.2 - MODAL DE RESULTADO DEFINITIVO DO XADREZ
+   O painel de xeque-mate/resultado sai do fluxo do card e vira overlay real.
+   Isso elimina o quadro cortado por cima do tabuleiro.
+   Damas preservada.
+   ====================================================================== */
+body.chess-board-visible #chess-result-panel.chess-result-panel:not(.show-front):not(.ta-result-front) {
+    display: none !important;
+}
+
+body.ta-chess-result-open {
+    overflow: hidden !important;
+}
+
+body.ta-chess-result-open #chess-result-panel,
+body.chess-board-visible #chess-result-panel.show-front,
+body.chess-board-visible #chess-result-panel.ta-result-front {
+    position: fixed !important;
+    inset: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    z-index: 2147483000 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(2, 6, 23, .82) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow-y: auto !important;
+    contain: none !important;
+}
+
+body.ta-chess-result-open #chess-result-panel .chess-result-card,
+body.chess-board-visible #chess-result-panel.show-front .chess-result-card,
+body.chess-board-visible #chess-result-panel.ta-result-front .chess-result-card {
+    width: min(92vw, 470px) !important;
+    max-width: 470px !important;
+    margin: auto !important;
+    padding: 24px 18px 18px !important;
+    border-radius: 24px !important;
+    text-align: center !important;
+    background: radial-gradient(circle at top, rgba(250,204,21,.24), transparent 44%), linear-gradient(135deg, #020617, #111827 58%, #241044) !important;
+    border: 1px solid rgba(250,204,21,.5) !important;
+    box-shadow: 0 28px 90px rgba(0,0,0,.86), 0 0 38px rgba(250,204,21,.20) !important;
+    position: relative !important;
+    transform: none !important;
+}
+
+body.ta-chess-result-open #chess-result-panel.win .chess-result-card,
+body.ta-chess-result-open #chess-result-panel.mate .chess-result-card {
+    border-color: rgba(46,204,113,.72) !important;
+    background: radial-gradient(circle at top, rgba(46,204,113,.22), transparent 42%), linear-gradient(135deg, #02140d, #0f172a 62%, #064e3b) !important;
+}
+
+body.ta-chess-result-open #chess-result-panel.loss .chess-result-card {
+    border-color: rgba(239,68,68,.72) !important;
+    background: radial-gradient(circle at top, rgba(239,68,68,.22), transparent 42%), linear-gradient(135deg, #160606, #0f172a 62%, #450a0a) !important;
+}
+
+body.ta-chess-result-open #chess-result-panel.draw .chess-result-card {
+    border-color: rgba(148,163,184,.72) !important;
+    background: radial-gradient(circle at top, rgba(148,163,184,.18), transparent 42%), linear-gradient(135deg, #020617, #111827 62%, #334155) !important;
+}
+
+body.ta-chess-result-open #chess-result-panel .chess-result-icon {
+    font-size: clamp(3.1rem, 12vw, 5rem) !important;
+    margin-bottom: 10px !important;
+}
+
+body.ta-chess-result-open #chess-result-panel .chess-result-title {
+    font-size: clamp(1.28rem, 5.6vw, 2rem) !important;
+    line-height: 1.12 !important;
+    margin-bottom: 10px !important;
+}
+
+body.ta-chess-result-open #chess-result-panel .chess-result-text {
+    font-size: clamp(.94rem, 3.6vw, 1.08rem) !important;
+    line-height: 1.45 !important;
+    max-width: 340px !important;
+    margin: 0 auto 14px auto !important;
+}
+
+body.ta-chess-result-open #chess-result-panel .chess-result-actions {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    max-width: 330px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+body.ta-chess-result-open #chess-result-panel .chess-result-actions button {
+    border-radius: 999px !important;
+    padding: 11px 12px !important;
+    font-size: .82rem !important;
+}
+
+@media (max-width: 560px) {
+    body.ta-chess-result-open #chess-result-panel,
+    body.chess-board-visible #chess-result-panel.show-front,
+    body.chess-board-visible #chess-result-panel.ta-result-front {
+        padding: 14px !important;
+    }
+    body.ta-chess-result-open #chess-result-panel .chess-result-card,
+    body.chess-board-visible #chess-result-panel.show-front .chess-result-card,
+    body.chess-board-visible #chess-result-panel.ta-result-front .chess-result-card {
+        width: min(94vw, 420px) !important;
+        max-width: 420px !important;
+    }
+}
