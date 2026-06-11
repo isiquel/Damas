@@ -1,22 +1,25 @@
-FASE 35 PRONTA PARA UPLOAD
+TABULEIRO ARENA - FASE 36
 
-Este pacote já vem com a pasta fase33 no lugar correto.
+Use estes arquivos SOMENTE dentro da pasta /fase33/.
 
-No GitHub, fique na RAIZ do projeto e envie a pasta fase33 inteira.
-A estrutura final precisa ficar assim:
+Estrutura correta:
+/fase33/index.html
+/fase33/css/style.css
+/fase33/css/fase36-xadrez-limpeza.css
+/fase33/js/app.js
+/fase33/js/fase36-xadrez-limpeza.js
 
-fase33/
-  index.html
-  css/
-    style.css
-    fase34-xadrez-limpo.css
-    fase35-camera-xadrez-abaixo-tabuleiro.css
-  js/
-    app.js
-    fase34-xadrez-limpo.js
-    fase35-camera-xadrez-abaixo-tabuleiro.js
+O que mudou:
+- Damas preservada.
+- Xadrez mantido funcionando.
+- Textos atualizados para Fase 36.
+- Ranking do treino continua recolhido com +.
+- Chat recolhível mantido.
+- Modais/alertas bonitos mantidos.
+- Câmera/áudio do Xadrez ficam abaixo do tabuleiro.
+- Removido o controle antigo de arrastar/compactar da chamada do Xadrez.
 
-Depois teste:
-https://damas-nine.vercel.app/fase33/index.html?v=35c
+Teste primeiro em:
+https://damas-nine.vercel.app/fase33/?v=36
 
-Não mexer no index.html principal até a fase33 ser aprovada.
+Não copie para a raiz antes de aprovar a /fase33/.
