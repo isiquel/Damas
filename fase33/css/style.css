@@ -4066,7 +4066,7 @@ body.ta-chess-online-board-3611 #chess-call-toggle-btn {
 
 
 /* ======================================================================
-   FASE 36.13 - CORREÇÃO REAL: CONTROLES ONLINE DENTRO DO TABULEIRO
+   FASE 36.12 - CORREÇÃO REAL: CONTROLES ONLINE DENTRO DO TABULEIRO
    Este CSS usa novo id para não depender dos blocos antigos 36.6-36.11.
    ====================================================================== */
 #chess-board-leave-online-btn,
@@ -4140,22 +4140,4 @@ body.chess-online-active-3612 #chess-call-toggle-btn {
         width: calc(100vw - 8px) !important;
         max-width: calc(100vw - 8px) !important;
     }
-}
-
-
-/* FASE 36.13 - botão + da câmera abre sem duplo clique fantasma */
-body.chess-selected.chess-board-visible.chess-online-active-3613 #chess-call-panel {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-body.chess-selected.chess-board-visible.chess-online-active-3613 #chess-call-panel:not(.call-compact) .chess-call-controls,
-body.chess-selected.chess-board-visible.chess-online-active-3613 #chess-call-panel:not(.call-compact) .chess-call-note {
-    display: grid !important;
-}
-body.chess-selected.chess-board-visible.chess-online-active-3613 #chess-call-panel:not(.call-compact) .chess-call-note {
-    display: block !important;
-}
-body.chess-selected.chess-board-visible.chess-online-active-3613 #chess-call-panel:not(.call-compact):not(.call-active) .chess-call-videos {
-    display: none !important;
 }
