@@ -3995,7 +3995,7 @@ body.chess-selected #ta-chess-result-modal-final {
 
 
 /* ======================================================================
-   FASE 36.8 - BOTÃO SAIR DA SALA + CÂMERA VISÍVEL NO TABULEIRO ONLINE
+   FASE 36.9 - BOTÃO SAIR DA SALA + CÂMERA VISÍVEL NO TABULEIRO ONLINE
    ====================================================================== */
 #chess-leave-room-board-btn,
 .btn-chess-leave-room-board {
@@ -4054,7 +4054,7 @@ body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call
 
 
 /* ======================================================================
-   FASE 36.8 - CONTROLES NO TABULEIRO + XADREZ MAIOR NO CELULAR
+   FASE 36.9 - CONTROLES NO TABULEIRO + XADREZ MAIOR NO CELULAR
    ====================================================================== */
 body.chess-selected:not(.chess-board-visible) #chess-call-panel {
     display: none !important;
@@ -4157,7 +4157,7 @@ body.chess-selected.chess-mode-training #chess-leave-room-board-btn {
 
 
 /* ======================================================================
-   FASE 36.8 - CONTROLES REAIS NO TABULEIRO ONLINE
+   FASE 36.9 - CONTROLES REAIS NO TABULEIRO ONLINE
    ====================================================================== */
 body.ta-chess-online-board #chess-screen .chess-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -4213,6 +4213,53 @@ body.ta-chess-online-board #chess-call-toggle-btn {
         max-width: calc(100vw - 8px) !important;
         padding: 7px !important;
     }
+    body.ta-chess-online-board #chess-screen .chess-actions,
+    body.ta-chess-online-board #chess-call-panel.online-visible,
+    body.ta-chess-online-board #chess-chat-panel {
+        width: calc(100vw - 8px) !important;
+        max-width: calc(100vw - 8px) !important;
+    }
+}
+
+
+/* ======================================================================
+   FASE 36.9 - CONTROLES ONLINE VISÍVEIS DENTRO DO TABULEIRO
+   ====================================================================== */
+body.ta-chess-online-board #chess-screen .chess-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+body.ta-chess-online-board #chess-leave-room-board-btn {
+    display: block !important;
+    visibility: visible !important;
+    background: linear-gradient(135deg, #0f766e, #14b8a6) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(94, 234, 212, .65) !important;
+}
+body.ta-chess-training-board #chess-leave-room-board-btn,
+body.ta-chess-training-board #chess-call-panel,
+body:not(.ta-chess-online-board) #chess-leave-room-board-btn {
+    display: none !important;
+}
+body.ta-chess-online-board #chess-call-panel.online-visible {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    max-width: 640px !important;
+    margin: 8px auto !important;
+    position: static !important;
+    transform: none !important;
+}
+body.ta-chess-online-board #chess-call-toggle-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 44px !important;
+    height: 36px !important;
+    border-radius: 999px !important;
+    background: #0ea5e9 !important;
+}
+@media (max-width: 560px) {
     body.ta-chess-online-board #chess-screen .chess-actions,
     body.ta-chess-online-board #chess-call-panel.online-visible,
     body.ta-chess-online-board #chess-chat-panel {

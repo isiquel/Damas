@@ -1,12 +1,1 @@
-FASE 36.8 - CONTROLES REAIS NO TABULEIRO ONLINE
-
-Base: Fase 36.7.
-
-Correções:
-- Botão Sair da sala aparece dentro da área do tabuleiro online.
-- Câmera e áudio aparecem abaixo do tabuleiro online, não apenas no menu.
-- Voltar ao menu libera a sala online.
-- Treino do Xadrez não mostra câmera nem botão sair da sala.
-- Damas preservada.
-
-Subir dentro de /fase33/: index.html, css/, js/ e LEIA-ME.txt.
+Fase 36.9 - Corrige controles online dentro do tabuleiro: botão Sair da sala e painel Câmera e áudio aparecem na tela do jogo online. Base 36.8, Damas preservada.
