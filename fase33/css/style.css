@@ -3781,3 +3781,105 @@ body.chess-board-visible .chess-pieces-lesson-panel {
             .chess-training-ranking-head { grid-template-columns: 1fr auto !important; }
             #chess-call-panel.call-active { width: 100% !important; max-width: 520px !important; }
         }
+
+
+/* ======================================================================
+   FASE 36 ESTÁVEL - CORREÇÃO FINAL
+   Mantém somente UM painel de câmera do Xadrez.
+   Remove a lógica visual duplicada do dock externo.
+   A Damas não é afetada.
+   ====================================================================== */
+body.chess-selected #fase36-camera-dock,
+body.chess-selected .fase36-camera-dock,
+body.chess-selected #chess-call-panel.fase36-call-panel.fase36-call-open + #fase36-camera-dock {
+    display: none !important;
+}
+
+body.chess-board-visible:not(.chess-mode-online) #chess-call-panel {
+    display: none !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.online-visible,
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active {
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    margin: 10px auto 12px auto !important;
+    z-index: auto !important;
+    user-select: auto !important;
+    touch-action: auto !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) {
+    padding: 10px 12px !important;
+    border: 1px solid rgba(56,189,248,.45) !important;
+    border-radius: 15px !important;
+    background: linear-gradient(135deg, #020617, #111827) !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-videos,
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-controls,
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-note {
+    display: none !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel .chess-call-header {
+    cursor: default !important;
+    touch-action: auto !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-toggle-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 44px !important;
+    height: 36px !important;
+    border-radius: 999px !important;
+    background: #0ea5e9 !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active .chess-call-videos {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+}
+
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active .chess-video-tile {
+    height: var(--fase35-video-height, 150px) !important;
+    min-height: 105px !important;
+    aspect-ratio: auto !important;
+}
+
+body.chess-selected #chess-training-ranking-panel.chess-rank-collapsed .chess-training-ranking-grid,
+body.chess-selected #chess-training-ranking-panel.chess-rank-collapsed .chess-training-ranking-details,
+body.chess-selected #chess-training-ranking-panel.chess-rank-collapsed .chess-training-ranking-actions,
+body.chess-selected #chess-training-ranking-panel.chess-rank-collapsed .chess-training-ranking-note {
+    display: none !important;
+}
+
+body.chess-selected #chess-training-ranking-panel:not(.chess-rank-collapsed) .chess-training-ranking-grid {
+    display: grid !important;
+}
+body.chess-selected #chess-training-ranking-panel:not(.chess-rank-collapsed) .chess-training-ranking-details,
+body.chess-selected #chess-training-ranking-panel:not(.chess-rank-collapsed) .chess-training-ranking-actions,
+body.chess-selected #chess-training-ranking-panel:not(.chess-rank-collapsed) .chess-training-ranking-note {
+    display: block !important;
+}
+
+@media (max-width: 560px) {
+    body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.online-visible,
+    body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active {
+        max-width: calc(100vw - 18px) !important;
+        margin-top: 8px !important;
+    }
+    body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active .chess-video-tile {
+        height: var(--fase35-video-height, 128px) !important;
+        min-height: 92px !important;
+    }
+}

@@ -1,18 +1,20 @@
 TABULEIRO ARENA - FASE 36 ESTÁVEL CORRIGIDA
 
 Suba estes itens DENTRO da pasta fase33:
+
 - index.html
-- LEIA-ME.txt
 - css/
 - js/
+- LEIA-ME.txt
 
-Correção principal:
-- O index.html agora chama somente a Fase 36.
-- Removidas as chamadas antigas da Fase 34 e Fase 35 que estavam brigando com a Fase 36.
-- A câmera do Xadrez fica fixa abaixo do tabuleiro.
-- O script da Fase 36 não fica mais reaplicando tudo a cada 1,2 segundo; agora trabalha com calma e não interfere no clique das peças.
-- A Damas não foi alterada.
-- O site principal não deve ser mexido.
+Correções desta versão:
+- Removida a chamada do arquivo extra fase36-xadrez-limpeza.js, que estava criando/alternando painéis.
+- Removida a chamada do CSS extra da Fase 36.
+- Mantido apenas UM painel nativo de câmera/áudio do Xadrez.
+- Esse painel é movido para baixo do tabuleiro sem dock duplicado.
+- Ranking do treino volta a usar o botão + nativo.
+- Sem MutationObserver e sem loop mexendo no DOM a todo momento.
+- Damas preservada.
 
-Teste:
-https://damas-nine.vercel.app/fase33/?v=36-estavel
+Teste com:
+https://damas-nine.vercel.app/fase33/?v=36final

@@ -4372,7 +4372,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             selectedSquare = null;
             legalMoves = [];
             chessGameOver = false;
-            lastMoveMessage = 'Fase 30 ativa: Xadrez Online com tabuleiro centralizado no celular, sem micro-toques ao selecionar peças, Firebase mais leve e vídeo/áudio separado da Damas.';
+            lastMoveMessage = 'Fase 36 ativa: Xadrez Online com câmera fixa abaixo do tabuleiro, tabuleiro centralizado no celular e Damas preservada.';
             lastChessMove = null;
             enPassantTarget = null;
             moveHistory = [];
@@ -4886,7 +4886,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 35</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 36 Estável</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -8381,7 +8381,7 @@ Link: ${location.origin}${location.pathname}`;
         }
 
         function ativarArrastarChamadaXadrez() {
-            // Fase 35: arraste desativado de propósito.
+            // Fase 36: arraste desativado de propósito.
             // A câmera do Xadrez agora fica fixa abaixo do tabuleiro para não cobrir as peças no celular.
             const { panel } = chessCallElements();
             if (!panel) return;
@@ -8758,14 +8758,14 @@ Link: ${location.origin}${location.pathname}`;
 
             function atualizarSeloFase30() {
                 const pill = document.getElementById('chess-online-stability-pill');
-                if (pill) pill.textContent = 'Fase 30 • Tabuleiro centralizado';
+                if (pill) pill.textContent = 'Fase 36 • Tabuleiro estável';
                 const clean = document.querySelector('#chess-screen .chess-clean-game-pill');
                 if (clean && /Online/i.test(clean.textContent || '')) {
                     clean.textContent = '🎯 Online estável + tabuleiro centralizado';
                 }
                 const warning = document.querySelector('#chess-screen .chess-warning');
                 if (warning) {
-                    warning.textContent = '✅ Fase 30 ativa: tabuleiro do Xadrez Online centralizado no celular, sem micro-toques ao selecionar peças, Firebase mais leve e vídeo/áudio separado da Damas.';
+                    warning.textContent = '✅ Fase 36 ativa: Xadrez Online estável, câmera abaixo do tabuleiro e Damas preservada.';
                 }
             }
 
@@ -9201,3 +9201,132 @@ Link: ${location.origin}${location.pathname}`;
         }
 
         instalarFase31XadrezTelaLimpa();
+
+
+/* ======================================================================
+   FASE 36 ESTÁVEL - CORREÇÃO FINAL DE ESTABILIDADE
+   - Não cria dock extra.
+   - Mantém apenas o painel nativo #chess-call-panel.
+   - Move esse único painel para baixo do tabuleiro.
+   - Não usa MutationObserver nem loop que mexe no DOM toda hora.
+   - Mantém ranking do treino abrindo pelo botão + nativo.
+   ====================================================================== */
+(function instalarFase36EstavelSemDuplicarCamera() {
+    if (window.__tabuleiroArenaFase36EstavelSemDuplicarCamera) return;
+    window.__tabuleiroArenaFase36EstavelSemDuplicarCamera = true;
+
+    function removerDocksDuplicadosFase36() {
+        document.querySelectorAll('#fase36-camera-dock, .fase36-camera-dock').forEach(function (el) {
+            el.remove();
+        });
+    }
+
+    function limparPainelChamadaFase36(panel) {
+        if (!panel) return;
+        panel.classList.remove('fase36-call-panel', 'fase36-call-open', 'fase35-call-panel', 'fase35-call-open', 'fase34-call-closed', 'fase343-movida', 'fase344-posicao-manual', 'fase343-posicao-inicial-ok');
+        panel.style.left = '';
+        panel.style.right = '';
+        panel.style.top = '';
+        panel.style.bottom = '';
+        panel.style.transform = '';
+        panel.style.width = '';
+        panel.style.maxWidth = '';
+        panel.style.position = '';
+        panel.style.zIndex = '';
+        panel.style.marginLeft = '';
+        panel.style.marginRight = '';
+
+        const toggle = document.getElementById('chess-call-toggle-btn');
+        if (toggle) {
+            toggle.style.display = '';
+            toggle.removeAttribute('aria-hidden');
+        }
+
+        const title = panel.querySelector('.chess-call-title');
+        if (title) title.textContent = '📹 Câmera e áudio';
+
+        const note = panel.querySelector('.chess-call-note');
+        if (note) note.innerHTML = 'A chamada fica fixa abaixo do tabuleiro do Xadrez e não cobre as peças. Não usa a câmera da Damas.';
+    }
+
+    function posicionarChamadaAbaixoDoTabuleiroFase36() {
+        removerDocksDuplicadosFase36();
+        const panel = document.getElementById('chess-call-panel');
+        const boardWrap = document.querySelector('#chess-screen .chess-board-wrap');
+        if (!panel || !boardWrap) return;
+
+        limparPainelChamadaFase36(panel);
+
+        if (boardWrap.nextElementSibling !== panel) {
+            boardWrap.insertAdjacentElement('afterend', panel);
+        }
+
+        if (typeof atualizarBotaoChamadaCompacta === 'function') {
+            try { atualizarBotaoChamadaCompacta(); } catch (_) {}
+        } else {
+            const toggle = document.getElementById('chess-call-toggle-btn');
+            if (toggle) {
+                const fechado = panel.classList.contains('call-compact') && !panel.classList.contains('call-active');
+                toggle.textContent = fechado ? '+' : '−';
+                toggle.setAttribute('aria-expanded', fechado ? 'false' : 'true');
+            }
+        }
+    }
+
+    function reforcarRankingNativoFase36() {
+        const panel = document.getElementById('chess-training-ranking-panel');
+        const btn = document.getElementById('chess-ranking-toggle-btn');
+        if (!panel || !btn || btn.dataset.fase36RankingSeguro === '1') return;
+        btn.dataset.fase36RankingSeguro = '1';
+        btn.addEventListener('click', function () {
+            setTimeout(function () {
+                const aberto = !panel.classList.contains('chess-rank-collapsed');
+                btn.textContent = aberto ? '−' : '+';
+                btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+            }, 0);
+        });
+    }
+
+    const oldMostrarTabuleiroFase36 = typeof mostrarTabuleiroXadrezAposEscolha === 'function' ? mostrarTabuleiroXadrezAposEscolha : null;
+    if (oldMostrarTabuleiroFase36) {
+        mostrarTabuleiroXadrezAposEscolha = function mostrarTabuleiroXadrezAposEscolhaFase36Estavel() {
+            oldMostrarTabuleiroFase36.apply(this, arguments);
+            setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 0);
+            setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 180);
+        };
+    }
+
+    const oldAtualizarPainelChamadaFase36 = typeof atualizarPainelChamadaXadrez === 'function' ? atualizarPainelChamadaXadrez : null;
+    if (oldAtualizarPainelChamadaFase36) {
+        atualizarPainelChamadaXadrez = function atualizarPainelChamadaXadrezFase36Estavel() {
+            oldAtualizarPainelChamadaFase36.apply(this, arguments);
+            posicionarChamadaAbaixoDoTabuleiroFase36();
+        };
+    }
+
+    const oldAtualizarPainelOnlineFase36 = typeof atualizarPainelOnlineXadrez === 'function' ? atualizarPainelOnlineXadrez : null;
+    if (oldAtualizarPainelOnlineFase36) {
+        atualizarPainelOnlineXadrez = function atualizarPainelOnlineXadrezFase36Estavel() {
+            oldAtualizarPainelOnlineFase36.apply(this, arguments);
+            setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 0);
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 300);
+        setTimeout(reforcarRankingNativoFase36, 350);
+    });
+
+    document.addEventListener('click', function (ev) {
+        const alvo = ev.target;
+        if (!alvo || !alvo.closest) return;
+        if (alvo.closest('#chess-online-join-btn, #chess-online-watch-btn, #chess-online-leave-btn, #chess-start-video-call-btn, #chess-start-audio-call-btn, #chess-end-call-btn, #chess-call-toggle-btn, #chess-training-easy-btn, #chess-training-medium-btn, #chess-training-hard-btn, #chess-training-learn-btn')) {
+            setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 160);
+            setTimeout(reforcarRankingNativoFase36, 180);
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 80);
+    });
+})();
