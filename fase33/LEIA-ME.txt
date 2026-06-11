@@ -1,13 +1,13 @@
-TABULEIRO ARENA - FASE 36.6
+Tabuleiro Arena - Fase 36.7
 
-Base: Fase 36.5 estável aprovada.
+Conteúdo para subir dentro da pasta fase33.
 
-Correções desta versão:
-- Mantém o resultado/xeque-mate centralizado.
-- Adiciona botão Sair da sala dentro do tabuleiro online do Xadrez.
-- Voltar ao menu também libera a vaga da sala online.
-- Adiciona presença/heartbeat: jogador desconectado/inativo é limpo após cerca de 5 minutos.
-- Garante câmera e áudio abaixo do tabuleiro no modo online.
+Correções desta fase:
+- Mantém a base estável 36.5/36.6.
+- Coloca Sair da sala dentro do tabuleiro do Xadrez online.
+- Coloca câmera e áudio abaixo do tabuleiro, não no menu.
+- Voltar ao menu libera a sala online.
+- Aumenta o tabuleiro do Xadrez no celular.
 - Damas preservada.
 
-Subir apenas o conteúdo desta pasta dentro de /fase33/. Não subir a pasta inteira e não mexer na raiz.
+Subir apenas: index.html, LEIA-ME.txt, css/ e js/ dentro de fase33.
