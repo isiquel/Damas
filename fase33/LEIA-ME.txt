@@ -1,17 +1,12 @@
-TABULEIRO ARENA - FASE 36.2
+TABULEIRO ARENA - FASE 36.3
 
-Conteúdo correto para subir DENTRO da pasta fase33.
+Conteúdo para subir dentro da pasta /fase33/.
 
-Correção principal:
-- O resultado do Xadrez, xeque-mate ou fim da partida, agora abre como modal central real na frente do tabuleiro.
-- O painel foi retirado do fluxo do card para não aparecer cortado pela metade.
+Correção desta fase:
+- Resultado/xeque-mate agora abre em um modal novo, menor e centralizado.
+- O painel antigo do resultado fica escondido para não aparecer torto no canto.
+- Câmera/áudio do Xadrez continuam abaixo do tabuleiro.
+- Ranking do treino e chat continuam recolhíveis.
 - Damas preservada.
 
-Subir dentro de /fase33/:
-- index.html
-- LEIA-ME.txt
-- css/
-- js/
-
-Teste:
-https://damas-nine.vercel.app/fase33/?v=362
+Não subir na raiz. Subir somente dentro de /fase33/.
