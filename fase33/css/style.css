@@ -3995,7 +3995,7 @@ body.chess-selected #ta-chess-result-modal-final {
 
 
 /* ======================================================================
-   FASE 36.11 - CONTROLES ONLINE DENTRO DO TABULEIRO (BASE LIMPA 36.5)
+   FASE 36.11 - BLOCO ANTIGO DESATIVADO
    ====================================================================== */
 #chess-leave-room-board-btn {
     background: linear-gradient(135deg, #0f766e, #14b8a6) !important;
@@ -4059,6 +4059,84 @@ body.ta-chess-online-board-3611 #chess-call-toggle-btn {
     body.ta-chess-online-board-3611 #chess-screen .chess-actions,
     body.ta-chess-online-board-3611 #chess-call-panel,
     body.ta-chess-online-board-3611 #chess-chat-panel {
+        width: calc(100vw - 8px) !important;
+        max-width: calc(100vw - 8px) !important;
+    }
+}
+
+
+/* ======================================================================
+   FASE 36.12 - CORREÇÃO REAL: CONTROLES ONLINE DENTRO DO TABULEIRO
+   Este CSS usa novo id para não depender dos blocos antigos 36.6-36.11.
+   ====================================================================== */
+#chess-board-leave-online-btn,
+.btn-chess-leave-online-board {
+    background: linear-gradient(135deg, #0f766e, #14b8a6) !important;
+    color: #fff !important;
+    border: 1px solid rgba(94, 234, 212, .75) !important;
+    box-shadow: 0 8px 18px rgba(20, 184, 166, .18) !important;
+}
+body.chess-selected.chess-board-visible.chess-online-active-3612 #chess-board-leave-online-btn {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+body:not(.chess-online-active-3612) #chess-board-leave-online-btn,
+body.chess-mode-training #chess-board-leave-online-btn,
+body.ta-chess-training-board-3611 #chess-board-leave-online-btn {
+    display: none !important;
+}
+body.chess-selected.chess-board-visible.chess-online-active-3612 #chess-screen .chess-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 640px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+body.chess-selected.chess-board-visible.chess-online-active-3612 #chess-call-panel {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 640px !important;
+    margin: 8px auto !important;
+    z-index: auto !important;
+}
+body:not(.chess-online-active-3612) #chess-call-panel:not(.call-active),
+body.chess-mode-training #chess-call-panel:not(.call-active) {
+    display: none !important;
+}
+body.chess-online-active-3612 #chess-call-panel.call-compact:not(.call-active) .chess-call-videos,
+body.chess-online-active-3612 #chess-call-panel.call-compact:not(.call-active) .chess-call-controls,
+body.chess-online-active-3612 #chess-call-panel.call-compact:not(.call-active) .chess-call-note {
+    display: none !important;
+}
+body.chess-online-active-3612 #chess-call-panel.call-compact:not(.call-active) .chess-call-header {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+}
+body.chess-online-active-3612 #chess-call-toggle-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 44px !important;
+    height: 36px !important;
+    border-radius: 999px !important;
+    background: #0ea5e9 !important;
+}
+@media (max-width: 560px) {
+    body.chess-selected.chess-board-visible.chess-online-active-3612 #chess-screen .chess-actions,
+    body.chess-selected.chess-board-visible.chess-online-active-3612 #chess-call-panel,
+    body.chess-selected.chess-board-visible.chess-online-active-3612 #chess-chat-panel {
         width: calc(100vw - 8px) !important;
         max-width: calc(100vw - 8px) !important;
     }
