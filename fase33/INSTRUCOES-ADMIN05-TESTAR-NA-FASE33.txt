@@ -1,0 +1,16 @@
+ADMIN 05 - TESTE NA /fase33/
+
+Correção: Admin do Xadrez abre sem travar.
+
+O que mudou:
+- Removidas as chamadas dos corretores Admin 02, Admin 03 e Admin 04 do index.html.
+- Mantido o Xadrez limpo igual à Damas.
+- Adicionado Admin 05, sem MutationObserver e sem setInterval.
+
+Teste:
+1. Abrir /fase33/?v=admin05
+2. Entrar no Painel do Dono.
+3. Clicar Administrar Xadrez.
+4. A página não pode travar.
+5. O painel do Xadrez deve aparecer.
+6. Testar Damas e Xadrez jogo depois.

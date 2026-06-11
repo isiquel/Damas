@@ -1,8 +1,9 @@
-Tabuleiro Arena — Admin 03
+TABULEIRO ARENA - ADMIN 05
 
-Correção visual/organização:
-- O Painel Admin do Xadrez fica somente na área do administrador.
-- Durante treino, online ou jogo, o Xadrez fica limpo igual à Damas.
-- Não altera Damas.
-- Não altera regra do Xadrez.
-- Não reativa câmera.
+Correção segura para o botão Administrar Xadrez.
+
+- Não mexe nas regras da Damas.
+- Não mexe nas regras do Xadrez.
+- Não volta câmera.
+- Remove chamadas antigas que podiam travar a página.
+- Admin do Xadrez abre somente na área administrativa.
