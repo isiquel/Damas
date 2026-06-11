@@ -1,1 +1,1 @@
-Fase 36.9 - Corrige controles online dentro do tabuleiro: botão Sair da sala e painel Câmera e áudio aparecem na tela do jogo online. Base 36.8, Damas preservada.
+Fase 36.10 - Correção real testada dos controles online: Sair da sala e Câmera/áudio aparecem no tabuleiro online. Corrigida a detecção que confundia online com treino por causa de texto escondido. Base 36.9, Damas preservada.
