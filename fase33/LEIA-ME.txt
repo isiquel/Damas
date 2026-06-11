@@ -1,18 +1,17 @@
-TABULEIRO ARENA - FASE 39
+TABULEIRO ARENA - FASE 40
 
-Base: Fase 38 segura.
-Objetivo: tela de partida do Xadrez mais limpa, sem câmera, com tabuleiro maior e menos movimentação vertical.
+Base: Fase 39 funcionando.
 
-Alterações:
-- Não mexe na Damas.
-- Remove visualmente a câmera do Xadrez.
-- Remove mensagem de câmera pausada.
-- Esconde cabeçalho grande durante a partida do Xadrez.
-- Mantém no jogo somente status, nomes, tabuleiro, botões e chat recolhido.
-- Mantém Sair da sala no tabuleiro.
+Objetivo desta fase:
+- Não mexer na Damas.
+- Manter Xadrez online funcionando.
+- Manter botão Sair da sala funcionando no tabuleiro.
+- Manter câmera removida/pausada.
+- Recolher os botões Reiniciar/Desistir/Sair/Voltar no botão + para o tabuleiro não ficar subindo e descendo.
+- Deixar o tabuleiro do Xadrez mais limpo no celular.
 
-Enviar dentro de /fase33/:
-index.html
-LEIA-ME.txt
-css/
-js/
+Subir dentro de /fase33/:
+index.html, LEIA-ME.txt, css/ e js/.
+
+Testar com:
+https://damas-nine.vercel.app/fase33/?v=40
