@@ -1,0 +1,29 @@
+TABULEIRO ARENA - PUBLICAR FASE 40 NO SITE PRINCIPAL
+
+Use este pacote somente na RAIZ do projeto GitHub, onde ficam:
+assets/
+css/
+js/
+damas.html
+index.html
+xadrez.html
+xadrez.js
+
+O que enviar para a RAIZ:
+- index.html
+- css/
+- js/
+
+O que NÃO apagar:
+- fase33/
+- assets/
+- damas.html
+- xadrez.html
+- xadrez.js
+- manifest.json
+- sw.js
+
+Depois de enviar, testar:
+https://damas-nine.vercel.app/?v=40principal
+
+A pasta fase33 deve ficar guardada como backup seguro.
