@@ -1,1 +1,20 @@
-Fase 36.13: base 36.12 mantida, botões no tabuleiro e correção do botão + da câmera sem duplo clique.
+TABULEIRO ARENA - FASE 37
+
+Objetivo desta fase:
+- Parar de remendar a câmera do Xadrez.
+- Pausar/remover a câmera do Xadrez da interface.
+- Manter o jogo online funcionando.
+- Manter Sair da sala dentro do tabuleiro.
+- Começar a organização do código sem quebrar a Damas.
+
+Estrutura:
+index.html
+css/core/style-core.css                 -> CSS antigo preservado como núcleo
+css/features/fase37-organizacao-sem-camera.css
+js/core/app-core.js                     -> JS antigo preservado como núcleo
+js/features/fase37-organizacao-sem-camera.js
+
+Regra de manutenção:
+- Não mexer no js/core/app-core.js para pequenas melhorias.
+- Novas melhorias entram em js/features/ e css/features/.
+- Damas continua preservada.

@@ -1,0 +1,58 @@
+/* ======================================================================
+   TABULEIRO ARENA - FASE 37
+   Organização segura: câmera do Xadrez desativada e código novo separado.
+   A Damas não foi alterada.
+   ====================================================================== */
+
+/* Xadrez: câmera desativada por decisão de manutenção. */
+body.chess-selected #chess-call-panel,
+body.chess-selected .chess-call-panel,
+body.chess-selected #fase36-camera-dock,
+body.chess-selected .fase36-camera-dock,
+body.chess-selected #chess-board-camera-panel,
+body.chess-selected .chess-board-camera-panel,
+body.chess-selected [data-xadrez-camera-panel="true"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Mantém os botões do tabuleiro organizados em 2 colunas no celular. */
+#chess-screen .chess-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+#chess-screen #chess-board-leave-online-btn,
+#chess-screen .btn-chess-leave-online-board {
+    background: linear-gradient(135deg, #0f766e, #14b8a6) !important;
+    color: #fff !important;
+    border: 1px solid rgba(45, 212, 191, 0.65) !important;
+}
+
+@media (max-width: 560px) {
+    #chess-screen .chess-actions {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    #chess-screen .chess-actions button {
+        min-height: 86px;
+        font-size: 1rem;
+    }
+}
+
+/* Aviso simples para não deixar o usuário esperando câmera que foi removida. */
+.chess-camera-disabled-note {
+    margin: 10px auto 0 auto;
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    text-align: center;
+}
