@@ -1,21 +1,18 @@
-TABULEIRO ARENA - FASE 38 BACKUP E LIMPEZA SEGURA
+TABULEIRO ARENA - FASE 39
 
-Base: Fase 37 segura funcionando.
+Base: Fase 38 segura.
+Objetivo: tela de partida do Xadrez mais limpa, sem câmera, com tabuleiro maior e menos movimentação vertical.
 
-Objetivo desta fase:
-- Manter o jogo funcionando.
-- Não mexer na Damas.
-- Não reativar câmera do Xadrez.
-- Manter Sair da sala no tabuleiro online.
-- Manter modal bonito de resultado.
-- Deixar a /fase33/ com poucos arquivos chamados pelo index.
+Alterações:
+- Não mexe na Damas.
+- Remove visualmente a câmera do Xadrez.
+- Remove mensagem de câmera pausada.
+- Esconde cabeçalho grande durante a partida do Xadrez.
+- Mantém no jogo somente status, nomes, tabuleiro, botões e chat recolhido.
+- Mantém Sair da sala no tabuleiro.
 
-Arquivos que devem ficar ativos em /fase33/:
-- index.html
-- css/style.css
-- css/fase38-backup-limpeza-segura.css
-- js/app.js
-- js/fase38-backup-limpeza-segura.js
-
-Teste após subir:
-https://damas-nine.vercel.app/fase33/?v=38
+Enviar dentro de /fase33/:
+index.html
+LEIA-ME.txt
+css/
+js/
