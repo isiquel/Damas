@@ -1,8 +1,13 @@
-Tabuleiro Arena - Fase 36.4
+FASE 36.5 - Resultado do Xadrez centralizado de verdade
 
-Correção final do resultado do Xadrez:
-- O painel antigo torto/cortado é escondido quando o resultado aparece.
-- Um modal novo, pequeno e centralizado é aberto na frente da tela.
-- Botões: Jogar novamente, Voltar ao menu do Xadrez e Continuar olhando.
-- Não mexe na Damas.
-- Testar apenas em /fase33/ antes de copiar para o principal.
+Suba estes itens diretamente dentro da pasta fase33:
+- index.html
+- LEIA-ME.txt
+- css/
+- js/
+
+Correção:
+- O painel antigo torto do resultado foi desligado.
+- O fim da partida usa apenas um modal novo, pequeno e centralizado.
+- Damas preservada.
+- Site principal não deve ser alterado.
