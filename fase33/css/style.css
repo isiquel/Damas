@@ -3883,3 +3883,74 @@ body.chess-selected #chess-training-ranking-panel:not(.chess-rank-collapsed) .ch
         min-height: 92px !important;
     }
 }
+
+/* ======================================================================
+   FASE 36.1 - CORREÇÃO DO QUADRO PELA METADE E SOBREPOSIÇÕES NO XADREZ
+   - Resultado/xeque-mate não fica mais deslocado por cima do tabuleiro.
+   - Menu do Xadrez não aparece em pedaços durante a partida.
+   - Mantém a Damas preservada.
+   ====================================================================== */
+body.chess-board-visible #chess-online-panel,
+body.chess-board-visible #chess-training-panel,
+body.chess-board-visible .chess-menu-section-label,
+body.chess-board-visible .chess-menu-organizer {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.chess-board-visible #chess-result-panel,
+body.chess-board-visible #chess-result-panel.chess-result-panel,
+body.chess-board-visible #chess-result-panel.show-front.chess-result-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    z-index: 9998 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 18px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(2, 6, 23, .78) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+body.chess-board-visible #chess-result-panel.chess-result-panel:not(.show-front) {
+    display: none !important;
+}
+
+body.chess-board-visible #chess-result-panel.show-front.chess-result-panel {
+    display: flex !important;
+}
+
+body.chess-board-visible #chess-result-panel.show-front .chess-result-card {
+    width: min(92vw, 460px) !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
+    border-radius: 24px !important;
+}
+
+@media (max-width: 560px) {
+    body.chess-board-visible #chess-result-panel,
+    body.chess-board-visible #chess-result-panel.show-front.chess-result-panel {
+        padding: 14px !important;
+    }
+    body.chess-board-visible #chess-result-panel.show-front .chess-result-card {
+        width: min(94vw, 420px) !important;
+    }
+}

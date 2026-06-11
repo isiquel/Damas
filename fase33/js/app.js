@@ -9330,3 +9330,136 @@ Link: ${location.origin}${location.pathname}`;
         setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 80);
     });
 })();
+
+/* ======================================================================
+   FASE 36.1 - ESTABILIZAÇÃO DO RESULTADO E LIMPEZA DE SOBREPOSIÇÕES
+   Corrige o quadro de resultado que ficava pela metade em cima do tabuleiro
+   e impede menu/painéis antigos de aparecerem durante a partida.
+   ====================================================================== */
+(function instalarFase361ResultadoSemQuadroCortado() {
+    if (window.__tabuleiroArenaFase361ResultadoSemQuadroCortado) return;
+    window.__tabuleiroArenaFase361ResultadoSemQuadroCortado = true;
+
+    function painelResultadoXadrez() {
+        return document.getElementById('chess-result-panel');
+    }
+
+    function fecharResultadoXadrez361() {
+        const panel = painelResultadoXadrez();
+        if (!panel) return;
+        panel.classList.remove('show-front', 'win', 'loss', 'draw', 'mate');
+        panel.style.display = 'none';
+    }
+
+    function abrirResultadoXadrez361() {
+        const panel = painelResultadoXadrez();
+        if (!panel || !document.body.classList.contains('chess-board-visible')) return;
+        panel.style.removeProperty('left');
+        panel.style.removeProperty('top');
+        panel.style.removeProperty('right');
+        panel.style.removeProperty('bottom');
+        panel.style.removeProperty('transform');
+        panel.style.removeProperty('width');
+        panel.style.removeProperty('max-width');
+        panel.style.removeProperty('margin');
+        panel.style.removeProperty('position');
+        panel.style.removeProperty('z-index');
+        panel.style.removeProperty('display');
+        panel.classList.add('show-front');
+    }
+
+    function limparMenusSobreTabuleiro361() {
+        const jogando = document.body.classList.contains('chess-board-visible');
+        const seletores = ['#chess-online-panel', '#chess-training-panel', '.chess-menu-section-label', '.chess-menu-organizer'];
+        seletores.forEach(function (sel) {
+            document.querySelectorAll(sel).forEach(function (el) {
+                if (jogando) {
+                    el.style.display = 'none';
+                    el.setAttribute('aria-hidden', 'true');
+                } else {
+                    if (el.getAttribute('aria-hidden') === 'true') el.removeAttribute('aria-hidden');
+                    el.style.removeProperty('display');
+                }
+            });
+        });
+    }
+
+    function garantirUmaCameraXadrez361() {
+        const paineis = Array.from(document.querySelectorAll('#chess-call-panel'));
+        paineis.slice(1).forEach(function (el) { el.remove(); });
+        document.querySelectorAll('#fase36-camera-dock, .fase36-camera-dock').forEach(function (el) { el.remove(); });
+    }
+
+    const resultadoOriginal361 = typeof mostrarResultadoXadrezSeTerminou === 'function' ? mostrarResultadoXadrezSeTerminou : null;
+    if (resultadoOriginal361) {
+        mostrarResultadoXadrezSeTerminou = function mostrarResultadoXadrezSeTerminouFase361() {
+            resultadoOriginal361.apply(this, arguments);
+            abrirResultadoXadrez361();
+            limparMenusSobreTabuleiro361();
+            garantirUmaCameraXadrez361();
+        };
+    }
+
+    const limparResultadoOriginal361 = typeof limparResultadoXadrez === 'function' ? limparResultadoXadrez : null;
+    if (limparResultadoOriginal361) {
+        limparResultadoXadrez = function limparResultadoXadrezFase361() {
+            limparResultadoOriginal361.apply(this, arguments);
+            fecharResultadoXadrez361();
+        };
+    }
+
+    const mostrarTabuleiroOriginal361 = typeof mostrarTabuleiroXadrezAposEscolha === 'function' ? mostrarTabuleiroXadrezAposEscolha : null;
+    if (mostrarTabuleiroOriginal361) {
+        mostrarTabuleiroXadrezAposEscolha = function mostrarTabuleiroXadrezAposEscolhaFase361() {
+            mostrarTabuleiroOriginal361.apply(this, arguments);
+            setTimeout(function () {
+                limparMenusSobreTabuleiro361();
+                garantirUmaCameraXadrez361();
+            }, 0);
+        };
+    }
+
+    const ocultarTabuleiroOriginal361 = typeof ocultarTabuleiroXadrezParaMenu === 'function' ? ocultarTabuleiroXadrezParaMenu : null;
+    if (ocultarTabuleiroOriginal361) {
+        ocultarTabuleiroXadrezParaMenu = function ocultarTabuleiroXadrezParaMenuFase361() {
+            ocultarTabuleiroOriginal361.apply(this, arguments);
+            fecharResultadoXadrez361();
+            setTimeout(limparMenusSobreTabuleiro361, 0);
+        };
+    }
+
+    document.addEventListener('click', function (ev) {
+        const alvo = ev.target;
+        if (!alvo || !alvo.closest) return;
+        if (alvo.closest('#chess-result-close-btn')) {
+            setTimeout(fecharResultadoXadrez361, 0);
+            setTimeout(limparMenusSobreTabuleiro361, 0);
+        }
+        if (alvo.closest('#chess-result-again-btn, #chess-result-menu-btn, #chess-reset-btn, #chess-new-btn, #chess-resign-btn, #chess-back-btn, #chess-back-btn-bottom')) {
+            setTimeout(fecharResultadoXadrez361, 0);
+            setTimeout(limparMenusSobreTabuleiro361, 0);
+            setTimeout(garantirUmaCameraXadrez361, 0);
+        }
+        if (alvo.closest('#chess-training-easy-btn, #chess-training-medium-btn, #chess-training-hard-btn, #chess-training-learn-btn, #chess-online-join-btn, #chess-online-watch-btn')) {
+            setTimeout(function () {
+                limparMenusSobreTabuleiro361();
+                garantirUmaCameraXadrez361();
+            }, 100);
+        }
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fecharResultadoXadrez361();
+        setTimeout(function () {
+            limparMenusSobreTabuleiro361();
+            garantirUmaCameraXadrez361();
+        }, 300);
+    });
+
+    window.addEventListener('resize', function () {
+        setTimeout(function () {
+            limparMenusSobreTabuleiro361();
+            garantirUmaCameraXadrez361();
+        }, 80);
+    });
+})();
