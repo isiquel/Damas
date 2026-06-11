@@ -1,0 +1,19 @@
+XADREZ LIMPO 02 - TESTAR NA /fase33/
+
+Esta versão volta para a base estável Fase 40 e aplica a limpeza do Xadrez somente por CSS.
+Não tem Admin 02, Admin 03, Admin 04 nem Admin 05.
+Não tem JavaScript extra para abrir/esconder o admin.
+
+Teste primeiro em:
+https://damas-nine.vercel.app/fase33/?v=xlimpo02
+
+Checklist:
+1. Entrar no Painel do Dono.
+2. Clicar Administrar Damas: deve abrir normal.
+3. Clicar Administrar Xadrez: deve abrir normal e não travar.
+4. Entrar no Xadrez contra robô: não pode mostrar painel admin.
+5. Entrar no Xadrez online: não pode mostrar painel admin.
+6. Testar botão Sair da sala.
+7. Testar Damas normal.
+
+Se tudo estiver certo, só depois copiar para o principal.

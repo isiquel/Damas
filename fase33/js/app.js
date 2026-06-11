@@ -7038,7 +7038,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     sala.board = estado.board;
                     sala.turn = estado.turn;
                     sala.gameOver = false;
-                    sala.lastMoveMessage = 'Sala de Xadrez criada/restaurada pelo painel admin.';
+                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 12 online ativa.';
                     sala.lastChessMove = null;
                     sala.enPassantTarget = null;
                     sala.moveHistory = [];
@@ -7090,7 +7090,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chessRoomPlayers = sala.players;
                 chessRoomSpectators = sala.spectators;
                 if (!sala.lastMoveMessage || /^Fase 5/i.test(String(sala.lastMoveMessage))) {
-                    sala.lastMoveMessage = 'Sala de Xadrez online ativa pelo painel admin.';
+                    sala.lastMoveMessage = 'Fase 12 ativa: sala online com painel Admin próprio, controle de salas, desistência, visão das pretas, alerta de vez, chat, histórico e placar.';
                 }
 
                 await set(chessRoomRef, sala);
@@ -7611,7 +7611,7 @@ Link: ${location.origin}${location.pathname}`;
                 board: tabuleiroInicialXadrezAdminSerializado(),
                 turn: 'white',
                 gameOver: false,
-                lastMoveMessage: 'Sala de Xadrez criada pelo painel admin.',
+                lastMoveMessage: 'Fase 12 ativa: sala de Xadrez criada pelo painel Admin.',
                 lastChessMove: null,
                 enPassantTarget: null,
                 moveHistory: [],
@@ -7878,7 +7878,7 @@ Link: ${location.origin}${location.pathname}`;
                     body.chess-admin-only #chess-training-panel { display: none !important; }
                     @media(max-width:560px){ .chess-training-actions { grid-template-columns: 1fr; } .chess-beginner-grid, .chess-legend-row { grid-template-columns: 1fr; } }
 
-                    /* Admin do Xadrez: esconde o jogo e mostra somente o controle de salas */
+                    /* ✅ FASE 12.1: ADMIN LIMPO — esconde tudo que é do jogo quando abrir o Admin do Xadrez */
                     body.chess-admin-only #chess-status,
                     body.chess-admin-only #chess-toast,
                     body.chess-admin-only .chess-board-wrap,
@@ -7910,12 +7910,9 @@ Link: ${location.origin}${location.pathname}`;
                 panel.id = 'chess-admin-panel';
                 panel.className = 'chess-admin-panel';
                 panel.innerHTML = `
-                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez — Controle de Salas</div>
-                    <div class="chess-admin-desc">Controle as salas online do Xadrez sem abrir o tabuleiro. Use esta área para liberar salas, bloquear, expulsar jogadores, resetar partidas e monitorar o chat.</div>
-                    <div class="admin01-help-card chess-admin-help">
-                        <strong>Como usar:</strong> digite o código da sala, clique em liberar/criar sala e entregue esse código aos jogadores. Se a sala travar, use resetar tabuleiro ou expulsar jogadores. Para limpar tudo, use excluir sala.
-                    </div>
-                    <input id="chess-admin-room-input" type="text" maxlength="18" placeholder="Código da sala de Xadrez. Ex: xadrez10">
+                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez — Fase 12.1</div>
+                    <div class="chess-admin-desc">Controle próprio do Xadrez, igual à Damas, usando o caminho <strong>chessRooms</strong>. Esta tela é somente administração: sem tabuleiro, sem placar e sem histórico do jogo. A Damas continua preservada.</div>
+                    <input id="chess-admin-room-input" type="text" maxlength="18" placeholder="Código da sala de Xadrez, ex: xadrez10">
                     <div class="chess-admin-grid">
                         <button id="chess-admin-create-btn" type="button" style="background:#22c55e;">Liberar / criar sala</button>
                         <button id="chess-admin-block-btn" type="button" style="background:#dc2626;">Bloquear sala</button>
@@ -7928,7 +7925,7 @@ Link: ${location.origin}${location.pathname}`;
                     </div>
                     <div id="chess-admin-panorama" class="chess-admin-desc">📊 Sincronizando salas de Xadrez...</div>
                     <div id="chess-admin-rooms-list" class="chess-admin-list">Carregando salas...</div>
-                    <div id="chess-admin-chat-monitor" class="chess-admin-chat-monitor" style="display:none;">Digite uma sala e clique em monitorar chat para acompanhar as mensagens.</div>
+                    <div id="chess-admin-chat-monitor" class="chess-admin-chat-monitor" style="display:none;">Selecione uma sala e clique em monitorar chat.</div>
                 `;
                 const online = document.getElementById('chess-online-panel');
                 if (online) online.insertAdjacentElement('afterend', panel);
@@ -7967,7 +7964,7 @@ Link: ${location.origin}${location.pathname}`;
             if (panel) panel.style.display = 'block';
             const online = document.getElementById('chess-online-panel');
             if (online) online.style.display = 'none';
-            atualizarStatusOnlineXadrez('🛡️ Painel Admin do Xadrez aberto. Só o controle de salas fica visível.');
+            atualizarStatusOnlineXadrez('🛡️ Fase 12.1 ativa: modo administrador limpo do Xadrez. Só o painel administrativo fica visível.');
             ativarDashboardAdminXadrez();
             panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }

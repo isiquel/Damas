@@ -7,9 +7,7 @@
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/fase40-controles-recolhidos.css">
-    <link rel="stylesheet" href="css/admin01-paineis-limpos.css">
-    <link rel="stylesheet" href="css/xadrez-limpo01-igual-damas.css">
-    <link rel="stylesheet" href="css/admin05-xadrez-admin-sem-travar.css">
+    <link rel="stylesheet" href="css/xadrez-limpo02-css-seguro.css">
 </head>
 <body class="platform-start-active mode-selecting">
 
@@ -47,8 +45,8 @@
             <div class="game-mode-card admin-entry" id="game-card-admin" role="button" tabindex="0">
                 <span class="game-mode-badge">Dono</span>
                 <div class="game-mode-icon">🛡️</div>
-                <div class="game-mode-name">Painel do Dono</div>
-                <div class="game-mode-copy">Controle salas, chats, rankings e torneios da Damas e do Xadrez.</div>
+                <div class="game-mode-name">Painel Admin</div>
+                <div class="game-mode-copy">Entre como administrador para controlar Damas e Xadrez.</div>
             </div>
         </div>
         <div id="admin-login-panel" class="admin-login-panel central-hidden">
@@ -64,11 +62,11 @@
             <div id="admin-login-status" class="admin-login-status">Jogadores comuns não usam esta área.</div>
 
             <div id="central-admin-menu" class="central-admin-menu">
-                <div class="central-admin-title">🎮 Central de Administração</div>
-                <div class="central-admin-desc">Escolha qual modalidade deseja administrar. Use esta área para liberar salas, resolver travamentos, acompanhar chats e preparar torneios.</div>
+                <div class="central-admin-title">🎮 Central do Dono da Plataforma</div>
+                <div class="central-admin-desc">Painel do dono da plataforma. A Damas continua ativa e preservada; o Xadrez agora tem administração própria.</div>
                 <div class="central-admin-grid">
-                    <button id="central-admin-damas-btn" class="btn-central-admin-damas" type="button">Administrar Damas<br><span style="font-size:.68rem; opacity:.85;">salas, chat, ranking e torneios</span></button>
-                    <button id="central-admin-xadrez-btn" class="btn-central-admin-xadrez" type="button">Administrar Xadrez<br><span style="font-size:.68rem; opacity:.85;">salas, chat, jogadores e tabuleiro</span></button>
+                    <button id="central-admin-damas-btn" class="btn-central-admin-damas" type="button">Administrar Damas<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat, ranking e torneios</span></button>
+                    <button id="central-admin-xadrez-btn" class="btn-central-admin-xadrez" type="button">Administrar Xadrez<br><span style="font-size:.68rem; opacity:.85;">salas, bloqueio, chat, jogadores e reset</span></button>
                     <button id="central-admin-back-btn" class="btn-central-admin-voltar" type="button">Voltar ao menu<br><span style="font-size:.68rem; opacity:.85;">continuar jogando</span></button>
                 </div>
                 <div id="central-admin-note" class="central-admin-note"></div>
@@ -86,8 +84,7 @@
             <div class="chess-title">♟️ Xadrez Arena</div>
             <div class="chess-clean-game-pill">♟️ Tabuleiro fixo e maior</div>
             <div class="chess-subtitle">
-                Fase 39 limpa: base estável preservada, arquivos antigos isolados e câmera do Xadrez pausada para estabilidade.
-                A Damas Arena continua preservada e não foi alterada.
+                Xadrez Limpo 02: visual de partida ajustado por CSS seguro, sem loops e sem alterar o Painel Admin.
             </div>
 
             <div id="chess-status" class="chess-status-panel">Vez das brancas.</div>
@@ -267,13 +264,10 @@
         </div>
 
         <div id="admin-panel" style="display: none; width: 100%; max-width: 500px; background: linear-gradient(135deg, #2c1a3a, #16213e); border: 2px dashed #9b59b6; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); text-align: left;">
-            <div style="font-size: 1.1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #9b59b6; padding-bottom: 6px;">🛡️ Painel Admin da Damas — Controle de Salas</div>
-            <div class="admin01-help-card">
-                <strong>Como usar:</strong> digite o código da sala, libere/crie a sala e divulgue o código aos jogadores. Se uma sala travar, use resetar tabuleiro ou expulsar jogadores. Para apagar tudo daquela sala, use excluir sala de vez.
-            </div>
+            <div style="font-size: 1.1rem; font-weight: bold; color: #9b59b6; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #9b59b6; padding-bottom: 6px;">🛡️ Painel de Controle de Salas</div>
             
-            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Código da sala da Damas que deseja gerenciar:</label>
-            <input type="text" id="admin-target-room" class="admin-input-control" placeholder="Digite o código da sala. Ex: sala10">
+            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Código da Sala que deseja gerenciar:</label>
+            <input type="text" id="admin-target-room" class="admin-input-control" placeholder="Digite o código da sala (ex: sala10)">
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
                 <button id="btn-adm-liberar" style="background-color: #2ecc71; font-size: 0.75rem; padding: 12px 5px;">LIBERAR / CRIAR SALA</button>
@@ -286,13 +280,13 @@
                 <button id="btn-adm-reset" style="background-color: #9b59b6; font-size: 0.75rem; padding: 12px 5px;">RESETAR TABULEIRO</button>
             </div>
 
-            <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ</button>
-            <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL</button>
+            <button id="btn-adm-excluir-total" style="background-color: #c0392b; border: 1px solid #962d22; padding: 14px; font-size: 0.85rem; margin-bottom: 15px; width: 100%;">❌ EXCLUIR SALA DE VEZ (Limpar do Sistema)</button>
+            <button id="btn-adm-limpar-ranking" style="background-color: #9b59b6; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 15px;">🏆 ZERAR RANKING GLOBAL (Nova Temporada)</button>
             
             <button id="btn-adm-monitorar-chat" style="background-color: #3498db; font-size: 0.85rem; padding: 14px; width: 100%; margin-bottom: 5px;">💬 MONITORAR CHAT DA SALA</button>
 
             <div class="admin-tournament-box">
-                <div class="admin-tournament-title">🏆 Central de Torneios e Avisos da Damas</div>
+                <div class="admin-tournament-title">🏆 Central de Torneios e Avisos</div>
                 <div class="admin-small-grid">
                     <input type="text" id="tournament-name-input" class="admin-input-control admin-full" placeholder="Nome do torneio. Ex: Torneio de Sábado">
                     <input type="datetime-local" id="tournament-date-input" class="admin-input-control">
@@ -308,21 +302,21 @@
             </div>
 
             <div id="admin-chat-monitor-container" class="admin-chat-monitor-box">
-                <div id="admin-chat-monitor-title" class="admin-chat-monitor-title">💬 Monitoramento do Chat da Sala</div>
+                <div id="admin-chat-monitor-title" class="admin-chat-monitor-title">💬 ESCUTA ATIVA: SALA ESPIONADA</div>
                 <div id="admin-chat-monitor-feed" class="admin-chat-monitor-feed">
-                    <div style="color: #666; font-style: italic;">Digite uma sala e clique em monitorar chat para acompanhar as mensagens.</div>
+                    <div style="color: #666; font-style: italic;">Selecione uma sala ativa acima e clique em monitorar...</div>
                 </div>
             </div>
 
             <div class="admin-dashboard-box">
-                <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando salas...</div>
-                <div class="admin-dashboard-title">📋 Lista geral de salas da Damas</div>
+                <div id="admin-panorama-header" style="font-size:0.8rem; color:#3498db; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">📊 PANORAMA: Sincronizando Servidores...</div>
+                <div class="admin-dashboard-title">📋 Lista Geral de Servidores (Salas Ativas e Vazias)</div>
                 <div id="admin-rooms-dashboard-list">
-                    <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade das salas...</div>
+                    <div style="color: #888; font-style: italic; font-size: 0.82rem; padding: 5px 0;">Rastreando atividade nos servidores...</div>
                 </div>
             </div>
             
-            <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">VOLTAR / SAIR DO PAINEL</button>
+            <button id="admin-exit-btn" style="background-color: #555; margin-top: 15px; padding: 12px; font-weight: bold;">SAIR DO TERMINAL</button>
         </div>
 
         <div id="learning-coach-box" class="learning-coach-box">
@@ -491,9 +485,6 @@
 
 <script type="module" src="js/app.js"></script>
 <script src="js/fase40-controles-recolhidos.js"></script>
-<script src="js/admin01-paineis-limpos.js"></script>
-    <script src="js/xadrez-limpo01-igual-damas.js"></script>
-    <script src="js/admin05-xadrez-admin-sem-travar.js"></script>
 
 
 <!--

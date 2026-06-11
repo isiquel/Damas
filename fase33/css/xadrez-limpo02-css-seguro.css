@@ -1,0 +1,209 @@
+/* ======================================================================
+   TABULEIRO ARENA - XADREZ LIMPO 02 SEGURO
+   Correção visual somente por CSS.
+   Base: Fase 40 estável.
+   Objetivo: deixar a partida de Xadrez mais parecida com a Damas,
+   sem mexer no Admin, sem observadores, sem loops e sem JavaScript extra.
+   ====================================================================== */
+
+/* Só ativa durante partida/treino/online do Xadrez. Não vale para admin. */
+body.chess-board-visible:not(.chess-admin-only) {
+  justify-content: flex-start !important;
+  padding-top: 0 !important;
+  overflow-x: hidden !important;
+  overflow-anchor: none !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) .container {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 4px 8px !important;
+  margin: 0 auto !important;
+}
+
+/* Durante o jogo, some com o cabeçalho grande e menus/painéis extras. */
+body.chess-board-visible:not(.chess-admin-only) h1,
+body.chess-board-visible:not(.chess-admin-only) .brand-kicker,
+body.chess-board-visible:not(.chess-admin-only) .platform-subtitle,
+body.chess-board-visible:not(.chess-admin-only) #chess-back-btn,
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-title,
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-clean-game-pill,
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-subtitle,
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-warning,
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-action-note,
+body.chess-board-visible:not(.chess-admin-only) #chess-online-panel,
+body.chess-board-visible:not(.chess-admin-only) #chess-training-panel,
+body.chess-board-visible:not(.chess-admin-only) #chess-admin-panel,
+body.chess-board-visible:not(.chess-admin-only) #chess-history-panel,
+body.chess-board-visible:not(.chess-admin-only) #chess-material-panel,
+body.chess-board-visible:not(.chess-admin-only) #chess-call-panel,
+body.chess-board-visible:not(.chess-admin-only) .chess-call-panel,
+body.chess-board-visible:not(.chess-admin-only) #fase36-camera-dock,
+body.chess-board-visible:not(.chess-admin-only) .fase36-camera-dock,
+body.chess-board-visible:not(.chess-admin-only) #chess-board-camera-panel,
+body.chess-board-visible:not(.chess-admin-only) .chess-board-camera-panel {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* O admin do Xadrez continua normal quando abrir pela área administrativa. */
+body.chess-admin-only #chess-admin-panel {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-screen {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-card {
+  width: 100% !important;
+  max-width: min(760px, 100vw) !important;
+  margin: 0 auto !important;
+  padding: 4px 4px 8px !important;
+  border-radius: 16px !important;
+  overflow: visible !important;
+}
+
+/* Status e barra de jogadores ficam como na Damas: compactos e fixos. */
+body.chess-board-visible:not(.chess-admin-only) #chess-status {
+  width: 100% !important;
+  max-width: 720px !important;
+  min-height: 38px !important;
+  max-height: 42px !important;
+  margin: 0 auto 5px !important;
+  padding: 7px 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  font-size: clamp(.75rem, 3.2vw, .92rem) !important;
+  line-height: 1.1 !important;
+  border-radius: 12px !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) .chess-status-online-pill {
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding: 4px 8px !important;
+  font-size: .68rem !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) .chess-game-players-bar {
+  width: 100% !important;
+  max-width: 720px !important;
+  min-height: 36px !important;
+  max-height: 42px !important;
+  margin: 0 auto 5px !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  font-size: clamp(.72rem, 3.1vw, .86rem) !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) .chess-game-players-name {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 34vw !important;
+}
+
+/* Tabuleiro maior e estável, sem depender de JS extra. */
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-board-wrap {
+  width: 100% !important;
+  max-width: min(740px, calc(100vw - 6px)) !important;
+  margin: 0 auto 6px !important;
+  padding: 4px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  transform: translateZ(0) !important;
+  overflow-anchor: none !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-coord-shell {
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  grid-template-columns: 13px minmax(0, 1fr) 13px !important;
+  grid-template-rows: 13px minmax(0, 1fr) 13px !important;
+  gap: 2px !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-board {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  min-height: 0 !important;
+  touch-action: manipulation !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-piece {
+  font-size: clamp(1.95rem, 10.8vw, 4.35rem) !important;
+}
+
+/* Controles e chat continuam recolhidos pela Fase 40. */
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-board-controls-toggle-row,
+body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-actions,
+body.chess-board-visible:not(.chess-admin-only) #chess-chat-panel {
+  width: 100% !important;
+  max-width: 720px !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-chat-panel {
+  display: block !important;
+  margin: 5px auto 0 !important;
+}
+
+body.chess-board-visible:not(.chess-admin-only) #chess-chat-panel.chat-collapsed,
+body.chess-board-visible:not(.chess-admin-only) #chess-chat-panel.chess-chat-collapsed {
+  min-height: 40px !important;
+  max-height: 44px !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 560px) {
+  body.chess-board-visible:not(.chess-admin-only) .container {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+  body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-card {
+    padding: 3px 2px 7px !important;
+  }
+  body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-board-wrap {
+    max-width: calc(100vw - 4px) !important;
+    padding: 3px !important;
+  }
+  body.chess-board-visible:not(.chess-admin-only) #chess-status {
+    min-height: 36px !important;
+    max-height: 38px !important;
+    font-size: .78rem !important;
+  }
+  body.chess-board-visible:not(.chess-admin-only) .chess-game-players-bar {
+    min-height: 34px !important;
+    max-height: 38px !important;
+  }
+  body.chess-board-visible:not(.chess-admin-only) #chess-screen .chess-coord-shell {
+    grid-template-columns: 12px minmax(0, 1fr) 12px !important;
+    grid-template-rows: 12px minmax(0, 1fr) 12px !important;
+  }
+}

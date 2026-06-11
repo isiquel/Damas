@@ -1,9 +1,7 @@
-TABULEIRO ARENA - ADMIN 05
+Tabuleiro Arena - Xadrez Limpo 02 Seguro
 
-Correção segura para o botão Administrar Xadrez.
-
-- Não mexe nas regras da Damas.
-- Não mexe nas regras do Xadrez.
-- Não volta câmera.
-- Remove chamadas antigas que podiam travar a página.
-- Admin do Xadrez abre somente na área administrativa.
+Base: Fase 40 estável.
+Correção: visual do Xadrez mais limpo, parecido com a Damas, usando somente CSS.
+Admin do Xadrez: mantido pelo código original da Fase 40 para evitar travamento.
+Câmera do Xadrez: continua pausada/removida.
+Damas: não alterada.
