@@ -1,12 +1,8 @@
-TABULEIRO ARENA - FASE 36.3
+Tabuleiro Arena - Fase 36.4
 
-Conteúdo para subir dentro da pasta /fase33/.
-
-Correção desta fase:
-- Resultado/xeque-mate agora abre em um modal novo, menor e centralizado.
-- O painel antigo do resultado fica escondido para não aparecer torto no canto.
-- Câmera/áudio do Xadrez continuam abaixo do tabuleiro.
-- Ranking do treino e chat continuam recolhíveis.
-- Damas preservada.
-
-Não subir na raiz. Subir somente dentro de /fase33/.
+Correção final do resultado do Xadrez:
+- O painel antigo torto/cortado é escondido quando o resultado aparece.
+- Um modal novo, pequeno e centralizado é aberto na frente da tela.
+- Botões: Jogar novamente, Voltar ao menu do Xadrez e Continuar olhando.
+- Não mexe na Damas.
+- Testar apenas em /fase33/ antes de copiar para o principal.

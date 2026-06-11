@@ -4076,3 +4076,251 @@ body.ta-chess-result-open #chess-result-panel .chess-result-actions button {
         max-width: 420px !important;
     }
 }
+
+/* ======================================================================
+   FASE 36.3 - MODAL PEQUENO, CENTRAL E DEFINITIVO DO RESULTADO DO XADREZ
+   Em vez de reaproveitar o painel antigo dentro do card, esta fase cria
+   um modal novo e independente, centralizado na tela. O painel antigo fica
+   oculto quando o modal novo está ativo. Damas preservada.
+   ====================================================================== */
+body.ta-result-modal-central-active #chess-result-panel {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#ta-chess-result-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 18px !important;
+    background: rgba(2, 6, 23, 0.68) !important;
+    backdrop-filter: blur(7px) !important;
+}
+
+#ta-chess-result-modal.is-open {
+    display: flex !important;
+}
+
+#ta-chess-result-modal .ta-result-card {
+    width: min(88vw, 350px) !important;
+    max-width: 350px !important;
+    border-radius: 20px !important;
+    padding: 18px 15px 14px !important;
+    text-align: center !important;
+    background: radial-gradient(circle at top, rgba(250, 204, 21, .24), transparent 42%), linear-gradient(135deg, #020617, #111827 62%, #241044) !important;
+    border: 1px solid rgba(250, 204, 21, .58) !important;
+    box-shadow: 0 24px 75px rgba(0,0,0,.82), 0 0 26px rgba(250,204,21,.18) !important;
+    transform: none !important;
+    margin: 0 auto !important;
+}
+
+#ta-chess-result-modal.win .ta-result-card,
+#ta-chess-result-modal.mate .ta-result-card {
+    border-color: rgba(46,204,113,.72) !important;
+    background: radial-gradient(circle at top, rgba(46,204,113,.22), transparent 42%), linear-gradient(135deg, #02140d, #0f172a 64%, #064e3b) !important;
+}
+
+#ta-chess-result-modal.loss .ta-result-card {
+    border-color: rgba(239,68,68,.72) !important;
+    background: radial-gradient(circle at top, rgba(239,68,68,.20), transparent 42%), linear-gradient(135deg, #160606, #0f172a 64%, #450a0a) !important;
+}
+
+#ta-chess-result-modal.draw .ta-result-card {
+    border-color: rgba(148,163,184,.72) !important;
+    background: radial-gradient(circle at top, rgba(148,163,184,.18), transparent 42%), linear-gradient(135deg, #020617, #111827 64%, #334155) !important;
+}
+
+#ta-chess-result-modal .ta-result-icon {
+    font-size: 2.55rem !important;
+    line-height: 1 !important;
+    margin-bottom: 8px !important;
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
+}
+
+#ta-chess-result-modal .ta-result-title {
+    color: #ffffff !important;
+    font-size: 1.22rem !important;
+    line-height: 1.15 !important;
+    font-weight: 1000 !important;
+    text-transform: uppercase !important;
+    letter-spacing: .45px !important;
+    margin-bottom: 8px !important;
+}
+
+#ta-chess-result-modal .ta-result-text {
+    color: #e2e8f0 !important;
+    font-size: .9rem !important;
+    line-height: 1.38 !important;
+    margin: 0 auto 12px auto !important;
+    max-width: 300px !important;
+}
+
+#ta-chess-result-modal .ta-result-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+    width: 100% !important;
+    max-width: 285px !important;
+    margin: 0 auto !important;
+}
+
+#ta-chess-result-modal .ta-result-actions button {
+    width: 100% !important;
+    border-radius: 999px !important;
+    padding: 10px 11px !important;
+    font-size: .78rem !important;
+    line-height: 1.15 !important;
+    text-transform: none !important;
+}
+
+#ta-result-again-btn { background: #16a34a !important; }
+#ta-result-menu-btn { background: #0ea5e9 !important; }
+#ta-result-close-btn { background: #475569 !important; }
+
+@media (max-width: 480px) {
+    #ta-chess-result-modal {
+        padding: 14px !important;
+    }
+    #ta-chess-result-modal .ta-result-card {
+        width: min(90vw, 330px) !important;
+        max-width: 330px !important;
+        padding: 16px 13px 13px !important;
+    }
+    #ta-chess-result-modal .ta-result-icon {
+        font-size: 2.25rem !important;
+    }
+    #ta-chess-result-modal .ta-result-title {
+        font-size: 1.06rem !important;
+    }
+    #ta-chess-result-modal .ta-result-text {
+        font-size: .84rem !important;
+    }
+}
+
+/* ======================================================================
+   FASE 36.4 - RESULTADO DO XADREZ DEFINITIVO, PEQUENO E CENTRAL
+   Correção final: o painel antigo #chess-result-panel nunca deve aparecer
+   torto/cortado. Ele fica oculto quando o modal novo central estiver ativo.
+   ====================================================================== */
+body.ta-result-modal-final-active #chess-result-panel,
+body.ta-result-modal-final-active #ta-chess-result-modal {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: none !important;
+}
+
+#ta-chess-result-modal-final {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    z-index: 2147483647 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+    background: rgba(2, 6, 23, 0.70) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+#ta-chess-result-modal-final.is-open {
+    display: flex !important;
+}
+
+#ta-chess-result-modal-final .ta-final-result-card {
+    width: min(90vw, 335px) !important;
+    max-width: 335px !important;
+    max-height: calc(100dvh - 32px) !important;
+    overflow-y: auto !important;
+    border-radius: 20px !important;
+    padding: 18px 15px 14px !important;
+    text-align: center !important;
+    color: #fff !important;
+    background: radial-gradient(circle at top, rgba(250, 204, 21, .22), transparent 42%), linear-gradient(135deg, #020617, #111827 64%, #241044) !important;
+    border: 1px solid rgba(250, 204, 21, .62) !important;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .84), 0 0 26px rgba(250, 204, 21, .20) !important;
+    transform: none !important;
+    margin: 0 !important;
+}
+
+#ta-chess-result-modal-final.win .ta-final-result-card,
+#ta-chess-result-modal-final.mate .ta-final-result-card {
+    border-color: rgba(46, 204, 113, .72) !important;
+    background: radial-gradient(circle at top, rgba(46, 204, 113, .22), transparent 42%), linear-gradient(135deg, #02140d, #0f172a 64%, #064e3b) !important;
+}
+
+#ta-chess-result-modal-final.loss .ta-final-result-card {
+    border-color: rgba(239, 68, 68, .72) !important;
+    background: radial-gradient(circle at top, rgba(239, 68, 68, .20), transparent 42%), linear-gradient(135deg, #160606, #0f172a 64%, #450a0a) !important;
+}
+
+#ta-chess-result-modal-final.draw .ta-final-result-card {
+    border-color: rgba(148, 163, 184, .72) !important;
+    background: radial-gradient(circle at top, rgba(148, 163, 184, .18), transparent 42%), linear-gradient(135deg, #020617, #111827 64%, #334155) !important;
+}
+
+#ta-chess-result-modal-final .ta-final-result-icon {
+    font-size: 2.35rem !important;
+    line-height: 1 !important;
+    margin-bottom: 8px !important;
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
+}
+
+#ta-chess-result-modal-final .ta-final-result-title {
+    font-size: 1.12rem !important;
+    line-height: 1.15 !important;
+    font-weight: 1000 !important;
+    text-transform: uppercase !important;
+    letter-spacing: .35px !important;
+    margin-bottom: 8px !important;
+}
+
+#ta-chess-result-modal-final .ta-final-result-text {
+    color: #e2e8f0 !important;
+    font-size: .86rem !important;
+    line-height: 1.36 !important;
+    max-width: 285px !important;
+    margin: 0 auto 12px auto !important;
+}
+
+#ta-chess-result-modal-final .ta-final-result-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+    width: 100% !important;
+    max-width: 270px !important;
+    margin: 0 auto !important;
+}
+
+#ta-chess-result-modal-final .ta-final-result-actions button {
+    width: 100% !important;
+    border-radius: 999px !important;
+    padding: 10px 11px !important;
+    font-size: .78rem !important;
+    line-height: 1.15 !important;
+    text-transform: none !important;
+}
+
+#ta-final-result-again-btn { background: #16a34a !important; }
+#ta-final-result-menu-btn { background: #0ea5e9 !important; }
+#ta-final-result-close-btn { background: #475569 !important; }
+
+@media (max-width: 480px) {
+    #ta-chess-result-modal-final { padding: 12px !important; }
+    #ta-chess-result-modal-final .ta-final-result-card {
+        width: min(92vw, 315px) !important;
+        max-width: 315px !important;
+        padding: 16px 13px 13px !important;
+    }
+    #ta-chess-result-modal-final .ta-final-result-icon { font-size: 2.1rem !important; }
+    #ta-chess-result-modal-final .ta-final-result-title { font-size: 1rem !important; }
+    #ta-chess-result-modal-final .ta-final-result-text { font-size: .82rem !important; }
+}
