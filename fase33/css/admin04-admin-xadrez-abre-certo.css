@@ -1,0 +1,26 @@
+/* Admin 04 - garante que o Painel Admin do Xadrez abra só no modo admin. */
+body.admin04-xadrez-admin-aberto #chess-screen #chess-admin-panel {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+  margin: 14px 0 !important;
+  padding: 14px !important;
+  border: 2px dashed #c084fc !important;
+}
+
+body.admin04-xadrez-admin-aberto #chess-screen #chess-online-panel,
+body.admin04-xadrez-admin-aberto #chess-screen #chess-training-panel,
+body.admin04-xadrez-admin-aberto #chess-screen #chess-status,
+body.admin04-xadrez-admin-aberto #chess-screen #chess-toast,
+body.admin04-xadrez-admin-aberto #chess-screen .chess-board-wrap,
+body.admin04-xadrez-admin-aberto #chess-screen .chess-actions,
+body.admin04-xadrez-admin-aberto #chess-screen .chess-warning,
+body.admin04-xadrez-admin-aberto #chess-screen #chess-chat-panel,
+body.admin04-xadrez-admin-aberto #chess-screen #chess-material-panel,
+body.admin04-xadrez-admin-aberto #chess-screen #chess-history-panel {
+  display: none !important;
+}

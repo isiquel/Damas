@@ -1,0 +1,17 @@
+ADMIN 03 — Xadrez com jogo limpo igual à Damas
+
+Suba estes itens dentro da pasta fase33:
+- index.html
+- LEIA-ME.txt
+- INSTRUCOES-ADMIN03-TESTAR-NA-FASE33.txt
+- css
+- js
+
+Teste em:
+https://damas-nine.vercel.app/fase33/?v=admin03
+
+Checklist:
+1. Entrar no Xadrez contra robô: o Painel Admin do Xadrez NÃO pode aparecer.
+2. Entrar no Xadrez online: o Painel Admin do Xadrez NÃO pode aparecer.
+3. Entrar em Painel Admin > Administrar Xadrez: o painel deve aparecer normal.
+4. Damas deve continuar normal.

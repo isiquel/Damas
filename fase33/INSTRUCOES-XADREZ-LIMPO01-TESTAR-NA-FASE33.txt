@@ -1,0 +1,22 @@
+TABULEIRO ARENA - XADREZ LIMPO 01
+
+Teste primeiro na pasta /fase33/.
+
+Objetivo:
+- Não alterar a Damas.
+- Não alterar regras do Xadrez.
+- Não mexer em câmera.
+- Fazer a tela de partida do Xadrez ficar mais parecida com a Damas.
+- Esconder admin/menu/ranking/instruções durante a partida.
+- Deixar status, jogadores, tabuleiro, controles + e chat +.
+- Evitar que scripts antigos puxem o tabuleiro para cima/baixo.
+
+Subir dentro de Damas/fase33:
+index.html
+LEIA-ME.txt
+INSTRUCOES-XADREZ-LIMPO01-TESTAR-NA-FASE33.txt
+css
+js
+
+Teste:
+https://damas-nine.vercel.app/fase33/?v=xadrez-limpo01

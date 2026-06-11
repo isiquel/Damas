@@ -1,9 +1,8 @@
-TABULEIRO ARENA - ADMIN 02
+Tabuleiro Arena — Admin 03
 
-Base: Fase 40 + Admin 01.
-
-Correção desta versão:
-- O painel admin do Xadrez não aparece mais dentro do tabuleiro.
-- O painel admin do Xadrez aparece somente na área do administrador.
-- Não mexe na Damas.
-- Não mexe na lógica do Xadrez, treino, online, chat, sair da sala ou modal de fim.
+Correção visual/organização:
+- O Painel Admin do Xadrez fica somente na área do administrador.
+- Durante treino, online ou jogo, o Xadrez fica limpo igual à Damas.
+- Não altera Damas.
+- Não altera regra do Xadrez.
+- Não reativa câmera.

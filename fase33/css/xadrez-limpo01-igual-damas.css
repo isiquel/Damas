@@ -1,0 +1,250 @@
+/* ======================================================================
+   TABULEIRO ARENA - XADREZ LIMPO 01
+   Objetivo: fazer a tela de partida do Xadrez se comportar como a Damas.
+   Não altera regras do jogo, Firebase, Damas, ranking ou admin.
+   ====================================================================== */
+
+/* Ativo somente quando o JS marca a partida/treino do Xadrez como visível. */
+body.ta-xadrez-damas-layout {
+    justify-content: flex-start !important;
+    padding-top: 0 !important;
+    overflow-x: hidden !important;
+    overflow-anchor: none !important;
+    overscroll-behavior-y: contain !important;
+}
+
+body.ta-xadrez-damas-layout .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 4px 8px 4px !important;
+    margin: 0 auto !important;
+}
+
+/* Some no topo grande durante a partida, igual à Damas. */
+body.ta-xadrez-damas-layout .brand-kicker,
+body.ta-xadrez-damas-layout .platform-subtitle,
+body.ta-xadrez-damas-layout body > h1,
+body.ta-xadrez-damas-layout h1,
+body.ta-xadrez-damas-layout #chess-back-btn,
+body.ta-xadrez-damas-layout #chess-screen .chess-title,
+body.ta-xadrez-damas-layout #chess-screen .chess-clean-game-pill,
+body.ta-xadrez-damas-layout #chess-screen .chess-subtitle,
+body.ta-xadrez-damas-layout #chess-screen .chess-warning,
+body.ta-xadrez-damas-layout #chess-screen .chess-action-note,
+body.ta-xadrez-damas-layout #chess-screen .chess-online-stability-pill,
+body.ta-xadrez-damas-layout #chess-screen #chess-online-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-online-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-training-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-training-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-admin-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-admin-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-history-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-history-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-material-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-material-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-achievements-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-achievements-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-menu-organizer,
+body.ta-xadrez-damas-layout #chess-screen .chess-menu-organizer,
+body.ta-xadrez-damas-layout #chess-screen #chess-pieces-lesson-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-pieces-lesson-panel,
+body.ta-xadrez-damas-layout #chess-screen #chess-beginner-box,
+body.ta-xadrez-damas-layout #chess-screen .chess-beginner-box,
+body.ta-xadrez-damas-layout #chess-screen #chess-training-coach,
+body.ta-xadrez-damas-layout #chess-screen .chess-training-coach,
+body.ta-xadrez-damas-layout #chess-screen #chess-live-coach,
+body.ta-xadrez-damas-layout #chess-screen .chess-live-coach,
+body.ta-xadrez-damas-layout #chess-screen #chess-call-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-call-panel,
+body.ta-xadrez-damas-layout #chess-screen #fase36-camera-dock,
+body.ta-xadrez-damas-layout #chess-screen .fase36-camera-dock,
+body.ta-xadrez-damas-layout #chess-screen #chess-board-camera-panel,
+body.ta-xadrez-damas-layout #chess-screen .chess-board-camera-panel,
+body.ta-xadrez-damas-layout #chess-screen [data-xadrez-camera-panel="true"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Card da partida: compacto, sem empurrar o tabuleiro. */
+body.ta-xadrez-damas-layout #chess-screen {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+}
+
+body.ta-xadrez-damas-layout #chess-screen .chess-card {
+    width: 100% !important;
+    max-width: min(760px, 100vw) !important;
+    margin: 0 auto !important;
+    padding: 4px 4px 8px 4px !important;
+    border-radius: 16px !important;
+    overflow: visible !important;
+    contain: paint !important;
+    overflow-anchor: none !important;
+}
+
+/* Status superior do Xadrez com altura fixa, parecido com a Damas. */
+body.ta-xadrez-damas-layout #chess-status {
+    width: 100% !important;
+    max-width: 720px !important;
+    min-height: 38px !important;
+    max-height: 42px !important;
+    margin: 0 auto 5px auto !important;
+    padding: 7px 9px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    font-size: clamp(.75rem, 3.2vw, .92rem) !important;
+    line-height: 1.1 !important;
+    border-radius: 12px !important;
+    overflow-anchor: none !important;
+}
+
+body.ta-xadrez-damas-layout .chess-status-online-pill {
+    margin-left: auto !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    padding: 4px 8px !important;
+    font-size: .68rem !important;
+}
+
+body.ta-xadrez-damas-layout .chess-game-players-bar {
+    width: 100% !important;
+    max-width: 720px !important;
+    min-height: 36px !important;
+    max-height: 42px !important;
+    margin: 0 auto 5px auto !important;
+    padding: 6px 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    border-radius: 12px !important;
+    font-size: clamp(.72rem, 3.1vw, .86rem) !important;
+    overflow-anchor: none !important;
+}
+
+body.ta-xadrez-damas-layout .chess-game-players-side {
+    min-width: 0 !important;
+}
+
+body.ta-xadrez-damas-layout .chess-game-players-name {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 34vw !important;
+}
+
+/* Tabuleiro maior e mais fixo. */
+body.ta-xadrez-damas-layout #chess-screen .chess-board-wrap {
+    width: 100% !important;
+    max-width: min(740px, calc(100vw - 6px)) !important;
+    margin: 0 auto 6px auto !important;
+    padding: 4px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    contain: paint !important;
+    transform: translateZ(0) !important;
+    overflow-anchor: none !important;
+}
+
+body.ta-xadrez-damas-layout #chess-screen .chess-coord-shell {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    grid-template-columns: 13px minmax(0, 1fr) 13px !important;
+    grid-template-rows: 13px minmax(0, 1fr) 13px !important;
+    gap: 2px !important;
+    contain: paint !important;
+    overflow-anchor: none !important;
+}
+
+body.ta-xadrez-damas-layout #chess-board {
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    min-height: 0 !important;
+    touch-action: manipulation !important;
+    contain: paint !important;
+    overflow-anchor: none !important;
+}
+
+body.ta-xadrez-damas-layout #chess-screen .chess-piece {
+    font-size: clamp(1.95rem, 10.8vw, 4.35rem) !important;
+}
+
+/* Controles continuam recolhidos, igual você aprovou. */
+body.ta-xadrez-damas-layout #chess-screen .chess-board-controls-toggle-row,
+body.ta-xadrez-damas-layout #chess-screen .chess-actions,
+body.ta-xadrez-damas-layout #chess-chat-panel {
+    width: 100% !important;
+    max-width: 720px !important;
+    overflow-anchor: none !important;
+}
+
+body.ta-xadrez-damas-layout #chess-chat-panel {
+    display: block !important;
+    margin: 5px auto 0 auto !important;
+}
+
+body.ta-xadrez-damas-layout #chess-chat-panel.chat-collapsed,
+body.ta-xadrez-damas-layout #chess-chat-panel.chess-chat-collapsed {
+    min-height: 40px !important;
+    max-height: 44px !important;
+    overflow: hidden !important;
+}
+
+/* No modo admin real, o painel admin continua permitido. */
+body.chess-admin-only #chess-screen #chess-admin-panel,
+body.chess-admin-only #chess-screen .chess-admin-panel {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 14px 0 !important;
+    padding: 14px !important;
+    pointer-events: auto !important;
+}
+
+@media (max-width: 560px) {
+    body.ta-xadrez-damas-layout .container {
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+    }
+
+    body.ta-xadrez-damas-layout #chess-screen .chess-card {
+        padding: 3px 2px 7px 2px !important;
+    }
+
+    body.ta-xadrez-damas-layout #chess-screen .chess-board-wrap {
+        max-width: calc(100vw - 4px) !important;
+        padding: 3px !important;
+    }
+
+    body.ta-xadrez-damas-layout #chess-status {
+        min-height: 36px !important;
+        max-height: 38px !important;
+        font-size: .78rem !important;
+    }
+
+    body.ta-xadrez-damas-layout .chess-game-players-bar {
+        min-height: 34px !important;
+        max-height: 38px !important;
+    }
+
+    body.ta-xadrez-damas-layout #chess-screen .chess-coord-shell {
+        grid-template-columns: 12px minmax(0, 1fr) 12px !important;
+        grid-template-rows: 12px minmax(0, 1fr) 12px !important;
+    }
+}
