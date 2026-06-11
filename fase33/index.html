@@ -14070,246 +14070,29 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
     setInterval(aplicarFase34, 1500);
 })();
 </script>
-    <!-- ✅ FASE 34.1 - VÍDEO E ÁUDIO DO XADREZ VISÍVEL COM BOTÃO +
-     Mostra o painel compacto de vídeo/áudio sem poluir a tela.
-     Não altera a Damas. Atua somente no Xadrez dentro da /fase33. -->
+    
 
-<style id="fase34-1-video-audio-xadrez-css">
-    body.chess-selected #chess-call-panel {
-        display: block !important;
-        max-width: 520px !important;
-        margin: 10px auto 12px auto !important;
-    }
+    
 
-    body.chess-selected #chess-call-panel:not(.call-active) {
-        position: static !important;
-        transform: none !important;
-        width: 100% !important;
-        padding: 10px 12px !important;
-        border-radius: 14px !important;
-        background: linear-gradient(135deg, #020617, #111827) !important;
-        border: 1px solid rgba(56,189,248,.45) !important;
-        box-shadow: 0 8px 20px rgba(0,0,0,.32) !important;
-    }
+    
 
-    body.chess-selected #chess-call-panel.fase34-video-fechado:not(.call-active) .chess-call-videos,
-    body.chess-selected #chess-call-panel.fase34-video-fechado:not(.call-active) .chess-call-controls,
-    body.chess-selected #chess-call-panel.fase34-video-fechado:not(.call-active) .chess-call-note {
-        display: none !important;
-    }
+    
 
-    body.chess-selected #chess-call-panel:not(.call-active) .chess-call-header {
-        display: grid !important;
-        grid-template-columns: 1fr auto !important;
-        gap: 10px !important;
-        align-items: center !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border-bottom: 0 !important;
-    }
 
-    body.chess-selected #chess-call-panel:not(.call-active) .chess-call-title {
-        color: #38bdf8 !important;
-        font-size: .86rem !important;
-        font-weight: 1000 !important;
-        text-transform: uppercase !important;
-        letter-spacing: .45px !important;
-    }
+<!-- ✅ FASE 35 - LIMPEZA DA CÂMERA DO XADREZ ABAIXO DO TABULEIRO
+     Remove a câmera flutuante em cima do tabuleiro no celular.
+     A chamada fica encaixada abaixo do tabuleiro, com botão + para abrir/fechar.
+     Não altera a Damas. Atua somente no Xadrez. -->
 
-    body.chess-selected #chess-call-panel:not(.call-active) .chess-call-status {
-        display: none !important;
-    }
-
-    .fase34-video-toggle {
-        width: 42px !important;
-        height: 36px !important;
-        min-width: 42px !important;
-        padding: 0 !important;
-        border-radius: 999px !important;
-        background: #0ea5e9 !important;
-        color: #fff !important;
-        font-size: 1.28rem !important;
-        line-height: 1 !important;
-        text-transform: none !important;
-        box-shadow: 0 8px 18px rgba(0,0,0,.28) !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) {
-        padding: 12px !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-header {
-        padding-bottom: 8px !important;
-        margin-bottom: 10px !important;
-        border-bottom: 1px solid rgba(255,255,255,.08) !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-status {
-        display: block !important;
-        color: #cbd5e1 !important;
-        font-size: .74rem !important;
-        line-height: 1.25 !important;
-        text-align: right !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-videos {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-        margin-top: 8px !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-controls {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-        margin-top: 10px !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-note {
-        display: block !important;
-    }
-
-    body.chess-selected #chess-call-panel.fase34-video-aberto:not(.call-active) .chess-call-controls button {
-        padding: 10px 8px !important;
-        font-size: .78rem !important;
-        border-radius: 10px !important;
-        text-transform: none !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active {
-        display: block !important;
-        position: fixed !important;
-        left: 50% !important;
-        right: auto !important;
-        top: auto !important;
-        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-        transform: translateX(-50%) !important;
-        width: min(300px, calc(100vw - 18px)) !important;
-        max-width: calc(100vw - 18px) !important;
-        z-index: 950 !important;
-        border-radius: 15px !important;
-        overflow: hidden !important;
-    }
-
-    body.chess-board-visible.chess-mode-training #chess-call-panel,
-    body.chess-board-visible.chess-mode-practice #chess-call-panel {
-        display: none !important;
-    }
-</style>
-
-<script id="fase34-1-video-audio-xadrez-js">
-(function () {
-    if (window.__fase341VideoAudioXadrezOk) return;
-    window.__fase341VideoAudioXadrezOk = true;
-
-    function xadrezAberto() {
-        const tela = document.getElementById('chess-screen');
-        return document.body.classList.contains('chess-selected') ||
-            (tela && getComputedStyle(tela).display !== 'none');
-    }
-
-    function estaOnlineXadrez() {
-        const status = document.getElementById('chess-online-status');
-        const panel = document.getElementById('chess-call-panel');
-
-        if (panel && panel.classList.contains('online-visible')) return true;
-
-        if (status) {
-            const txt = (status.innerText || '').toLowerCase();
-            if (txt.includes('online na sala') || txt.includes('sala') && !txt.includes('modo local ativo')) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    function mostrarAvisoVideo() {
-        if (typeof window.alert === 'function') {
-            window.alert('Entre/Jogue em uma sala online primeiro. Depois o vídeo e áudio do Xadrez serão liberados para os dois jogadores.');
-        }
-    }
-
-    function prepararVideoAudioXadrez() {
-        if (!xadrezAberto()) return;
-
-        const panel = document.getElementById('chess-call-panel');
-        if (!panel) return;
-
-        const header = panel.querySelector('.chess-call-header');
-        if (!header) return;
-
-        let btn = header.querySelector('.fase34-video-toggle');
-
-        if (!btn) {
-            btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'fase34-video-toggle';
-            btn.textContent = '+';
-            btn.setAttribute('aria-label', 'Abrir vídeo e áudio do Xadrez');
-            header.appendChild(btn);
-
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                if (panel.classList.contains('call-active')) return;
-
-                if (!estaOnlineXadrez()) {
-                    panel.classList.remove('fase34-video-aberto');
-                    panel.classList.add('fase34-video-fechado');
-                    btn.textContent = '+';
-                    mostrarAvisoVideo();
-                    return;
-                }
-
-                panel.classList.toggle('fase34-video-aberto');
-                panel.classList.toggle('fase34-video-fechado', !panel.classList.contains('fase34-video-aberto'));
-                btn.textContent = panel.classList.contains('fase34-video-aberto') ? '−' : '+';
-            });
-        }
-
-        if (!panel.classList.contains('fase34-video-aberto') && !panel.classList.contains('call-active')) {
-            panel.classList.add('fase34-video-fechado');
-        }
-
-        btn.textContent = panel.classList.contains('fase34-video-aberto') || panel.classList.contains('call-active') ? '−' : '+';
-
-        const status = document.getElementById('chess-call-status');
-        if (status && !estaOnlineXadrez()) {
-            status.innerText = 'Entre em uma sala online para liberar câmera e microfone.';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', prepararVideoAudioXadrez);
-    window.addEventListener('load', prepararVideoAudioXadrez);
-    document.addEventListener('click', function () {
-        setTimeout(prepararVideoAudioXadrez, 120);
-        setTimeout(prepararVideoAudioXadrez, 600);
-    });
-
-    setInterval(prepararVideoAudioXadrez, 1200);
-})();
-</script>
-    <!-- ✅ FASE 34.2 - CÂMERA DO XADREZ DENTRO DA PARTIDA ONLINE
-     Move o botão de vídeo/áudio para perto do tabuleiro quando a partida online abre.
-     Não altera a Damas. Não altera o site principal. Atua somente na /fase33. -->
-
-<style id="fase34-2-camera-dentro-da-partida-css">
-    /* Esconde a chamada antiga no menu para ela não aparecer fora do lugar */
-    body.chess-selected:not(.fase342-online-board) #chess-call-panel:not(.call-active) {
-        display: none !important;
-    }
-
-    /* Botão pequeno que fica dentro da partida online, perto do tabuleiro */
-    #fase342-camera-dock {
+<style id="fase35-camera-xadrez-abaixo-tabuleiro-css">
+    /* ===== FASE 35: BOTÃO DA CÂMERA DENTRO DA PARTIDA, SEM FLUTUAR SOBRE O TABULEIRO ===== */
+    #fase35-camera-dock {
         display: none;
         width: 100%;
         max-width: 520px;
-        margin: 8px auto 10px auto;
-        padding: 9px 10px;
-        border-radius: 14px;
+        margin: 10px auto 10px auto;
+        padding: 10px 12px;
+        border-radius: 15px;
         border: 1px solid rgba(56, 189, 248, .45);
         background: linear-gradient(135deg, rgba(2,6,23,.96), rgba(15,23,42,.94));
         box-shadow: 0 8px 20px rgba(0,0,0,.32);
@@ -14319,20 +14102,20 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
         text-align: left;
     }
 
-    body.chess-selected.chess-board-visible.fase342-online-board #fase342-camera-dock {
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #fase35-camera-dock {
         display: flex !important;
     }
 
-    .fase342-camera-info {
+    .fase35-camera-info {
         display: flex;
         flex-direction: column;
         gap: 2px;
         min-width: 0;
     }
 
-    .fase342-camera-title {
+    .fase35-camera-title {
         color: #38bdf8;
-        font-size: .82rem;
+        font-size: .84rem;
         font-weight: 1000;
         text-transform: uppercase;
         letter-spacing: .35px;
@@ -14341,16 +14124,16 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
         text-overflow: ellipsis;
     }
 
-    .fase342-camera-sub {
+    .fase35-camera-sub {
         color: #94a3b8;
         font-size: .68rem;
-        line-height: 1.2;
+        line-height: 1.25;
     }
 
-    #fase342-camera-toggle {
-        width: 42px !important;
-        height: 36px !important;
-        min-width: 42px !important;
+    #fase35-camera-toggle {
+        width: 44px !important;
+        height: 38px !important;
+        min-width: 44px !important;
         padding: 0 !important;
         border-radius: 999px !important;
         background: #0ea5e9 !important;
@@ -14361,49 +14144,109 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
         box-shadow: 0 8px 18px rgba(0,0,0,.28) !important;
     }
 
-    /* Painel real da chamada agora fica escondido até apertar + */
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro:not(.fase342-aberto):not(.call-active) {
+    /* Esconde o painel antigo fora da partida para não poluir o menu */
+    body.chess-selected:not(.fase35-xadrez-online) #chess-call-panel:not(.call-active) {
         display: none !important;
     }
 
-    /* Quando abrir no +, aparece abaixo do botão da câmera */
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) {
+    /* Painel de chamada fechado: só aparece o dock com + */
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel:not(.fase35-call-open):not(.call-active) {
+        display: none !important;
+    }
+
+    /* Painel aberto antes da chamada começar: fica abaixo do tabuleiro, sem sobrepor */
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel.fase35-call-open:not(.call-active) {
         display: block !important;
         position: static !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
         transform: none !important;
         width: 100% !important;
         max-width: 520px !important;
-        margin: 0 auto 10px auto !important;
-        padding: 11px !important;
-        border-radius: 14px !important;
+        margin: 0 auto 12px auto !important;
+        padding: 12px !important;
+        border-radius: 15px !important;
         border: 1px solid rgba(56,189,248,.45) !important;
         background: linear-gradient(135deg, #020617, #111827) !important;
         box-shadow: 0 8px 20px rgba(0,0,0,.32) !important;
+        overflow: visible !important;
+        user-select: auto !important;
+        touch-action: auto !important;
     }
 
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-header {
-        display: none !important;
+    /* Chamada ativa: também fica abaixo do tabuleiro. Não fica em cima das peças. */
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel.call-active {
+        display: block !important;
+        position: static !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: 520px !important;
+        margin: 0 auto 12px auto !important;
+        padding: 12px !important;
+        border-radius: 15px !important;
+        border: 1px solid rgba(56,189,248,.65) !important;
+        background: linear-gradient(135deg, #020617, #111827) !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,.32) !important;
+        overflow: visible !important;
+        user-select: auto !important;
+        touch-action: auto !important;
+        backdrop-filter: none !important;
     }
 
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-videos {
-        display: none !important;
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+        padding-bottom: 8px !important;
+        border-bottom: 1px solid rgba(255,255,255,.08) !important;
+        cursor: default !important;
+        touch-action: auto !important;
+        user-select: auto !important;
     }
 
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-controls {
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-title::after {
+        content: '' !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-status {
+        display: block !important;
+        color: #cbd5e1 !important;
+        font-size: .72rem !important;
+        line-height: 1.25 !important;
+        text-align: right !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-videos {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 8px !important;
-        margin-top: 0 !important;
+        margin-bottom: 10px !important;
     }
 
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-controls button {
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-controls {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-controls button {
+        min-width: 0 !important;
         padding: 10px 8px !important;
         font-size: .78rem !important;
         border-radius: 10px !important;
         text-transform: none !important;
+        white-space: normal !important;
     }
 
-    body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-note {
+    body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-note {
         display: block !important;
         margin-top: 8px !important;
         font-size: .72rem !important;
@@ -14411,52 +14254,63 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
         line-height: 1.35 !important;
     }
 
-    /* Remove botões + antigos dentro do painel para não duplicar */
+    /* Remove controles antigos de arraste e botões duplicados dos remendos anteriores */
+    #fase344-drag-handle,
     body.chess-selected #chess-call-panel .fase34-video-toggle,
     body.chess-selected #chess-call-panel .fase34-call-toggle {
         display: none !important;
     }
 
-    /* Quando a chamada realmente começa, ela vira janelinha flutuante */
-    body.chess-selected #chess-call-panel.call-active {
-        display: block !important;
-        position: fixed !important;
-        left: 50% !important;
-        right: auto !important;
-        top: auto !important;
-        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-        transform: translateX(-50%) !important;
-        width: min(300px, calc(100vw - 18px)) !important;
-        max-width: calc(100vw - 18px) !important;
-        z-index: 950 !important;
-        border-radius: 15px !important;
-        overflow: hidden !important;
+    /* Em treino, não precisa aparecer chamada */
+    body.chess-board-visible.chess-mode-training #fase35-camera-dock,
+    body.chess-board-visible.chess-mode-practice #fase35-camera-dock,
+    body.chess-board-visible.chess-mode-training #chess-call-panel,
+    body.chess-board-visible.chess-mode-practice #chess-call-panel {
+        display: none !important;
     }
 
     @media (max-width: 560px) {
-        #fase342-camera-dock {
-            margin-top: 7px;
-            padding: 8px 9px;
+        body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel.fase35-call-open:not(.call-active),
+        body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel.call-active {
+            max-width: calc(100vw - 14px) !important;
+            padding: 10px !important;
         }
 
-        .fase342-camera-title {
-            font-size: .76rem;
-        }
-
-        .fase342-camera-sub {
-            font-size: .64rem;
-        }
-
-        body.chess-selected.chess-board-visible.fase342-online-board #chess-call-panel.fase342-panel-no-tabuleiro.fase342-aberto:not(.call-active) .chess-call-controls {
+        body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-videos {
             grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+        }
+
+        body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-controls {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 7px !important;
+        }
+
+        body.chess-selected.chess-board-visible.fase35-xadrez-online #chess-call-panel.fase35-call-panel .chess-call-controls button {
+            font-size: .72rem !important;
+            padding: 9px 6px !important;
+        }
+
+        #fase35-camera-dock {
+            max-width: calc(100vw - 14px);
+            margin-top: 8px;
+            padding: 9px 10px;
+        }
+
+        .fase35-camera-title {
+            font-size: .78rem;
+        }
+
+        .fase35-camera-sub {
+            font-size: .64rem;
         }
     }
 </style>
 
-<script id="fase34-2-camera-dentro-da-partida-js">
+<script id="fase35-camera-xadrez-abaixo-tabuleiro-js">
 (function () {
-    if (window.__fase342CameraDentroDaPartidaOk) return;
-    window.__fase342CameraDentroDaPartidaOk = true;
+    if (window.__fase35CameraAbaixoTabuleiroOk) return;
+    window.__fase35CameraAbaixoTabuleiroOk = true;
 
     function telaXadrezVisivel() {
         const tela = document.getElementById('chess-screen');
@@ -14483,25 +14337,26 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
         if (textoOnline.includes('como brancas')) return true;
         if (textoOnline.includes('como pretas')) return true;
         if (textoStatus.includes('online')) return true;
+        if (document.body.classList.contains('chess-mode-online')) return true;
 
         return false;
     }
 
-    function criarDockCamera() {
-        let dock = document.getElementById('fase342-camera-dock');
+    function criarDock() {
+        let dock = document.getElementById('fase35-camera-dock');
         if (dock) return dock;
 
         dock = document.createElement('div');
-        dock.id = 'fase342-camera-dock';
+        dock.id = 'fase35-camera-dock';
         dock.innerHTML = `
-            <div class="fase342-camera-info">
-                <div class="fase342-camera-title">📹 Câmera e áudio</div>
-                <div class="fase342-camera-sub">Chamada do Xadrez Online</div>
+            <div class="fase35-camera-info">
+                <div class="fase35-camera-title">📹 Câmera e áudio</div>
+                <div class="fase35-camera-sub">Aparece abaixo do tabuleiro e não atrapalha a jogada</div>
             </div>
-            <button id="fase342-camera-toggle" type="button" aria-label="Abrir câmera e áudio">+</button>
+            <button id="fase35-camera-toggle" type="button" aria-label="Abrir câmera e áudio">+</button>
         `;
 
-        const btn = dock.querySelector('#fase342-camera-toggle');
+        const btn = dock.querySelector('#fase35-camera-toggle');
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -14509,16 +14364,16 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
             const panel = document.getElementById('chess-call-panel');
             if (!panel) return;
 
-            if (panel.classList.contains('call-active')) return;
+            panel.classList.toggle('fase35-call-open');
+            btn.textContent = panel.classList.contains('fase35-call-open') || panel.classList.contains('call-active') ? '−' : '+';
 
-            panel.classList.toggle('fase342-aberto');
-            btn.textContent = panel.classList.contains('fase342-aberto') ? '−' : '+';
+            setTimeout(posicionarCameraAbaixoDoTabuleiro, 50);
         });
 
         return dock;
     }
 
-    function moverCameraParaDentroDaPartida() {
+    function posicionarCameraAbaixoDoTabuleiro() {
         if (!telaXadrezVisivel()) return;
 
         const panel = document.getElementById('chess-call-panel');
@@ -14529,634 +14384,76 @@ Antes de usar, entre uma vez como admin pelo app para gravar seu UID em /admins.
 
         const online = tabuleiroXadrezAberto() && partidaOnlineAtiva();
 
-        document.body.classList.toggle('fase342-online-board', !!online);
+        document.body.classList.toggle('fase35-xadrez-online', !!online);
+        panel.classList.add('fase35-call-panel');
 
-        panel.classList.add('fase342-panel-no-tabuleiro');
-
-        const dock = criarDockCamera();
+        const dock = criarDock();
 
         if (online) {
-            if (dock.parentElement !== card) {
-                card.insertBefore(dock, boardWrap);
-            } else if (dock.nextElementSibling !== panel && panel.parentElement !== card) {
-                card.insertBefore(panel, boardWrap);
+            /* Ordem correta:
+               1. Tabuleiro
+               2. Botão Câmera e áudio +
+               3. Painel da chamada, se abrir
+               4. Botões reiniciar/desistir/voltar
+            */
+            if (dock.parentElement !== card || boardWrap.nextElementSibling !== dock) {
+                boardWrap.insertAdjacentElement('afterend', dock);
             }
 
-            if (panel.parentElement !== card || panel.previousElementSibling !== dock) {
+            if (panel.parentElement !== card || dock.nextElementSibling !== panel) {
                 dock.insertAdjacentElement('afterend', panel);
             }
 
-            const btn = document.getElementById('fase342-camera-toggle');
+            /* Remove restos de posição flutuante deixados por fases anteriores */
+            panel.classList.remove('fase343-movida', 'fase344-posicao-manual', 'fase343-posicao-inicial-ok');
+            panel.style.left = '';
+            panel.style.top = '';
+            panel.style.right = '';
+            panel.style.bottom = '';
+            panel.style.transform = '';
+            panel.style.width = '';
+            panel.style.maxWidth = '';
+
+            const btn = document.getElementById('fase35-camera-toggle');
             if (btn) {
-                btn.textContent = panel.classList.contains('fase342-aberto') || panel.classList.contains('call-active') ? '−' : '+';
+                btn.textContent = panel.classList.contains('fase35-call-open') || panel.classList.contains('call-active') ? '−' : '+';
             }
         } else {
-            panel.classList.remove('fase342-aberto');
+            panel.classList.remove('fase35-call-open');
 
-            const btn = document.getElementById('fase342-camera-toggle');
+            const btn = document.getElementById('fase35-camera-toggle');
             if (btn) btn.textContent = '+';
         }
     }
 
-    document.addEventListener('DOMContentLoaded', moverCameraParaDentroDaPartida);
-    window.addEventListener('load', moverCameraParaDentroDaPartida);
+    function quandoIniciarChamada() {
+        const panel = document.getElementById('chess-call-panel');
+        if (!panel) return;
+
+        if (panel.classList.contains('call-active')) {
+            panel.classList.add('fase35-call-open');
+            const btn = document.getElementById('fase35-camera-toggle');
+            if (btn) btn.textContent = '−';
+            posicionarCameraAbaixoDoTabuleiro();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', posicionarCameraAbaixoDoTabuleiro);
+    window.addEventListener('load', posicionarCameraAbaixoDoTabuleiro);
 
     document.addEventListener('click', function () {
-        setTimeout(moverCameraParaDentroDaPartida, 80);
-        setTimeout(moverCameraParaDentroDaPartida, 400);
-        setTimeout(moverCameraParaDentroDaPartida, 900);
-    });
-
-    setInterval(moverCameraParaDentroDaPartida, 900);
-})();
-</script>
-    <!-- ✅ FASE 34.3 - CÂMERA DO XADREZ ARRASTÁVEL E REDIMENSIONÁVEL
-     Corrige a janelinha da chamada no celular e no computador.
-     Não altera a Damas. Não altera o site principal. Atua somente na /fase33. -->
-
-<style id="fase34-3-camera-arrastavel-css">
-    body.chess-selected #chess-call-panel.call-active {
-        position: fixed !important;
-        z-index: 10020 !important;
-        width: min(var(--fase343-call-width, 300px), calc(100vw - 14px)) !important;
-        max-width: calc(100vw - 14px) !important;
-        min-width: 220px !important;
-        left: 50% !important;
-        top: auto !important;
-        right: auto !important;
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-        transform: translateX(-50%) !important;
-        margin: 0 !important;
-        border-radius: 15px !important;
-        overflow: hidden !important;
-        touch-action: none !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active.fase343-movida {
-        bottom: auto !important;
-        transform: none !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-header {
-        display: flex !important;
-        cursor: grab !important;
-        touch-action: none !important;
-        user-select: none !important;
-        padding: 6px 8px !important;
-        margin-bottom: 5px !important;
-        border-bottom: 1px solid rgba(255,255,255,.08) !important;
-        background: rgba(15,23,42,.92) !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-header:active {
-        cursor: grabbing !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-title::after {
-        content: " • arraste";
-        color: #94a3b8;
-        font-weight: 700;
-        text-transform: none;
-        letter-spacing: 0;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-videos {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 5px !important;
-        margin-bottom: 5px !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-controls {
-        display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 5px !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-controls button {
-        min-width: 0 !important;
-        padding: 7px 5px !important;
-        font-size: .6rem !important;
-        line-height: 1.1 !important;
-        border-radius: 8px !important;
-        white-space: normal !important;
-        text-transform: none !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active #chess-end-call-btn,
-    body.chess-selected #chess-call-panel.call-active [id*="end-call"] {
-        grid-column: 1 / -1 !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .video-tile,
-    body.chess-selected #chess-call-panel.call-active .chess-video-tile {
-        aspect-ratio: 16 / 10 !important;
-        min-height: 82px !important;
-    }
-
-    @media (max-width: 560px) {
-        body.chess-selected #chess-call-panel.call-active {
-            width: min(var(--fase343-call-width, 285px), calc(100vw - 12px)) !important;
-            max-width: calc(100vw - 12px) !important;
-        }
-
-        body.chess-selected #chess-call-panel.call-active .chess-call-controls {
-            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        }
-
-        body.chess-selected #chess-call-panel.call-active .chess-call-controls button {
-            font-size: .56rem !important;
-            padding: 6px 4px !important;
-        }
-    }
-</style>
-
-<script id="fase34-3-camera-arrastavel-js">
-(function () {
-    if (window.__fase343CameraArrastavelOk) return;
-    window.__fase343CameraArrastavelOk = true;
-
-    let larguraAtual = 300;
-    let arrastando = false;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    function painel() {
-        return document.getElementById('chess-call-panel');
-    }
-
-    function clamp(valor, min, max) {
-        return Math.max(min, Math.min(max, valor));
-    }
-
-    function larguraMaxima() {
-        return Math.max(230, window.innerWidth - 14);
-    }
-
-    function aplicarLargura(novaLargura) {
-        const p = painel();
-        if (!p) return;
-
-        larguraAtual = clamp(novaLargura, 220, Math.min(430, larguraMaxima()));
-        p.style.setProperty('--fase343-call-width', larguraAtual + 'px');
-
-        if (p.classList.contains('fase343-movida')) {
-            manterDentroDaTela();
-        }
-    }
-
-    function manterDentroDaTela() {
-        const p = painel();
-        if (!p || !p.classList.contains('call-active')) return;
-
-        const rect = p.getBoundingClientRect();
-        const margem = 6;
-
-        let left = rect.left;
-        let top = rect.top;
-
-        left = clamp(left, margem, window.innerWidth - rect.width - margem);
-        top = clamp(top, margem, window.innerHeight - rect.height - margem);
-
-        p.classList.add('fase343-movida');
-        p.style.left = left + 'px';
-        p.style.top = top + 'px';
-        p.style.right = 'auto';
-        p.style.bottom = 'auto';
-        p.style.transform = 'none';
-    }
-
-    function iniciarArraste(e) {
-        const p = painel();
-        if (!p || !p.classList.contains('call-active')) return;
-
-        const alvo = e.target;
-        if (alvo && alvo.closest && alvo.closest('button, input, video')) return;
-
-        const rect = p.getBoundingClientRect();
-        const ponto = e.touches ? e.touches[0] : e;
-
-        arrastando = true;
-        offsetX = ponto.clientX - rect.left;
-        offsetY = ponto.clientY - rect.top;
-
-        p.classList.add('fase343-movida');
-        p.style.left = rect.left + 'px';
-        p.style.top = rect.top + 'px';
-        p.style.right = 'auto';
-        p.style.bottom = 'auto';
-        p.style.transform = 'none';
-
-        e.preventDefault();
-    }
-
-    function moverArraste(e) {
-        if (!arrastando) return;
-
-        const p = painel();
-        if (!p) return;
-
-        const ponto = e.touches ? e.touches[0] : e;
-        const rect = p.getBoundingClientRect();
-        const margem = 6;
-
-        let left = ponto.clientX - offsetX;
-        let top = ponto.clientY - offsetY;
-
-        left = clamp(left, margem, window.innerWidth - rect.width - margem);
-        top = clamp(top, margem, window.innerHeight - rect.height - margem);
-
-        p.style.left = left + 'px';
-        p.style.top = top + 'px';
-        p.style.right = 'auto';
-        p.style.bottom = 'auto';
-        p.style.transform = 'none';
-
-        e.preventDefault();
-    }
-
-    function pararArraste() {
-        arrastando = false;
-    }
-
-    function configurarArraste() {
-        const p = painel();
-        if (!p || p.dataset.fase343DragOk === '1') return;
-
-        p.dataset.fase343DragOk = '1';
-
-        const header = p.querySelector('.chess-call-header') || p;
-
-        header.addEventListener('mousedown', iniciarArraste);
-        header.addEventListener('touchstart', iniciarArraste, { passive: false });
-
-        document.addEventListener('mousemove', moverArraste);
-        document.addEventListener('touchmove', moverArraste, { passive: false });
-
-        document.addEventListener('mouseup', pararArraste);
-        document.addEventListener('touchend', pararArraste);
-        document.addEventListener('touchcancel', pararArraste);
-    }
-
-    function textoBotao(btn) {
-        return ((btn.innerText || btn.textContent || '') + ' ' + (btn.id || '') + ' ' + (btn.className || '')).toLowerCase();
-    }
-
-    function configurarBotoesTamanho() {
-        const p = painel();
-        if (!p) return;
-
-        const botoes = Array.from(p.querySelectorAll('button'));
-
-        botoes.forEach(function (btn) {
-            if (btn.dataset.fase343SizeOk === '1') return;
-
-            const texto = textoBotao(btn);
-            const ehMenor = texto.includes('menor') || texto.includes('minus') || texto.includes('size-minus') || texto.trim() === '−' || texto.trim() === '-';
-            const ehMaior = texto.includes('maior') || texto.includes('plus') || texto.includes('size-plus') || texto.trim() === '+';
-
-            if (!ehMenor && !ehMaior) return;
-
-            btn.dataset.fase343SizeOk = '1';
-
-            btn.addEventListener('click', function (e) {
-                if (!p.classList.contains('call-active')) return;
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                if (ehMenor) {
-                    aplicarLargura(larguraAtual - 35);
-                }
-
-                if (ehMaior) {
-                    aplicarLargura(larguraAtual + 35);
-                }
-            }, true);
-        });
-    }
-
-    function quandoAtivarChamada() {
-        const p = painel();
-        if (!p) return;
-
-        configurarArraste();
-        configurarBotoesTamanho();
-
-        if (p.classList.contains('call-active')) {
-            aplicarLargura(larguraAtual);
-
-            if (!p.classList.contains('fase343-posicao-inicial-ok') && !p.classList.contains('fase343-movida')) {
-                p.classList.add('fase343-posicao-inicial-ok');
-
-                setTimeout(function () {
-                    const rect = p.getBoundingClientRect();
-                    const left = Math.round((window.innerWidth - rect.width) / 2);
-                    const top = Math.max(8, window.innerHeight - rect.height - 12);
-
-                    p.classList.add('fase343-movida');
-                    p.style.left = left + 'px';
-                    p.style.top = top + 'px';
-                    p.style.right = 'auto';
-                    p.style.bottom = 'auto';
-                    p.style.transform = 'none';
-                }, 250);
-            }
-        } else {
-            p.classList.remove('fase343-posicao-inicial-ok');
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', quandoAtivarChamada);
-    window.addEventListener('load', quandoAtivarChamada);
-    window.addEventListener('resize', manterDentroDaTela);
-
-    document.addEventListener('click', function () {
-        setTimeout(quandoAtivarChamada, 100);
-        setTimeout(quandoAtivarChamada, 500);
-    });
-
-    setInterval(quandoAtivarChamada, 700);
-})();
-</script>
-    <!-- ✅ FASE 34.4 - ARRASTE REAL DA CÂMERA NO CELULAR
-     Adiciona uma barra própria para arrastar a chamada do Xadrez.
-     Também adiciona botões pequenos de posição para tirar a câmera da frente do tabuleiro.
-     Não altera a Damas. Não altera o site principal. Atua somente na /fase33. -->
-
-<style id="fase34-4-arraste-real-camera-css">
-    body.chess-selected #chess-call-panel.call-active {
-        position: fixed !important;
-        z-index: 12000 !important;
-        touch-action: none !important;
-        user-select: none !important;
-    }
-
-    #fase344-drag-handle {
-        display: none;
-    }
-
-    body.chess-selected #chess-call-panel.call-active #fase344-drag-handle {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 6px !important;
-        width: 100% !important;
-        padding: 7px 8px !important;
-        margin: 0 0 5px 0 !important;
-        border-radius: 11px !important;
-        background: linear-gradient(90deg, #0ea5e9, #2563eb) !important;
-        color: #fff !important;
-        font-size: .68rem !important;
-        font-weight: 900 !important;
-        text-transform: uppercase !important;
-        letter-spacing: .25px !important;
-        cursor: grab !important;
-        touch-action: none !important;
-        user-select: none !important;
-        -webkit-user-select: none !important;
-        -webkit-touch-callout: none !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active #fase344-drag-handle:active {
-        cursor: grabbing !important;
-    }
-
-    .fase344-drag-text {
-        flex: 1;
-        text-align: left;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        pointer-events: none;
-    }
-
-    .fase344-move-buttons {
-        display: flex;
-        gap: 3px;
-        flex-shrink: 0;
-    }
-
-    .fase344-move-buttons button {
-        width: 24px !important;
-        height: 24px !important;
-        min-width: 24px !important;
-        padding: 0 !important;
-        border-radius: 999px !important;
-        background: rgba(2, 6, 23, .35) !important;
-        color: #fff !important;
-        font-size: .75rem !important;
-        line-height: 1 !important;
-        text-transform: none !important;
-        box-shadow: none !important;
-    }
-
-    body.chess-selected #chess-call-panel.call-active .chess-call-header {
-        cursor: default !important;
-        touch-action: auto !important;
-    }
-
-    @media (max-width: 560px) {
-        body.chess-selected #chess-call-panel.call-active {
-            width: min(var(--fase343-call-width, 260px), calc(100vw - 10px)) !important;
-            max-width: calc(100vw - 10px) !important;
-        }
-
-        body.chess-selected #chess-call-panel.call-active #fase344-drag-handle {
-            padding: 8px !important;
-            font-size: .64rem !important;
-        }
-
-        .fase344-move-buttons button {
-            width: 25px !important;
-            height: 25px !important;
-            min-width: 25px !important;
-        }
-    }
-</style>
-
-<script id="fase34-4-arraste-real-camera-js">
-(function () {
-    if (window.__fase344ArrasteRealCameraOk) return;
-    window.__fase344ArrasteRealCameraOk = true;
-
-    let dragging = false;
-    let startX = 0;
-    let startY = 0;
-    let startLeft = 0;
-    let startTop = 0;
-
-    function painel() {
-        return document.getElementById('chess-call-panel');
-    }
-
-    function limitar(valor, min, max) {
-        return Math.max(min, Math.min(max, valor));
-    }
-
-    function aplicarPosicao(left, top) {
-        const p = painel();
-        if (!p) return;
-
-        const margem = 6;
-        const rect = p.getBoundingClientRect();
-        const largura = rect.width || 280;
-        const altura = rect.height || 220;
-
-        const novoLeft = limitar(left, margem, window.innerWidth - largura - margem);
-        const novoTop = limitar(top, margem, window.innerHeight - altura - margem);
-
-        p.classList.add('fase343-movida');
-        p.classList.add('fase344-posicao-manual');
-
-        p.style.left = novoLeft + 'px';
-        p.style.top = novoTop + 'px';
-        p.style.right = 'auto';
-        p.style.bottom = 'auto';
-        p.style.transform = 'none';
-    }
-
-    function moverPorBotao(dx, dy) {
-        const p = painel();
-        if (!p) return;
-
-        const rect = p.getBoundingClientRect();
-        aplicarPosicao(rect.left + dx, rect.top + dy);
-    }
-
-    function criarHandle() {
-        const p = painel();
-        if (!p || p.dataset.fase344HandleOk === '1') return;
-
-        p.dataset.fase344HandleOk = '1';
-
-        const handle = document.createElement('div');
-        handle.id = 'fase344-drag-handle';
-        handle.innerHTML = `
-            <span class="fase344-drag-text">↔ arraste a câmera</span>
-            <span class="fase344-move-buttons">
-                <button type="button" data-move="left">←</button>
-                <button type="button" data-move="up">↑</button>
-                <button type="button" data-move="down">↓</button>
-                <button type="button" data-move="right">→</button>
-            </span>
-        `;
-
-        p.insertBefore(handle, p.firstChild);
-
-        handle.querySelectorAll('button[data-move]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const dir = btn.getAttribute('data-move');
-                const passo = 45;
-
-                if (dir === 'left') moverPorBotao(-passo, 0);
-                if (dir === 'right') moverPorBotao(passo, 0);
-                if (dir === 'up') moverPorBotao(0, -passo);
-                if (dir === 'down') moverPorBotao(0, passo);
-            });
-        });
-
-        function pegarPonto(e) {
-            if (e.touches && e.touches[0]) return e.touches[0];
-            if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0];
-            return e;
-        }
-
-        function iniciar(e) {
-            const alvo = e.target;
-
-            if (alvo && alvo.closest && alvo.closest('button')) {
-                return;
-            }
-
-            const ponto = pegarPonto(e);
-            const rect = p.getBoundingClientRect();
-
-            dragging = true;
-            startX = ponto.clientX;
-            startY = ponto.clientY;
-            startLeft = rect.left;
-            startTop = rect.top;
-
-            p.classList.add('fase343-movida');
-            p.classList.add('fase344-posicao-manual');
-
-            p.style.left = startLeft + 'px';
-            p.style.top = startTop + 'px';
-            p.style.right = 'auto';
-            p.style.bottom = 'auto';
-            p.style.transform = 'none';
-
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        function mover(e) {
-            if (!dragging) return;
-
-            const ponto = pegarPonto(e);
-            const dx = ponto.clientX - startX;
-            const dy = ponto.clientY - startY;
-
-            aplicarPosicao(startLeft + dx, startTop + dy);
-
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        function parar() {
-            dragging = false;
-        }
-
-        handle.addEventListener('pointerdown', iniciar);
-        window.addEventListener('pointermove', mover);
-        window.addEventListener('pointerup', parar);
-        window.addEventListener('pointercancel', parar);
-
-        handle.addEventListener('touchstart', iniciar, { passive: false });
-        window.addEventListener('touchmove', mover, { passive: false });
-        window.addEventListener('touchend', parar);
-        window.addEventListener('touchcancel', parar);
-
-        handle.addEventListener('mousedown', iniciar);
-        window.addEventListener('mousemove', mover);
-        window.addEventListener('mouseup', parar);
-    }
-
-    function posicionarMelhorNoCelular() {
-        const p = painel();
-        if (!p || !p.classList.contains('call-active')) return;
-
-        criarHandle();
-
-        if (p.classList.contains('fase344-posicao-manual')) return;
-
-        const rect = p.getBoundingClientRect();
-
-        if (window.innerWidth <= 560) {
-            const left = window.innerWidth - rect.width - 8;
-            const top = 8;
-            aplicarPosicao(left, top);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', criarHandle);
-    window.addEventListener('load', criarHandle);
-
-    document.addEventListener('click', function () {
-        setTimeout(criarHandle, 100);
-        setTimeout(posicionarMelhorNoCelular, 300);
-        setTimeout(posicionarMelhorNoCelular, 900);
+        setTimeout(posicionarCameraAbaixoDoTabuleiro, 80);
+        setTimeout(posicionarCameraAbaixoDoTabuleiro, 350);
+        setTimeout(quandoIniciarChamada, 500);
+        setTimeout(posicionarCameraAbaixoDoTabuleiro, 900);
     });
 
     setInterval(function () {
-        criarHandle();
-        posicionarMelhorNoCelular();
-    }, 800);
+        posicionarCameraAbaixoDoTabuleiro();
+        quandoIniciarChamada();
+    }, 900);
 })();
 </script>
+
 </body>
 </html>
