@@ -1,1 +1,1 @@
-Fase 36.12 - correção real dos controles online no tabuleiro do Xadrez. Subir este conteúdo dentro de /fase33/. Damas preservada.
+Fase 36.13: base 36.12 mantida, botões no tabuleiro e correção do botão + da câmera sem duplo clique.

@@ -4886,7 +4886,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 36.12 Estável</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 36.13 Estável</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -6934,7 +6934,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
 
 
 
-        /* ✅ FASE 36.12 - FUNÇÕES DIRETAS: controles online dentro do tabuleiro real */
+        /* ✅ FASE 36.13 - FUNÇÕES DIRETAS: controles online dentro do tabuleiro real */
         function controlesOnlineXadrezAtivos3612() {
             return chessMode === 'online' && !!chessRoomId && document.body.classList.contains('chess-board-visible') && !chessIsSpectator;
         }
@@ -9475,7 +9475,7 @@ Link: ${location.origin}${location.pathname}`;
 
 
 
-/* ✅ FASE 36.12 - Reforço sem remendo: manter controles no tabuleiro se a sala online já estiver ativa. */
+/* ✅ FASE 36.13 - Reforço sem remendo: manter controles no tabuleiro se a sala online já estiver ativa. */
 document.addEventListener('click', async (ev) => {
     const alvo = ev.target;
     if (!alvo || !alvo.closest) return;
@@ -9503,3 +9503,73 @@ setInterval(() => {
         garantirControlesOnlineNoTabuleiro3612(!chessIsSpectator);
     }
 }, 1000);
+
+
+/* ======================================================================
+   FASE 36.13 - CORREÇÃO DO BOTÃO + DA CÂMERA DO XADREZ
+   Causa limpa: o clique no + passava por dois listeners e abria/fechava
+   no mesmo clique. Este listener no window captura antes dos antigos,
+   abre/fecha uma única vez e impede o duplo clique fantasma.
+   ====================================================================== */
+(function instalarFase3613BotaoCameraUnico() {
+    if (window.__tabuleiroArenaFase3613BotaoCameraUnico) return;
+    window.__tabuleiroArenaFase3613BotaoCameraUnico = true;
+
+    function estaNoXadrezOnlineComTabuleiro3613() {
+        try {
+            return document.body.classList.contains('chess-selected') &&
+                   document.body.classList.contains('chess-board-visible') &&
+                   (document.body.classList.contains('chess-online-active-3612') ||
+                    document.body.classList.contains('chess-online-active-3613') ||
+                    (typeof chessMode !== 'undefined' && chessMode === 'online' && typeof chessRoomId !== 'undefined' && !!chessRoomId));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function atualizarTextoBotaoCamera3613(panel) {
+        const toggle = document.getElementById('chess-call-toggle-btn');
+        if (!panel || !toggle) return;
+        const fechado = panel.classList.contains('call-compact') && !panel.classList.contains('call-active');
+        toggle.textContent = fechado ? '+' : '−';
+        toggle.setAttribute('aria-expanded', fechado ? 'false' : 'true');
+    }
+
+    function abrirFecharPainelCamera3613() {
+        const panel = document.getElementById('chess-call-panel');
+        if (!panel) return;
+
+        document.body.classList.add('chess-online-active-3612', 'chess-online-active-3613');
+        panel.classList.add('online-visible');
+
+        if (!panel.classList.contains('call-active')) {
+            const estavaFechado = panel.classList.contains('call-compact');
+            panel.classList.toggle('call-compact', !estavaFechado);
+            panel.dataset.userOpened = estavaFechado ? '1' : '0';
+        }
+
+        atualizarTextoBotaoCamera3613(panel);
+
+        if (typeof garantirControlesOnlineNoTabuleiro3612 === 'function') {
+            try { garantirControlesOnlineNoTabuleiro3612(true); } catch (_) {}
+        }
+    }
+
+    window.addEventListener('click', function (ev) {
+        const alvo = ev.target;
+        if (!alvo || !alvo.closest) return;
+        if (!alvo.closest('#chess-call-toggle-btn')) return;
+        if (!estaNoXadrezOnlineComTabuleiro3613()) return;
+
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+
+        abrirFecharPainelCamera3613();
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const panel = document.getElementById('chess-call-panel');
+        if (panel) atualizarTextoBotaoCamera3613(panel);
+    });
+})();
