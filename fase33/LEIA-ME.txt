@@ -1,0 +1,22 @@
+FASE 35 PRONTA PARA UPLOAD
+
+Este pacote já vem com a pasta fase33 no lugar correto.
+
+No GitHub, fique na RAIZ do projeto e envie a pasta fase33 inteira.
+A estrutura final precisa ficar assim:
+
+fase33/
+  index.html
+  css/
+    style.css
+    fase34-xadrez-limpo.css
+    fase35-camera-xadrez-abaixo-tabuleiro.css
+  js/
+    app.js
+    fase34-xadrez-limpo.js
+    fase35-camera-xadrez-abaixo-tabuleiro.js
+
+Depois teste:
+https://damas-nine.vercel.app/fase33/index.html?v=35c
+
+Não mexer no index.html principal até a fase33 ser aprovada.
