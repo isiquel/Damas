@@ -1,0 +1,18 @@
+TABULEIRO ARENA - FASE 35 SEPARADO
+
+Copie estes arquivos para a pasta /fase33/ no GitHub/Vercel:
+
+/fase33/index.html
+/fase33/css/style.css
+/fase33/css/fase34-xadrez-limpo.css
+/fase33/css/fase35-camera-xadrez-abaixo-tabuleiro.css
+/fase33/js/app.js
+/fase33/js/fase34-xadrez-limpo.js
+/fase33/js/fase35-camera-xadrez-abaixo-tabuleiro.js
+
+IMPORTANTE:
+- Não mexe no index principal.
+- Teste primeiro em /fase33/.
+- Esta separação não muda a lógica: só tirou CSS e JS de dentro do index para diminuir o arquivo principal.
+- A Damas continua no app.js como estava, para não quebrar.
+- O Xadrez continua com os ajustes da Fase 35 e Fase 35 em arquivos separados.
