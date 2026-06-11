@@ -1,17 +1,9 @@
-TABULEIRO ARENA - FASE 40
+TABULEIRO ARENA - ADMIN 02
 
-Base: Fase 39 funcionando.
+Base: Fase 40 + Admin 01.
 
-Objetivo desta fase:
-- Não mexer na Damas.
-- Manter Xadrez online funcionando.
-- Manter botão Sair da sala funcionando no tabuleiro.
-- Manter câmera removida/pausada.
-- Recolher os botões Reiniciar/Desistir/Sair/Voltar no botão + para o tabuleiro não ficar subindo e descendo.
-- Deixar o tabuleiro do Xadrez mais limpo no celular.
-
-Subir dentro de /fase33/:
-index.html, LEIA-ME.txt, css/ e js/.
-
-Testar com:
-https://damas-nine.vercel.app/fase33/?v=40
+Correção desta versão:
+- O painel admin do Xadrez não aparece mais dentro do tabuleiro.
+- O painel admin do Xadrez aparece somente na área do administrador.
+- Não mexe na Damas.
+- Não mexe na lógica do Xadrez, treino, online, chat, sair da sala ou modal de fim.

@@ -1,0 +1,32 @@
+/*
+   TABULEIRO ARENA - ADMIN 02
+   O painel admin do Xadrez só pode aparecer na área do administrador.
+   Durante jogo/treino/online ele fica escondido para não ficar por cima do tabuleiro.
+*/
+
+/* Padrão seguro: painel admin do Xadrez escondido */
+#chess-admin-panel{
+  display: none !important;
+}
+
+/* Só mostra quando o JavaScript confirmar que estamos realmente na tela admin */
+body.admin02-chess-admin-open #chess-admin-panel{
+  display: block !important;
+}
+
+/* Nunca mostrar painel admin junto do tabuleiro */
+body.chess-game-active #chess-admin-panel,
+body.chess-board-visible #chess-admin-panel,
+body.chess-mode-training #chess-admin-panel,
+body.chess-mode-online #chess-admin-panel,
+body.admin02-chess-playing #chess-admin-panel{
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Limpeza visual: evita sobra de painel admin ocupando espaço no jogo */
+body.admin02-chess-playing #chess-admin-panel + #chess-status,
+body.admin02-chess-playing #chess-admin-panel + .chess-status{
+  margin-top: 0 !important;
+}
