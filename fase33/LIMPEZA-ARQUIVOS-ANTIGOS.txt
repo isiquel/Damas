@@ -1,0 +1,38 @@
+LIMPEZA SEGURA DA PASTA /fase33/
+
+Depois de subir e testar a Fase 38, a pasta /fase33/ precisa ficar usando somente estes arquivos:
+
+index.html
+LEIA-ME.txt
+LIMPEZA-ARQUIVOS-ANTIGOS.txt
+css/style.css
+css/fase38-backup-limpeza-segura.css
+js/app.js
+js/fase38-backup-limpeza-segura.js
+
+Se ainda existirem, estes arquivos antigos podem ser apagados de /fase33/css/:
+- fase34-xadrez-limpo.css
+- fase35-camera-xadrez-abaixo-tabuleiro.css
+- fase36-xadrez-limpeza.css
+- fase36-*.css
+- fase37-organizacao-sem-camera.css
+- fase37-segura-sem-camera.css  (apague somente depois que a Fase 38 estiver testada)
+
+Se ainda existirem, estes arquivos antigos podem ser apagados de /fase33/js/:
+- fase34-xadrez-limpo.js
+- fase35-camera-xadrez-abaixo-tabuleiro.js
+- fase36-xadrez-limpeza.js
+- fase36-*.js
+- fase37-organizacao-sem-camera.js
+- fase37-segura-sem-camera.js  (apague somente depois que a Fase 38 estiver testada)
+
+Não apagar:
+- /assets
+- index.html da raiz
+- damas.html da raiz
+- xadrez.html da raiz
+- sw.js
+- manifest.json
+- css/ e js/ da raiz
+
+Esta limpeza é somente dentro da pasta /fase33/.
