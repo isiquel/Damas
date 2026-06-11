@@ -1,13 +1,13 @@
-FASE 36.5 - Resultado do Xadrez centralizado de verdade
+TABULEIRO ARENA - FASE 36.6
 
-Suba estes itens diretamente dentro da pasta fase33:
-- index.html
-- LEIA-ME.txt
-- css/
-- js/
+Base: Fase 36.5 estável aprovada.
 
-Correção:
-- O painel antigo torto do resultado foi desligado.
-- O fim da partida usa apenas um modal novo, pequeno e centralizado.
+Correções desta versão:
+- Mantém o resultado/xeque-mate centralizado.
+- Adiciona botão Sair da sala dentro do tabuleiro online do Xadrez.
+- Voltar ao menu também libera a vaga da sala online.
+- Adiciona presença/heartbeat: jogador desconectado/inativo é limpo após cerca de 5 minutos.
+- Garante câmera e áudio abaixo do tabuleiro no modo online.
 - Damas preservada.
-- Site principal não deve ser alterado.
+
+Subir apenas o conteúdo desta pasta dentro de /fase33/. Não subir a pasta inteira e não mexer na raiz.

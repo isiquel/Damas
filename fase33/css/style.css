@@ -3992,3 +3992,62 @@ body.chess-selected #ta-chess-result-modal-final {
 #ta-safe-result-again-btn { background: #16a34a !important; }
 #ta-safe-result-menu-btn { background: #0ea5e9 !important; }
 #ta-safe-result-close-btn { background: #475569 !important; }
+
+
+/* ======================================================================
+   FASE 36.6 - BOTÃO SAIR DA SALA + CÂMERA VISÍVEL NO TABULEIRO ONLINE
+   ====================================================================== */
+#chess-leave-room-board-btn,
+.btn-chess-leave-room-board {
+    background: linear-gradient(135deg, #0f766e, #14b8a6) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(94, 234, 212, .45) !important;
+    box-shadow: 0 8px 18px rgba(20, 184, 166, .18) !important;
+}
+#chess-leave-room-board-btn:hover:not(:disabled),
+.btn-chess-leave-room-board:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0d9488, #2dd4bf) !important;
+}
+body.chess-selected.chess-board-visible.chess-mode-online #chess-leave-room-board-btn {
+    display: block !important;
+}
+body.chess-selected.chess-board-visible:not(.chess-mode-online) #chess-leave-room-board-btn,
+body.chess-selected.chess-mode-training #chess-leave-room-board-btn {
+    display: none !important;
+}
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.online-visible,
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    margin: 10px auto 10px auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    z-index: auto !important;
+}
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-videos,
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-controls,
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-note {
+    display: none !important;
+}
+body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-compact:not(.call-active) .chess-call-header {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+}
+@media (max-width: 560px) {
+    body:not(.chess-admin-only) .chess-actions {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    #chess-leave-room-board-btn {
+        grid-column: 1 / -1;
+    }
+    body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.online-visible,
+    body.chess-selected.chess-board-visible.chess-mode-online #chess-call-panel.call-active {
+        max-width: calc(100vw - 18px) !important;
+    }
+}

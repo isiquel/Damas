@@ -4886,7 +4886,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 online.id = 'chess-online-panel';
                 online.className = 'chess-online-panel';
                 online.innerHTML = `
-                    <div class="chess-online-title">🌐 Xadrez Online — Fase 36 Estável</div>
+                    <div class="chess-online-title">🌐 Xadrez Online — Fase 36.6 Estável</div>
                     <div class="chess-online-desc">Entre em uma sala de Xadrez separada da Damas. O tabuleiro abre somente depois de clicar em Entrar/Jogar ou Assistir.</div>
                     <div class="chess-online-grid">
                         <input id="chess-online-name" type="text" maxlength="18" placeholder="Seu nome">
@@ -8834,7 +8834,7 @@ Link: ${location.origin}${location.pathname}`;
 
             function atualizarSeloFase30() {
                 const pill = document.getElementById('chess-online-stability-pill');
-                if (pill) pill.textContent = 'Fase 36 • Tabuleiro estável';
+                if (pill) pill.textContent = 'Fase 36.6 • Tabuleiro estável';
                 const clean = document.querySelector('#chess-screen .chess-clean-game-pill');
                 if (clean && /Online/i.test(clean.textContent || '')) {
                     clean.textContent = '🎯 Online estável + tabuleiro centralizado';
@@ -9405,4 +9405,285 @@ Link: ${location.origin}${location.pathname}`;
     window.addEventListener('resize', function () {
         setTimeout(posicionarChamadaAbaixoDoTabuleiroFase36, 80);
     });
+
+/* ======================================================================
+   FASE 36.6 - SAÍDA DE SALA + PRESENÇA ONLINE + CÂMERA VISÍVEL
+   Base: Fase 36.5 estável aprovada.
+   - Não mexe na Damas.
+   - Adiciona botão Sair da sala no tabuleiro do Xadrez online.
+   - Voltar ao menu também libera o jogador da sala online.
+   - Presença/heartbeat remove jogador parado/desconectado após cerca de 5 minutos.
+   - Garante o painel de câmera e áudio abaixo do tabuleiro no modo online.
+   ====================================================================== */
+(function instalarFase366SaidaSalaCameraPresenca() {
+    if (window.__tabuleiroArenaFase366SaidaSalaCameraPresenca) return;
+    window.__tabuleiroArenaFase366SaidaSalaCameraPresenca = true;
+
+    const LIMITE_INATIVIDADE_XADREZ = 5 * 60 * 1000;
+    const LIMITE_SEM_LASTSEEN_XADREZ = 15 * 60 * 1000;
+    let heartbeatXadrez366 = null;
+    let ultimaLimpezaPresencaXadrez366 = 0;
+
+    function caminhoPresencaAtualXadrez366() {
+        if (chessMode !== 'online' || !chessRoomId) return null;
+        const uid = getChessUid();
+        if (!uid) return null;
+        if (chessPlayerColor === 'white' || chessPlayerColor === 'black') {
+            return `chessRooms/${chessRoomId}/players/${chessPlayerColor}`;
+        }
+        if (chessIsSpectator) {
+            return `chessRooms/${chessRoomId}/spectators/${uid}`;
+        }
+        return null;
+    }
+
+    async function marcarPresencaXadrez366(tipo = 'heartbeat', marcarAcao = false) {
+        const caminho = caminhoPresencaAtualXadrez366();
+        if (!caminho) return;
+        const agora = Date.now();
+        const payload = {
+            id: getChessUid(),
+            name: chessPlayerName || 'Jogador',
+            lastSeen: agora,
+            updatedAt: agora,
+            phase: '36.6',
+            status: 'online'
+        };
+        if (marcarAcao) payload.lastActionAt = agora;
+        if (tipo) payload.lastPresenceType = tipo;
+        try { await update(ref(db, caminho), payload); } catch (e) { console.warn('Presença do Xadrez não atualizada:', e); }
+    }
+
+    function iniciarHeartbeatXadrez366() {
+        pararHeartbeatXadrez366();
+        if (chessMode !== 'online' || !chessRoomId) return;
+        marcarPresencaXadrez366('entrada', true);
+        heartbeatXadrez366 = setInterval(() => {
+            if (chessMode === 'online' && chessRoomId) marcarPresencaXadrez366('heartbeat', false);
+            else pararHeartbeatXadrez366();
+        }, 30000);
+    }
+
+    function pararHeartbeatXadrez366() {
+        if (heartbeatXadrez366) clearInterval(heartbeatXadrez366);
+        heartbeatXadrez366 = null;
+    }
+
+    function participanteInativoXadrez366(p, agora) {
+        if (!p || !p.id) return false;
+        const lastSeen = Number(p.lastSeen || 0);
+        if (lastSeen && agora - lastSeen > LIMITE_INATIVIDADE_XADREZ) return true;
+        const connectedAt = Number(p.connectedAt || 0);
+        if (!lastSeen && connectedAt && agora - connectedAt > LIMITE_SEM_LASTSEEN_XADREZ) return true;
+        return false;
+    }
+
+    function limparParticipantesInativosXadrez366(data) {
+        if (chessMode !== 'online' || !chessRoomId || !data || typeof data !== 'object') return;
+        const agora = Date.now();
+        if (agora - ultimaLimpezaPresencaXadrez366 < 25000) return;
+        ultimaLimpezaPresencaXadrez366 = agora;
+
+        const updates = {};
+        const players = data.players && typeof data.players === 'object' ? data.players : {};
+        const spectators = data.spectators && typeof data.spectators === 'object' ? data.spectators : {};
+        const meuUid = getChessUid();
+
+        ['white', 'black'].forEach(cor => {
+            const p = players[cor];
+            if (p && p.id && p.id !== meuUid && participanteInativoXadrez366(p, agora)) {
+                updates[`players/${cor}`] = null;
+                updates[`lastPresenceCleanup/${cor}`] = { name: p.name || cor, at: agora, reason: 'inativo_5_minutos' };
+            }
+        });
+
+        Object.entries(spectators).forEach(([uid, p]) => {
+            if (uid !== meuUid && p && p.id && participanteInativoXadrez366(p, agora)) {
+                updates[`spectators/${uid}`] = null;
+            }
+        });
+
+        if (Object.keys(updates).length) {
+            updates.updatedAt = agora;
+            update(ref(db, `chessRooms/${chessRoomId}`), updates).catch(e => console.warn('Limpeza de inativos do Xadrez falhou:', e));
+        }
+    }
+
+    function garantirBotaoSairSalaNoTabuleiroXadrez366() {
+        const actions = document.querySelector('#chess-screen .chess-actions');
+        if (!actions) return;
+        let btn = document.getElementById('chess-leave-room-board-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'chess-leave-room-board-btn';
+            btn.className = 'btn-chess-leave-room-board';
+            btn.type = 'button';
+            btn.textContent = 'Sair da sala';
+            const back = document.getElementById('chess-back-btn-bottom');
+            if (back) actions.insertBefore(btn, back);
+            else actions.appendChild(btn);
+        }
+        btn.style.display = chessMode === 'online' ? '' : 'none';
+        btn.disabled = chessMode !== 'online';
+    }
+
+    function garantirCameraAbaixoDoTabuleiroXadrez366() {
+        const panel = document.getElementById('chess-call-panel');
+        const boardWrap = document.querySelector('#chess-screen .chess-board-wrap');
+        if (!panel || !boardWrap) return;
+
+        if (boardWrap.nextElementSibling !== panel) {
+            boardWrap.insertAdjacentElement('afterend', panel);
+        }
+
+        panel.classList.remove('fase36-call-panel', 'fase36-call-open', 'fase35-call-panel', 'fase35-call-open', 'fase34-call-closed');
+        panel.style.left = '';
+        panel.style.right = '';
+        panel.style.top = '';
+        panel.style.bottom = '';
+        panel.style.transform = '';
+        panel.style.position = '';
+        panel.style.zIndex = '';
+        panel.style.width = '';
+        panel.style.maxWidth = '';
+
+        const online = chessMode === 'online' && !!chessRoomId && document.body.classList.contains('chess-board-visible');
+        panel.classList.toggle('online-visible', online);
+        if (online) {
+            panel.style.setProperty('display', 'block', 'important');
+            if (!panel.classList.contains('call-active') && panel.dataset.userOpened !== '1') {
+                panel.classList.add('call-compact');
+            }
+        } else {
+            panel.style.removeProperty('display');
+        }
+
+        const title = panel.querySelector('.chess-call-title');
+        if (title) title.textContent = '📹 Câmera e áudio';
+        const status = document.getElementById('chess-call-status');
+        if (status && online && !chessLocalCallStream) status.textContent = 'Disponível para os dois jogadores da sala.';
+        const toggle = document.getElementById('chess-call-toggle-btn');
+        if (toggle) {
+            const fechado = panel.classList.contains('call-compact') && !panel.classList.contains('call-active');
+            toggle.textContent = fechado ? '+' : '−';
+            toggle.setAttribute('aria-expanded', fechado ? 'false' : 'true');
+            toggle.style.display = '';
+        }
+    }
+
+    async function sairSalaXadrezPeloTabuleiro366(irParaModalidades = false) {
+        try { await marcarPresencaXadrez366('saida_manual', true); } catch (_) {}
+        try { sairXadrezOnline(false); } catch (e) { console.warn('Erro ao sair da sala de Xadrez:', e); }
+        pararHeartbeatXadrez366();
+        garantirBotaoSairSalaNoTabuleiroXadrez366();
+        garantirCameraAbaixoDoTabuleiroXadrez366();
+        mostrarToastXadrez('🚪 Você saiu da sala online. A vaga foi liberada.');
+        if (irParaModalidades) {
+            try { voltarParaModalidades(); } catch (_) { ocultarTabuleiroXadrezParaMenu(); }
+        } else {
+            ocultarTabuleiroXadrezParaMenu();
+        }
+    }
+
+    const entrarOriginalFase366 = entrarXadrezOnline;
+    entrarXadrezOnline = async function entrarXadrezOnlineFase366() {
+        const resultado = await entrarOriginalFase366.apply(this, arguments);
+        if (chessMode === 'online' && chessRoomId) {
+            iniciarHeartbeatXadrez366();
+            garantirBotaoSairSalaNoTabuleiroXadrez366();
+            setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 0);
+            setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 250);
+        }
+        return resultado;
+    };
+
+    const sairOriginalFase366 = sairXadrezOnline;
+    sairXadrezOnline = function sairXadrezOnlineFase366() {
+        pararHeartbeatXadrez366();
+        return sairOriginalFase366.apply(this, arguments);
+    };
+
+    const publicarOriginalFase366 = publicarEstadoXadrezOnline;
+    publicarEstadoXadrezOnline = async function publicarEstadoXadrezOnlineFase366(extra = {}) {
+        if (chessMode === 'online' && chessRoomId) await marcarPresencaXadrez366('jogada', true);
+        return publicarOriginalFase366.call(this, extra);
+    };
+
+    const aplicarEstadoOriginalFase366 = aplicarEstadoXadrezRemoto;
+    aplicarEstadoXadrezRemoto = function aplicarEstadoXadrezRemotoFase366(data) {
+        aplicarEstadoOriginalFase366.apply(this, arguments);
+        limparParticipantesInativosXadrez366(data);
+        garantirBotaoSairSalaNoTabuleiroXadrez366();
+        setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 0);
+    };
+
+    const mostrarTabuleiroOriginalFase366 = mostrarTabuleiroXadrezAposEscolha;
+    mostrarTabuleiroXadrezAposEscolha = function mostrarTabuleiroXadrezAposEscolhaFase366() {
+        mostrarTabuleiroOriginalFase366.apply(this, arguments);
+        garantirBotaoSairSalaNoTabuleiroXadrez366();
+        setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 0);
+        setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 300);
+    };
+
+    const atualizarOnlineOriginalFase366 = atualizarPainelOnlineXadrez;
+    atualizarPainelOnlineXadrez = function atualizarPainelOnlineXadrezFase366() {
+        atualizarOnlineOriginalFase366.apply(this, arguments);
+        garantirBotaoSairSalaNoTabuleiroXadrez366();
+        setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 0);
+    };
+
+    const atualizarChamadaOriginalFase366 = atualizarPainelChamadaXadrez;
+    atualizarPainelChamadaXadrez = function atualizarPainelChamadaXadrezFase366() {
+        atualizarChamadaOriginalFase366.apply(this, arguments);
+        garantirCameraAbaixoDoTabuleiroXadrez366();
+    };
+
+    document.addEventListener('click', function (ev) {
+        const alvo = ev.target;
+        if (!alvo || !alvo.closest) return;
+
+        if (alvo.closest('#chess-leave-room-board-btn')) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation?.();
+            sairSalaXadrezPeloTabuleiro366(false);
+            return;
+        }
+
+        if (alvo.closest('#chess-back-btn-bottom, #chess-back-btn') && chessMode === 'online') {
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation?.();
+            sairSalaXadrezPeloTabuleiro366(true);
+        }
+
+        if (alvo.closest('#chess-call-toggle-btn')) {
+            setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 60);
+        }
+    }, true);
+
+    window.addEventListener('pagehide', function () {
+        if (chessMode === 'online' && chessRoomId) {
+            try { marcarPresencaXadrez366('pagehide', true); } catch (_) {}
+        }
+    });
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+            if (chessMode === 'online' && chessRoomId) marcarPresencaXadrez366('visivel', false);
+            setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 100);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        garantirBotaoSairSalaNoTabuleiroXadrez366();
+        setTimeout(garantirCameraAbaixoDoTabuleiroXadrez366, 400);
+    });
+
+    setInterval(function () {
+        garantirBotaoSairSalaNoTabuleiroXadrez366();
+        if (chessMode === 'online' && chessRoomId) garantirCameraAbaixoDoTabuleiroXadrez366();
+    }, 2500);
+})();
+
 })();
