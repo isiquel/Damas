@@ -1,0 +1,24 @@
+TABULEIRO ARENA - FASE 40
+
+Base: Fase 39 funcionando.
+
+Objetivo desta fase:
+- Não mexer na Damas.
+- Manter Xadrez online funcionando.
+- Manter botão Sair da sala funcionando no tabuleiro.
+- Manter câmera removida/pausada.
+- Recolher os botões Reiniciar/Desistir/Sair/Voltar no botão + para o tabuleiro não ficar subindo e descendo.
+- Deixar o tabuleiro do Xadrez mais limpo no celular.
+
+Subir dentro de /fase33/:
+index.html, LEIA-ME.txt, css/ e js/.
+
+Testar com:
+https://damas-nine.vercel.app/fase33/?v=40
+
+SEPARAÇÃO 01 SEGURA
+Esta versão mantém o carregamento original da Fase 40 e guarda os arquivos separados apenas como referência.
+Não usa js/parts no carregamento do site.
+
+Separação 02 CSS:
+O CSS foi dividido com segurança em arquivos menores. O JavaScript continua intacto.

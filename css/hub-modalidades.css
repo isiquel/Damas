@@ -1,0 +1,220 @@
+/* Separação 02 - hub-modalidades.css
+   Extraído do style.css aprovado. Não altera lógica do jogo. */
+
+        /* 🎲 TABULEIRO ARENA - HUB DE JOGOS CLÁSSICOS */
+        .brand-kicker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 7px 13px;
+            border-radius: 999px;
+            background: rgba(52, 152, 219, 0.13);
+            border: 1px solid rgba(52, 152, 219, 0.35);
+            color: #38bdf8;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+        }
+        .platform-subtitle {
+            max-width: 560px;
+            margin: -10px auto 18px auto;
+            color: #cbd5e1;
+            font-size: 0.96rem;
+            line-height: 1.45;
+        }
+        .games-hub-panel {
+            background: linear-gradient(135deg, #0f172a, #111827 55%, #1e1b4b);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 18px;
+            text-align: left;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.42);
+        }
+        .games-hub-title {
+            color: #fff;
+            font-size: 0.98rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            margin-bottom: 5px;
+        }
+        .games-hub-desc {
+            color: #94a3b8;
+            font-size: 0.82rem;
+            line-height: 1.38;
+            margin-bottom: 12px;
+        }
+        .game-mode-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .game-mode-card {
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #020617;
+            border-radius: 14px;
+            padding: 13px 10px;
+            cursor: pointer;
+            overflow: hidden;
+            min-height: 122px;
+            transition: transform .2s ease, border-color .2s ease, background .2s ease;
+        }
+        .game-mode-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56,189,248,0.55);
+            background: #07111f;
+        }
+        .game-mode-card.active {
+            border-color: rgba(46,204,113,0.75);
+            background: linear-gradient(135deg, rgba(46,204,113,0.16), rgba(2,6,23,0.98));
+            box-shadow: 0 0 18px rgba(46,204,113,0.12);
+        }
+        .game-mode-card.admin-entry {
+            border-color: rgba(192,132,252,0.55);
+            background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(2,6,23,0.98));
+        }
+        .game-mode-card.admin-entry:hover {
+            border-color: rgba(216,180,254,0.9);
+            box-shadow: 0 0 20px rgba(124,58,237,0.18);
+        }
+        .game-mode-card.admin-entry .game-mode-badge {
+            background: #c084fc;
+            color: #1e1b4b;
+        }
+        .admin-login-panel.central-hidden {
+            display: none;
+        }
+        .btn-admin-login-back {
+            background-color: #334155;
+            margin-top: 8px;
+        }
+        .btn-admin-login-back:hover:not(:disabled) {
+            background-color: #475569;
+        }
+        .game-mode-card.soon {
+            opacity: 0.78;
+        }
+        .game-mode-icon {
+            font-size: 1.85rem;
+            margin-bottom: 7px;
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+        }
+        .game-mode-name {
+            color: #fff;
+            font-weight: 900;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .game-mode-copy {
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            line-height: 1.32;
+        }
+        .game-mode-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.62rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #020617;
+            background: #f1c40f;
+            border-radius: 999px;
+            padding: 3px 7px;
+        }
+        .game-mode-card.active .game-mode-badge {
+            background: #2ecc71;
+            color: #052e16;
+        }
+        .current-game-strip {
+            margin: 0 0 14px 0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, rgba(233,69,96,0.17), rgba(52,152,219,0.12));
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #e2e8f0;
+            font-size: 0.86rem;
+            line-height: 1.35;
+            text-align: left;
+        }
+        .current-game-strip strong { color: #fff; }
+
+        /* 🧭 HUB LIMPO: ao abrir, mostra somente escolha de modalidade */
+        body.platform-start-active #lobby-screen,
+        body.platform-start-active #game-screen,
+        body.platform-start-active #countdown-screen { display: none !important; }
+        body.platform-start-active #games-hub-panel { display: block !important; }
+        body.platform-start-active .container { max-width: 520px; }
+        body.platform-start-active h1 { margin-bottom: 18px; font-size: clamp(2rem, 7vw, 3rem); }
+        body.platform-start-active .brand-kicker,
+        body.platform-start-active .platform-subtitle,
+        body.platform-start-active .games-hub-desc { display: none !important; }
+        body.platform-start-active .games-hub-panel { text-align: center; margin-top: 6px; padding: 20px; }
+        body.platform-start-active .games-hub-title { text-align: center; font-size: 1.05rem; margin-bottom: 14px; }
+        body.platform-start-active .game-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        body.platform-start-active .game-mode-card { text-align: center; min-height: 116px; }
+
+        body.mode-selecting .brand-kicker,
+        body.mode-selecting .platform-subtitle,
+        body.mode-selecting .games-hub-desc { display: none !important; }
+
+        body.mode-selecting #lobby-screen,
+        body.mode-selecting #game-screen { display: none !important; }
+
+        body.mode-selecting .container { max-width: 520px; }
+
+        body.mode-selecting h1 {
+            margin-bottom: 18px;
+            font-size: clamp(2rem, 7vw, 3rem);
+        }
+
+        body.mode-selecting .games-hub-panel {
+            text-align: center;
+            margin-top: 6px;
+            padding: 20px;
+        }
+
+        body.mode-selecting .games-hub-title {
+            text-align: center;
+            font-size: 1.05rem;
+            margin-bottom: 14px;
+        }
+
+        body.mode-selecting .game-mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        body.mode-selecting .game-mode-card {
+            text-align: center;
+            min-height: 116px;
+        }
+
+        body.game-selected #games-hub-panel { display: none !important; }
+        body.game-selected .platform-subtitle { display: none !important; }
+        body.game-selected .brand-kicker { display: none !important; }
+
+        .back-to-games-btn {
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            margin: 0 0 12px 0;
+            border-radius: 999px;
+            background: #334155;
+            color: #e2e8f0;
+            font-size: 0.78rem;
+            text-transform: none;
+        }
+        .back-to-games-btn:hover:not(:disabled) { background:#475569; }
+
+        @media (max-width: 560px) {
+            .game-mode-grid { grid-template-columns: 1fr; }
+            .game-mode-card { min-height: 98px; }
+            .platform-subtitle { font-size: 0.86rem; margin-top: -6px; }
+        }
+
