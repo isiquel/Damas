@@ -19,3 +19,6 @@ https://damas-nine.vercel.app/fase33/?v=40
 SEPARAÇÃO 01 SEGURA
 Esta versão mantém o carregamento original da Fase 40 e guarda os arquivos separados apenas como referência.
 Não usa js/parts no carregamento do site.
+
+Separação 02 CSS:
+O CSS foi dividido com segurança em arquivos menores. O JavaScript continua intacto.
