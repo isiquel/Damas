@@ -1,0 +1,32 @@
+TABULEIRO ARENA - PUBLICAR SEPARACAO 03 JS CONFIG NO PRINCIPAL
+
+Esta versão já foi testada na pasta /fase33/ e funcionou.
+
+COMO PUBLICAR:
+1. Entre na RAIZ do projeto no GitHub.
+2. Clique em Add file > Upload files.
+3. Envie SOMENTE os itens de dentro deste pacote:
+   - index.html
+   - LEIA-ME.txt
+   - LEIA-ME-SEPARACAO02-CSS.txt
+   - LEIA-ME-SEPARACAO03-JS-CONFIG.txt
+   - INSTRUCOES-PUBLICAR-SEPARACAO03-NO-PRINCIPAL.txt
+   - css
+   - js
+4. Nao envie a pasta inteira do ZIP.
+5. Nao apague a pasta fase33. Ela e o backup/teste seguro.
+6. Nao mexa em assets, manifest.json, sw.js, damas.html, xadrez.html ou xadrez.js.
+
+DEPOIS DO COMMIT, TESTE:
+https://damas-nine.vercel.app/?v=separacao03principal
+
+CHECKLIST:
+- Tela inicial abre
+- Damas abre
+- Xadrez abre
+- Xadrez online entra na sala
+- Sair da sala funciona
+- Controles + funciona
+- Chat + funciona
+- Admin da Damas abre
+- Admin do Xadrez abre
