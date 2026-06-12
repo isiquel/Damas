@@ -1,0 +1,24 @@
+SEPARAÇÃO 01 SEGURA - TABULEIRO ARENA
+
+Esta versão volta a carregar o jogo pelo caminho estável da Fase 40:
+
+  js/app.js
+  js/fase40-controles-recolhidos.js
+
+O jogo NÃO carrega mais a pasta js/parts automaticamente.
+A tentativa anterior usava um carregador dinâmico que dependia da pasta js/parts estar perfeita no GitHub/Vercel. Se qualquer arquivo não subisse, aparecia tela vermelha.
+
+Nesta versão segura:
+- O jogo volta a funcionar como a Fase 40.
+- A Damas não foi alterada.
+- O Xadrez não foi alterado.
+- O admin não foi alterado.
+- Os arquivos divididos ficam apenas como REFERÊNCIA em:
+
+  js/parts-referencia/
+
+Eles NÃO são usados pelo site ainda.
+A separação real deve ser feita depois, uma função por vez, testando cada etapa.
+
+TESTE:
+https://damas-nine.vercel.app/fase33/?v=separacao01segura

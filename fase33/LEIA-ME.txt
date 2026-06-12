@@ -15,3 +15,7 @@ index.html, LEIA-ME.txt, css/ e js/.
 
 Testar com:
 https://damas-nine.vercel.app/fase33/?v=40
+
+SEPARAÇÃO 01 SEGURA
+Esta versão mantém o carregamento original da Fase 40 e guarda os arquivos separados apenas como referência.
+Não usa js/parts no carregamento do site.

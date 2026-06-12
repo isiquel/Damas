@@ -1,0 +1,4302 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, get, push, onDisconnect, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAyjusKD0t6DOtI93bxYbWRSiSHe0jvStA",
+        authDomain: "damas-57b07.firebaseapp.com",
+        databaseURL: "https://damas-57b07-default-rtdb.firebaseio.com",
+        projectId: "damas-57b07",
+        storageBucket: "damas-57b07.firebasestorage.app",
+        messagingSenderId: "178140626924",
+        appId: "1:178140626924:web:195432bbba189d48630ac9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app, firebaseConfig.databaseURL);
+    const auth = getAuth(app);
+
+    let playerId = null; 
+    let roomId = "";
+    let playerRole = "spectator"; 
+    let isPracticeMode = false;
+    let practiceDifficulty = "medio";
+    let isLearningMode = false;
+    let currentLearningHint = null;
+    let learningTipsVisible = true; 
+    let currentGameState = null;
+    let selectedPiece = null;
+    let validMoves = [];
+    let hasRecordedResult = false;
+    let lockPieceForMultiCapture = null;
+    let ultimoContadorEspectadores = 0;
+    
+    let gameTimerInterval = null;
+    let isChatMutedLocally = false;
+
+    let ultimoTurnoRegistrado = 0;
+    let timestampInicioTurnoAtual = 0;
+    let jaAlertouTurnoDemorado = false;
+    
+    let emContagemRegressivaAtiva = false;
+    let listenerChatAdminAtivo = null;
+    let alertaFimPartidaMostrado = false;
+    let ultimaContagemInicioMostrada = 0;
+    let tabuleiroViradoManual = false;
+
+    let callPeer = null;
+    let localCallStream = null;
+    let callUnsubscribers = [];
+    let processedRemoteCandidates = new Set();
+    let callStartedByUser = false;
+    let remoteDescriptionApplied = false;
+    let localMicEnabled = true;
+    let localCameraEnabled = true;
+
+    // 👁️ Transmissão da chamada para espectadores.
+    // Mantém a chamada dos jogadores intacta e cria conexões separadas, somente para assistir.
+    let spectatorWatchActive = false;
+    let spectatorWatchConnecting = false;
+    let spectatorWatchUnsubscribers = [];
+    let spectatorWatchPeers = {};
+    let spectatorWatchStreams = { p1: null, p2: null };
+    let spectatorProcessedCandidates = new Set();
+    let spectatorAudioP1 = null;
+    let spectatorAudioP2 = null;
+
+    // Conexões extras que cada jogador abre para enviar sua câmera/áudio aos espectadores.
+    let playerSpectatorPeers = {};
+    let playerSpectatorUnsubscribers = [];
+    let playerProcessedSpectatorCandidates = new Set();
+    let playerAnsweredSpectatorOffers = new Set();
+    let playerSpectatorOfferKeys = {};
+
+
+
+    // ================================================================
+    // 🔐 CAMADA DE SEGURANÇA E HIGIENIZAÇÃO - v Segurança Premium
+    // Mantém o jogo igual, mas reduz brechas no admin, sala, chat e ranking.
+    // IMPORTANTE: para blindagem real, publique também as regras do Firebase
+    // que estão no final deste arquivo como comentário.
+    // ================================================================
+    const ADMIN_ROOM_CODE = "00";
+    const LEGACY_FIRST_ADMIN_NAME = "isiquel_admin";
+    const WHATSAPP_SUPORTE = "5544991711936";
+    const ADMIN_EMAIL_AUTORIZADO = "isiquelcamilanatan@gmail.com";
+    const APP_VERSION_10 = "10/10 Fase 2 gratuita - Admin e salas reforçados";
+    const TEMPO_MAX_LOGIN_ADMIN_MS = 12000;
+    let usuarioAdminConfirmado = false;
+    let usuarioLogadoPorSenha = false;
+    let emailAdministradorAtual = "";
+
+    function somenteTextoSeguro(valor, limite = 80) {
+        return String(valor ?? "")
+            .replace(/[<>`]/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, limite);
+    }
+
+    function nomeSeguro(valor) {
+        return somenteTextoSeguro(valor || "Jogador", 15) || "Jogador";
+    }
+
+    function salaSegura(valor) {
+        return String(valor ?? "")
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9_-]/g, "")
+            .slice(0, 15);
+    }
+
+    function numeroSeguro(valor, padrao = 0) {
+        const n = Number(valor);
+        return Number.isFinite(n) ? n : padrao;
+    }
+
+    function limparElemento(el) {
+        while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function criarTexto(tag, texto, className = "") {
+        const el = document.createElement(tag);
+        if (className) el.className = className;
+        el.innerText = String(texto ?? "");
+        return el;
+    }
+
+
+    function telefoneSeguro(valor) {
+        let n = String(valor ?? "").replace(/\D/g, "");
+        if (!n) return "";
+        if (n.length === 10 || n.length === 11) n = "55" + n;
+        return n.slice(0, 14);
+    }
+
+    function textoAvisoSeguro(valor, limite = 220) {
+        return somenteTextoSeguro(valor || "", limite);
+    }
+
+    async function registrarJogadorComunidade(nomeBase) {
+        if (!playerId || !db) return;
+        const nome = nomeSeguro(nomeBase || nameInput?.value || "Jogador");
+        const whatsapp = telefoneSeguro(document.getElementById('whatsapp-input')?.value || "");
+        const consentiu = !!document.getElementById('whatsapp-consent')?.checked;
+        try {
+            await update(ref(db, `players/${playerId}`), {
+                name: nome,
+                whatsapp: whatsapp,
+                whatsappConsent: consentiu && !!whatsapp,
+                lastSeen: Date.now()
+            });
+        } catch (e) {
+            console.warn("Não foi possível salvar cadastro do jogador:", e);
+        }
+    }
+
+    function formatarDataTorneio(valor) {
+        if (!valor) return "Data a definir";
+        try {
+            const d = new Date(valor);
+            if (Number.isNaN(d.getTime())) return String(valor);
+            return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+        } catch (_) { return String(valor); }
+    }
+
+    function criarCardTorneio(torneio, id) {
+        const card = document.createElement('div');
+        card.className = 'tournament-card';
+        const titulo = document.createElement('strong');
+        titulo.innerText = `🏆 ${somenteTextoSeguro(torneio.name || 'Torneio de Damas', 60)}`;
+        const meta = criarTexto('div', `📅 ${formatarDataTorneio(torneio.date)} • Sala: ${(torneio.room || 'a definir').toUpperCase()} • Status: ${torneio.status || 'aberto'}`, 'tiny-muted');
+        const msg = criarTexto('div', textoAvisoSeguro(torneio.message || 'Participe do torneio e acompanhe as partidas no app.', 180), 'tiny-muted');
+        card.append(titulo, meta, msg);
+        if (torneio.room) {
+            const btn = document.createElement('button');
+            btn.className = 'mini-action-btn';
+            btn.innerText = 'Assistir sala do torneio';
+            btn.onclick = () => {
+                roomInput.value = salaSegura(torneio.room);
+                spectateBtn.click();
+            };
+            card.appendChild(btn);
+        }
+        return card;
+    }
+
+    function carregarTorneiosLobby() {
+        const list = document.getElementById('tournament-lobby-list');
+        if (!list) return;
+        onValue(ref(db, 'tournaments'), (snapshot) => {
+            limparElemento(list);
+            const data = snapshot.val();
+            if (!data) {
+                list.appendChild(criarTexto('div', 'Nenhum torneio publicado ainda.', 'tiny-muted'));
+                return;
+            }
+            const torneios = Object.entries(data)
+                .map(([id, t]) => [id, t || {}])
+                .filter(([_, t]) => t.status !== 'encerrado')
+                .sort((a, b) => numeroSeguro(b[1].createdAt) - numeroSeguro(a[1].createdAt))
+                .slice(0, 5);
+            if (!torneios.length) {
+                list.appendChild(criarTexto('div', 'Nenhum torneio aberto no momento.', 'tiny-muted'));
+                return;
+            }
+            torneios.forEach(([id, t]) => list.appendChild(criarCardTorneio(t, id)));
+        });
+    }
+
+    function carregarPartidasAoVivoLobby() {
+        const list = document.getElementById('live-games-lobby-list');
+        if (!list) return;
+        onValue(ref(db, 'liveGames'), (snapshot) => {
+            limparElemento(list);
+            const data = snapshot.val();
+            if (!data) {
+                list.appendChild(criarTexto('div', 'Nenhuma partida ao vivo no momento.', 'tiny-muted'));
+                return;
+            }
+            const jogos = Object.entries(data)
+                .filter(([_, g]) => g && g.status === 'playing')
+                .sort((a, b) => numeroSeguro(b[1].updatedAt) - numeroSeguro(a[1].updatedAt))
+                .slice(0, 6);
+            if (!jogos.length) {
+                list.appendChild(criarTexto('div', 'Nenhuma partida ao vivo no momento.', 'tiny-muted'));
+                return;
+            }
+            jogos.forEach(([id, g]) => {
+                const card = document.createElement('div');
+                card.className = 'live-game-card';
+                const title = document.createElement('strong');
+                title.innerText = `🔥 Sala ${id.toUpperCase()}`;
+                const info = criarTexto('div', `${nomeSeguro(g.p1Name || 'Jogador 1')} vs ${nomeSeguro(g.p2Name || 'Jogador 2')}`, 'tiny-muted');
+                const btn = document.createElement('button');
+                btn.className = 'mini-action-btn';
+                btn.innerText = 'Assistir como espectador';
+                btn.onclick = () => { roomInput.value = salaSegura(id); spectateBtn.click(); };
+                card.append(title, info, btn);
+                list.appendChild(card);
+            });
+        });
+    }
+
+    async function atualizarPartidaAoVivo(roomName, data) {
+        if (!roomName || isPracticeMode || playerRole === 'admin') return;
+        try {
+            if (data.status === 'playing' && data.p1Name && data.p2Name) {
+                await update(ref(db, `liveGames/${roomName}`), {
+                    status: 'playing',
+                    p1Name: nomeSeguro(data.p1Name),
+                    p2Name: nomeSeguro(data.p2Name),
+                    updatedAt: Date.now()
+                });
+            } else if (data.status === 'finished') {
+                await update(ref(db, `liveGames/${roomName}`), { status: 'finished', updatedAt: Date.now() });
+            }
+        } catch (e) { console.warn('Não foi possível atualizar partidas ao vivo:', e); }
+    }
+
+    async function criarTorneioAdmin() {
+        if (!(await exigirAdminSeguro())) return;
+        const nome = somenteTextoSeguro(document.getElementById('tournament-name-input')?.value || '', 60);
+        const data = document.getElementById('tournament-date-input')?.value || '';
+        const sala = salaSegura(document.getElementById('tournament-room-input')?.value || '');
+        const mensagem = textoAvisoSeguro(document.getElementById('tournament-message-input')?.value || '', 220);
+        if (!nome) return exibirAlertaDoSistema('Torneio', 'Digite o nome do torneio.');
+        const novoRef = push(ref(db, 'tournaments'));
+        await set(novoRef, {
+            name: nome,
+            date: data,
+            room: sala,
+            message: mensagem || `Novo torneio de damas: ${nome}. Entre no app para participar!`,
+            status: 'aberto',
+            createdAt: Date.now(),
+            createdBy: playerId
+        });
+        await registrarLogAdmin('criou_torneio', sala || nome);
+        exibirAlertaDoSistema('Torneio Publicado 🏆', `O torneio <strong>${nome}</strong> foi publicado no lobby.`);
+    }
+
+    function carregarTorneiosAdmin() {
+        const list = document.getElementById('admin-tournament-list');
+        if (!list) return;
+        onValue(ref(db, 'tournaments'), (snapshot) => {
+            limparElemento(list);
+            const data = snapshot.val();
+            if (!data) {
+                list.appendChild(criarTexto('div', 'Nenhum torneio criado.', 'tiny-muted'));
+                return;
+            }
+            Object.entries(data)
+                .sort((a, b) => numeroSeguro(b[1]?.createdAt) - numeroSeguro(a[1]?.createdAt))
+                .slice(0, 8)
+                .forEach(([id, t]) => {
+                    const card = criarCardTorneio(t || {}, id);
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'mini-action-btn';
+                    closeBtn.style.backgroundColor = '#991b1b';
+                    closeBtn.innerText = 'Encerrar';
+                    closeBtn.onclick = async () => {
+                        if (!(await exigirAdminSeguro())) return;
+                        await update(ref(db, `tournaments/${id}`), { status: 'encerrado', closedAt: Date.now() });
+                    };
+                    card.appendChild(closeBtn);
+                    list.appendChild(card);
+                });
+        });
+    }
+
+    async function gerarAvisosWhatsApp() {
+        if (!(await exigirAdminSeguro())) return;
+        const box = document.getElementById('admin-whatsapp-participants');
+        if (!box) return;
+        limparElemento(box);
+        const snap = await get(ref(db, 'players'));
+        const players = snap.val() || {};
+        const sala = salaSegura(document.getElementById('tournament-room-input')?.value || adminTargetRoomInput?.value || '');
+        const nomeTorneio = somenteTextoSeguro(document.getElementById('tournament-name-input')?.value || 'Torneio de Damas', 60);
+        const mensagemBase = textoAvisoSeguro(document.getElementById('tournament-message-input')?.value || `Olá! Está acontecendo um aviso do jogo de Damas: ${nomeTorneio}. ${sala ? 'Sala: ' + sala.toUpperCase() : 'Entre no app para participar.'}`, 240);
+        const autorizados = Object.values(players).filter(p => p && p.whatsappConsent && p.whatsapp);
+        if (!autorizados.length) {
+            box.appendChild(criarTexto('div', 'Nenhum jogador com WhatsApp autorizado ainda.', 'tiny-muted'));
+            return;
+        }
+        const aviso = criarTexto('div', `Encontrados ${autorizados.length} jogadores autorizados. Clique em cada botão para abrir o WhatsApp com a mensagem pronta.`, 'tiny-muted');
+        box.appendChild(aviso);
+        autorizados.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'participant-card';
+            const title = document.createElement('strong');
+            title.innerText = `${nomeSeguro(p.name || 'Jogador')} • ${telefoneSeguro(p.whatsapp)}`;
+            const btn = document.createElement('button');
+            btn.className = 'mini-action-btn';
+            btn.style.backgroundColor = '#25d366';
+            btn.innerText = 'Abrir WhatsApp';
+            btn.onclick = () => {
+                const msg = encodeURIComponent(mensagemBase);
+                window.open(`https://wa.me/${telefoneSeguro(p.whatsapp)}?text=${msg}`, '_blank');
+            };
+            card.append(title, btn);
+            box.appendChild(card);
+        });
+    }
+
+    function criarMensagemSistema(container, texto) {
+        limparElemento(container);
+        const div = document.createElement('div');
+        div.style.cssText = "color:#7f8c8d; font-style:italic;";
+        div.innerText = texto;
+        container.appendChild(div);
+    }
+
+    function comTempoLimite(promise, ms, mensagem = "Tempo esgotado") {
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error(mensagem)), ms))
+        ]);
+    }
+
+    async function usuarioEhAdminSeguro() {
+        const user = auth.currentUser;
+        const emailAtual = String(user?.email || "").trim().toLowerCase();
+
+        // ✅ Caminho principal: login e senha do dono cadastrado no Firebase Auth.
+        // Assim o painel não fica preso se /admins estiver vazio, antigo ou bloqueado por regra.
+        if (user && !user.isAnonymous && emailAtual === ADMIN_EMAIL_AUTORIZADO) {
+            usuarioAdminConfirmado = true;
+            return true;
+        }
+
+        if (!playerId) return false;
+        try {
+            const snap = await get(ref(db, `admins/${playerId}`));
+            usuarioAdminConfirmado = snap.exists() && snap.val() === true;
+            return usuarioAdminConfirmado;
+        } catch (e) {
+            console.warn("Não foi possível validar admin:", e);
+            return false;
+        }
+    }
+
+    async function existeAlgumAdminCadastrado() {
+        try {
+            const snap = await get(ref(db, 'admins'));
+            return snap.exists();
+        } catch (e) {
+            return true;
+        }
+    }
+
+    async function tentarConfigurarPrimeiroAdmin(playerName, roomName) {
+        const nomeDigitado = String(playerName || "").toLowerCase().trim();
+        if (roomName !== ADMIN_ROOM_CODE || nomeDigitado !== LEGACY_FIRST_ADMIN_NAME || !playerId) return false;
+
+        if (await usuarioEhAdminSeguro()) return true;
+
+        const jaExisteAdmin = await existeAlgumAdminCadastrado();
+        if (jaExisteAdmin) return false;
+
+        await set(ref(db, `admins/${playerId}`), true);
+        await push(ref(db, 'adminLogs'), {
+            acao: 'primeiro_admin_configurado',
+            adminUid: playerId,
+            data: Date.now(),
+            aviso: 'Configure as Rules do Firebase e remova o acesso legado se desejar blindagem máxima.'
+        });
+        usuarioAdminConfirmado = true;
+        return true;
+    }
+
+
+    async function configurarAdminPorLoginEmail(user) {
+        if (!user || user.isAnonymous) return false;
+        playerId = user.uid;
+        usuarioLogadoPorSenha = true;
+        emailAdministradorAtual = user.email || "";
+
+        const emailAtual = String(user.email || "").trim().toLowerCase();
+
+        // ✅ Login oficial do dono: se o e-mail for o autorizado, entra no painel.
+        // Também tenta registrar o UID em /admins, mas não trava o painel se a regra do banco impedir.
+        if (emailAtual === ADMIN_EMAIL_AUTORIZADO) {
+            usuarioAdminConfirmado = true;
+            try {
+                await set(ref(db, `admins/${user.uid}`), true);
+                await push(ref(db, 'adminLogs'), {
+                    acao: 'admin_login_email_autorizado',
+                    adminUid: user.uid,
+                    email: user.email || '',
+                    data: Date.now(),
+                    aviso: 'Administrador reconhecido pelo e-mail autorizado.'
+                });
+            } catch(e) {
+                console.warn('Admin autorizado pelo e-mail, mas não foi possível gravar /admins:', e);
+            }
+            return true;
+        }
+
+        if (await usuarioEhAdminSeguro()) return true;
+
+        const jaExisteAdmin = await existeAlgumAdminCadastrado();
+        if (!jaExisteAdmin) {
+            await set(ref(db, `admins/${user.uid}`), true);
+            await push(ref(db, 'adminLogs'), {
+                acao: 'primeiro_admin_por_email_configurado',
+                adminUid: user.uid,
+                email: user.email || '',
+                data: Date.now(),
+                aviso: 'Primeiro administrador cadastrado por login com e-mail e senha.'
+            });
+            usuarioAdminConfirmado = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    async function podeEntrarComoAdmin(playerName, roomName) {
+        if (roomName !== ADMIN_ROOM_CODE) return false;
+        if (await usuarioEhAdminSeguro()) return true;
+        return await tentarConfigurarPrimeiroAdmin(playerName, roomName);
+    }
+
+    async function exigirAdminSeguro() {
+        const ok = playerRole === "admin" && await usuarioEhAdminSeguro();
+        if (!ok) {
+            exibirAlertaDoSistema("Acesso negado 🛡️", "Esta ação exige login de administrador autorizado.");
+            return false;
+        }
+        return true;
+    }
+
+    async function registrarLogAdmin(acao, sala = "", extra = {}) {
+        try {
+            await push(ref(db, 'adminLogs'), {
+                acao,
+                sala: salaSegura(sala),
+                adminUid: playerId || "sem_uid",
+                data: Date.now(),
+                ...extra
+            });
+        } catch (e) {
+            console.warn("Não foi possível registrar log admin:", e);
+        }
+    }
+
+    async function obterSalaAdminAlvo(opcoes = {}) {
+        const { permitirSala00 = false, exigirExistente = true } = opcoes;
+        const salaAlvo = salaSegura(adminTargetRoomInput.value);
+
+        if (!salaAlvo) {
+            exibirAlertaDoSistema("Aviso", "Digite ou selecione o código da sala primeiro.");
+            return null;
+        }
+
+        if (salaAlvo === ADMIN_ROOM_CODE && !permitirSala00) {
+            exibirAlertaDoSistema("Código restrito 🛡️", "A sala <strong>00</strong> é o terminal do administrador e não deve ser alterada por esta ação.");
+            return null;
+        }
+
+        const refSala = ref(db, 'rooms/' + salaAlvo);
+        const snap = await get(refSala);
+
+        if (exigirExistente && !snap.exists()) {
+            exibirAlertaDoSistema("Sala não encontrada", `A sala <strong>${salaAlvo.toUpperCase()}</strong> ainda não existe. Use <strong>LIBERAR / CRIAR SALA</strong> primeiro.`);
+            return null;
+        }
+
+        return { salaAlvo, refSala, snap, data: snap.exists() ? snap.val() : null };
+    }
+
+    function exibirAlertaDoSistema(titulo, texto) {
+        document.getElementById('custom-alert-title').innerText = titulo;
+        document.getElementById('custom-alert-text').innerHTML = texto;
+        document.getElementById('custom-alert-modal').style.display = 'flex';
+    }
+    document.getElementById('close-alert-btn').addEventListener('click', () => {
+        document.getElementById('custom-alert-modal').style.display = 'none';
+        document.body.classList.remove('vitoria-animada');
+    });
+
+    window.addEventListener('error', (ev) => {
+        console.error('Erro geral capturado:', ev.error || ev.message);
+        atualizarStatusSistema('Atenção: o navegador capturou um erro, mas o jogo tentou continuar funcionando. Abra o console se precisar diagnosticar.', '#f1c40f');
+    });
+    window.addEventListener('unhandledrejection', (ev) => {
+        console.error('Promessa rejeitada capturada:', ev.reason);
+        atualizarStatusSistema('Atenção: uma operação online falhou, mas o modo treino e a tela continuam disponíveis.', '#f1c40f');
+    });
+
+    let acaoConfirmadaCallback = null;
+    function exibirConfirmacao(titulo, texto, callbackSim) {
+        document.getElementById('custom-confirm-title').innerHTML = titulo;
+        document.getElementById('custom-confirm-text').innerHTML = texto;
+        document.getElementById('custom-confirm-modal').style.display = 'flex';
+        acaoConfirmadaCallback = callbackSim;
+    }
+
+    document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+        document.getElementById('custom-confirm-modal').style.display = 'none';
+        if (acaoConfirmadaCallback) acaoConfirmadaCallback();
+        acaoConfirmadaCallback = null;
+    });
+
+    document.getElementById('btn-confirm-no').addEventListener('click', () => {
+        document.getElementById('custom-confirm-modal').style.display = 'none';
+        acaoConfirmadaCallback = null;
+    });
+
+    // 🔥 NOVO DISPARADOR DE COMPARTILHAMENTO DE SUGESTÕES PARA O WHATSAPP DO ISIQUEI
+    document.getElementById('btn-submit-feedback').addEventListener('click', () => {
+        const txtFeedback = somenteTextoSeguro(document.getElementById('feedback-text-input').value, 180);
+        if (!txtFeedback) return exibirAlertaDoSistema("Aviso", "Por favor, digite sua sugestão ou comentário antes de enviar.");
+        const nomeUsuario = nomeSeguro(document.getElementById('name-input').value || "Jogador Anônimo");
+        
+        const msgFormatada = encodeURIComponent(`Olá Isiquel! Me chamo ${nomeUsuario} e tenho uma sugestão para o jogo de Damas: ${txtFeedback}`);
+        window.open(`https://wa.me/${WHATSAPP_SUPORTE}?text=${msgFormatada}`, '_blank');
+        document.getElementById('feedback-text-input').value = "";
+    });
+
+    function reproduzirSomDoJogo(tipo) {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            const agora = ctx.currentTime;
+            
+            if (tipo === 'inicio') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(261.63, agora); 
+                osc.frequency.exponentialRampToValueAtTime(523.25, agora + 0.3); 
+                gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora); osc.stop(agora + 0.3);
+            } else if (tipo === 'move') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, agora);
+                gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.08);
+                osc.start(agora); osc.stop(agora + 0.08);
+            } else if (tipo === 'capture') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, agora); osc.frequency.linearRampToValueAtTime(90, agora + 0.15);
+                gain.gain.setValueAtTime(0.2, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.15);
+                osc.start(agora); osc.stop(agora + 0.15);
+            } else if (tipo === 'king') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, agora); osc.frequency.setValueAtTime(880.00, agora + 0.1); 
+                gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.3);
+                osc.start(agora); osc.stop(agora + 0.3);
+            } else if (tipo === 'chat') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, agora); osc.frequency.exponentialRampToValueAtTime(800, agora + 0.08);
+                gain.gain.setValueAtTime(0.08, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
+                osc.start(agora); osc.stop(agora + 0.08);
+            } else if (tipo === 'spectator') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(440, agora + 0.15);
+                gain.gain.setValueAtTime(0.05, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.15);
+                osc.start(agora); osc.stop(agora + 0.15);
+            } else if (tipo === 'bip_aviso') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(880, agora);
+                gain.gain.setValueAtTime(0.12, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.08);
+                osc.start(agora); osc.stop(agora + 0.08);
+            } else if (tipo === 'tic_relogio') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(700, agora);
+                gain.gain.setValueAtTime(0.1, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.05);
+                osc.start(agora); osc.stop(agora + 0.05);
+            } else if (tipo === 'gongo_start') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(330, agora); osc.frequency.exponentialRampToValueAtTime(150, agora + 0.5);
+                gain.gain.setValueAtTime(0.25, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.5);
+                osc.start(agora); osc.stop(agora + 0.5);
+            } else if (tipo === 'saida_rival') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(290, agora); osc.frequency.linearRampToValueAtTime(120, agora + 0.4);
+                gain.gain.setValueAtTime(0.2, agora); gain.gain.linearRampToValueAtTime(0.001, agora + 0.4);
+                osc.start(agora); osc.stop(agora + 0.4);
+            } else if (tipo === 'fanfarra_vitoria') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, agora);
+                gain.gain.setValueAtTime(0.15, agora); gain.gain.linearRampToValueAtTime(0.01, agora + 0.4);
+                osc.start(agora); osc.stop(agora + 0.4);
+            }
+        } catch (e) { console.log("Áudio bloqueado", e); }
+    }
+
+    const lobbyScreen = document.getElementById('lobby-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const nameInput = document.getElementById('name-input');
+    const roomInput = document.getElementById('room-input');
+    const whatsappInput = document.getElementById('whatsapp-input');
+    const whatsappConsent = document.getElementById('whatsapp-consent');
+    const systemHealthText = document.getElementById('system-health-text');
+    const joinBtn = document.getElementById('join-btn');
+    const spectateBtn = document.getElementById('spectate-btn');
+    const practiceBtn = document.getElementById('practice-btn');
+    const leaveBtn = document.getElementById('leave-btn');
+    const resetRoomBtn = document.getElementById('reset-room-btn');
+    const drawBtn = document.getElementById('draw-btn');
+    const displayRoom = document.getElementById('display-room');
+    const turnIndicator = document.getElementById('turn-indicator');
+    const playersNamesEl = document.getElementById('players-names');
+    const playerBadge = document.getElementById('player-badge');
+    const boardEl = document.getElementById('board');
+    const authStatusEl = document.getElementById('auth-status');
+    const downloadBtnLobby = document.getElementById('download-btn-lobby');
+    const adminEmailInput = document.getElementById('admin-email-input');
+    const adminPasswordInput = document.getElementById('admin-password-input');
+    const adminLoginBtn = document.getElementById('admin-login-btn');
+    const adminLogoutBtn = document.getElementById('admin-logout-btn');
+    const adminLoginStatus = document.getElementById('admin-login-status');
+    const centralAdminMenu = document.getElementById('central-admin-menu');
+    const centralAdminDamasBtn = document.getElementById('central-admin-damas-btn');
+    const centralAdminXadrezBtn = document.getElementById('central-admin-xadrez-btn');
+    const centralAdminBackBtn = document.getElementById('central-admin-back-btn');
+    const centralAdminNote = document.getElementById('central-admin-note');
+    const adminEntryCard = document.getElementById('game-card-admin');
+    const adminLoginPanelBox = document.getElementById('admin-login-panel');
+    const adminLoginBackBtn = document.getElementById('admin-login-back-btn');
+    
+    const gameTimerEl = document.getElementById('game-timer');
+    const liveSpectatorsEl = document.getElementById('live-spectators');
+    const chatBoxMessages = document.getElementById('chat-box-messages');
+    const chatInputField = document.getElementById('chat-input-field');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const toggleChatVisibility = document.getElementById('toggle-chat-visibility');
+    const chatInputWrapper = document.getElementById('chat-input-wrapper');
+
+    const voiceVideoCallPanel = document.getElementById('voice-video-call-panel');
+    const startCallBtn = document.getElementById('start-call-btn');
+    const startAudioCallBtn = document.getElementById('start-audio-call-btn');
+    const endCallBtn = document.getElementById('end-call-btn');
+    const toggleMicBtn = document.getElementById('toggle-mic-btn');
+    const toggleCameraBtn = document.getElementById('toggle-camera-btn');
+    const callSizeMinusBtn = document.getElementById('call-size-minus-btn');
+    const callSizePlusBtn = document.getElementById('call-size-plus-btn');
+    const localVideoEl = document.getElementById('local-video');
+    const remoteVideoEl = document.getElementById('remote-video');
+    const remoteAudioEl = document.getElementById('remote-audio');
+    const unlockAudioBtn = document.getElementById('unlock-audio-btn');
+    const callStatusText = document.getElementById('call-status-text');
+
+    function atualizarStatusSistema(texto, cor = '') {
+        if (!systemHealthText) return;
+        systemHealthText.innerText = texto;
+        if (cor) systemHealthText.style.color = cor;
+    }
+
+    function carregarPreferenciasLocais() {
+        try {
+            const nomeSalvo = localStorage.getItem('damas_nome_jogador') || '';
+            const zapSalvo = localStorage.getItem('damas_whatsapp_jogador') || '';
+            const consentSalvo = localStorage.getItem('damas_whatsapp_consent') === 'sim';
+            if (nomeSalvo && !nameInput.value) nameInput.value = nomeSeguro(nomeSalvo);
+            if (zapSalvo && whatsappInput && !whatsappInput.value) whatsappInput.value = telefoneSeguro(zapSalvo);
+            if (whatsappConsent) whatsappConsent.checked = consentSalvo;
+        } catch(e) { console.warn('Preferências locais indisponíveis:', e); }
+    }
+
+    function salvarPreferenciasLocais() {
+        try {
+            localStorage.setItem('damas_nome_jogador', nomeSeguro(nameInput.value || ''));
+            if (whatsappInput) localStorage.setItem('damas_whatsapp_jogador', telefoneSeguro(whatsappInput.value || ''));
+            if (whatsappConsent) localStorage.setItem('damas_whatsapp_consent', whatsappConsent.checked ? 'sim' : 'nao');
+        } catch(e) { console.warn('Não foi possível salvar preferências locais:', e); }
+    }
+
+    carregarPreferenciasLocais();
+    [nameInput, whatsappInput, whatsappConsent].filter(Boolean).forEach(el => {
+        el.addEventListener('input', salvarPreferenciasLocais);
+        el.addEventListener('change', salvarPreferenciasLocais);
+    });
+
+
+    const adminPanel = document.getElementById('admin-panel');
+    const adminRoomsDashboardList = document.getElementById('admin-rooms-dashboard-list');
+    const adminTargetRoomInput = document.getElementById('admin-target-room');
+
+    const rulesModal = document.getElementById('rules-modal');
+    const rulesBtnLobby = document.getElementById('rules-btn-lobby');
+    const rulesBtnGame = document.getElementById('rules-btn-game');
+    const flipBoardBtn = document.getElementById('flip-board-btn');
+    const closeRulesBtn = document.getElementById('close-rules-btn');
+
+    const rankModal = document.getElementById('rank-modal');
+    const rankBtnLobby = document.getElementById('rank-btn-lobby');
+    const closeRankBtn = document.getElementById('close-rank-btn');
+    const rankTableBody = document.getElementById('rank-table-body');
+    const practiceRankModal = document.getElementById('practice-rank-modal');
+    const practiceRankBtnLobby = document.getElementById('practice-rank-btn-lobby');
+    const closePracticeRankBtn = document.getElementById('close-practice-rank-btn');
+    const practiceRankTableBody = document.getElementById('practice-rank-table-body');
+    const combinedPracticeRankTableBody = document.getElementById('combined-practice-rank-table-body');
+    const practicePodiumContent = document.getElementById('practice-podium-content');
+    const livePodiumContent = document.getElementById('live-podium-content');
+    const motivateBox = document.getElementById('motivate-box');
+    
+    const difficultyBox = document.getElementById('difficulty-box');
+    const btnChooseEasy = document.getElementById('btn-choose-easy');
+    const btnChooseMedium = document.getElementById('btn-choose-medium');
+    const btnChooseHard = document.getElementById('btn-choose-hard');
+    const btnChooseLearn = document.getElementById('btn-choose-learn');
+    const learningCoachBox = document.getElementById('learning-coach-box');
+    const learningCoachText = document.getElementById('learning-coach-text');
+    const btnLearningRefresh = document.getElementById('btn-learning-refresh');
+    const btnLearningToggle = document.getElementById('btn-learning-toggle');
+
+    function abrirEntradaAdminInicial() {
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hub = document.getElementById('games-hub-panel');
+        if (hub) hub.style.display = 'block';
+        if (lobbyScreen) lobbyScreen.style.display = 'none';
+        if (gameScreen) gameScreen.style.display = 'none';
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.remove('central-hidden');
+            adminLoginPanelBox.style.display = 'block';
+            adminLoginPanelBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (adminLoginStatus && (!auth.currentUser || auth.currentUser.isAnonymous)) {
+            adminLoginStatus.innerText = 'Digite o e-mail e a senha do dono para administrar a plataforma.';
+        }
+    }
+
+    function fecharEntradaAdminInicial() {
+        if (centralAdminMenu) centralAdminMenu.style.display = 'none';
+        if (centralAdminNote) centralAdminNote.style.display = 'none';
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.add('central-hidden');
+            adminLoginPanelBox.style.display = 'none';
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function mostrarMenuCentralAdmin(mensagem = "") {
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.remove('central-hidden');
+            adminLoginPanelBox.style.display = 'block';
+        }
+        if (centralAdminMenu) centralAdminMenu.style.display = "block";
+        if (centralAdminNote) {
+            centralAdminNote.style.display = mensagem ? "block" : "none";
+            centralAdminNote.innerHTML = mensagem || "";
+        }
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hub = document.getElementById('games-hub-panel');
+        if (hub) hub.style.display = 'block';
+        if (lobbyScreen) lobbyScreen.style.display = 'none';
+        if (gameScreen) gameScreen.style.display = 'none';
+    }
+
+
+    async function abrirAdminDamasCentral() {
+        if (!auth.currentUser || auth.currentUser.isAnonymous || !(await usuarioEhAdminSeguro())) {
+            exibirAlertaDoSistema("Acesso negado 🛡️", "Entre primeiro com o login do administrador.");
+            return;
+        }
+        document.body.classList.remove('platform-start-active');
+        document.body.classList.remove('mode-selecting');
+        document.body.classList.add('game-selected');
+        document.body.classList.remove('domino-selected');
+        if (centralAdminNote) {
+            centralAdminNote.style.display = "block";
+            centralAdminNote.innerHTML = "Abrindo painel da <strong>Damas</strong>...";
+        }
+        playerRole = "admin";
+        nameInput.value = "Administrador";
+        roomInput.value = ADMIN_ROOM_CODE;
+        await joinRoom(ADMIN_ROOM_CODE, "Administrador", false);
+    }
+
+
+    adminLoginBtn.addEventListener('click', async () => {
+        const email = String(adminEmailInput.value || '').trim();
+        const senha = String(adminPasswordInput.value || '');
+        if (!email || !senha) {
+            exibirAlertaDoSistema("Login do Administrador", "Digite o e-mail e a senha do administrador.");
+            return;
+        }
+
+        adminLoginBtn.disabled = true;
+        adminLoginBtn.innerText = "Entrando...";
+        adminLoginStatus.innerText = "Validando login do administrador...";
+
+        try {
+            const cred = await comTempoLimite(signInWithEmailAndPassword(auth, email, senha), TEMPO_MAX_LOGIN_ADMIN_MS, "O login demorou demais. Confira a internet, o Firebase Auth e se o usuário foi criado.");
+            const ok = await configurarAdminPorLoginEmail(cred.user);
+            if (!ok) {
+                adminLoginStatus.innerText = "Login feito, mas este usuário ainda não está autorizado como admin.";
+                exibirAlertaDoSistema(
+                    "Admin não autorizado",
+                    "O e-mail e senha estão corretos, mas este usuário ainda não está cadastrado em <strong>/admins</strong>. Cadastre o UID deste usuário no Firebase ou apague /admins para transformar este primeiro login no dono."
+                );
+                return;
+            }
+
+            usuarioAdminConfirmado = true;
+            playerRole = "admin";
+            nameInput.value = "Administrador";
+            roomInput.value = ADMIN_ROOM_CODE;
+            adminPasswordInput.value = "";
+            adminLoginBtn.style.display = "none";
+            adminLogoutBtn.style.display = "block";
+            adminLoginStatus.innerText = `Admin conectado: ${cred.user.email || 'usuário autorizado'}`;
+            mostrarMenuCentralAdmin("Login confirmado. Agora escolha qual jogo deseja administrar.");
+        } catch (e) {
+            console.error("Erro no login admin:", e);
+            let msg = "Não foi possível entrar. Confira o e-mail, a senha e se o login Email/Senha está ativado no Firebase Authentication.";
+            if (e && e.code === 'auth/invalid-credential') msg = "E-mail ou senha inválidos. Confirme se esse usuário foi criado em Authentication > Usuários.";
+            if (e && e.code === 'auth/user-not-found') msg = "Esse e-mail ainda não foi criado em Authentication > Usuários.";
+            if (e && e.code === 'auth/wrong-password') msg = "Senha incorreta.";
+            if (e && e.code === 'auth/too-many-requests') msg = "Muitas tentativas. Aguarde um pouco e tente novamente.";
+            if (e && e.message && e.message.includes('demorou demais')) msg = e.message;
+            adminLoginStatus.innerText = msg;
+            exibirAlertaDoSistema("Falha no Login", msg);
+        } finally {
+            adminLoginBtn.disabled = false;
+            adminLoginBtn.innerText = "Entrar no Painel Admin";
+        }
+    });
+
+    adminPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') adminLoginBtn.click();
+    });
+
+    adminLogoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+        } catch(e) { console.warn("Erro ao sair do admin:", e); }
+        usuarioAdminConfirmado = false;
+        usuarioLogadoPorSenha = false;
+        emailAdministradorAtual = "";
+        playerRole = "spectator";
+        adminLoginBtn.style.display = "block";
+        adminLogoutBtn.style.display = "none";
+        adminLoginStatus.innerText = "Admin desconectado. Jogadores comuns não usam esta área.";
+        if (centralAdminMenu) centralAdminMenu.style.display = "none";
+        if (centralAdminNote) centralAdminNote.style.display = "none";
+        adminPanel.style.display = "none";
+        gameScreen.style.display = 'none';
+        lobbyScreen.style.display = 'none';
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hub = document.getElementById('games-hub-panel');
+        if (hub) hub.style.display = 'block';
+        if (adminLoginPanelBox) {
+            adminLoginPanelBox.classList.add('central-hidden');
+            adminLoginPanelBox.style.display = 'none';
+        }
+        iniciarAutenticacaoAnonima();
+    });
+
+    function ligarCardAdminInicial() {
+        if (!adminEntryCard || adminEntryCard.dataset.adminBind === '1') return;
+        adminEntryCard.dataset.adminBind = '1';
+        adminEntryCard.addEventListener('click', abrirEntradaAdminInicial);
+        adminEntryCard.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                abrirEntradaAdminInicial();
+            }
+        });
+    }
+    ligarCardAdminInicial();
+    if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', fecharEntradaAdminInicial);
+
+    if (centralAdminDamasBtn) centralAdminDamasBtn.addEventListener('click', abrirAdminDamasCentral);
+    if (centralAdminBackBtn) centralAdminBackBtn.addEventListener('click', () => {
+        if (centralAdminNote) centralAdminNote.style.display = "none";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    rulesBtnLobby.addEventListener('click', () => rulesModal.style.display = 'flex');
+    rulesBtnGame.addEventListener('click', () => rulesModal.style.display = 'flex');
+    closeRulesBtn.addEventListener('click', () => rulesModal.style.display = 'none');
+    if (flipBoardBtn) {
+        flipBoardBtn.addEventListener('click', () => {
+            tabuleiroViradoManual = !tabuleiroViradoManual;
+            if (currentGameState && currentGameState.board) generateBoardUI(currentGameState.board);
+        });
+    }
+
+    rankBtnLobby.addEventListener('click', () => { networkLeaderboard(); });
+    async function networkLeaderboard() { rankModal.style.display = 'flex'; await Promise.all([loadLeaderboard(), loadPracticeLeaderboard()]); }
+    closeRankBtn.addEventListener('click', () => rankModal.style.display = 'none');
+
+    practiceRankBtnLobby.addEventListener('click', () => { networkPracticeLeaderboard(); });
+    async function networkPracticeLeaderboard() { rankModal.style.display = 'flex'; await Promise.all([loadLeaderboard(), loadPracticeLeaderboard()]); }
+    closePracticeRankBtn.addEventListener('click', () => practiceRankModal.style.display = 'none');
+
+    downloadBtnLobby.addEventListener('click', () => { window.location.href = 'jogo.apk'; });
+
+    async function carregarPodiumLobby() {
+        try {
+            const rankRef = ref(db, 'leaderboard');
+            onValue(rankRef, (snapshot) => {
+                const data = snapshot.val();
+                limparElemento(livePodiumContent);
+                if (!data) {
+                    const vazio = document.createElement('div');
+                    vazio.style.cssText = 'font-size:0.85rem; color:#aaa; padding:5px 0;';
+                    vazio.innerText = 'Nenhuma batalha online registrada ainda!';
+                    livePodiumContent.appendChild(vazio);
+                    motivateBox.innerText = "⚔️ Seja o primeiro a inaugurar o tabuleiro e assumir o topo!";
+                    return;
+                }
+                const sorted = Object.values(data)
+                    .map(p => ({ name: nomeSeguro(p.name || 'Jogador'), wins: numeroSeguro(p.wins), losses: numeroSeguro(p.losses) }))
+                    .sort((a, b) => b.wins - a.wins)
+                    .slice(0, 3);
+                let medalhas = ["🥇", "🥈", "🥉"];
+                sorted.forEach((player, idx) => {
+                    const row = document.createElement('div');
+                    row.className = "podium-row";
+
+                    const left = document.createElement('div');
+                    const strong = document.createElement('strong');
+                    strong.innerText = player.name;
+                    left.append(document.createTextNode(`${medalhas[idx]} `), strong);
+                    if (player.losses === 0 && player.wins > 0) {
+                        const invicto = document.createElement('span');
+                        invicto.style.cssText = 'color:#f1c40f; font-size:0.75rem; font-weight:bold;';
+                        invicto.innerText = ' 🔥 INTACTO';
+                        left.appendChild(invicto);
+                    }
+
+                    const right = document.createElement('div');
+                    right.style.cssText = 'color:#2ecc71; font-weight:bold;';
+                    right.innerText = `${player.wins} Vitórias`;
+                    row.append(left, right);
+                    livePodiumContent.appendChild(row);
+                });
+                if (sorted.length > 0) {
+                    motivateBox.innerText = `⚔️ Desafie o topo! ${sorted[0].name} está dominando. Crie uma sala online e marque um confronto direto contra os campeões!`;
+                }
+            });
+        } catch(e) { console.log("Erro ao carregar podium", e); }
+    }
+
+    function liberarLobbyBasico(mensagem, modoLimitado = false) {
+        authStatusEl.innerText = mensagem;
+        atualizarStatusSistema(modoLimitado
+            ? 'Modo treino, modo aprender e regras liberados. Online aguardando Firebase sem travar o jogo.'
+            : 'Sistema online ativo. Multiplayer, ranking, torneios, chamadas e painel admin disponíveis conforme permissão.',
+            modoLimitado ? '#f1c40f' : '#cbd5e1'
+        );
+        nameInput.disabled = false;
+        roomInput.disabled = false;
+        if (whatsappInput) whatsappInput.disabled = false;
+        if (whatsappConsent) whatsappConsent.disabled = false;
+        practiceBtn.disabled = false;
+        rulesBtnLobby.disabled = false;
+        rankBtnLobby.disabled = modoLimitado;
+        practiceRankBtnLobby.disabled = false;
+        joinBtn.disabled = modoLimitado;
+        spectateBtn.disabled = modoLimitado;
+    }
+
+    let tentativaAuthEmAndamento = false;
+    function iniciarAutenticacaoAnonima() {
+        if (auth.currentUser && !auth.currentUser.isAnonymous) return;
+        if (tentativaAuthEmAndamento) return;
+        tentativaAuthEmAndamento = true;
+        signInAnonymously(auth)
+            .catch(err => {
+                console.warn("Falha na autenticação anônima:", err);
+                authStatusEl.style.color = "#f1c40f";
+                liberarLobbyBasico("Modo treino liberado • Online aguardando Firebase", true);
+            })
+            .finally(() => { tentativaAuthEmAndamento = false; });
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            playerId = user.uid;
+            authStatusEl.style.color = "#2ecc71";
+            liberarLobbyBasico("Conexão Segura Ativa ✓", false);
+
+            if (!user.isAnonymous) {
+                usuarioLogadoPorSenha = true;
+                emailAdministradorAtual = user.email || "";
+                const okAdmin = await usuarioEhAdminSeguro();
+                if (okAdmin) {
+                    adminLoginBtn.style.display = "none";
+                    adminLogoutBtn.style.display = "block";
+                    adminLoginStatus.innerText = `Admin conectado: ${user.email || 'usuário autorizado'}`;
+                    if (adminLoginPanelBox) {
+                        adminLoginPanelBox.classList.remove('central-hidden');
+                        adminLoginPanelBox.style.display = 'block';
+                    }
+                    if (centralAdminMenu) centralAdminMenu.style.display = "block";
+                } else {
+                    adminLoginStatus.innerText = "Usuário logado por e-mail, mas ainda não autorizado como administrador.";
+                }
+            }
+
+            carregarPodiumLobby();
+            carregarPodiumTreinoLobby();
+            carregarTorneiosLobby();
+            carregarPartidasAoVivoLobby(); 
+        } else {
+            iniciarAutenticacaoAnonima();
+        }
+    });
+
+    // Se o Firebase demorar ou ficar pendurado, o modo treino não pode ficar travado.
+    setTimeout(() => {
+        if (!playerId) {
+            authStatusEl.style.color = "#f1c40f";
+            liberarLobbyBasico("Modo treino liberado • Autenticação online demorando", true);
+        }
+    }, 2500);
+
+    // Dispara a autenticação logo no carregamento, sem esperar o primeiro retorno do listener.
+    iniciarAutenticacaoAnonima();
+
+    function getInitialBoard() {
+        let board = Array(8).fill(null).map(() => Array(8).fill(0));
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if ((r + c) % 2 === 1) {
+                    if (r < 3) board[r][c] = 3;      
+                    else if (r > 4) board[r][c] = 1; 
+                }
+            }
+        }
+        return board;
+    }
+
+    function chaveRankingTreino(nome) {
+        const base = String(nome || "Jogador")
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9_-]/g, "_")
+            .replace(/_+/g, "_")
+            .replace(/^_+|_+$/g, "")
+            .slice(0, 30);
+        return base || "jogador";
+    }
+
+    function calcularPontosTreino(stats) {
+        const d = stats?.difficulty || {};
+        const facil = numeroSeguro(d.facil?.wins);
+        const medio = numeroSeguro(d.medio?.wins);
+        const dificil = numeroSeguro(d.dificil?.wins);
+        return facil + (medio * 3) + (dificil * 6);
+    }
+
+    function melhorNivelTreino(stats) {
+        const d = stats?.difficulty || {};
+        if (numeroSeguro(d.dificil?.wins) > 0) return "Difícil";
+        if (numeroSeguro(d.medio?.wins) > 0) return "Médio";
+        if (numeroSeguro(d.facil?.wins) > 0) return "Fácil";
+        return "—";
+    }
+
+    function ordenarRankingTreino(data) {
+        return Object.values(data || {})
+            .map(p => {
+                const wins = numeroSeguro(p.wins);
+                const losses = numeroSeguro(p.losses);
+                const games = wins + losses;
+                const pontos = numeroSeguro(p.score, calcularPontosTreino(p));
+                return {
+                    ...p,
+                    name: nomeSeguro(p.name || "Jogador"),
+                    wins,
+                    losses,
+                    games,
+                    score: pontos,
+                    bestLevel: p.bestLevel || melhorNivelTreino(p),
+                    pct: games > 0 ? Math.round((wins / games) * 100) : 0
+                };
+            })
+            .sort((a, b) => (b.score - a.score) || (b.wins - a.wins) || (a.losses - b.losses));
+    }
+
+    async function registrarResultadoTreino(jogadorGanhou) {
+        if (!isPracticeMode || hasRecordedResult) return;
+        if (practiceDifficulty === "aprender") return;
+        hasRecordedResult = true;
+
+        const nomeJogador = nomeSeguro(currentGameState?.p1Name || nameInput.value || "Jogador");
+        const dificuldade = ["facil", "medio", "dificil"].includes(practiceDifficulty) ? practiceDifficulty : "medio";
+        const chave = chaveRankingTreino(nomeJogador);
+        const rankRef = ref(db, `practiceLeaderboard/${chave}`);
+
+        try {
+            await runTransaction(rankRef, (atual) => {
+                const stats = atual || {
+                    name: nomeJogador,
+                    wins: 0,
+                    losses: 0,
+                    games: 0,
+                    score: 0,
+                    bestLevel: "—",
+                    difficulty: {
+                        facil: { wins: 0, losses: 0 },
+                        medio: { wins: 0, losses: 0 },
+                        dificil: { wins: 0, losses: 0 }
+                    }
+                };
+                stats.name = nomeJogador;
+                stats.wins = numeroSeguro(stats.wins);
+                stats.losses = numeroSeguro(stats.losses);
+                stats.games = numeroSeguro(stats.games);
+                stats.difficulty = stats.difficulty || {};
+                stats.difficulty.facil = stats.difficulty.facil || { wins: 0, losses: 0 };
+                stats.difficulty.medio = stats.difficulty.medio || { wins: 0, losses: 0 };
+                stats.difficulty.dificil = stats.difficulty.dificil || { wins: 0, losses: 0 };
+                stats.difficulty[dificuldade].wins = numeroSeguro(stats.difficulty[dificuldade].wins);
+                stats.difficulty[dificuldade].losses = numeroSeguro(stats.difficulty[dificuldade].losses);
+
+                if (jogadorGanhou) {
+                    stats.wins += 1;
+                    stats.difficulty[dificuldade].wins += 1;
+                } else {
+                    stats.losses += 1;
+                    stats.difficulty[dificuldade].losses += 1;
+                }
+
+                stats.games = stats.wins + stats.losses;
+                stats.score = calcularPontosTreino(stats);
+                stats.bestLevel = melhorNivelTreino(stats);
+                stats.lastDifficulty = dificuldade;
+                stats.lastResult = jogadorGanhou ? "win" : "loss";
+                stats.updatedAt = Date.now();
+                return stats;
+            });
+        } catch (e) {
+            console.warn("Não foi possível registrar ranking do treino no Firebase:", e);
+            try {
+                const localKey = `practiceLeaderboardBackup:${chave}`;
+                const atual = JSON.parse(localStorage.getItem(localKey) || "{}");
+                atual.name = nomeJogador;
+                atual.wins = numeroSeguro(atual.wins) + (jogadorGanhou ? 1 : 0);
+                atual.losses = numeroSeguro(atual.losses) + (jogadorGanhou ? 0 : 1);
+                atual.games = atual.wins + atual.losses;
+                atual.updatedAt = Date.now();
+                localStorage.setItem(localKey, JSON.stringify(atual));
+            } catch(_) {}
+        }
+    }
+
+    async function loadPracticeLeaderboard() {
+        const alvosTabelaTreino = [practiceRankTableBody, combinedPracticeRankTableBody].filter(Boolean);
+        const setTreinoHtml = (conteudo) => alvosTabelaTreino.forEach(t => { t.innerHTML = conteudo; });
+        setTreinoHtml("<tr><td colspan='6'>Buscando ranking do treino...</td></tr>");
+        try {
+            const snapshot = await get(ref(db, 'practiceLeaderboard'));
+            const data = snapshot.val();
+            if (!data) {
+                setTreinoHtml("<tr><td colspan='6'>Nenhuma partida contra a máquina registrada ainda!</td></tr>");
+                return;
+            }
+            const sorted = ordenarRankingTreino(data);
+            alvosTabelaTreino.forEach(t => limparElemento(t));
+            sorted.forEach((player, index) => {
+                alvosTabelaTreino.forEach(tbody => {
+                    const row = document.createElement('tr');
+                    const pos = document.createElement('td'); pos.innerHTML = `<strong>#${index + 1}</strong>`;
+                    const name = criarTexto('td', player.name);
+                    const wins = criarTexto('td', player.wins); wins.style.cssText = 'color:#2ecc71; font-weight:bold;';
+                    const losses = criarTexto('td', player.losses); losses.style.cssText = 'color:#e74c3c;';
+                    const best = criarTexto('td', player.bestLevel);
+                    const score = criarTexto('td', `${player.score} pts`); score.style.cssText = 'color:#f1c40f; font-weight:bold;';
+                    row.append(pos, name, wins, losses, best, score);
+                    tbody.appendChild(row);
+                });
+            });
+        } catch(e) {
+            console.error("Erro ao carregar ranking do treino:", e);
+            setTreinoHtml("<tr><td colspan='6'>Não foi possível carregar o ranking do treino agora.</td></tr>");
+        }
+    }
+
+    function carregarPodiumTreinoLobby() {
+        try {
+            const rankRef = ref(db, 'practiceLeaderboard');
+            onValue(rankRef, (snapshot) => {
+                const data = snapshot.val();
+                limparElemento(practicePodiumContent);
+                if (!data) {
+                    const vazio = document.createElement('div');
+                    vazio.style.cssText = 'font-size:0.85rem; color:#aaa; padding:5px 0;';
+                    vazio.innerText = 'Ainda não há vitórias contra a máquina. Seja o primeiro a vencer o robô!';
+                    practicePodiumContent.appendChild(vazio);
+                    return;
+                }
+                const sorted = ordenarRankingTreino(data).slice(0, 3);
+                const medalhas = ["🥇", "🥈", "🥉"];
+                sorted.forEach((player, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'practice-ranking-row';
+                    const left = criarTexto('div', `${medalhas[idx]} ${player.name} • ${player.bestLevel}`);
+                    const right = criarTexto('div', `${player.score} pts`, 'practice-ranking-score');
+                    row.append(left, right);
+                    practicePodiumContent.appendChild(row);
+                });
+            });
+        } catch(e) {
+            console.warn("Erro ao carregar pódio do treino:", e);
+        }
+    }
+
+    async function loadLeaderboard() {
+        rankTableBody.innerHTML = "<tr><td colspan='5'>Buscando pontuações...</td></tr>";
+        const rankRef = ref(db, 'leaderboard');
+        const snapshot = await get(rankRef);
+        const data = snapshot.val();
+        if (!data) {
+            rankTableBody.innerHTML = "<tr><td colspan='5'>Nenhuma partida registrada ainda!</td></tr>";
+            return;
+        }
+        const sortedPlayers = Object.values(data)
+            .map(p => ({ name: nomeSeguro(p.name || 'Jogador'), wins: numeroSeguro(p.wins), losses: numeroSeguro(p.losses) }))
+            .sort((a, b) => b.wins - a.wins);
+        limparElemento(rankTableBody);
+        sortedPlayers.forEach((player, index) => {
+            const totalGames = player.wins + player.losses;
+            const pct = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0;
+            const row = document.createElement('tr');
+            const pos = document.createElement('td'); pos.innerHTML = `<strong>#${index + 1}</strong>`;
+            const name = criarTexto('td', player.name);
+            const wins = criarTexto('td', player.wins); wins.style.cssText = 'color:#2ecc71; font-weight:bold;';
+            const losses = criarTexto('td', player.losses); losses.style.cssText = 'color:#e74c3c;';
+            const aproveitamento = document.createElement('td');
+            const badge = criarTexto('span', `${pct}%`, 'badge');
+            badge.style.backgroundColor = '#34495e';
+            aproveitamento.appendChild(badge);
+            row.append(pos, name, wins, losses, aproveitamento);
+            rankTableBody.appendChild(row);
+        });
+    }
+
+    async function updatePlayerRanking(isWin, winnerName) {
+        if (isPracticeMode || hasRecordedResult) return;
+        hasRecordedResult = true;
+        const nomeFinal = nomeSeguro(winnerName);
+        if (!playerId) {
+            console.warn('Ranking online não atualizado: jogador ainda sem UID.');
+            return;
+        }
+        const userRankRef = ref(db, 'leaderboard/' + playerId);
+        try {
+            await runTransaction(userRankRef, (atual) => {
+                const stats = atual || { name: nomeFinal, wins: 0, losses: 0, updatedAt: 0 };
+                stats.name = nomeFinal;
+                stats.wins = numeroSeguro(stats.wins);
+                stats.losses = numeroSeguro(stats.losses);
+                if (isWin) stats.wins += 1;
+                else stats.losses += 1;
+                stats.updatedAt = Date.now();
+                return stats;
+            });
+        } catch (e) {
+            console.warn('Não foi possível atualizar ranking online no Firebase:', e);
+            try {
+                const key = `leaderboardBackup:${playerId}`;
+                const atual = JSON.parse(localStorage.getItem(key) || '{}');
+                atual.name = nomeFinal;
+                atual.wins = numeroSeguro(atual.wins) + (isWin ? 1 : 0);
+                atual.losses = numeroSeguro(atual.losses) + (isWin ? 0 : 1);
+                atual.updatedAt = Date.now();
+                localStorage.setItem(key, JSON.stringify(atual));
+            } catch(_) {}
+        }
+    }
+
+    joinBtn.addEventListener('click', () => {
+        const playerName = nomeSeguro(nameInput.value);
+        const roomName = salaSegura(roomInput.value);
+        if (!playerName) return exibirAlertaDoSistema("Identificação", "Por favor, digite seu nome para continuar.");
+        if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe o código da sala para conectar.");
+        difficultyBox.style.display = "none";
+        isPracticeMode = false;
+        hasRecordedResult = false;
+        alertaFimPartidaMostrado = false;
+        lockPieceForMultiCapture = null;
+        ultimoContadorEspectadores = 0;
+        roomId = roomName;
+        registrarJogadorComunidade(playerName);
+        joinRoom(roomName, playerName, false);
+    });
+
+    spectateBtn.addEventListener('click', () => {
+        const roomName = salaSegura(roomInput.value);
+        if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe o código da sala para assistir.");
+        difficultyBox.style.display = "none";
+        isPracticeMode = false;
+        hasRecordedResult = false;
+        alertaFimPartidaMostrado = false;
+        lockPieceForMultiCapture = null;
+        ultimoContadorEspectadores = 0;
+        roomId = roomName;
+        registrarJogadorComunidade(nameInput.value || "Olheiro");
+        joinRoom(roomName, "Olheiro", true);
+    });
+
+    practiceBtn.addEventListener('click', () => {
+        difficultyBox.style.display = difficultyBox.style.display === "flex" ? "none" : "flex";
+    });
+
+    btnChooseEasy.addEventListener('click', () => { isLearningMode = false; practiceDifficulty = "facil"; iniciarTreinoDireto(); });
+    btnChooseMedium.addEventListener('click', () => { isLearningMode = false; practiceDifficulty = "medio"; iniciarTreinoDireto(); });
+    btnChooseHard.addEventListener('click', () => { isLearningMode = false; practiceDifficulty = "dificil"; iniciarTreinoDireto(); });
+    btnChooseLearn.addEventListener('click', () => { isLearningMode = true; practiceDifficulty = "aprender"; learningTipsVisible = true; iniciarTreinoDireto(); });
+
+    btnLearningRefresh.addEventListener('click', () => {
+        if (!isLearningMode || !currentGameState || currentGameState.status !== "playing" || currentGameState.turn !== 1) return;
+        atualizarDicaAprendizado(true);
+    });
+
+    btnLearningToggle.addEventListener('click', () => {
+        learningTipsVisible = !learningTipsVisible;
+        btnLearningToggle.innerText = learningTipsVisible ? "Ocultar dicas" : "Mostrar dicas";
+        atualizarDicaAprendizado(true);
+    });
+
+    function iniciarTreinoDireto() {
+        const playerName = nameInput.value.trim() || "Você";
+        difficultyBox.style.display = "none";
+        isPracticeMode = true;
+        hasRecordedResult = false;
+        alertaFimPartidaMostrado = false;
+        lockPieceForMultiCapture = null;
+        playerRole = "p1";
+        registrarJogadorComunidade(playerName);
+        setupPracticeGame(playerName);
+    }
+
+    function runLocalTimer(startTimestamp, gameStatus) {
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        if (gameStatus !== "playing" || !startTimestamp) {
+            if (gameStatus === "waiting") gameTimerEl.innerText = "⏱️ Aguardando";
+            return;
+        }
+        gameTimerInterval = setInterval(() => {
+            const momentoAgora = Date.now();
+            const totalSeconds = Math.floor((momentoAgora - startTimestamp) / 1000);
+            if (totalSeconds < 0) return;
+            const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            gameTimerEl.innerText = `⏱️ ${mins}:${secs}`;
+
+            if (timestampInicioTurnoAtual > 0) {
+                const segundosNoTurno = Math.floor((momentoAgora - timestampInicioTurnoAtual) / 1000);
+                if (segundosNoTurno >= 10 && !jaAlertouTurnoDemorado) {
+                    jaAlertouTurnoDemorado = true;
+                    
+                    const seuTurnoE1 = (currentGameState && currentGameState.turn === 1 && playerRole === "p1");
+                    const seuTurnoE2 = (currentGameState && currentGameState.turn === 2 && playerRole === "p2");
+                    const noModoTreinoSuaVez = (isPracticeMode && currentGameState && currentGameState.turn === 1);
+
+                    if (seuTurnoE1 || seuTurnoE2 || noModoTreinoSuaVez) {
+                        reproduzirSomDoJogo('bip_aviso');
+                        turnIndicator.classList.add('tempo-estourado');
+                    }
+                }
+            }
+        }, 1000);
+    }
+
+    toggleChatVisibility.addEventListener('click', () => {
+        isChatMutedLocally = !isChatMutedLocally;
+        if (isChatMutedLocally) {
+            toggleChatVisibility.innerText = "Ligar Chat";
+            toggleChatVisibility.classList.add('off');
+            chatBoxMessages.style.opacity = "0.15";
+            chatBoxMessages.style.pointerEvents = "none";
+            chatInputWrapper.style.display = "none";
+        } else {
+            toggleChatVisibility.innerText = "Desligar Chat";
+            toggleChatVisibility.classList.remove('off');
+            chatBoxMessages.style.opacity = "1";
+            chatBoxMessages.style.pointerEvents = "auto";
+            chatInputWrapper.style.display = "flex";
+            chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
+        }
+    });
+
+    function pushChatMessage() {
+        if (currentGameState && currentGameState.chatBlocked) {
+            exibirAlertaDoSistema("Chat Trancado", "O Administrador desativou o envio de mensagens nesta sala.");
+            return;
+        }
+
+        const text = somenteTextoSeguro(chatInputField.value, 80);
+        if (!text) return;
+        const author = nomeSeguro(nameInput.value || "Anônimo");
+        if (isPracticeMode) { appendChatRow(author, text); chatInputField.value = ""; return; }
+        const msgRef = ref(db, `rooms/${roomId}/chat`);
+        push(msgRef, { author: author, text: text, timestamp: Date.now() });
+        chatInputField.value = "";
+    }
+
+    chatSendBtn.addEventListener('click', pushChatMessage);
+    chatInputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') pushChatMessage(); });
+
+    function appendChatRow(author, text) {
+        const row = document.createElement('div');
+        row.className = "chat-msg-row";
+        const authorSpan = document.createElement('span');
+        authorSpan.className = "msg-author";
+        authorSpan.innerText = author + ": ";
+        const textSpan = document.createElement('span');
+        textSpan.innerText = text;
+        row.appendChild(authorSpan);
+        row.appendChild(textSpan);
+        chatBoxMessages.appendChild(row);
+        chatBoxMessages.scrollTop = chatBoxMessages.scrollHeight;
+    }
+
+
+    // ================================================================
+    // 📹 CHAMADA DE VÍDEO E ÁUDIO GRÁTIS - WEBRTC + FIREBASE
+    // Versão corrigida: janelinha flutuante + sinalização por função
+    // p1 sempre cria o convite e p2 sempre responde. Isso evita a tela
+    // ficar presa em "aguardando jogador" quando os dois já entraram.
+    // ================================================================
+    const rtcConfigGratis = {
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" }
+        ]
+    };
+
+    let callSessionId = "";
+
+    function atualizarStatusChamada(texto) {
+        if (callStatusText) callStatusText.innerText = texto;
+    }
+
+    function podeUsarChamadaAgora() {
+        return !isPracticeMode && roomId && (playerRole === "p1" || playerRole === "p2");
+    }
+
+    function oponenteDaChamada() {
+        return playerRole === "p1" ? "p2" : "p1";
+    }
+
+    function atualizarPainelChamada() {
+        if (!voiceVideoCallPanel) return;
+
+        const souJogadorDaChamada = podeUsarChamadaAgora();
+        const souEspectadorOnline = !isPracticeMode && roomId && playerRole === "spectator";
+
+        if (souJogadorDaChamada) {
+            voiceVideoCallPanel.style.display = "block";
+            voiceVideoCallPanel.classList.remove("call-spectator");
+            voiceVideoCallPanel.classList.toggle("call-active", !!localCallStream);
+            if (localCallStream) restaurarPosicaoChamadaFlutuante();
+
+            const localLabel = voiceVideoCallPanel.querySelector('.video-tile:first-child .video-label');
+            const remoteLabel = voiceVideoCallPanel.querySelector('.video-tile:nth-child(2) .video-label');
+            if (localLabel) localLabel.innerText = "Você";
+            if (remoteLabel) remoteLabel.innerText = "Oponente";
+
+            if (startCallBtn) { startCallBtn.disabled = !!localCallStream; startCallBtn.style.display = ""; }
+            if (startAudioCallBtn) { startAudioCallBtn.disabled = !!localCallStream; startAudioCallBtn.style.display = ""; }
+            if (endCallBtn) { endCallBtn.disabled = !localCallStream; endCallBtn.innerText = "Encerrar"; }
+            if (toggleMicBtn) toggleMicBtn.disabled = !localCallStream;
+            if (toggleCameraBtn) toggleCameraBtn.disabled = !localCallStream;
+            if (unlockAudioBtn) unlockAudioBtn.style.display = "";
+
+            if (!localCallStream) {
+                atualizarStatusChamada("Toque em iniciar para chamar o oponente.");
+            }
+            return;
+        }
+
+        if (souEspectadorOnline) {
+            voiceVideoCallPanel.style.display = "block";
+            voiceVideoCallPanel.classList.add("call-spectator");
+            voiceVideoCallPanel.classList.toggle("call-active", !!spectatorWatchActive);
+            if (spectatorWatchActive) restaurarPosicaoChamadaFlutuante();
+
+            const localLabel = voiceVideoCallPanel.querySelector('.video-tile:first-child .video-label');
+            const remoteLabel = voiceVideoCallPanel.querySelector('.video-tile:nth-child(2) .video-label');
+            if (localLabel) localLabel.innerText = "Vermelho";
+            if (remoteLabel) remoteLabel.innerText = "Preto";
+
+            if (startCallBtn) { startCallBtn.disabled = true; startCallBtn.style.display = "none"; }
+            if (startAudioCallBtn) { startAudioCallBtn.disabled = true; startAudioCallBtn.style.display = "none"; }
+            if (toggleMicBtn) { toggleMicBtn.disabled = true; toggleMicBtn.style.display = "none"; }
+            if (toggleCameraBtn) { toggleCameraBtn.disabled = true; toggleCameraBtn.style.display = "none"; }
+            if (endCallBtn) { endCallBtn.disabled = !spectatorWatchActive; endCallBtn.innerText = "Parar transmissão"; }
+            if (unlockAudioBtn) unlockAudioBtn.style.display = "";
+
+            if (!spectatorWatchActive && !spectatorWatchConnecting) {
+                atualizarStatusChamada("Aguardando os jogadores abrirem câmera e áudio...");
+            }
+            return;
+        }
+
+        voiceVideoCallPanel.classList.remove("call-active", "call-spectator");
+        voiceVideoCallPanel.style.display = "none";
+        atualizarStatusChamada("Disponível apenas para sala online.");
+    }
+
+    function explicarErroMidia(erro) {
+        const nomeErro = erro?.name || "";
+        if (location.protocol !== "https:" && location.hostname !== "localhost") {
+            return "A chamada precisa abrir em link HTTPS. Publique na Vercel ou GitHub Pages e abra pelo navegador.";
+        }
+        if (nomeErro === "NotAllowedError" || nomeErro === "PermissionDeniedError") {
+            return "Câmera ou microfone bloqueados. Abra as permissões do navegador e libere Câmera e Microfone para este site.";
+        }
+        if (nomeErro === "NotFoundError" || nomeErro === "DevicesNotFoundError") {
+            return "O navegador não encontrou câmera ou microfone disponível neste aparelho.";
+        }
+        if (nomeErro === "NotReadableError" || nomeErro === "TrackStartError") {
+            return "A câmera ou o microfone estão ocupados por outro aplicativo. Feche WhatsApp, Instagram, câmera ou chamada aberta e tente novamente.";
+        }
+        return "Não foi possível acessar câmera ou microfone. Libere as permissões do navegador e tente novamente.";
+    }
+
+    async function prepararMidiaLocal(somenteAudio = false) {
+        if (localCallStream) return localCallStream;
+
+        try {
+            if (somenteAudio) {
+                localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            } else {
+                try {
+                    localCallStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } },
+                        audio: true
+                    });
+                } catch (erroVideo) {
+                    localCallStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                    exibirAlertaDoSistema("Chamada por áudio", "A câmera não foi liberada, então a chamada começou somente com áudio.");
+                }
+            }
+        } catch (erroMidia) {
+            throw new Error(explicarErroMidia(erroMidia));
+        }
+
+        localMicEnabled = true;
+        localCameraEnabled = localCallStream.getVideoTracks().some(t => t.enabled);
+        if (localVideoEl) localVideoEl.srcObject = localCallStream;
+        if (voiceVideoCallPanel) {
+            voiceVideoCallPanel.classList.add("call-active");
+            restaurarPosicaoChamadaFlutuante();
+        }
+        if (toggleMicBtn) {
+            toggleMicBtn.innerText = "🎙️ Mic";
+            toggleMicBtn.classList.remove("btn-call-muted");
+        }
+        if (toggleCameraBtn) {
+            toggleCameraBtn.innerText = localCameraEnabled ? "📷 Cam" : "📷 Sem cam";
+            toggleCameraBtn.classList.toggle("btn-call-muted", !localCameraEnabled);
+        }
+        return localCallStream;
+    }
+
+    function criarPeerChamada() {
+        if (callPeer) return callPeer;
+
+        callPeer = new RTCPeerConnection(rtcConfigGratis);
+
+        callPeer.ontrack = (event) => {
+            // Recebe áudio/vídeo do outro jogador. Mantém os tracks juntos em um único stream remoto.
+            if (!remoteVideoEl) return;
+
+            let remoteStream = event.streams && event.streams[0];
+
+            // Alguns celulares não entregam event.streams[0]; então criamos um MediaStream manual.
+            if (!remoteStream) {
+                remoteStream = remoteVideoEl.srcObject instanceof MediaStream
+                    ? remoteVideoEl.srcObject
+                    : new MediaStream();
+            }
+
+            // Garante que áudio e vídeo do oponente entrem no mesmo stream, mesmo chegando separados.
+            if (event.track && !remoteStream.getTracks().some(t => t.id === event.track.id)) {
+                try { remoteStream.addTrack(event.track); } catch (_) {}
+            }
+
+            remoteVideoEl.srcObject = remoteStream;
+            remoteVideoEl.muted = true; // o som sai pelo elemento de áudio abaixo para evitar bloqueio/duplicidade.
+            remoteVideoEl.play?.().catch(() => {});
+
+            if (remoteAudioEl) {
+                remoteAudioEl.srcObject = remoteStream;
+                remoteAudioEl.muted = false;
+                remoteAudioEl.volume = 1;
+                remoteAudioEl.play?.().catch(() => {
+                    atualizarStatusChamada("Vídeo conectado. Toque em 🔊 Som para liberar o áudio.");
+                });
+            }
+
+            atualizarStatusChamada("Conectado ✅");
+            if (voiceVideoCallPanel) {
+                voiceVideoCallPanel.classList.add("call-active");
+                restaurarPosicaoChamadaFlutuante();
+            }
+        };
+
+        callPeer.onicecandidate = async (event) => {
+            if (!event.candidate || !roomId || !playerRole || !playerId) return;
+            try {
+                await push(ref(db, `rooms/${roomId}/call/candidates/${playerRole}`), {
+                    ...event.candidate.toJSON(),
+                    sessionId: callSessionId,
+                    createdAt: Date.now()
+                });
+            } catch (e) {
+                console.warn("Falha ao enviar candidato ICE:", e);
+            }
+        };
+
+        callPeer.onconnectionstatechange = () => {
+            const estado = callPeer?.connectionState || "novo";
+            if (estado === "new") atualizarStatusChamada("Preparando conexão...");
+            if (estado === "connecting") atualizarStatusChamada("Conectando chamada...");
+            if (estado === "connected") atualizarStatusChamada("Conectado ✅");
+            if (estado === "disconnected") atualizarStatusChamada("Conexão instável. Tentando reconectar...");
+            if (estado === "failed") atualizarStatusChamada("A rede bloqueou a conexão direta. Tente trocar de internet ou usar somente áudio.");
+            if (estado === "closed") atualizarStatusChamada("Chamada encerrada.");
+        };
+
+        if (localCallStream) {
+            localCallStream.getTracks().forEach(track => callPeer.addTrack(track, localCallStream));
+        }
+
+        return callPeer;
+    }
+
+    function limparListenersChamada() {
+        callUnsubscribers.forEach(unsub => {
+            try { if (typeof unsub === "function") unsub(); } catch (_) {}
+        });
+        callUnsubscribers = [];
+    }
+
+    async function iniciarChamadaWebRTC(somenteAudio = false) {
+        if (!podeUsarChamadaAgora()) {
+            exibirAlertaDoSistema("Chamada indisponível", "A chamada de vídeo e áudio funciona apenas para os dois jogadores da sala online.");
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            exibirAlertaDoSistema("Navegador incompatível", "Este navegador não liberou câmera/microfone para chamada. Use Chrome, Edge ou navegador atualizado.");
+            return;
+        }
+
+        callStartedByUser = true;
+        callSessionId = `${Date.now()}_${playerRole}_${playerId}`;
+        processedRemoteCandidates = new Set();
+        remoteDescriptionApplied = false;
+        atualizarStatusChamada("Pedindo permissão da câmera e microfone...");
+
+        try {
+            await prepararMidiaLocal(somenteAudio);
+
+            // Remove sinalização velha sem apagar o participante que já entrou.
+            // Isso resolve o caso em que ficou oferta/resposta antiga no Firebase.
+            if (playerRole === "p1") {
+                await remove(ref(db, `rooms/${roomId}/call/offer`));
+                await remove(ref(db, `rooms/${roomId}/call/answer`));
+                await remove(ref(db, `rooms/${roomId}/call/candidates`));
+            } else {
+                await remove(ref(db, `rooms/${roomId}/call/candidates/${playerRole}`));
+            }
+
+            await update(ref(db, `rooms/${roomId}/call`), {
+                status: "active",
+                updatedAt: Date.now()
+            });
+
+            await update(ref(db, `rooms/${roomId}/call/participants/${playerId}`), {
+                role: playerRole,
+                name: nomeSeguro(nameInput.value || playerRole),
+                sessionId: callSessionId,
+                joinedAt: Date.now()
+            });
+            onDisconnect(ref(db, `rooms/${roomId}/call/participants/${playerId}`)).remove();
+
+            criarPeerChamada();
+            escutarSinalizacaoChamada();
+            escutarPedidosEspectadoresChamada();
+            atualizarPainelChamada();
+
+            atualizarStatusChamada(playerRole === "p1"
+                ? "Aguardando conexão com o jogador preto..."
+                : "Aguardando convite do jogador vermelho...");
+        } catch (e) {
+            encerrarChamadaWebRTC(false);
+            exibirAlertaDoSistema("Erro na chamada", somenteTextoSeguro(e.message || "Não foi possível iniciar a chamada.", 180));
+        }
+    }
+
+    function escutarSinalizacaoChamada() {
+        limparListenersChamada();
+
+        const callRef = ref(db, `rooms/${roomId}/call`);
+        const unsubCall = onValue(callRef, async (snap) => {
+            const callData = snap.val() || {};
+
+            if (callData.status === "ended" && callData.endedBy !== playerId && localCallStream) {
+                encerrarChamadaWebRTC(false);
+                atualizarStatusChamada("O oponente encerrou a chamada.");
+                return;
+            }
+
+            const participants = callData.participants || {};
+            const temP1 = Object.values(participants).some(p => p?.role === "p1");
+            const temP2 = Object.values(participants).some(p => p?.role === "p2");
+
+            // Jogador vermelho cria a oferta somente quando os dois já estão na chamada.
+            if (localCallStream && playerRole === "p1" && temP1 && temP2 && !callData.offer?.sdp) {
+                try {
+                    const pc = criarPeerChamada();
+                    const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+                    await pc.setLocalDescription(offer);
+                    await set(ref(db, `rooms/${roomId}/call/offer`), {
+                        type: offer.type,
+                        sdp: offer.sdp,
+                        fromRole: "p1",
+                        sessionId: callSessionId,
+                        createdAt: Date.now()
+                    });
+                    atualizarStatusChamada("Convite enviado. Esperando resposta...");
+                } catch (e) {
+                    console.warn("Erro criando oferta WebRTC:", e);
+                    atualizarStatusChamada("Falha ao criar convite da chamada.");
+                }
+            }
+
+            // Jogador preto recebe a oferta e responde.
+            if (localCallStream && playerRole === "p2" && callData.offer?.sdp && !remoteDescriptionApplied) {
+                try {
+                    const pc = criarPeerChamada();
+                    await pc.setRemoteDescription(new RTCSessionDescription({
+                        type: callData.offer.type,
+                        sdp: callData.offer.sdp
+                    }));
+                    remoteDescriptionApplied = true;
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    await set(ref(db, `rooms/${roomId}/call/answer`), {
+                        type: answer.type,
+                        sdp: answer.sdp,
+                        fromRole: "p2",
+                        sessionId: callSessionId,
+                        createdAt: Date.now()
+                    });
+                    atualizarStatusChamada("Resposta enviada. Conectando...");
+                } catch (e) {
+                    console.warn("Erro respondendo chamada WebRTC:", e);
+                    atualizarStatusChamada("Falha ao responder chamada.");
+                }
+            }
+
+            // Jogador vermelho recebe a resposta.
+            if (localCallStream && playerRole === "p1" && callData.answer?.sdp && !remoteDescriptionApplied) {
+                try {
+                    const pc = criarPeerChamada();
+                    await pc.setRemoteDescription(new RTCSessionDescription({
+                        type: callData.answer.type,
+                        sdp: callData.answer.sdp
+                    }));
+                    remoteDescriptionApplied = true;
+                    atualizarStatusChamada("Resposta recebida. Conectando...");
+                } catch (e) {
+                    console.warn("Erro aplicando resposta WebRTC:", e);
+                    atualizarStatusChamada("Falha ao aplicar resposta da chamada.");
+                }
+            }
+
+            // Troca de candidatos ICE por função: p1 lê p2, p2 lê p1.
+            // Correção importante: se o candidato chegar antes da descrição remota, NÃO marcamos como processado.
+            // Assim ele será tentado novamente quando a oferta/resposta já estiver aplicada.
+            if (localCallStream && callData.candidates) {
+                const outroRole = oponenteDaChamada();
+                const lista = callData.candidates[outroRole] || {};
+                for (const [candId, cand] of Object.entries(lista)) {
+                    const chave = `${outroRole}_${candId}`;
+                    if (processedRemoteCandidates.has(chave)) continue;
+                    try {
+                        const pc = criarPeerChamada();
+                        if (!pc.remoteDescription || !cand || !cand.candidate) {
+                            continue;
+                        }
+                        await pc.addIceCandidate(new RTCIceCandidate(cand));
+                        processedRemoteCandidates.add(chave);
+                    } catch (e) {
+                        // Não mata a chamada por candidato duplicado/fora de ordem.
+                        console.warn("Candidato ICE aguardando nova tentativa:", e);
+                    }
+                }
+            }
+        });
+
+        callUnsubscribers.push(unsubCall);
+    }
+
+    async function encerrarChamadaWebRTC(avisarFirebase = true) {
+        limparListenersChamada();
+        limparListenersJogadorParaEspectadores();
+        fecharPeersJogadorParaEspectadores();
+        if (playerRole === "spectator") {
+            await encerrarAssistirChamadaEspectador(avisarFirebase);
+        }
+
+        if (callPeer) {
+            try { callPeer.close(); } catch (_) {}
+            callPeer = null;
+        }
+
+        if (localCallStream) {
+            localCallStream.getTracks().forEach(track => track.stop());
+            localCallStream = null;
+        }
+
+        if (localVideoEl) localVideoEl.srcObject = null;
+        if (remoteVideoEl) remoteVideoEl.srcObject = null;
+        if (remoteAudioEl) remoteAudioEl.srcObject = null;
+        if (voiceVideoCallPanel) voiceVideoCallPanel.classList.remove("call-active");
+
+        processedRemoteCandidates = new Set();
+        remoteDescriptionApplied = false;
+        callStartedByUser = false;
+
+        if (avisarFirebase && roomId && playerId && !isPracticeMode) {
+            try {
+                await remove(ref(db, `rooms/${roomId}/call/participants/${playerId}`));
+                await update(ref(db, `rooms/${roomId}/call`), {
+                    status: "ended",
+                    endedAt: Date.now(),
+                    endedBy: playerId
+                });
+                if (playerRole === "p1" || playerRole === "p2") {
+                    await remove(ref(db, `rooms/${roomId}/call/watchers`));
+                }
+            } catch (e) {
+                console.warn("Não foi possível limpar chamada no Firebase:", e);
+            }
+        }
+
+        atualizarPainelChamada();
+        atualizarStatusChamada("Chamada encerrada.");
+    }
+
+
+
+
+    // 👁️ ESPECTADORES VENDO E OUVINDO A CHAMADA DOS DOIS JOGADORES
+    // Cada espectador recebe uma conexão separada de cada jogador, sem enviar câmera nem microfone.
+    function limparListenersEspectadorChamada() {
+        spectatorWatchUnsubscribers.forEach(unsub => {
+            try { if (typeof unsub === "function") unsub(); } catch (_) {}
+        });
+        spectatorWatchUnsubscribers = [];
+    }
+
+    function limparListenersJogadorParaEspectadores() {
+        playerSpectatorUnsubscribers.forEach(unsub => {
+            try { if (typeof unsub === "function") unsub(); } catch (_) {}
+        });
+        playerSpectatorUnsubscribers = [];
+    }
+
+    function fecharPeersJogadorParaEspectadores() {
+        Object.values(playerSpectatorPeers).forEach(pc => {
+            try { pc.close(); } catch (_) {}
+        });
+        playerSpectatorPeers = {};
+        playerProcessedSpectatorCandidates = new Set();
+        playerAnsweredSpectatorOffers = new Set();
+        playerSpectatorOfferKeys = {};
+    }
+
+    async function encerrarAssistirChamadaEspectador(removerFirebase = true) {
+        limparListenersEspectadorChamada();
+
+        Object.values(spectatorWatchPeers).forEach(pc => {
+            try { pc.close(); } catch (_) {}
+        });
+        spectatorWatchPeers = {};
+        spectatorWatchStreams = { p1: null, p2: null };
+        spectatorProcessedCandidates = new Set();
+        spectatorWatchActive = false;
+        spectatorWatchConnecting = false;
+
+        if (localVideoEl) localVideoEl.srcObject = null;
+        if (remoteVideoEl) remoteVideoEl.srcObject = null;
+        if (spectatorAudioP1) { try { spectatorAudioP1.pause(); spectatorAudioP1.srcObject = null; } catch (_) {} }
+        if (spectatorAudioP2) { try { spectatorAudioP2.pause(); spectatorAudioP2.srcObject = null; } catch (_) {} }
+        spectatorAudioP1 = null;
+        spectatorAudioP2 = null;
+
+        if (removerFirebase && roomId && playerId) {
+            try { await remove(ref(db, `rooms/${roomId}/call/watchers/${playerId}`)); } catch (_) {}
+        }
+
+        atualizarPainelChamada();
+    }
+
+    function obterAudioEspectador(role) {
+        if (role === "p1") {
+            if (!spectatorAudioP1) {
+                spectatorAudioP1 = document.createElement('audio');
+                spectatorAudioP1.autoplay = true;
+                spectatorAudioP1.playsInline = true;
+            }
+            return spectatorAudioP1;
+        }
+        if (!spectatorAudioP2) {
+            spectatorAudioP2 = document.createElement('audio');
+            spectatorAudioP2.autoplay = true;
+            spectatorAudioP2.playsInline = true;
+        }
+        return spectatorAudioP2;
+    }
+
+    function aplicarStreamEspectador(role, event) {
+        let stream = event.streams && event.streams[0];
+        if (!stream) {
+            stream = spectatorWatchStreams[role] instanceof MediaStream ? spectatorWatchStreams[role] : new MediaStream();
+        }
+        if (event.track && !stream.getTracks().some(t => t.id === event.track.id)) {
+            try { stream.addTrack(event.track); } catch (_) {}
+        }
+        spectatorWatchStreams[role] = stream;
+
+        const videoEl = role === "p1" ? localVideoEl : remoteVideoEl;
+        if (videoEl) {
+            videoEl.srcObject = stream;
+            videoEl.muted = true;
+            videoEl.play?.().catch(() => {});
+        }
+
+        const audioEl = obterAudioEspectador(role);
+        audioEl.srcObject = stream;
+        audioEl.muted = false;
+        audioEl.volume = 1;
+        audioEl.play?.().catch(() => {
+            atualizarStatusChamada("Transmissão visível. Toque em 🔊 Som para liberar o áudio.");
+        });
+
+        spectatorWatchActive = true;
+        atualizarPainelChamada();
+        atualizarStatusChamada("Assistindo câmera e áudio dos jogadores ✅");
+    }
+
+    function criarPeerEspectadorPara(roleAlvo) {
+        if (spectatorWatchPeers[roleAlvo]) return spectatorWatchPeers[roleAlvo];
+
+        const pc = new RTCPeerConnection(rtcConfigGratis);
+        spectatorWatchPeers[roleAlvo] = pc;
+
+        pc.addTransceiver("video", { direction: "recvonly" });
+        pc.addTransceiver("audio", { direction: "recvonly" });
+
+        pc.ontrack = (event) => aplicarStreamEspectador(roleAlvo, event);
+
+        pc.onicecandidate = async (event) => {
+            if (!event.candidate || !roomId || !playerId) return;
+            try {
+                await push(ref(db, `rooms/${roomId}/call/watchers/${playerId}/candidates/spectator/${roleAlvo}`), {
+                    ...event.candidate.toJSON(),
+                    createdAt: Date.now()
+                });
+            } catch (e) {
+                console.warn("Falha ao enviar candidato ICE do espectador:", e);
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const estado = pc.connectionState || "new";
+            if (estado === "connected") {
+                spectatorWatchActive = true;
+                atualizarPainelChamada();
+                atualizarStatusChamada("Assistindo transmissão ao vivo ✅");
+            }
+            if (estado === "failed") atualizarStatusChamada("A rede bloqueou parte da transmissão. Toque em 🔊 Som ou atualize.");
+        };
+
+        return pc;
+    }
+
+    async function iniciarAssistirChamadaEspectador() {
+        if (spectatorWatchConnecting || spectatorWatchActive) return;
+        if (isPracticeMode || playerRole !== "spectator" || !roomId || !playerId) return;
+
+        spectatorWatchConnecting = true;
+        atualizarPainelChamada();
+        atualizarStatusChamada("Conectando como espectador da chamada...");
+
+        try {
+            // Limpa qualquer tentativa antiga deste espectador antes de criar novas ofertas.
+            // Isso evita o bug de aparecer só um jogador por causa de offer/answer velha no Firebase.
+            await remove(ref(db, `rooms/${roomId}/call/watchers/${playerId}`));
+            const watchSessionId = `${Date.now()}_${playerId}`;
+            spectatorProcessedCandidates = new Set();
+
+            await update(ref(db, `rooms/${roomId}/call/watchers/${playerId}/meta`), {
+                name: nomeSeguro(nameInput?.value || "Espectador"),
+                joinedAt: Date.now(),
+                sessionId: watchSessionId
+            });
+            onDisconnect(ref(db, `rooms/${roomId}/call/watchers/${playerId}`)).remove();
+
+            for (const roleAlvo of ["p1", "p2"]) {
+                const pc = criarPeerEspectadorPara(roleAlvo);
+                const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+                await pc.setLocalDescription(offer);
+                await set(ref(db, `rooms/${roomId}/call/watchers/${playerId}/offers/${roleAlvo}`), {
+                    type: offer.type,
+                    sdp: offer.sdp,
+                    sessionId: watchSessionId,
+                    createdAt: Date.now()
+                });
+            }
+        } catch (e) {
+            console.warn("Falha ao iniciar espectador da chamada:", e);
+            atualizarStatusChamada("Não foi possível assistir a chamada agora.");
+        } finally {
+            spectatorWatchConnecting = false;
+        }
+    }
+
+    function escutarChamadaParaEspectador() {
+        limparListenersEspectadorChamada();
+        if (isPracticeMode || playerRole !== "spectator" || !roomId || !playerId) return;
+
+        const callRef = ref(db, `rooms/${roomId}/call`);
+        const unsub = onValue(callRef, async (snap) => {
+            const callData = snap.val() || {};
+            const participants = callData.participants || {};
+            const temP1 = Object.values(participants).some(p => p?.role === "p1");
+            const temP2 = Object.values(participants).some(p => p?.role === "p2");
+
+            if (callData.status === "active" && temP1 && temP2 && !spectatorWatchActive && !spectatorWatchConnecting) {
+                iniciarAssistirChamadaEspectador();
+            }
+
+            if ((!callData.status || callData.status === "ended") && (spectatorWatchActive || spectatorWatchConnecting)) {
+                encerrarAssistirChamadaEspectador(false);
+                atualizarStatusChamada("A chamada dos jogadores foi encerrada.");
+                return;
+            }
+
+            if (playerRole !== "spectator" || !roomId || !playerId) return;
+            const watcher = callData.watchers?.[playerId] || {};
+
+            for (const roleAlvo of ["p1", "p2"]) {
+                const answer = watcher.answers?.[roleAlvo];
+                const pc = spectatorWatchPeers[roleAlvo];
+                if (pc && answer?.sdp && !pc.remoteDescription) {
+                    try {
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: answer.type, sdp: answer.sdp }));
+                    } catch (e) {
+                        console.warn("Falha ao aplicar resposta para espectador:", e);
+                    }
+                }
+
+                const lista = watcher.candidates?.[roleAlvo] || {};
+                for (const [candId, cand] of Object.entries(lista)) {
+                    const chave = `${roleAlvo}_${candId}`;
+                    if (spectatorProcessedCandidates.has(chave)) continue;
+                    try {
+                        const pcAtual = spectatorWatchPeers[roleAlvo];
+                        if (!pcAtual || !pcAtual.remoteDescription || !cand?.candidate) continue;
+                        await pcAtual.addIceCandidate(new RTCIceCandidate(cand));
+                        spectatorProcessedCandidates.add(chave);
+                    } catch (e) {
+                        console.warn("Candidato ICE do jogador aguardando nova tentativa:", e);
+                    }
+                }
+            }
+        });
+        spectatorWatchUnsubscribers.push(unsub);
+    }
+
+    function adicionarTracksLocaisAoPeerSpectador(pc) {
+        if (!pc || !localCallStream) return;
+
+        // IMPORTANTE PARA O MODO ESPECTADOR:
+        // O espectador cria uma oferta "recvonly". O jogador precisa encaixar
+        // a própria câmera e microfone dentro dos transceivers que já vieram
+        // nessa oferta. Se usar apenas addTrack aqui, alguns navegadores aceitam
+        // a conexão, mas enviam tela preta e áudio mudo para quem assiste.
+        const tracks = localCallStream.getTracks();
+
+        tracks.forEach(track => {
+            try {
+                const transceiver = pc.getTransceivers().find(t => {
+                    const receiverKind = t.receiver?.track?.kind;
+                    const senderKind = t.sender?.track?.kind;
+                    return receiverKind === track.kind || senderKind === track.kind;
+                });
+
+                if (transceiver) {
+                    transceiver.direction = "sendonly";
+                    transceiver.sender.replaceTrack(track).catch(() => {});
+                } else if (!pc.getSenders().some(sender => sender.track && sender.track.id === track.id)) {
+                    pc.addTrack(track, localCallStream);
+                }
+            } catch (e) {
+                console.warn("Não foi possível anexar mídia ao espectador:", e);
+            }
+        });
+    }
+
+    function criarPeerJogadorParaEspectador(spectatorId) {
+        if (playerSpectatorPeers[spectatorId]) return playerSpectatorPeers[spectatorId];
+
+        const pc = new RTCPeerConnection(rtcConfigGratis);
+        playerSpectatorPeers[spectatorId] = pc;
+
+        pc.onicecandidate = async (event) => {
+            if (!event.candidate || !roomId || !spectatorId || !playerRole) return;
+            try {
+                await push(ref(db, `rooms/${roomId}/call/watchers/${spectatorId}/candidates/${playerRole}`), {
+                    ...event.candidate.toJSON(),
+                    createdAt: Date.now()
+                });
+            } catch (e) {
+                console.warn("Falha ao enviar candidato ICE ao espectador:", e);
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const estado = pc.connectionState || "new";
+            if (estado === "failed" || estado === "closed") {
+                try { pc.close(); } catch (_) {}
+                delete playerSpectatorPeers[spectatorId];
+                delete playerSpectatorOfferKeys[spectatorId];
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            const estadoIce = pc.iceConnectionState || "new";
+            if (estadoIce === "failed" || estadoIce === "disconnected") {
+                // Libera para responder de novo se o espectador atualizar/reabrir a transmissão.
+                delete playerSpectatorOfferKeys[spectatorId];
+            }
+        };
+
+        return pc;
+    }
+
+    function escutarPedidosEspectadoresChamada() {
+        limparListenersJogadorParaEspectadores();
+        if (!localCallStream || !roomId || !(playerRole === "p1" || playerRole === "p2")) return;
+
+        const watchersRef = ref(db, `rooms/${roomId}/call/watchers`);
+        const unsub = onValue(watchersRef, async (snap) => {
+            const watchers = snap.val() || {};
+            for (const [spectatorId, watcher] of Object.entries(watchers)) {
+                if (!watcher || spectatorId === playerId) continue;
+                const offer = watcher.offers?.[playerRole];
+                if (!offer?.sdp) continue;
+
+                const offerKey = `${spectatorId}_${playerRole}_${offer.sessionId || watcher.meta?.sessionId || offer.createdAt || offer.sdp.slice(0, 24)}`;
+                try {
+                    // Se o espectador atualizou/reentrou, recria a conexão deste jogador para não ficar presa em SDP antigo.
+                    if (playerSpectatorOfferKeys[spectatorId] && playerSpectatorOfferKeys[spectatorId] !== offerKey) {
+                        try { playerSpectatorPeers[spectatorId]?.close(); } catch (_) {}
+                        delete playerSpectatorPeers[spectatorId];
+                    }
+
+                    const pc = criarPeerJogadorParaEspectador(spectatorId);
+                    if (!playerAnsweredSpectatorOffers.has(offerKey)) {
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: offer.type, sdp: offer.sdp }));
+                        // Importante: adiciona a câmera/áudio DEPOIS de ler a oferta do espectador.
+                        // Em alguns celulares, adicionar antes faz o espectador conectar, mas receber tela preta/silêncio.
+                        adicionarTracksLocaisAoPeerSpectador(pc);
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        await set(ref(db, `rooms/${roomId}/call/watchers/${spectatorId}/answers/${playerRole}`), {
+                            type: answer.type,
+                            sdp: answer.sdp,
+                            sessionId: offer.sessionId || watcher.meta?.sessionId || "",
+                            createdAt: Date.now()
+                        });
+                        playerAnsweredSpectatorOffers.add(offerKey);
+                        playerSpectatorOfferKeys[spectatorId] = offerKey;
+                    }
+
+                    const lista = watcher.candidates?.spectator?.[playerRole] || {};
+                    for (const [candId, cand] of Object.entries(lista)) {
+                        const chave = `${spectatorId}_${playerRole}_${offerKey}_${candId}`;
+                        if (playerProcessedSpectatorCandidates.has(chave)) continue;
+                        try {
+                            if (!pc.remoteDescription || !cand?.candidate) continue;
+                            await pc.addIceCandidate(new RTCIceCandidate(cand));
+                            playerProcessedSpectatorCandidates.add(chave);
+                        } catch (e) {
+                            console.warn("Candidato ICE do espectador aguardando nova tentativa:", e);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Falha ao responder espectador da chamada:", e);
+                    try { playerSpectatorPeers[spectatorId]?.close(); } catch (_) {}
+                    delete playerSpectatorPeers[spectatorId];
+                    delete playerSpectatorOfferKeys[spectatorId];
+                }
+            }
+        });
+        playerSpectatorUnsubscribers.push(unsub);
+    }
+
+    // 🖼️ Controles da janelinha flutuante da chamada: arrastar + maior/menor.
+    let callFloatingWidth = Number(localStorage.getItem('damas_call_floating_width_landscape') || 330);
+    callFloatingWidth = Math.max(260, Math.min(420, callFloatingWidth));
+
+    function aplicarTamanhoChamadaFlutuante() {
+        if (!voiceVideoCallPanel) return;
+        if (voiceVideoCallPanel.classList.contains('call-active')) {
+            voiceVideoCallPanel.style.width = `${callFloatingWidth}px`;
+        }
+        localStorage.setItem('damas_call_floating_width_landscape', String(callFloatingWidth));
+    }
+
+    function redimensionarChamadaFlutuante(delta) {
+        callFloatingWidth = Math.max(260, Math.min(420, callFloatingWidth + delta));
+        aplicarTamanhoChamadaFlutuante();
+        manterChamadaDentroDaTela();
+    }
+
+    function manterChamadaDentroDaTela() {
+        if (!voiceVideoCallPanel || !voiceVideoCallPanel.classList.contains('call-active')) return;
+        const rect = voiceVideoCallPanel.getBoundingClientRect();
+        const margem = 6;
+        let left = rect.left;
+        let top = rect.top;
+        if (rect.right > window.innerWidth - margem) left -= rect.right - (window.innerWidth - margem);
+        if (rect.left < margem) left = margem;
+        if (rect.bottom > window.innerHeight - margem) top -= rect.bottom - (window.innerHeight - margem);
+        if (rect.top < margem) top = margem;
+        voiceVideoCallPanel.style.left = `${Math.round(left)}px`;
+        voiceVideoCallPanel.style.top = `${Math.round(top)}px`;
+        voiceVideoCallPanel.style.right = 'auto';
+        voiceVideoCallPanel.style.bottom = 'auto';
+        voiceVideoCallPanel.style.transform = 'none';
+    }
+
+    function restaurarPosicaoChamadaFlutuante() {
+        if (!voiceVideoCallPanel || !voiceVideoCallPanel.classList.contains('call-active')) return;
+        aplicarTamanhoChamadaFlutuante();
+        const salvo = localStorage.getItem('damas_call_floating_pos_landscape');
+        if (salvo) {
+            try {
+                const pos = JSON.parse(salvo);
+                if (Number.isFinite(pos.left) && Number.isFinite(pos.top)) {
+                    voiceVideoCallPanel.style.left = `${pos.left}px`;
+                    voiceVideoCallPanel.style.top = `${pos.top}px`;
+                    voiceVideoCallPanel.style.right = 'auto';
+                    voiceVideoCallPanel.style.bottom = 'auto';
+                    voiceVideoCallPanel.style.transform = 'none';
+                }
+            } catch (_) {}
+        }
+        setTimeout(manterChamadaDentroDaTela, 80);
+    }
+
+    function ativarArrastarChamadaFlutuante() {
+        if (!voiceVideoCallPanel) return;
+        const header = voiceVideoCallPanel.querySelector('.call-header');
+        if (!header || header.dataset.dragReady === '1') return;
+        header.dataset.dragReady = '1';
+
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startLeft = 0;
+        let startTop = 0;
+
+        header.addEventListener('pointerdown', (ev) => {
+            if (!voiceVideoCallPanel.classList.contains('call-active')) return;
+            dragging = true;
+            const rect = voiceVideoCallPanel.getBoundingClientRect();
+            startX = ev.clientX;
+            startY = ev.clientY;
+            startLeft = rect.left;
+            startTop = rect.top;
+            voiceVideoCallPanel.style.left = `${rect.left}px`;
+            voiceVideoCallPanel.style.top = `${rect.top}px`;
+            voiceVideoCallPanel.style.right = 'auto';
+            voiceVideoCallPanel.style.bottom = 'auto';
+            voiceVideoCallPanel.style.transform = 'none';
+            try { header.setPointerCapture(ev.pointerId); } catch (_) {}
+            ev.preventDefault();
+        });
+
+        header.addEventListener('pointermove', (ev) => {
+            if (!dragging) return;
+            const rect = voiceVideoCallPanel.getBoundingClientRect();
+            const margem = 6;
+            let nextLeft = startLeft + (ev.clientX - startX);
+            let nextTop = startTop + (ev.clientY - startY);
+            nextLeft = Math.max(margem, Math.min(window.innerWidth - rect.width - margem, nextLeft));
+            nextTop = Math.max(margem, Math.min(window.innerHeight - rect.height - margem, nextTop));
+            voiceVideoCallPanel.style.left = `${Math.round(nextLeft)}px`;
+            voiceVideoCallPanel.style.top = `${Math.round(nextTop)}px`;
+            voiceVideoCallPanel.style.right = 'auto';
+            voiceVideoCallPanel.style.bottom = 'auto';
+            voiceVideoCallPanel.style.transform = 'none';
+        });
+
+        const pararArrasto = () => {
+            if (!dragging) return;
+            dragging = false;
+            const rect = voiceVideoCallPanel.getBoundingClientRect();
+            localStorage.setItem('damas_call_floating_pos_landscape', JSON.stringify({
+                left: Math.round(rect.left),
+                top: Math.round(rect.top)
+            }));
+        };
+        header.addEventListener('pointerup', pararArrasto);
+        header.addEventListener('pointercancel', pararArrasto);
+        window.addEventListener('resize', manterChamadaDentroDaTela);
+    }
+
+    ativarArrastarChamadaFlutuante();
+    if (callSizeMinusBtn) callSizeMinusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(-24));
+    if (callSizePlusBtn) callSizePlusBtn.addEventListener('click', () => redimensionarChamadaFlutuante(24));
+
+
+    function liberarSomDoOponente() {
+        const tentativas = [];
+        if (remoteAudioEl) {
+            remoteAudioEl.muted = false;
+            remoteAudioEl.volume = 1;
+            tentativas.push(remoteAudioEl.play?.());
+        }
+        if (spectatorAudioP1) {
+            spectatorAudioP1.muted = false;
+            spectatorAudioP1.volume = 1;
+            tentativas.push(spectatorAudioP1.play?.());
+        }
+        if (spectatorAudioP2) {
+            spectatorAudioP2.muted = false;
+            spectatorAudioP2.volume = 1;
+            tentativas.push(spectatorAudioP2.play?.());
+        }
+        Promise.allSettled(tentativas.filter(Boolean)).then(() => {
+            atualizarStatusChamada(playerRole === "spectator" ? "Som da transmissão liberado ✅" : "Som do oponente liberado ✅");
+        }).catch(() => {
+            atualizarStatusChamada("Toque novamente em 🔊 Som quando alguém falar.");
+        });
+    }
+
+    if (unlockAudioBtn) unlockAudioBtn.addEventListener('click', liberarSomDoOponente);
+
+    if (startCallBtn) startCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(false));
+    if (startAudioCallBtn) startAudioCallBtn.addEventListener('click', () => iniciarChamadaWebRTC(true));
+    if (endCallBtn) endCallBtn.addEventListener('click', () => {
+        if (playerRole === "spectator") encerrarAssistirChamadaEspectador(true);
+        else encerrarChamadaWebRTC(true);
+    });
+
+    if (toggleMicBtn) toggleMicBtn.addEventListener('click', () => {
+        if (!localCallStream) return;
+        localMicEnabled = !localMicEnabled;
+        localCallStream.getAudioTracks().forEach(track => track.enabled = localMicEnabled);
+        toggleMicBtn.innerText = localMicEnabled ? "🎙️ Mic" : "🔇 Mutado";
+        toggleMicBtn.classList.toggle("btn-call-muted", !localMicEnabled);
+    });
+
+    if (toggleCameraBtn) toggleCameraBtn.addEventListener('click', () => {
+        if (!localCallStream) return;
+        const videoTracks = localCallStream.getVideoTracks();
+        if (!videoTracks.length) return exibirAlertaDoSistema("Sem câmera", "Esta chamada foi iniciada apenas com áudio.");
+        localCameraEnabled = !localCameraEnabled;
+        videoTracks.forEach(track => track.enabled = localCameraEnabled);
+        toggleCameraBtn.innerText = localCameraEnabled ? "📷 Cam" : "🚫 Cam";
+        toggleCameraBtn.classList.toggle("btn-call-muted", !localCameraEnabled);
+    });
+
+    function contarPecasNoTabuleiro(board) {
+        let count = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] !== 0) count++;
+            }
+        }
+        return count;
+    }
+
+    function detectouNovaDama(oldBoard, newBoard) {
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                let antes = oldBoard[r][c];
+                let depois = newBoard[r][c]; 
+                if ((antes === 1 && depois === 2) || (antes === 3 && depois === 4)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function ativarPainelMonitoramentoRealtime() {
+        const todasSalasRef = ref(db, 'rooms');
+        onValue(todasSalasRef, (snapshot) => {
+            const listEl = document.getElementById('admin-rooms-dashboard-list');
+            const panoramaEl = document.getElementById('admin-panorama-header');
+            try {
+                if (!snapshot.exists()) {
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala ativa nos servidores.</div>`;
+                    panoramaEl.innerHTML = `📊 PANORAMA: 0 salas registradas no aplicativo`;
+                    return;
+                }
+                
+                const roomsData = snapshot.val();
+                listEl.innerHTML = "";
+                let countDeSalasValidas = 0;
+                let salasLiberadas = 0;
+                
+                for (const idSala in roomsData) {
+                    if (idSala === "00") continue; 
+                    countDeSalasValidas++;
+
+                    const sala = roomsData[idSala];
+                    const isAuth = sala.isAuthorized !== false; 
+                    if (isAuth) salasLiberadas++;
+                    
+                    const statusColor = isAuth ? '#2ecc71' : '#e74c3c';
+                    const statusText = isAuth ? 'ATIVA / LIBERADA' : 'BLOQUEADA';
+                    const chatTrancado = sala.chatBlocked ? " <span style='color:#e74c3c; font-size:0.7rem; margin-left:5px;'>[CHAT OFF]</span>" : "";
+                    
+                    const p1Nome = sala.p1Name ? sala.p1Name : "<span style='color:#cca43b; font-style:italic;'>Aguardando...</span>";
+                    const p2Nome = sala.p2Name ? sala.p2Name : "<span style='color:#cca43b; font-style:italic;'>Aguardando...</span>";
+                    
+                    let ocupantesTexto = `Ocupantes: ${p1Nome} vs ${p2Nome}`;
+                    if (!sala.p1Name && !sala.p2Name) {
+                        ocupantesTexto = `<span style="color:#e67e22; font-weight:bold;">[ Sala Vazia / Aguardando Jogadores ]</span>`;
+                    }
+
+                    const row = document.createElement('div');
+                    row.style.cssText = `background-color: #16213e; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid ${statusColor}; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s;`;
+                    
+                    row.onclick = () => {
+                        document.getElementById('admin-target-room').value = idSala;
+                        row.style.backgroundColor = '#1f3a5f';
+                        setTimeout(() => { row.style.backgroundColor = '#16213e'; }, 200);
+                    };
+                    
+                    row.innerHTML = `
+                        <div>
+                            <strong style="font-size: 1rem; color:#fff;">${idSala.toUpperCase()}</strong>
+                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 3px;">${ocupantesTexto} ${chatTrancado}</div>
+                        </div>
+                        <div style="color: ${statusColor}; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${statusColor};"></span>
+                            ${statusText}
+                        </div>
+                    `;
+                    
+                    listEl.appendChild(row);
+                }
+
+                panoramaEl.innerHTML = `📊 PANORAMA: ${countDeSalasValidas} salas | <span style="color:#2ecc71;">${salasLiberadas} Liberadas</span> | <span style="color:#e74c3c;">${countDeSalasValidas - salasLiberadas} Bloqueadas</span>`;
+
+                if (countDeSalasValidas === 0) {
+                    listEl.innerHTML = `<div style="color: #888; font-style: italic; font-size: 0.85rem;">Nenhuma sala de jogador registrada além do terminal.</div>`;
+                }
+            } catch(e) {
+                console.error("Erro renderizando dashboard:", e);
+                listEl.innerHTML = `<div style="color: #e74c3c; font-size: 0.85rem;">Erro de sistema ao carregar servidores.</div>`;
+            }
+        });
+    }
+
+    document.getElementById('btn-adm-criar-torneio')?.addEventListener('click', criarTorneioAdmin);
+    document.getElementById('btn-adm-listar-participantes')?.addEventListener('click', gerarAvisosWhatsApp);
+
+    document.getElementById('btn-adm-monitorar-chat').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const salaAlvo = salaSegura(adminTargetRoomInput.value);
+        if (!salaAlvo) return exibirAlertaDoSistema("Aviso", "Por favor, digite ou selecione a sala que deseja espionar o chat.");
+        
+        const feedContainer = document.getElementById('admin-chat-monitor-container');
+        const feedDisplay = document.getElementById('admin-chat-monitor-feed');
+        const titleDisplay = document.getElementById('admin-chat-monitor-title');
+        
+        feedContainer.style.display = "block";
+        titleDisplay.innerText = `💬 ESCUTA ATIVA: SALA [${salaAlvo.toUpperCase()}]`;
+        feedDisplay.innerHTML = `<div style="color:#888; font-style:italic;">Sintonizando frequências de conversa...</div>`;
+        
+        if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); }
+        
+        const targetChatRef = ref(db, `rooms/${salaAlvo}/chat`);
+        listenerChatAdminAtivo = onValue(targetChatRef, (snapshot) => {
+            feedDisplay.innerHTML = "";
+            const chats = snapshot.val();
+            if (chats) {
+                Object.values(chats).forEach(msg => {
+                    const row = document.createElement('div');
+                    const strong = document.createElement('strong');
+                    strong.style.color = '#3498db';
+                    strong.innerText = `${nomeSeguro(msg.author || 'Anônimo')}: `;
+                    const span = document.createElement('span');
+                    span.style.color = '#eee';
+                    span.innerText = somenteTextoSeguro(msg.text || '', 80);
+                    row.append(strong, span);
+                    feedDisplay.appendChild(row);
+                });
+                feedDisplay.scrollTop = feedDisplay.scrollHeight;
+            } else {
+                feedDisplay.innerHTML = `<div style="color:#555; font-style:italic;">Nenhuma mensagem trocada nesta sala ainda.</div>`;
+            }
+        });
+    });
+
+    document.getElementById('btn-adm-limpar-ranking').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        exibirConfirmacao(
+            "Limpar Ranking Global ⚠️", 
+            "Você tem certeza de que quer <strong>RESETAR COMPLETAMENTE</strong> o placar dos campeões? Todos os jogadores voltarão para 0 vitórias.", 
+            async () => {
+                await set(ref(db, 'leaderboard'), null);
+                await registrarLogAdmin('zerou_ranking_global');
+                exibirAlertaDoSistema("Sucesso", "O Ranking Global foi zerado com total sucesso!");
+            }
+        );
+    });
+
+    document.getElementById('btn-adm-excluir-total').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
+
+        exibirConfirmacao("Excluir Servidor", `Tem certeza absoluta de que quer <strong>DELETAR</strong> permanentemente a sala <strong>${salaAlvo.toUpperCase()}</strong> do banco de dados?`, async () => {
+            await remove(refSala);
+            await registrarLogAdmin('excluiu_sala', salaAlvo);
+            exibirAlertaDoSistema("Eliminação Concluída", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi removida do sistema.`);
+            adminTargetRoomInput.value = "";
+        });
+    });
+
+    document.getElementById('btn-adm-liberar').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: false });
+        if (!alvo) return;
+        const { salaAlvo, refSala, snap } = alvo;
+
+        if (!snap.exists()) {
+            await set(refSala, {
+                id: salaAlvo,
+                board: getInitialBoard(),
+                turn: 1,
+                status: "waiting",
+                p1Id: "",
+                p1Name: "",
+                p2Id: "",
+                p2Name: "",
+                startTime: 0,
+                chat: null,
+                isAuthorized: true,
+                chatBlocked: false,
+                winnerRole: null,
+                winnerName: null,
+                finishReason: null,
+                finishedAt: null,
+                createdByAdminUid: playerId,
+                createdAt: Date.now(),
+                lastAdminAction: "criada_e_liberada",
+                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+            });
+            await registrarLogAdmin('criou_e_liberou_sala', salaAlvo);
+            exibirAlertaDoSistema("Sucesso", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi criada pelo administrador e já está liberada!`);
+        } else {
+            await update(refSala, {
+                isAuthorized: true,
+                lastAdminAction: "liberada",
+                lastAdminUid: playerId,
+                lastAdminAt: Date.now(),
+                lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+            });
+            await registrarLogAdmin('liberou_sala', salaAlvo);
+            exibirAlertaDoSistema("Sucesso", `Acesso liberado para a sala <strong>${salaAlvo.toUpperCase()}</strong>.`);
+        }
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('btn-adm-bloquear').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
+        await update(refSala, {
+            isAuthorized: false,
+            lastAdminAction: "bloqueada",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin('bloqueou_sala', salaAlvo);
+        exibirAlertaDoSistema("Sala Trancada", `Acesso bloqueado para a sala <strong>${salaAlvo.toUpperCase()}</strong>. Quem já estiver jogando pode precisar sair e entrar novamente para ver o bloqueio.`);
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('btn-adm-travar-chat').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala, data } = alvo;
+        const novoEstado = !(data && data.chatBlocked === true);
+        await update(refSala, {
+            chatBlocked: novoEstado,
+            lastAdminAction: novoEstado ? "chat_travado" : "chat_liberado",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin(novoEstado ? 'travou_chat' : 'destravou_chat', salaAlvo);
+        exibirAlertaDoSistema("Chat atualizado", `O chat da sala <strong>${salaAlvo.toUpperCase()}</strong> foi ${novoEstado ? '<strong>travado</strong>' : '<strong>liberado</strong>'}.`);
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('btn-adm-expulsar').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
+        
+        exibirConfirmacao("Expulsar Todos", `Deseja remover todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> agora? O tabuleiro será mantido, mas a sala voltará a aguardar novos jogadores.`, async () => {
+            await update(refSala, {
+                p1Id: "",
+                p1Name: "",
+                p2Id: "",
+                p2Name: "",
+                spectators: null,
+                status: "waiting",
+                startTime: 0,
+                lastAdminAction: "jogadores_expulsos",
+                lastAdminUid: playerId,
+                lastAdminAt: Date.now()
+            });
+            await registrarLogAdmin('expulsou_jogadores', salaAlvo);
+            exibirAlertaDoSistema("Jogadores removidos", `Todos os jogadores da sala <strong>${salaAlvo.toUpperCase()}</strong> foram removidos.`);
+            adminTargetRoomInput.value = "";
+        });
+    });
+
+    document.getElementById('btn-adm-limpar-chat').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala } = alvo;
+        await update(refSala, {
+            chat: null,
+            lastAdminAction: "chat_limpo",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin('limpou_chat', salaAlvo);
+        exibirAlertaDoSistema("Chat limpo", `As mensagens da sala <strong>${salaAlvo.toUpperCase()}</strong> foram apagadas.`);
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('btn-adm-reset').addEventListener('click', async () => {
+        if (!(await exigirAdminSeguro())) return;
+        const alvo = await obterSalaAdminAlvo({ exigirExistente: true });
+        if (!alvo) return;
+        const { salaAlvo, refSala, data } = alvo;
+        const temDoisJogadores = !!(data && data.p1Id && data.p2Id);
+        await update(refSala, {
+            board: getInitialBoard(),
+            turn: 1,
+            status: temDoisJogadores ? "playing" : "waiting",
+            startTime: temDoisJogadores ? Date.now() : 0,
+            winnerRole: null,
+            winnerName: null,
+            finishReason: null,
+            finishedAt: null,
+            lastAdminAction: "tabuleiro_resetado",
+            lastAdminUid: playerId,
+            lastAdminAt: Date.now()
+        });
+        await registrarLogAdmin('resetou_tabuleiro', salaAlvo);
+        exibirAlertaDoSistema("Tabuleiro resetado", `A sala <strong>${salaAlvo.toUpperCase()}</strong> foi reiniciada com segurança.`);
+        adminTargetRoomInput.value = "";
+    });
+
+    document.getElementById('admin-exit-btn').addEventListener('click', () => {
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false;
+        if (listenerChatAdminAtivo) { listenerChatAdminAtivo(); listenerChatAdminAtivo = null; }
+        document.getElementById('admin-chat-monitor-container').style.display = "none";
+        adminPanel.style.display = "none"; 
+        gameScreen.style.display = 'none'; 
+        lobbyScreen.style.display = 'none';
+        document.body.classList.add('platform-start-active');
+        document.body.classList.add('mode-selecting');
+        document.body.classList.remove('game-selected');
+        document.body.classList.remove('domino-selected');
+        const hubAdminExit = document.getElementById('games-hub-panel');
+        if (hubAdminExit) hubAdminExit.style.display = 'block';
+        if (centralAdminMenu) centralAdminMenu.style.display = "block";
+        atualizarStatusSistema('Admin saiu do terminal. Voltou para o menu central da plataforma.', '#c084fc');
+    });
+
+    // -------------------------------------------------------------------------------------------------------------------------------- //
+
+    function dispararAnimaçãoContagemRegressiva(callbackFim, segundosIniciais = 5, tipo = "online") {
+        emContagemRegressivaAtiva = true;
+        const overlay = document.getElementById('countdown-screen');
+        const numEl = document.getElementById('countdown-num');
+        const txtEl = document.getElementById('countdown-txt');
+        const subEl = document.getElementById('countdown-subtxt');
+        
+        overlay.style.display = "flex";
+        let tempoRestante = Math.max(1, Math.min(5, Number(segundosIniciais) || 5));
+        numEl.classList.remove('show');
+        txtEl.innerText = tipo === "treino" ? "Preparando treino inteligente" : "Sincronizando o tabuleiro online";
+        subEl.innerText = tipo === "treino"
+            ? "Organizando peças, dicas e robô para começar com estabilidade."
+            : "A partida começará em instantes para jogadores e espectadores.";
+
+        function rodarPasso() {
+            if (tempoRestante > 0) {
+                numEl.innerText = tempoRestante;
+                reproduzirSomDoJogo('tic_relogio');
+                numEl.classList.remove('show');
+                setTimeout(() => { numEl.classList.add('show'); }, 50);
+                tempoRestante--;
+                setTimeout(rodarPasso, 1000);
+            } else {
+                numEl.innerText = "JOGAR!";
+                txtEl.innerText = tipo === "treino" ? "Treino iniciado" : "Partida iniciada";
+                subEl.innerText = "Boa partida! Que vença a melhor estratégia.";
+                reproduzirSomDoJogo('gongo_start');
+                numEl.classList.remove('show');
+                setTimeout(() => { numEl.classList.add('show'); }, 50);
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                    emContagemRegressivaAtiva = false;
+                    if(callbackFim) callbackFim();
+                }, 1050);
+            }
+        }
+        rodarPasso();
+    }
+
+    async function joinRoom(roomName, playerName, forceSpectator) {
+        playerName = nomeSeguro(playerName);
+        roomName = salaSegura(roomName);
+        if (!roomName) return exibirAlertaDoSistema("Sala Obrigatória", "Por favor, informe um código de sala válido.");
+
+        alertaFimPartidaMostrado = false;
+        const isTerminal = (roomName === ADMIN_ROOM_CODE);
+        const isAdminMode = await podeEntrarComoAdmin(playerName, roomName);
+
+        if (isTerminal && !isAdminMode) {
+            exibirAlertaDoSistema("Código Restrito 🛡️", "O código de sala <strong>00</strong> é exclusivo do administrador. Use a área <strong>Entrada do Administrador</strong> com e-mail e senha.");
+            return;
+        }
+
+        const roomRef = ref(db, 'rooms/' + roomName);
+        const snapshot = await get(roomRef);
+        let roomData = snapshot.val();
+
+        if (!roomData) {
+            if (isAdminMode) {
+                roomData = {
+                    id: roomName,
+                    board: getInitialBoard(),
+                    turn: 1,
+                    status: "admin_dashboard",
+                    p1Id: "",
+                    p1Name: "Central Suprema",
+                    p2Id: null,
+                    p2Name: "",
+                    startTime: 0,
+                    chat: null,
+                    isAuthorized: true,
+                    chatBlocked: false,
+                    createdByAdminUid: playerId,
+                    lastUsedDate: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                };
+                await set(roomRef, roomData);
+                await registrarLogAdmin('criou_terminal_admin', roomName);
+                playerRole = "admin";
+            } else {
+                const msgLiberacao = encodeURIComponent(`Olá Isiquel! Tentei entrar na sala "${roomName}", mas ela ainda não foi liberada no painel administrativo.`);
+                exibirAlertaDoSistema(
+                    "Sala não liberada 🛡️",
+                    `<p style="margin-bottom:15px;">Esta sala ainda não foi criada/liberada pelo administrador do jogo.</p>
+                     <p style="margin-bottom:15px; color:#cbd5e1;">Somente o dono do aplicativo pode criar e liberar salas pelo painel administrativo.</p>
+                     <button onclick="window.open('https://wa.me/${WHATSAPP_SUPORTE}?text=${msgLiberacao}', '_blank')" class="btn-whatsapp">💬 Pedir liberação da sala</button>`
+                );
+                return;
+            }
+        } else {
+            if (roomData.isAuthorized === false && !isAdminMode) {
+                const msgBloqueio = encodeURIComponent(`Olá Isiquel! A minha sala "${roomName}" está bloqueada no painel de controle das Damas. Poderia verificar?`);
+                exibirAlertaDoSistema(
+                    "Sala Bloqueada 🛡️",
+                    `<p style="margin-bottom:15px;">Esta sala foi temporariamente congelada pelo sistema.</p>
+                     <button onclick="window.open('https://wa.me/${WHATSAPP_SUPORTE}?text=${msgBloqueio}', '_blank')" class="btn-whatsapp">💬 Solicitar Liberação ao Isiquel</button>`
+                );
+                return;
+            }
+
+            if (isAdminMode) {
+                playerRole = "admin";
+            } else if (forceSpectator) {
+                playerRole = "spectator";
+            } else {
+                const tx = await runTransaction(roomRef, (sala) => {
+                    if (!sala || sala.isAuthorized === false) return sala;
+                    if (sala.p1Id === playerId || sala.p2Id === playerId) return sala;
+                    if (!sala.p1Id || sala.p1Id === "") {
+                        sala.p1Id = playerId;
+                        sala.p1Name = playerName;
+                        sala.chat = null;
+                        if (!sala.status || sala.status === "finished") sala.status = "waiting";
+                    } else if (!sala.p2Id || sala.p2Id === "") {
+                        sala.p2Id = playerId;
+                        sala.p2Name = playerName;
+                        sala.status = "playing";
+                        sala.startTime = Date.now();
+                        sala.winnerRole = null;
+                        sala.winnerName = null;
+                        sala.finishReason = null;
+                        sala.finishedAt = null;
+                    }
+                    sala.lastUsedDate = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+                    return sala;
+                });
+                roomData = tx.snapshot.val();
+                if (roomData?.p1Id === playerId) playerRole = "p1";
+                else if (roomData?.p2Id === playerId) playerRole = "p2";
+                else playerRole = "spectator";
+            }
+        }
+
+        if (playerRole === "spectator" && !isAdminMode) {
+            const specPresenceRef = ref(db, `rooms/${roomName}/spectators/${playerId}`);
+            set(specPresenceRef, nomeSeguro(playerName));
+            onDisconnect(specPresenceRef).remove();
+        }
+
+        displayRoom.innerText = roomName.toUpperCase();
+        lobbyScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+
+        if (playerRole === "admin") {
+            adminPanel.style.display = "block";
+            document.getElementById('normal-game-status').style.display = "none";
+            document.getElementById('normal-board-wrapper').style.display = "none";
+            document.getElementById('normal-controls').style.display = "none";
+            document.getElementById('normal-chat-wrapper').style.display = "none";
+            voiceVideoCallPanel.style.display = "none";
+            ativarPainelMonitoramentoRealtime();
+            carregarTorneiosAdmin();
+            return;
+        } else {
+            adminPanel.style.display = "none";
+            document.getElementById('normal-game-status').style.display = "flex";
+            document.getElementById('normal-board-wrapper').style.display = "block";
+            document.getElementById('normal-controls').style.display = "grid";
+            document.getElementById('normal-chat-wrapper').style.display = "flex";
+        }
+        
+        toggleChatVisibility.style.display = (playerRole === "spectator") ? "none" : "block";
+        atualizarPainelChamada();
+        if (playerRole === "spectator") {
+            escutarChamadaParaEspectador();
+        }
+
+        onValue(roomRef, (snap) => {
+            const data = snap.val();
+            if (!data) return;
+            
+            const inicioPartidaOnline = Number(data.startTime || 0);
+            const agoraSincronizacao = Date.now();
+            const partidaAcabouDeComecar = data.status === "playing" && inicioPartidaOnline && (agoraSincronizacao - inicioPartidaOnline) < 6200;
+            if (partidaAcabouDeComecar && ultimaContagemInicioMostrada !== inicioPartidaOnline) {
+                ultimaContagemInicioMostrada = inicioPartidaOnline;
+                const segundosRestantes = Math.max(1, Math.min(5, Math.ceil((6200 - (agoraSincronizacao - inicioPartidaOnline)) / 1000)));
+                dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); }, segundosRestantes, "online");
+            }
+
+            if (currentGameState && currentGameState.status === "playing" && data.status === "finished" && (!data.p1Name || !data.p2Name)) {
+                reproduzirSomDoJogo('saida_rival');
+                appendChatRow("🚨 Sistema", "O oponente saiu e abandonou a sala de jogos!");
+            }
+            
+            if (currentGameState && currentGameState.board && data.board) {
+                const stringTabAnterior = JSON.stringify(currentGameState.board);
+                const stringTabNovo = JSON.stringify(data.board);
+                
+                if (stringTabAnterior !== stringTabNovo) {
+                    const pecasAntes = contarPecasNoTabuleiro(currentGameState.board);
+                    const pecasDepois = contarPecasNoTabuleiro(data.board);
+                    if (pecasDepois < pecasAntes) { reproduzirSomDoJogo('capture'); }
+                    else if (detectouNovaDama(currentGameState.board, data.board)) { reproduzirSomDoJogo('king'); }
+                    else { reproduzirSomDoJogo('move'); }
+                }
+            }
+
+            if (!ultimoTurnoRegistrado || ultimoTurnoRegistrado !== data.turn) {
+                ultimoTurnoRegistrado = data.turn;
+                timestampInicioTurnoAtual = Date.now();
+                jaAlertouTurnoDemorado = false;
+                turnIndicator.classList.remove('tempo-estourado');
+                lockPieceForMultiCapture = null;
+                selectedPiece = null;
+                validMoves = [];
+            }
+
+            let specsCount = data.spectators ? Object.keys(data.spectators).length : 0;
+            if (ultimoContadorEspectadores !== 0 && specsCount > ultimoContadorEspectadores) reproduzirSomDoJogo('spectator');
+            ultimoContadorEspectadores = specsCount;
+
+            if (currentGameState && currentGameState.status === "playing" && data.status === "finished" && !alertaFimPartidaMostrado) {
+                alertaFimPartidaMostrado = true;
+                executarAlertaVisualDeVitoria(data);
+            }
+
+            atualizarPartidaAoVivo(roomName, data);
+            currentGameState = data;
+            liveSpectatorsEl.innerText = `👁️ ${specsCount} assistindo`;
+            runLocalTimer(data.startTime, data.status);
+            renderGameStatus(data);
+            generateBoardUI(data.board);
+        });
+
+        let primeiraCargaChat = true;
+        const chatRef = ref(db, `rooms/${roomName}/chat`);
+        onValue(chatRef, (snap) => {
+            limparElemento(chatBoxMessages);
+            const data = snap.val();
+            if (data) {
+                Object.values(data).forEach(msg => appendChatRow(msg.author, msg.text));
+                if (!primeiraCargaChat && !isChatMutedLocally) reproduzirSomDoJogo('chat');
+                primeiraCargaChat = false;
+            } else {
+                criarMensagemSistema(chatBoxMessages, "O chat está ativo.");
+            }
+        });
+    }
+
+    function setupPracticeGame(playerName) {
+        encerrarChamadaWebRTC(false);
+        encerrarAssistirChamadaEspectador(false);
+        isPracticeMode = true;
+        alertaFimPartidaMostrado = false;
+        toggleChatVisibility.style.display = "block";
+        adminPanel.style.display = "none";
+        lockPieceForMultiCapture = null;
+        
+        ultimoTurnoRegistrado = 1;
+        timestampInicioTurnoAtual = Date.now();
+        jaAlertouTurnoDemorado = false;
+
+        let robotLabel = "Robô Estrategista";
+        if (practiceDifficulty === "facil") robotLabel = "Robô Aprendiz";
+        if (practiceDifficulty === "dificil") robotLabel = "Mestre das Damas 👑";
+        if (practiceDifficulty === "aprender") robotLabel = "Professor Robô 🎓";
+
+        currentGameState = { board: getInitialBoard(), turn: 1, status: "playing", p1Name: playerName, p2Name: robotLabel, startTime: Date.now() };
+        displayRoom.innerText = isLearningMode ? "TREINO (APRENDER)" : `TREINO (${practiceDifficulty.toUpperCase()})`;
+        
+        lobbyScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        
+        document.getElementById('normal-game-status').style.display = "flex";
+        document.getElementById('normal-board-wrapper').style.display = "block";
+        document.getElementById('normal-controls').style.display = "grid";
+        document.getElementById('normal-chat-wrapper').style.display = "flex";
+        learningCoachBox.style.display = isLearningMode ? "block" : "none";
+        voiceVideoCallPanel.style.display = "none";
+        currentLearningHint = null;
+
+        dispararAnimaçãoContagemRegressiva(() => { reproduzirSomDoJogo('inicio'); }, 5, "treino");
+        
+        runLocalTimer(currentGameState.startTime, "playing");
+        renderGameStatus(currentGameState);
+        if (isLearningMode) atualizarDicaAprendizado(true);
+        generateBoardUI(currentGameState.board);
+    }
+
+    function renderGameStatus(data) {
+        const p1 = data.p1Name || "Aguardando...";
+        const p2 = data.p2Name || "Aguardando...";
+        playersNamesEl.innerText = `${p1} VS ${p2}`;
+        playerBadge.innerText = playerRole === "p1" ? "Vermelho" : playerRole === "p2" ? "Preto" : playerRole === "admin" ? "Dono" : "Espectador";
+        playerBadge.className = `badge badge-${playerRole === "p1"?"p1":playerRole === "p2"?"p2":playerRole === "admin"?"admin":"spec"}`;
+
+        if (data.status === "waiting") {
+            turnIndicator.innerText = "Aguardando Rival...";
+            turnIndicator.style.color = "#f1c40f";
+        } else if (data.status === "playing") {
+            let nomeVez = data.turn === 1 ? p1 : p2;
+            if (lockPieceForMultiCapture) {
+                turnIndicator.innerText = `💥 Combo! ${nomeVez} continua`;
+            } else {
+                turnIndicator.innerText = `Vez de: ${nomeVez}`;
+            }
+            if (!turnIndicator.classList.contains('tempo-estourado')) {
+                turnIndicator.style.color = data.turn === 1 ? "var(--p1-color)" : "#ecf0f1";
+            }
+        } else if (data.status === "finished") {
+            turnIndicator.innerText = "Fim de Jogo!";
+            turnIndicator.style.color = "#2ecc71";
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+        }
+    }
+
+    function deveVirarTabuleiroParaVisualizacao() {
+        // A lógica interna do jogo continua igual. Aqui mudamos só a forma de enxergar o tabuleiro.
+        // Vermelho vê normal. Preto vê virado automaticamente. Espectador pode virar no botão.
+        const virarAutomatico = (!isPracticeMode && playerRole === "p2");
+        return tabuleiroViradoManual ? !virarAutomatico : virarAutomatico;
+    }
+
+    function atualizarCoordenadasDoTabuleiro(tabuleiroVirado) {
+        const letras = tabuleiroVirado ? ['H','G','F','E','D','C','B','A'] : ['A','B','C','D','E','F','G','H'];
+        const numeros = tabuleiroVirado ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
+        const top = document.querySelectorAll('.coord-row-top .coord-space');
+        const bottom = document.querySelectorAll('.coord-row-bottom .coord-space');
+        const left = document.querySelectorAll('.coord-col-left .coord-space');
+        const right = document.querySelectorAll('.coord-col-right .coord-space');
+        top.forEach((el, i) => el.innerText = letras[i] || '');
+        bottom.forEach((el, i) => el.innerText = letras[i] || '');
+        left.forEach((el, i) => el.innerText = numeros[i] || '');
+        right.forEach((el, i) => el.innerText = numeros[i] || '');
+    }
+
+    function atualizarBotaoVirarTabuleiro(tabuleiroVirado) {
+        if (!flipBoardBtn) return;
+        if (playerRole === "p2" && !isPracticeMode) {
+            flipBoardBtn.innerText = tabuleiroVirado ? "Visão Preto" : "Visão Normal";
+            flipBoardBtn.title = tabuleiroVirado ? "Você está vendo o tabuleiro do lado das peças pretas." : "Você desvirou manualmente o tabuleiro.";
+        } else if (playerRole === "spectator") {
+            flipBoardBtn.innerText = tabuleiroVirado ? "Visão Preto" : "Virar";
+            flipBoardBtn.title = "Alternar visão do espectador.";
+        } else {
+            flipBoardBtn.innerText = tabuleiroVirado ? "Virado" : "Virar";
+            flipBoardBtn.title = "Virar tabuleiro manualmente.";
+        }
+    }
+
+    function generateBoardUI(board) {
+        boardEl.innerHTML = "";
+        const tabuleiroVirado = deveVirarTabuleiroParaVisualizacao();
+        atualizarCoordenadasDoTabuleiro(tabuleiroVirado);
+        atualizarBotaoVirarTabuleiro(tabuleiroVirado);
+
+        const linhas = tabuleiroVirado ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+        const colunas = tabuleiroVirado ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+
+        for (let vr = 0; vr < 8; vr++) {
+            for (let vc = 0; vc < 8; vc++) {
+                const r = linhas[vr];
+                const c = colunas[vc];
+                const square = document.createElement('div');
+                square.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                square.dataset.row = String(r);
+                square.dataset.col = String(c);
+
+                const val = board[r][c];
+                if (val !== 0) {
+                    const piece = document.createElement('div');
+                    piece.className = `piece ${val === 1 || val === 2 ? 'p1-piece' : 'p2-piece'}`;
+                    if (val === 2 || val === 4) piece.classList.add('king');
+                    if (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) piece.classList.add('selected');
+                    square.appendChild(piece);
+                }
+
+                if (validMoves.some(m => m.toR === r && m.toC === c)) square.classList.add('highlight');
+
+                if (isLearningMode && learningTipsVisible && currentLearningHint && currentGameState?.turn === 1) {
+                    if (currentLearningHint.move && currentLearningHint.move.fromR === r && currentLearningHint.move.fromC === c) square.classList.add('learn-from');
+                    if (currentLearningHint.move && currentLearningHint.move.toR === r && currentLearningHint.move.toC === c) square.classList.add('learn-to');
+                    if (currentLearningHint.danger && currentLearningHint.danger.r === r && currentLearningHint.danger.c === c) square.classList.add('learn-danger');
+                }
+
+                square.addEventListener('click', () => handleSquareInteraction(r, c));
+                boardEl.appendChild(square);
+            }
+        }
+    }
+
+    function handleSquareInteraction(r, c) {
+        if (emContagemRegressivaAtiva) return;
+        if (!currentGameState || currentGameState.status !== "playing") return;
+        if (!isPracticeMode) {
+            if (currentGameState.turn === 1 && playerRole !== "p1") return;
+            if (currentGameState.turn === 2 && playerRole !== "p2") return;
+        } else { if (currentGameState.turn === 2) return; }
+
+        const board = currentGameState.board;
+        const clickedValue = board[r][c];
+
+        if (lockPieceForMultiCapture && (lockPieceForMultiCapture.r !== r || lockPieceForMultiCapture.c !== c) && clickedValue !== 0) {
+            return; 
+        }
+
+        if (clickedValue !== 0) {
+            const isP1Turn = currentGameState.turn === 1;
+            const ownsPiece = isP1Turn ? (clickedValue === 1 || clickedValue === 2) : (clickedValue === 3 || clickedValue === 4);
+            if (ownsPiece) {
+                selectedPiece = { r, c };
+                let moves = computeValidMovesForPiece(r, c, board);
+                if (lockPieceForMultiCapture) { moves = moves.filter(m => m.capture !== null); }
+                validMoves = moves;
+                generateBoardUI(board);
+            }
+        } else {
+            const move = validMoves.find(m => m.toR === r && m.toC === c);
+            if (move) executeGameMove(move);
+        }
+    }
+
+    function computeValidMovesForPiece(r, c, board) {
+        const piece = board[r][c];
+        let moves = [];
+        if (piece === 0) return moves;
+        const isKing = piece === 2 || piece === 4;
+        const isP1 = piece === 1 || piece === 2;
+
+        if (isKing) {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                let nr = r + dr, nc = c + dc;
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) { 
+                        if (!lockPieceForMultiCapture) { moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); }
+                    } 
+                    else {
+                        if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
+                            let rr = nr + dr, cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                        break; 
+                    }
+                    nr += dr; nc += dc;
+                }
+            });
+        } else {
+            const captureDirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            captureDirs.forEach(([dr, dc]) => {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) { 
+                        if (!lockPieceForMultiCapture) {
+                            const isForward = isP1 ? dr === -1 : dr === 1;
+                            if (isForward) moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null }); 
+                        }
+                    } 
+                    else {
+                        if ((board[nr][nc] === 1 || board[nr][nc] === 2) !== isP1) {
+                            const rr = nr + dr, cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        if (!lockPieceForMultiCapture) {
+            const forceCaptures = moves.filter(m => m.capture !== null);
+            return forceCaptures.length > 0 ? forceCaptures : moves;
+        }
+        return moves;
+    }
+
+    function computeAllValidMoves(turn, board) {
+        let allMoves = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p === 0) continue;
+                if ((turn === 1 && (p === 1 || p === 2)) || (turn === 2 && (p === 3 || p === 4))) {
+                    allMoves = allMoves.concat(computeValidMovesForPiece(r, c, board));
+                }
+            }
+        }
+        const captures = allMoves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : allMoves;
+    }
+
+    function executeGameMove(move) {
+        let board = currentGameState.board.map(row => row.slice());
+        let piece = board[move.fromR][move.fromC];
+
+        if (move.capture) { board[move.capture.r][move.capture.c] = 0; }
+
+        if (piece === 1 && move.toR === 0) piece = 2; 
+        if (piece === 3 && move.toR === 7) piece = 4; 
+
+        board[move.toR][move.toC] = piece;
+        board[move.fromR][move.fromC] = 0;
+
+        let maisCapturasDisponiveis = [];
+        if (move.capture) {
+            lockPieceForMultiCapture = { r: move.toR, c: move.toC };
+            maisCapturasDisponiveis = computeValidMovesForPiece(move.toR, move.toC, board).filter(m => m.capture !== null);
+        }
+
+        let nextTurn = currentGameState.turn;
+        if (maisCapturasDisponiveis.length > 0) {
+            lockPieceForMultiCapture = { r: move.toR, c: move.toC };
+            selectedPiece = { r: move.toR, c: move.toC };
+            validMoves = maisCapturasDisponiveis;
+        } else {
+            lockPieceForMultiCapture = null;
+            selectedPiece = null;
+            validMoves = [];
+            nextTurn = currentGameState.turn === 1 ? 2 : 1;
+        }
+
+        if (isPracticeMode) {
+            if (move.capture) reproduzirSomDoJogo('capture');
+            else reproduzirSomDoJogo((piece === 2 || piece === 4) ? 'king' : 'move');
+            
+            timestampInicioTurnoAtual = Date.now();
+            jaAlertouTurnoDemorado = false;
+            turnIndicator.classList.remove('tempo-estourado');
+
+            currentGameState.board = board; currentGameState.turn = nextTurn;
+            renderGameStatus(currentGameState);
+            if (isLearningMode && nextTurn === 1) atualizarDicaAprendizado(true);
+            else currentLearningHint = null;
+            generateBoardUI(board);
+            if (!checkEndGameConditions(board) && nextTurn === 2) { setTimeout(executeRobotTurn, 600); }
+        } else { 
+            currentGameState.board = board; currentGameState.turn = nextTurn;
+            if (!checkEndGameConditions(board)) { update(ref(db, 'rooms/' + roomId), { board: board, turn: nextTurn }); }
+        }
+    }
+
+    function clonarTabuleiro(board) {
+        return board.map(row => row.slice());
+    }
+
+    function donoDaPecaEngine(piece) {
+        if (piece === 1 || piece === 2) return 1;
+        if (piece === 3 || piece === 4) return 2;
+        return 0;
+    }
+
+    function computeValidMovesForPieceEngine(r, c, board, somenteCapturas = false) {
+        const piece = board[r][c];
+        let moves = [];
+        if (piece === 0) return moves;
+
+        const isKing = piece === 2 || piece === 4;
+        const owner = donoDaPecaEngine(piece);
+        const isP1 = owner === 1;
+
+        if (isKing) {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                let nr = r + dr, nc = c + dc;
+                while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    if (board[nr][nc] === 0) {
+                        if (!somenteCapturas) moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    } else {
+                        if (donoDaPecaEngine(board[nr][nc]) !== owner) {
+                            let rr = nr + dr, cc = nc + dc;
+                            if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                                moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                            }
+                        }
+                        break;
+                    }
+                    nr += dr;
+                    nc += dc;
+                }
+            });
+        } else {
+            const dirs = [[1,1], [1,-1], [-1,1], [-1,-1]];
+            dirs.forEach(([dr, dc]) => {
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) return;
+
+                if (board[nr][nc] === 0) {
+                    const isForward = isP1 ? dr === -1 : dr === 1;
+                    if (!somenteCapturas && isForward) {
+                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: null });
+                    }
+                } else if (donoDaPecaEngine(board[nr][nc]) !== owner) {
+                    const rr = nr + dr, cc = nc + dc;
+                    if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && board[rr][cc] === 0) {
+                        moves.push({ fromR: r, fromC: c, toR: rr, toC: cc, capture: { r: nr, c: nc } });
+                    }
+                }
+            });
+        }
+
+        if (somenteCapturas) return moves.filter(m => m.capture !== null);
+        const captures = moves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : moves;
+    }
+
+    function computeAllValidMovesEngine(turn, board, pecaObrigatoria = null) {
+        let allMoves = [];
+
+        if (pecaObrigatoria) {
+            return computeValidMovesForPieceEngine(pecaObrigatoria.r, pecaObrigatoria.c, board, true);
+        }
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (donoDaPecaEngine(board[r][c]) === turn) {
+                    allMoves = allMoves.concat(computeValidMovesForPieceEngine(r, c, board, false));
+                }
+            }
+        }
+
+        const captures = allMoves.filter(m => m.capture !== null);
+        return captures.length > 0 ? captures : allMoves;
+    }
+
+    function aplicarMovimentoEngine(board, move) {
+        const nextBoard = clonarTabuleiro(board);
+        let piece = nextBoard[move.fromR][move.fromC];
+        let capturedPiece = 0;
+
+        if (move.capture) {
+            capturedPiece = nextBoard[move.capture.r][move.capture.c];
+            nextBoard[move.capture.r][move.capture.c] = 0;
+        }
+
+        let promoted = false;
+        if (piece === 1 && move.toR === 0) { piece = 2; promoted = true; }
+        if (piece === 3 && move.toR === 7) { piece = 4; promoted = true; }
+
+        nextBoard[move.toR][move.toC] = piece;
+        nextBoard[move.fromR][move.fromC] = 0;
+
+        return { board: nextBoard, piece, capturedPiece, promoted, toR: move.toR, toC: move.toC };
+    }
+
+    function contarPecasPorLadoEngine(board) {
+        let p1 = 0, p2 = 0, p1Kings = 0, p2Kings = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p === 1) p1++;
+                if (p === 2) { p1++; p1Kings++; }
+                if (p === 3) p2++;
+                if (p === 4) { p2++; p2Kings++; }
+            }
+        }
+        return { p1, p2, p1Kings, p2Kings };
+    }
+
+    function avaliarTabuleiroParaRobo(board) {
+        const counts = contarPecasPorLadoEngine(board);
+        if (counts.p2 === 0) return -100000;
+        if (counts.p1 === 0) return 100000;
+
+        let score = 0;
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p === 0) continue;
+
+                const owner = donoDaPecaEngine(p);
+                const isRobot = owner === 2;
+                const sign = isRobot ? 1 : -1;
+                const isKing = p === 2 || p === 4;
+
+                score += sign * (isKing ? 320 : 115);
+
+                // Controle do centro: peças no centro têm mais mobilidade e menos chance de ficarem presas.
+                if (c >= 2 && c <= 5 && r >= 2 && r <= 5) score += sign * 18;
+
+                // Avanço: o robô valoriza chegar perto de virar dama; o jogador também é considerado.
+                if (!isKing) {
+                    if (isRobot) score += r * 13;       // robô desce rumo à linha 7
+                    else score -= (7 - r) * 13;        // jogador sobe rumo à linha 0
+                }
+
+                // Proteção lateral e fundo: evita entregar peças soltas.
+                if (c === 0 || c === 7) score += sign * 10;
+                if (isRobot && r === 0) score += 8;
+                if (!isRobot && r === 7) score -= 8;
+            }
+        }
+
+        const robotMoves = computeAllValidMovesEngine(2, board).length;
+        const humanMoves = computeAllValidMovesEngine(1, board).length;
+        score += (robotMoves - humanMoves) * 8;
+
+        // Capturas disponíveis no próximo lance valem bastante.
+        score += computeAllValidMovesEngine(2, board).filter(m => m.capture).length * 45;
+        score -= computeAllValidMovesEngine(1, board).filter(m => m.capture).length * 65;
+
+        return score;
+    }
+
+    function ordenarMovimentosParaBusca(board, moves, turn) {
+        return moves.slice().sort((a, b) => {
+            const pa = pontuarMovimentoRapido(board, a, turn);
+            const pb = pontuarMovimentoRapido(board, b, turn);
+            return pb - pa;
+        });
+    }
+
+    function pontuarMovimentoRapido(board, move, turn) {
+        const piece = board[move.fromR][move.fromC];
+        let s = 0;
+        if (move.capture) {
+            const captured = board[move.capture.r][move.capture.c];
+            s += (captured === 2 || captured === 4) ? 600 : 380;
+        }
+        if ((piece === 3 && move.toR === 7) || (piece === 1 && move.toR === 0)) s += 500;
+        if ((piece === 4 || piece === 2)) s += 40;
+        if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) s += 25;
+        return turn === 2 ? s : -s;
+    }
+
+    function minimaxRobo(board, depth, turn, alpha, beta, pecaObrigatoria = null) {
+        const counts = contarPecasPorLadoEngine(board);
+        if (depth <= 0 || counts.p1 === 0 || counts.p2 === 0) {
+            return avaliarTabuleiroParaRobo(board);
+        }
+
+        let moves = computeAllValidMovesEngine(turn, board, pecaObrigatoria);
+        if (moves.length === 0) {
+            return turn === 2 ? -90000 - depth : 90000 + depth;
+        }
+
+        // Evita travamento em celulares quando há muitas damas com muitas casas disponíveis.
+        moves = ordenarMovimentosParaBusca(board, moves, turn).slice(0, 16);
+
+        if (turn === 2) {
+            let best = -Infinity;
+            for (const move of moves) {
+                const applied = aplicarMovimentoEngine(board, move);
+                let nextTurn = 1;
+                let nextForced = null;
+
+                if (move.capture) {
+                    const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                    if (novasCapturas.length > 0) {
+                        nextTurn = 2;
+                        nextForced = { r: applied.toR, c: applied.toC };
+                    }
+                }
+
+                const value = minimaxRobo(applied.board, depth - 1, nextTurn, alpha, beta, nextForced);
+                best = Math.max(best, value);
+                alpha = Math.max(alpha, value);
+                if (beta <= alpha) break;
+            }
+            return best;
+        } else {
+            let best = Infinity;
+            for (const move of moves) {
+                const applied = aplicarMovimentoEngine(board, move);
+                let nextTurn = 2;
+                let nextForced = null;
+
+                if (move.capture) {
+                    const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                    if (novasCapturas.length > 0) {
+                        nextTurn = 1;
+                        nextForced = { r: applied.toR, c: applied.toC };
+                    }
+                }
+
+                const value = minimaxRobo(applied.board, depth - 1, nextTurn, alpha, beta, nextForced);
+                best = Math.min(best, value);
+                beta = Math.min(beta, value);
+                if (beta <= alpha) break;
+            }
+            return best;
+        }
+    }
+
+    function escolherMovimentoDoRobo(board, moves) {
+        if (practiceDifficulty === "facil") {
+            // Fácil ainda erra, mas não ignora capturas obrigatórias.
+            const capturas = moves.filter(m => m.capture !== null);
+            if (capturas.length > 0 && Math.random() < 0.75) {
+                return capturas[Math.floor(Math.random() * capturas.length)];
+            }
+            return moves[Math.floor(Math.random() * moves.length)];
+        }
+
+        const depth = practiceDifficulty === "dificil" ? 5 : 3;
+        const candidatos = ordenarMovimentosParaBusca(board, moves, 2).slice(0, practiceDifficulty === "dificil" ? 16 : 10);
+        let melhorPeso = -Infinity;
+        let melhores = [];
+
+        candidatos.forEach(move => {
+            const applied = aplicarMovimentoEngine(board, move);
+            let nextTurn = 1;
+            let nextForced = null;
+
+            if (move.capture) {
+                const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                if (novasCapturas.length > 0) {
+                    nextTurn = 2;
+                    nextForced = { r: applied.toR, c: applied.toC };
+                }
+            }
+
+            let peso = minimaxRobo(applied.board, depth - 1, nextTurn, -Infinity, Infinity, nextForced);
+
+            // No médio, um pouco de humanidade: ele pode escolher entre boas jogadas, não sempre a perfeita.
+            if (practiceDifficulty === "medio") peso += Math.random() * 35;
+
+            if (peso > melhorPeso) {
+                melhorPeso = peso;
+                melhores = [move];
+            } else if (Math.abs(peso - melhorPeso) < 0.001) {
+                melhores.push(move);
+            }
+        });
+
+        return melhores[Math.floor(Math.random() * melhores.length)] || moves[0];
+    }
+
+    function avaliarCenarioPosicional(board, m) {
+        const applied = aplicarMovimentoEngine(board, m);
+        return avaliarTabuleiroParaRobo(applied.board);
+    }
+
+    function movimentoCoord(move) {
+        const letras = "ABCDEFGH";
+        return `${letras[move.fromC]}${8 - move.fromR} → ${letras[move.toC]}${8 - move.toR}`;
+    }
+
+    function jogadaEntregaCaptura(boardDepois) {
+        const respostas = computeAllValidMovesEngine(2, boardDepois);
+        const capturas = respostas.filter(m => m.capture);
+        if (capturas.length === 0) return null;
+        return capturas[0].capture;
+    }
+
+    function explicarJogadaAprendizado(board, move, score) {
+        const piece = board[move.fromR][move.fromC];
+        const applied = aplicarMovimentoEngine(board, move);
+        const partes = [];
+        const coord = movimentoCoord(move);
+        if (move.capture) {
+            partes.push(`Essa jogada em <strong>${coord}</strong> é forte porque captura uma peça do robô. Na dama, quando existe captura, ela é obrigatória — então o caminho certo é aproveitar a tomada.`);
+        } else {
+            partes.push(`Uma boa jogada agora é <strong>${coord}</strong>. Ela mantém sua peça em movimento e melhora sua posição no tabuleiro.`);
+        }
+
+        if (piece === 1 && move.toR <= 2) partes.push("Ela também aproxima sua peça da última linha, aumentando a chance de virar dama.");
+        if (piece === 2) partes.push("Como essa peça já é dama, ela tem mais alcance. Use-a para controlar diagonais longas e pressionar o robô.");
+        if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) partes.push("Ela ocupa uma região central, onde sua peça costuma ter mais opções de ataque e defesa.");
+        if (move.toC === 0 || move.toC === 7) partes.push("Ela encosta na lateral, o que reduz alguns riscos de captura por um dos lados.");
+
+        const perigo = jogadaEntregaCaptura(applied.board);
+        if (perigo) {
+            partes.push("⚠️ Atenção: mesmo sendo uma opção possível, depois dela o robô pode ter uma captura. Observe a casa marcada em vermelho antes de confirmar.");
+        } else {
+            partes.push("✅ O ponto positivo é que ela não deixa uma captura imediata fácil para o robô.");
+        }
+
+        return { texto: partes.join(" "), danger: perigo, score };
+    }
+
+    function analisarMelhorJogadaDoAluno(board) {
+        let moves = computeAllValidMovesEngine(1, board, lockPieceForMultiCapture);
+        if (!moves.length) return null;
+        const candidatos = ordenarMovimentosParaBusca(board, moves, 1).slice(0, 14);
+        let melhor = null;
+        let melhorScore = -Infinity;
+
+        candidatos.forEach(move => {
+            const applied = aplicarMovimentoEngine(board, move);
+            let nextTurn = 2;
+            let nextForced = null;
+
+            if (move.capture) {
+                const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                if (novasCapturas.length > 0) {
+                    nextTurn = 1;
+                    nextForced = { r: applied.toR, c: applied.toC };
+                }
+            }
+
+            // Como a avaliação original mede vantagem do robô, invertemos o sinal para sugerir a melhor jogada do aluno.
+            let score = -minimaxRobo(applied.board, 3, nextTurn, -Infinity, Infinity, nextForced);
+            if (move.capture) score += 120;
+            if (board[move.fromR][move.fromC] === 1 && move.toR === 0) score += 220;
+            if (!jogadaEntregaCaptura(applied.board)) score += 55;
+
+            if (score > melhorScore) {
+                melhorScore = score;
+                melhor = move;
+            }
+        });
+
+        if (!melhor) melhor = moves[0];
+        const explicacao = explicarJogadaAprendizado(board, melhor, melhorScore);
+        return { move: melhor, text: explicacao.texto, danger: explicacao.danger, score: melhorScore };
+    }
+
+    function atualizarDicaAprendizado(forcarNova = false) {
+        if (!isLearningMode || !learningCoachBox || !learningCoachText) return;
+        learningCoachBox.style.display = "block";
+
+        if (!learningTipsVisible) {
+            currentLearningHint = null;
+            learningCoachText.innerHTML = "Dicas ocultas. Clique em <strong>Mostrar dicas</strong> para o Professor de Damas voltar a orientar suas jogadas.";
+            generateBoardUI(currentGameState?.board || []);
+            return;
+        }
+
+        if (!currentGameState || currentGameState.status !== "playing") {
+            currentLearningHint = null;
+            learningCoachText.innerText = "A partida terminou. Comece outra rodada para continuar aprendendo.";
+            return;
+        }
+
+        if (currentGameState.turn !== 1) {
+            currentLearningHint = null;
+            learningCoachText.innerText = "Agora observe o robô. Repare como ele tenta capturar, proteger peças e dominar as diagonais.";
+            return;
+        }
+
+        if (!currentLearningHint || forcarNova) currentLearningHint = analisarMelhorJogadaDoAluno(currentGameState.board);
+        if (!currentLearningHint) {
+            learningCoachText.innerText = "Não encontrei jogadas disponíveis. Isso geralmente significa bloqueio total ou fim de partida.";
+            return;
+        }
+
+        learningCoachText.innerHTML = `<strong>Dica do professor:</strong> ${currentLearningHint.text}<br><span style="display:block; margin-top:6px; color:#94a3b8;">Casa amarela = peça sugerida. Casa verde = destino sugerido. Casa vermelha = possível perigo.</span>`;
+    }
+
+    function executeRobotTurn() {
+        if (!isPracticeMode || currentGameState.status !== "playing") return;
+        const board = currentGameState.board;
+        const robotMoves = computeAllValidMovesEngine(2, board, lockPieceForMultiCapture);
+
+        if (robotMoves.length === 0) {
+            currentGameState.status = "finished";
+            currentGameState.winnerRole = "p1";
+            currentGameState.winnerName = currentGameState.p1Name || "Você";
+            currentGameState.finishReason = "sem_movimentos";
+            currentGameState.finishedAt = Date.now();
+            if (!alertaFimPartidaMostrado) {
+                alertaFimPartidaMostrado = true;
+                executarAlertaVisualDeVitoria(currentGameState);
+            }
+            renderGameStatus(currentGameState);
+            return;
+        }
+
+        const nomeRobo = currentGameState.p2Name || "Robô";
+        turnIndicator.innerText = `${nomeRobo} analisando a melhor jogada...`;
+        turnIndicator.style.color = "#f1c40f";
+
+        const selectedMove = escolherMovimentoDoRobo(board, robotMoves);
+        const applied = aplicarMovimentoEngine(board, selectedMove);
+        let nextTurn = 1;
+
+        if (selectedMove.capture) reproduzirSomDoJogo('capture');
+        else reproduzirSomDoJogo((applied.piece === 2 || applied.piece === 4) ? 'king' : 'move');
+
+        lockPieceForMultiCapture = null;
+        selectedPiece = null;
+        validMoves = [];
+
+        if (selectedMove.capture) {
+            const novasCapturas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+            if (novasCapturas.length > 0) {
+                nextTurn = 2;
+                lockPieceForMultiCapture = { r: applied.toR, c: applied.toC };
+            }
+        }
+
+        timestampInicioTurnoAtual = Date.now();
+        jaAlertouTurnoDemorado = false;
+        turnIndicator.classList.remove('tempo-estourado');
+
+        currentGameState.board = applied.board;
+        currentGameState.turn = nextTurn;
+        renderGameStatus(currentGameState);
+        if (isLearningMode && nextTurn === 1) atualizarDicaAprendizado(true);
+        else currentLearningHint = null;
+        generateBoardUI(applied.board);
+
+        if (checkEndGameConditions(applied.board)) return;
+
+        if (nextTurn === 2) {
+            setTimeout(executeRobotTurn, 550);
+        }
+    }
+
+    function executarAlertaVisualDeVitoria(gameDataOrBoard) {
+        const gameData = Array.isArray(gameDataOrBoard)
+            ? { ...(currentGameState || {}), board: gameDataOrBoard }
+            : (gameDataOrBoard || currentGameState || {});
+        const board = gameData.board || gameDataOrBoard;
+        if (!board) return;
+
+        let p1Pieces = 0, p2Pieces = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] === 1 || board[r][c] === 2) p1Pieces++;
+                if (board[r][c] === 3 || board[r][c] === 4) p2Pieces++;
+            }
+        }
+
+        let winnerRole = gameData.winnerRole || "";
+        if (!winnerRole) {
+            if (p1Pieces === 0 || p2Pieces === 0) {
+                winnerRole = p1Pieces > 0 ? "p1" : "p2";
+            } else {
+                winnerRole = gameData.turn === 2 ? "p1" : "p2";
+            }
+        }
+
+        const nomeP1 = nomeSeguro(gameData.p1Name || currentGameState?.p1Name || "Vermelho");
+        const nomeP2 = nomeSeguro(gameData.p2Name || currentGameState?.p2Name || "Preto");
+        const nomeDoGanhador = nomeSeguro(gameData.winnerName || (winnerRole === "p1" ? nomeP1 : nomeP2));
+        const nomeDoPerdedor = nomeSeguro(winnerRole === "p1" ? nomeP2 : nomeP1);
+
+        const souJogadorP1 = (playerRole === "p1");
+        const souJogadorP2 = (playerRole === "p2");
+        const voceGanhou = (winnerRole === "p1" && souJogadorP1) || (winnerRole === "p2" && souJogadorP2);
+        const vocePerdeu = (souJogadorP1 || souJogadorP2) && !voceGanhou;
+        const textoRanking = isPracticeMode
+            ? "Essa partida foi registrada no Ranking Contra a Máquina. Continue somando pontos e tente vencer no nível Difícil."
+            : "Sua vitória entra para a caminhada no ranking global dos campeões.";
+
+        if (playerRole === "spectator") {
+            reproduzirSomDoJogo('fanfarra_vitoria');
+            exibirAlertaDoSistema(
+                "👑 PARTIDA TERMINADA 👑",
+                `<div style="font-size:1.35rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 VITÓRIA DE ${nomeDoGanhador.toUpperCase()}! 🎉</div>
+                 <p style="color:#e2e8f0; font-size:0.95rem; line-height:1.5;">O duelo terminou no tabuleiro. Parabéns ao vencedor e honra aos dois jogadores pela batalha!</p>`
+            );
+            return;
+        }
+
+        if (voceGanhou) {
+            document.body.classList.add('vitoria-animada');
+            reproduzirSomDoJogo('fanfarra_vitoria');
+            exibirAlertaDoSistema(
+                "🏆 VOCÊ GANHOU! 👑",
+                `<div style="font-size:1.4rem; color:#2ecc71; font-weight:bold; text-shadow:0 0 10px rgba(46,204,113,0.5); margin-bottom:15px;">🎉 PARABÉNS, ${nomeDoGanhador.toUpperCase()}! 🎉</div>
+                 <p style="color:#fff; font-size:0.98rem; line-height:1.5;">Você venceu a partida com estratégia e domínio do tabuleiro.</p>
+                 <p style="color:#f1c40f; font-size:0.92rem; margin-top:10px;">${textoRanking}</p>`
+            );
+        } else if (vocePerdeu) {
+            reproduzirSomDoJogo('saida_rival');
+            exibirAlertaDoSistema(
+                "💔 PARTIDA TERMINADA",
+                `<div style="font-size:1.3rem; color:#e74c3c; font-weight:bold; margin-bottom:15px;">VITÓRIA DE ${nomeDoGanhador.toUpperCase()}!</div>
+                 <p style="color:#eee; font-size:0.96rem; line-height:1.5;">${nomeDoPerdedor}, não fique triste. Continue treinando, observe suas jogadas e volte para a revanche mais preparado.</p>
+                 <p style="color:#94a3b8; font-size:0.9rem; margin-top:10px;">Dica: use o modo contra a máquina para treinar captura obrigatória, defesa e movimentação da dama.</p>`
+            );
+        } else {
+            exibirAlertaDoSistema(
+                "👑 PARTIDA TERMINADA 👑",
+                `<div style="font-size:1.3rem; color:#3498db; font-weight:bold; margin-bottom:15px;">🎉 VITÓRIA DE ${nomeDoGanhador.toUpperCase()}! 🎉</div>`
+            );
+        }
+    }
+
+    function checkEndGameConditions(board) {
+        let p1Pieces = 0, p2Pieces = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] === 1 || board[r][c] === 2) p1Pieces++;
+                if (board[r][c] === 3 || board[r][c] === 4) p2Pieces++;
+            }
+        }
+
+        if (currentGameState.status !== "playing") return false;
+
+        if (p1Pieces === 0 || p2Pieces === 0) {
+            const p1Venceu = p1Pieces > 0;
+            currentGameState.status = "finished";
+            currentGameState.winnerRole = p1Venceu ? "p1" : "p2";
+            currentGameState.winnerName = p1Venceu ? currentGameState.p1Name : currentGameState.p2Name;
+            currentGameState.finishReason = "sem_pecas";
+            currentGameState.finishedAt = Date.now();
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+            if (isPracticeMode) {
+                registrarResultadoTreino(p1Venceu);
+                if (!alertaFimPartidaMostrado) {
+                    alertaFimPartidaMostrado = true;
+                    executarAlertaVisualDeVitoria(currentGameState);
+                }
+            } else { finalizarPartidaOnline(p1Venceu, board, "sem_pecas"); }
+            return true;
+        }
+
+        const totalMovimentosPossiveis = computeAllValidMoves(currentGameState.turn, board).length;
+        if (totalMovimentosPossiveis === 0 && !lockPieceForMultiCapture) {
+            const p1Venceu = (currentGameState.turn === 2);
+            currentGameState.status = "finished";
+            currentGameState.winnerRole = p1Venceu ? "p1" : "p2";
+            currentGameState.winnerName = p1Venceu ? currentGameState.p1Name : currentGameState.p2Name;
+            currentGameState.finishReason = "sem_movimentos";
+            currentGameState.finishedAt = Date.now();
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+            if (isPracticeMode) {
+                registrarResultadoTreino(p1Venceu);
+                if (!alertaFimPartidaMostrado) {
+                    alertaFimPartidaMostrado = true;
+                    executarAlertaVisualDeVitoria(currentGameState);
+                }
+            } else { finalizarPartidaOnline(p1Venceu, board, "sem_movimentos"); }
+            return true;
+        }
+        return false;
+    }
+
+    async function finalizarPartidaOnline(p1Venceu, board, motivo = "fim_de_jogo") {
+        if (isPracticeMode) return;
+        const winnerRole = p1Venceu ? "p1" : "p2";
+        const winnerName = nomeSeguro(p1Venceu ? currentGameState.p1Name : currentGameState.p2Name);
+        await update(ref(db, 'rooms/' + roomId), {
+            board: board,
+            status: "finished",
+            winnerRole: winnerRole,
+            winnerName: winnerName,
+            finishReason: motivo,
+            finishedAt: Date.now()
+        });
+        if (playerRole === "p1") updatePlayerRanking(p1Venceu, currentGameState.p1Name);
+        if (playerRole === "p2") updatePlayerRanking(!p1Venceu, currentGameState.p2Name);
+    }
+
+    drawBtn.addEventListener('click', async () => {
+        if (!currentGameState || currentGameState.status !== "playing") return;
+        if (playerRole === "spectator") return;
+        
+        exibirConfirmacao("Propor Empate", "Deseja declarar empate consensual e reiniciar a partida?", async () => {
+            if (isPracticeMode) {
+                setupPracticeGame(nameInput.value.trim() || "Você");
+            } else {
+                const roomRef = ref(db, 'rooms/' + roomId);
+                push(ref(db, `rooms/${roomId}/chat`), { author: "⚙️ Sistema", text: `A partida terminou em EMPATE por acordo.`, timestamp: Date.now() });
+                alertaFimPartidaMostrado = false;
+                await update(roomRef, { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now(), winnerRole: null, winnerName: null, finishReason: null, finishedAt: null });
+            }
+        });
+    });
+
+    resetRoomBtn.addEventListener('click', async () => {
+        if (isPracticeMode) { setupPracticeGame(nameInput.value.trim() || "Você"); return; }
+        if (playerRole === "spectator") return;
+        lockPieceForMultiCapture = null;
+        alertaFimPartidaMostrado = false;
+        update(ref(db, 'rooms/' + roomId), { board: getInitialBoard(), turn: 1, status: "playing", startTime: Date.now(), winnerRole: null, winnerName: null, finishReason: null, finishedAt: null });
+    });
+
+    leaveBtn.addEventListener('click', async () => {
+        await encerrarChamadaWebRTC(true);
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        if (!isPracticeMode && roomId) {
+            if (playerRole === "spectator") {
+                if (!usuarioAdminConfirmado) { set(ref(db, `rooms/${roomId}/spectators/${playerId}`), null); }
+            } 
+            else if (playerRole !== "admin") {
+                if (playerRole === "p1") await update(ref(db, 'rooms/' + roomId), { p1Id: "", p1Name: "", status: "finished" });
+                if (playerRole === "p2") await update(ref(db, 'rooms/' + roomId), { p2Id: "", p2Name: "", status: "finished" });
+            }
+        }
+        roomId = ""; playerRole = "spectator"; isPracticeMode = false; lockPieceForMultiCapture = null; ultimoContadorEspectadores = 0;
+        ultimoTurnoRegistrado = 0; timestampInicioTurnoAtual = 0; jaAlertouTurnoDemorado = false;
+        difficultyBox.style.display = "none"; gameScreen.style.display = 'none'; lobbyScreen.style.display = 'block';
+    });
+
+
+    // ================================================================
+    // ✅ FASE 3 GRÁTIS - POLIMENTO COMERCIAL SEM SERVIÇO PAGO
+    // Recursos seguros: compartilhar sala, copiar link, instrução de instalação,
+    // privacidade básica e tratamento de erros visíveis ao usuário.
+    // ================================================================
+    (function aplicarFase3Gratis() {
+        const executar = () => {
+            try {
+                const lobby = document.getElementById('lobby-screen');
+                if (lobby && !document.getElementById('phase3-tools-panel')) {
+                    const panel = document.createElement('div');
+                    panel.id = 'phase3-tools-panel';
+                    panel.className = 'phase3-tools-panel';
+                    panel.innerHTML = `
+                        <div class="phase3-tools-title">🚀 Ferramentas rápidas</div>
+                        <div class="phase3-tools-desc">Compartilhe sala, copie link do jogo, veja como instalar no celular e consulte o aviso de privacidade.</div>
+                        <div class="phase3-tools-row">
+                            <button id="phase3-share-room-btn" class="btn-phase3-share" type="button">Compartilhar sala no WhatsApp</button>
+                            <button id="phase3-copy-link-btn" class="btn-phase3-copy" type="button">Copiar link do jogo</button>
+                            <button id="phase3-install-help-btn" class="btn-phase3-install" type="button">Como instalar no celular</button>
+                            <button id="phase3-privacy-btn" class="btn-phase3-privacy" type="button">Privacidade e avisos</button>
+                        </div>
+                    `;
+                    const feedbackPanel = document.querySelector('.feedback-panel');
+                    if (feedbackPanel) lobby.insertBefore(panel, feedbackPanel); else lobby.appendChild(panel);
+                }
+
+                const shareBtn = document.getElementById('phase3-share-room-btn');
+                if (shareBtn && !shareBtn.dataset.phase3Ready) {
+                    shareBtn.dataset.phase3Ready = '1';
+                    shareBtn.addEventListener('click', () => {
+                        const nome = (document.getElementById('name-input')?.value || 'Jogador').trim() || 'Jogador';
+                        const sala = (document.getElementById('room-input')?.value || '').trim();
+                        if (!sala) {
+                            if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Informe a sala', 'Digite o código da sala antes de compartilhar.');
+                            else alert('Digite o código da sala antes de compartilhar.');
+                            return;
+                        }
+                        const link = window.location.href.split('#')[0];
+                        const texto = encodeURIComponent(`🔥 Partida de Damas Online!
+${nome} está chamando você para jogar ou assistir.
+Sala: ${sala}
+Entre pelo link: ${link}`);
+                        window.open(`https://wa.me/?text=${texto}`, '_blank');
+                    });
+                }
+
+                const copyBtn = document.getElementById('phase3-copy-link-btn');
+                if (copyBtn && !copyBtn.dataset.phase3Ready) {
+                    copyBtn.dataset.phase3Ready = '1';
+                    copyBtn.addEventListener('click', async () => {
+                        const sala = (document.getElementById('room-input')?.value || '').trim();
+                        const link = window.location.href.split('#')[0] + (sala ? `#sala=${encodeURIComponent(sala)}` : '');
+                        try {
+                            await navigator.clipboard.writeText(link);
+                            if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Link copiado', 'O link do jogo foi copiado. Agora é só enviar para os participantes.');
+                            else alert('Link copiado.');
+                        } catch (e) {
+                            prompt('Copie o link abaixo:', link);
+                        }
+                    });
+                }
+
+                const installBtn = document.getElementById('phase3-install-help-btn');
+                if (installBtn && !installBtn.dataset.phase3Ready) {
+                    installBtn.dataset.phase3Ready = '1';
+                    installBtn.addEventListener('click', () => {
+                        const msg = `No celular, abra este jogo pelo navegador.
+
+Android/Chrome: toque nos três pontinhos e escolha “Adicionar à tela inicial”.
+
+iPhone/Safari: toque em compartilhar e depois “Adicionar à Tela de Início”.
+
+Isso cria um ícone do jogo no celular sem precisar pagar nada.`;
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Instalar no celular', msg.replace(/\n/g, '<br>'));
+                        else alert(msg);
+                    });
+                }
+
+                const privacyBtn = document.getElementById('phase3-privacy-btn');
+                if (privacyBtn && !privacyBtn.dataset.phase3Ready) {
+                    privacyBtn.dataset.phase3Ready = '1';
+                    privacyBtn.addEventListener('click', () => {
+                        const msg = `Este jogo pode salvar nome, sala, ranking, mensagens do chat e WhatsApp somente quando o jogador autorizar avisos.
+
+A chamada de vídeo/áudio depende da permissão do navegador e deve ser iniciada pelo jogador.
+
+O WhatsApp automático não é usado nesta versão: os avisos são manuais, para evitar spam e custos.`;
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Privacidade e avisos', msg.replace(/\n/g, '<br>'));
+                        else alert(msg);
+                    });
+                }
+
+                const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+                const salaHash = hash.get('sala');
+                const roomInput = document.getElementById('room-input');
+                if (salaHash && roomInput && !roomInput.value) roomInput.value = salaHash.slice(0, 15);
+            } catch (e) {
+                console.warn('Fase 3 não pôde ser aplicada:', e);
+            }
+        };
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
+        else executar();
+
+        window.addEventListener('error', (event) => {
+            console.warn('Erro capturado pelo modo estabilidade:', event.message);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.warn('Promessa rejeitada capturada pelo modo estabilidade:', event.reason);
+        });
+    })();
+
+
+    // ================================================================
+    // ✅ FASE 4 GRÁTIS - DIAGNÓSTICO, BACKUP E CHECKLIST COMERCIAL
+    // Não muda regras do jogo. Só ajuda a testar, vender e manter estável.
+    // ================================================================
+    (function aplicarFase4Gratis() {
+        const executar = () => {
+            try {
+                const lobby = document.getElementById('admin-panel');
+                if (!lobby || document.getElementById('phase4-quality-panel')) return;
+
+                const panel = document.createElement('div');
+                panel.id = 'phase4-quality-panel';
+                panel.className = 'phase4-quality-panel';
+                panel.innerHTML = `
+                    <div class="phase4-quality-title">✅ Central 10/10 do Sistema</div>
+                    <div class="phase4-quality-desc">Use estes botões antes de divulgar o jogo: teste recursos grátis, faça backup local e veja o checklist comercial.</div>
+                    <div class="phase4-quality-row">
+                        <button id="phase4-run-check-btn" class="btn-phase4-check" type="button">Rodar diagnóstico grátis</button>
+                        <button id="phase4-backup-btn" class="btn-phase4-backup" type="button">Baixar backup local</button>
+                        <button id="phase4-clear-local-btn" class="btn-phase4-clear" type="button">Limpar dados deste celular</button>
+                        <button id="phase4-sales-check-btn" class="btn-phase4-sales" type="button">Checklist para vender</button>
+                    </div>
+                `;
+                const adminExitBtn = document.getElementById('admin-exit-btn');
+                if (adminExitBtn) lobby.insertBefore(panel, adminExitBtn);
+                else lobby.appendChild(panel);
+
+                const status = (ok, texto) => `<div><span class="${ok ? 'phase4-ok' : 'phase4-warn'}">${ok ? '✅' : '⚠️'}</span> ${texto}</div>`;
+
+                document.getElementById('phase4-run-check-btn')?.addEventListener('click', async () => {
+                    const checks = [];
+                    checks.push(status(!!window.navigator, 'Navegador carregado corretamente.'));
+                    checks.push(status(!!auth?.currentUser, auth?.currentUser ? 'Firebase Auth conectado.' : 'Firebase Auth ainda não confirmou usuário.'));
+                    checks.push(status(!!db, 'Realtime Database inicializado.'));
+                    checks.push(status(typeof RTCPeerConnection !== 'undefined', 'WebRTC disponível para vídeo/áudio.'));
+                    checks.push(status(!!navigator.mediaDevices?.getUserMedia, 'Permissão de câmera/microfone suportada pelo navegador.'));
+                    checks.push(status(!!navigator.clipboard, 'Função copiar link disponível.'));
+                    checks.push(status(testarLocalStorageFase4(), 'Armazenamento local disponível para salvar preferências.'));
+                    checks.push(status(!!document.getElementById('board'), 'Tabuleiro encontrado na tela.'));
+                    checks.push(status(!!document.getElementById('voice-video-call-panel'), 'Painel de chamada de vídeo/áudio encontrado.'));
+                    checks.push(status(!!document.getElementById('admin-login-panel'), 'Painel de login administrador encontrado.'));
+
+                    let dbExtra = '';
+                    try {
+                        if (auth?.currentUser && db) {
+                            const snap = await get(ref(db, '.info/connected'));
+                            dbExtra = snap.val() ? '<div><span class="phase4-ok">✅</span> Firebase informou conexão ativa.</div>' : '<div><span class="phase4-warn">⚠️</span> Firebase carregou, mas pode estar offline neste momento.</div>';
+                        }
+                    } catch (e) {
+                        dbExtra = '<div><span class="phase4-warn">⚠️</span> Não consegui consultar o status online do Firebase agora.</div>';
+                    }
+
+                    const html = `<div class="phase4-check-list">${checks.join('')}${dbExtra}<br><div class="tiny-muted">Dica: se algum item ficar com aviso, o jogo ainda pode funcionar, mas vale testar antes de chamar jogadores.</div></div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Diagnóstico do sistema', html);
+                    else alert('Diagnóstico concluído.');
+                });
+
+                document.getElementById('phase4-backup-btn')?.addEventListener('click', () => {
+                    const dados = {
+                        versao: 'v10-fase8-lobby-limpo',
+                        criadoEm: new Date().toISOString(),
+                        jogador: {
+                            nome: document.getElementById('name-input')?.value || '',
+                            sala: document.getElementById('room-input')?.value || '',
+                            whatsapp: document.getElementById('whatsapp-input')?.value || '',
+                            consentimentoWhatsapp: !!document.getElementById('whatsapp-consent')?.checked
+                        },
+                        localStorage: coletarLocalStorageDamasFase4(),
+                        observacao: 'Backup local simples. Não substitui o Firebase, mas ajuda a guardar configurações do navegador.'
+                    };
+                    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json;charset=utf-8' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `backup-damas-${Date.now()}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+                });
+
+                document.getElementById('phase4-clear-local-btn')?.addEventListener('click', () => {
+                    const limpar = () => {
+                        Object.keys(localStorage).forEach(k => { if (k.startsWith('damas_')) localStorage.removeItem(k); });
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Dados locais limpos', 'As preferências salvas neste celular foram apagadas. O ranking online e as salas no Firebase não foram alterados.');
+                        else alert('Dados locais limpos.');
+                    };
+                    if (typeof exibirConfirmacao === 'function') {
+                        exibirConfirmacao('Limpar dados deste celular', 'Isso apaga nome, WhatsApp salvo, posição da chamada e backups locais deste navegador. Não apaga Firebase nem ranking online.', limpar);
+                    } else if (confirm('Limpar dados locais deste navegador?')) limpar();
+                });
+
+                document.getElementById('phase4-sales-check-btn')?.addEventListener('click', () => {
+                    const html = `<div class="phase4-check-list">
+                        <div><span class="phase4-ok">✅</span> Testar login administrador.</div>
+                        <div><span class="phase4-ok">✅</span> Criar/liberar uma sala pelo painel.</div>
+                        <div><span class="phase4-ok">✅</span> Entrar com dois jogadores em celulares diferentes.</div>
+                        <div><span class="phase4-ok">✅</span> Testar vídeo/áudio dos dois lados.</div>
+                        <div><span class="phase4-ok">✅</span> Testar espectador assistindo.</div>
+                        <div><span class="phase4-ok">✅</span> Finalizar partida e conferir ranking.</div>
+                        <div><span class="phase4-ok">✅</span> Testar modo treino, difícil e aprender.</div>
+                        <div><span class="phase4-ok">✅</span> Criar torneio e gerar aviso WhatsApp manual.</div>
+                        <div><span class="phase4-warn">⚠️</span> Antes de vender caro: aplicar Rules seguras no Firebase e testar no celular do cliente.</div>
+                    </div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Checklist para vender', html);
+                    else alert('Checklist comercial carregado.');
+                });
+            } catch (e) {
+                console.warn('Fase 4 não pôde ser aplicada:', e);
+            }
+        };
+
+        function testarLocalStorageFase4() {
+            try {
+                localStorage.setItem('damas_teste_storage', 'ok');
+                localStorage.removeItem('damas_teste_storage');
+                return true;
+            } catch (_) { return false; }
+        }
+
+        function coletarLocalStorageDamasFase4() {
+            const dados = {};
+            try {
+                Object.keys(localStorage).forEach(k => {
+                    if (k.startsWith('damas_')) dados[k] = localStorage.getItem(k);
+                });
+            } catch (_) {}
+            return dados;
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
+        else executar();
+    })();
+
+
+
+    // ================================================================
+    // ✅ FASE 5 GRÁTIS - MODO APP + APRESENTAÇÃO COMERCIAL
+    // Não usa serviço pago. Não mexe no tabuleiro, admin, ranking ou vídeo.
+    // Apenas melhora instalação, divulgação e apresentação para venda.
+    // ================================================================
+    (function aplicarFase5Gratis() {
+        const executar = () => {
+            try {
+                criarManifestGratisFase5();
+                const lobby = document.getElementById('admin-panel');
+                if (!lobby || document.getElementById('phase5-sales-panel')) return;
+
+                const panel = document.createElement('div');
+                panel.id = 'phase5-sales-panel';
+                panel.className = 'phase5-sales-panel';
+                panel.innerHTML = `
+                    <div class="phase5-sales-title">💼 Central Comercial 10/10 Gratuita</div>
+                    <div class="phase5-sales-desc">Use esta área para apresentar o jogo para escolas, igrejas, clubes e projetos sociais sem precisar pagar por nenhum serviço adicional.</div>
+                    <div class="phase5-sales-row">
+                        <button id="phase5-copy-pitch-btn" class="btn-phase5-copy" type="button">Copiar apresentação</button>
+                        <button id="phase5-demo-script-btn" class="btn-phase5-demo" type="button">Roteiro de demonstração</button>
+                        <button id="phase5-app-mode-btn" class="btn-phase5-app" type="button">Modo app grátis</button>
+                        <button id="phase5-final-check-btn" class="btn-phase5-final" type="button">Checklist 10/10</button>
+                    </div>
+                    <div class="phase5-mini-note">Dica: antes de vender, mostre uma partida online, uma chamada de vídeo, o modo aprender, o ranking e o painel admin liberando uma sala.</div>
+                `;
+
+                const phase4Panel = document.getElementById('phase4-quality-panel');
+                const adminExitBtn = document.getElementById('admin-exit-btn');
+                if (phase4Panel && phase4Panel.nextSibling) lobby.insertBefore(panel, phase4Panel.nextSibling);
+                else if (adminExitBtn) lobby.insertBefore(panel, adminExitBtn);
+                else lobby.appendChild(panel);
+
+                document.getElementById('phase5-copy-pitch-btn')?.addEventListener('click', async () => {
+                    const texto = `Arena de Damas Online Interativa\n\nUma plataforma completa de damas online com salas privadas, ranking, torneios, modo treino contra robô, modo aprender com dicas no tabuleiro, chat, espectadores e chamada de vídeo/áudio entre jogadores.\n\nIdeal para escolas, igrejas, clubes, projetos sociais e comunidades que desejam organizar torneios e estimular raciocínio lógico de forma divertida e interativa.`;
+                    try {
+                        await navigator.clipboard.writeText(texto);
+                        if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Apresentação copiada', 'O texto comercial foi copiado. Agora você pode enviar para um possível cliente ou parceiro.');
+                        else alert('Apresentação copiada.');
+                    } catch (e) {
+                        prompt('Copie a apresentação abaixo:', texto);
+                    }
+                });
+
+                document.getElementById('phase5-demo-script-btn')?.addEventListener('click', () => {
+                    const html = `<div class="phase4-check-list">
+                        <div><span class="phase4-ok">1.</span> Abra o jogo no celular e mostre o visual inicial.</div>
+                        <div><span class="phase4-ok">2.</span> Entre no admin e libere uma sala.</div>
+                        <div><span class="phase4-ok">3.</span> Entre com dois jogadores na mesma sala.</div>
+                        <div><span class="phase4-ok">4.</span> Mostre o chat e a chamada de vídeo/áudio.</div>
+                        <div><span class="phase4-ok">5.</span> Mostre o espectador assistindo a partida.</div>
+                        <div><span class="phase4-ok">6.</span> Mostre o modo aprender explicando uma jogada.</div>
+                        <div><span class="phase4-ok">7.</span> Mostre o ranking e o torneio.</div>
+                        <div><span class="phase4-ok">8.</span> Finalize falando: “isso pode ser personalizado para sua escola, igreja, clube ou projeto”.</div>
+                    </div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Roteiro de demonstração', html);
+                    else alert('Roteiro carregado.');
+                });
+
+                document.getElementById('phase5-app-mode-btn')?.addEventListener('click', () => {
+                    const msg = `O modo app grátis já foi preparado nesta versão por meio de configurações no navegador.\n\nPara instalar no celular:\n\nAndroid/Chrome: toque nos três pontinhos > Adicionar à tela inicial.\n\niPhone/Safari: toque em compartilhar > Adicionar à Tela de Início.\n\nIsso não usa serviço pago e deixa o jogo com aparência de aplicativo.`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Modo app grátis', msg.replace(/\n/g, '<br>'));
+                    else alert(msg);
+                });
+
+                document.getElementById('phase5-final-check-btn')?.addEventListener('click', () => {
+                    const html = `<div class="phase4-check-list">
+                        <div><span class="phase4-ok">✅</span> Testar em dois celulares diferentes.</div>
+                        <div><span class="phase4-ok">✅</span> Testar login admin, liberar sala e bloquear sala.</div>
+                        <div><span class="phase4-ok">✅</span> Testar vídeo/áudio entre jogadores.</div>
+                        <div><span class="phase4-ok">✅</span> Testar espectador assistindo.</div>
+                        <div><span class="phase4-ok">✅</span> Testar modo treino difícil e modo aprender.</div>
+                        <div><span class="phase4-ok">✅</span> Testar ranking global e ranking contra máquina.</div>
+                        <div><span class="phase4-ok">✅</span> Testar torneio e WhatsApp manual.</div>
+                        <div><span class="phase4-warn">⚠️</span> Para venda premium: aplicar Firebase Rules finais e testar no domínio definitivo.</div>
+                    </div>`;
+                    if (typeof exibirAlertaDoSistema === 'function') exibirAlertaDoSistema('Checklist 10/10 final', html);
+                    else alert('Checklist 10/10 carregado.');
+                });
+            } catch (e) {
+                console.warn('Fase 5 não pôde ser aplicada:', e);
+            }
+        };
+
+        function criarManifestGratisFase5() {
+            try {
+                if (document.querySelector('link[rel="manifest"]')) return;
+                const manifest = {
+                    name: 'Tabuleiro Arena - Damas Online',
+                    short_name: 'Tabuleiro Arena',
+                    start_url: './',
+                    display: 'standalone',
+                    background_color: '#1a1a2e',
+                    theme_color: '#e94560',
+                    orientation: 'portrait-primary',
+                    description: 'Plataforma de jogos clássicos online começando por Damas Arena, com ranking, torneios, modo aprender e vídeo/áudio.'
+                };
+                const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('link');
+                link.rel = 'manifest';
+                link.href = url;
+                document.head.appendChild(link);
+                if (!document.querySelector('meta[name="theme-color"]')) {
+                    const meta = document.createElement('meta');
+                    meta.name = 'theme-color';
+                    meta.content = '#e94560';
+                    document.head.appendChild(meta);
+                }
+            } catch (e) {
+                console.warn('Manifest grátis não pôde ser criado:', e);
+            }
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', executar);
+        else executar();
+    })();
+
+
+    // 🧱 Garantia extra: ao abrir, só o hub aparece.
+    (function garantirHubInicialLimpo() {
+        const aplicar = () => {
+            if (!document.body.classList.contains('game-selected')) {
+                document.body.classList.add('platform-start-active');
+                document.body.classList.add('mode-selecting');
+                const lobby = document.getElementById('lobby-screen');
+                const game = document.getElementById('game-screen');
+                const hub = document.getElementById('games-hub-panel');
+                if (lobby) lobby.style.display = 'none';
+                if (game) game.style.display = 'none';
+                if (hub) hub.style.display = 'block';
+            }
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicar);
+        else aplicar();
+        setTimeout(aplicar, 300);
+        setTimeout(aplicar, 1200);
+    })();
+
+
+    // ♟️ XADREZ ARENA - FASE 4 (módulo isolado da Damas)
