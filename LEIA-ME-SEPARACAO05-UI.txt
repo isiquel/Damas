@@ -1,0 +1,18 @@
+Tabuleiro Arena — Separação 05 — UI / Alertas / Modais
+
+Esta etapa separa apenas funções visuais pequenas para js/ui.js.
+
+O que foi movido:
+- exibirAlertaDoSistema
+- exibirConfirmacao
+- fechamento dos modais de alerta/confirmação
+
+O que NÃO foi alterado:
+- regras da Damas
+- regras do Xadrez
+- Firebase e salas online
+- Admin
+- ranking
+- chat
+
+Teste primeiro na /fase33/. Se tudo funcionar, publicar no principal.

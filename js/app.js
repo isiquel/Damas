@@ -105,6 +105,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         textoAvisoSeguro
     } = window.TabuleiroArenaUtils || {};
 
+
+    // ================================================================
+    // 🪟 SEPARAÇÃO 05 — UI / ALERTAS / CONFIRMAÇÕES
+    // Estas funções visuais foram movidas para js/ui.js.
+    // O app.js continua controlando Damas, Xadrez, Admin, salas e regras.
+    // ================================================================
+    const TA_UI = window.TabuleiroArenaUI || {};
+    const exibirAlertaDoSistema = TA_UI.exibirAlertaDoSistema || ((titulo, texto) => {
+        const limpo = String(texto ?? '').replace(/<[^>]*>/g, '');
+        window.alert(`${titulo || 'Aviso'}
+
+${limpo}`);
+    });
+    const exibirConfirmacao = TA_UI.exibirConfirmacao || ((titulo, texto, callbackSim) => {
+        const limpo = String(texto ?? '').replace(/<[^>]*>/g, '');
+        if (window.confirm(`${titulo || 'Confirmar'}
+
+${limpo}`) && typeof callbackSim === 'function') callbackSim();
+    });
+
     async function registrarJogadorComunidade(nomeBase) {
         if (!playerId || !db) return;
         const nome = nomeSeguro(nomeBase || nameInput?.value || "Jogador");
@@ -477,16 +497,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         return { salaAlvo, refSala, snap, data: snap.exists() ? snap.val() : null };
     }
 
-    function exibirAlertaDoSistema(titulo, texto) {
-        document.getElementById('custom-alert-title').innerText = titulo;
-        document.getElementById('custom-alert-text').innerHTML = texto;
-        document.getElementById('custom-alert-modal').style.display = 'flex';
-    }
-    document.getElementById('close-alert-btn').addEventListener('click', () => {
-        document.getElementById('custom-alert-modal').style.display = 'none';
-        document.body.classList.remove('vitoria-animada');
-    });
-
     window.addEventListener('error', (ev) => {
         console.error('Erro geral capturado:', ev.error || ev.message);
         atualizarStatusSistema('Atenção: o navegador capturou um erro, mas o jogo tentou continuar funcionando. Abra o console se precisar diagnosticar.', '#f1c40f');
@@ -494,25 +504,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
     window.addEventListener('unhandledrejection', (ev) => {
         console.error('Promessa rejeitada capturada:', ev.reason);
         atualizarStatusSistema('Atenção: uma operação online falhou, mas o modo treino e a tela continuam disponíveis.', '#f1c40f');
-    });
-
-    let acaoConfirmadaCallback = null;
-    function exibirConfirmacao(titulo, texto, callbackSim) {
-        document.getElementById('custom-confirm-title').innerHTML = titulo;
-        document.getElementById('custom-confirm-text').innerHTML = texto;
-        document.getElementById('custom-confirm-modal').style.display = 'flex';
-        acaoConfirmadaCallback = callbackSim;
-    }
-
-    document.getElementById('btn-confirm-yes').addEventListener('click', () => {
-        document.getElementById('custom-confirm-modal').style.display = 'none';
-        if (acaoConfirmadaCallback) acaoConfirmadaCallback();
-        acaoConfirmadaCallback = null;
-    });
-
-    document.getElementById('btn-confirm-no').addEventListener('click', () => {
-        document.getElementById('custom-confirm-modal').style.display = 'none';
-        acaoConfirmadaCallback = null;
     });
 
     // 🔥 NOVO DISPARADOR DE COMPARTILHAMENTO DE SUGESTÕES PARA O WHATSAPP DO ISIQUEI
