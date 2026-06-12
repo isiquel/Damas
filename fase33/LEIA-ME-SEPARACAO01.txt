@@ -1,0 +1,24 @@
+TABULEIRO ARENA - SEPARAÇÃO 01
+
+Objetivo:
+- Começar a separar o código grande sem quebrar o jogo.
+- O index.html continua igual.
+- O arquivo js/app.js agora é apenas um carregador pequeno.
+- A lógica original foi dividida em 3 arquivos dentro de js/parts/.
+
+Arquivos importantes:
+- js/app.js -> carregador das partes
+- js/parts/app.01-base-damas-admin.js -> base, Damas, admin e recursos principais
+- js/parts/app.02-xadrez-core.js -> módulo grande do Xadrez
+- js/parts/app.03-hub-ajustes-finais.js -> hub, ajustes finais e reforços
+- js/app-original-fase40-backup.js -> backup do app.js original da Fase 40
+
+Como testar:
+1. Subir primeiro dentro da pasta /fase33/.
+2. Testar: https://damas-nine.vercel.app/fase33/?v=separacao01
+3. Se tudo funcionar, manter como base para a próxima separação.
+4. Não publicar no principal antes de testar Damas, Xadrez online, treino, admin, sair da sala e chat.
+
+IMPORTANTE:
+Essa etapa separa o arquivo grande em partes, mas mantém a lógica original intacta.
+A próxima etapa pode separar o Xadrez de verdade em arquivo próprio, depois que esta base estiver estável.

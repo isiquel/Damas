@@ -1,7 +1,17 @@
-Tabuleiro Arena - Xadrez Limpo 02 Seguro
+TABULEIRO ARENA - FASE 40
 
-Base: Fase 40 estável.
-Correção: visual do Xadrez mais limpo, parecido com a Damas, usando somente CSS.
-Admin do Xadrez: mantido pelo código original da Fase 40 para evitar travamento.
-Câmera do Xadrez: continua pausada/removida.
-Damas: não alterada.
+Base: Fase 39 funcionando.
+
+Objetivo desta fase:
+- Não mexer na Damas.
+- Manter Xadrez online funcionando.
+- Manter botão Sair da sala funcionando no tabuleiro.
+- Manter câmera removida/pausada.
+- Recolher os botões Reiniciar/Desistir/Sair/Voltar no botão + para o tabuleiro não ficar subindo e descendo.
+- Deixar o tabuleiro do Xadrez mais limpo no celular.
+
+Subir dentro de /fase33/:
+index.html, LEIA-ME.txt, css/ e js/.
+
+Testar com:
+https://damas-nine.vercel.app/fase33/?v=40
