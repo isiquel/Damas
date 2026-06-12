@@ -1,24 +1,15 @@
-TABULEIRO ARENA - FASE 40
+TABULEIRO ARENA
+Base estável com Separação 02 CSS e Separação 03 JS Config.
 
-Base: Fase 39 funcionando.
+Estado atual:
+- Damas preservada.
+- Xadrez online funcionando.
+- Botão Sair da sala funcionando.
+- Controles recolhidos no +.
+- Chat recolhível.
+- Câmera do Xadrez pausada/removida.
+- CSS organizado em arquivos menores.
+- JavaScript começou a ser organizado com js/config.js, sem mexer na lógica do jogo.
 
-Objetivo desta fase:
-- Não mexer na Damas.
-- Manter Xadrez online funcionando.
-- Manter botão Sair da sala funcionando no tabuleiro.
-- Manter câmera removida/pausada.
-- Recolher os botões Reiniciar/Desistir/Sair/Voltar no botão + para o tabuleiro não ficar subindo e descendo.
-- Deixar o tabuleiro do Xadrez mais limpo no celular.
-
-Subir dentro de /fase33/:
-index.html, LEIA-ME.txt, css/ e js/.
-
-Testar com:
-https://damas-nine.vercel.app/fase33/?v=40
-
-SEPARAÇÃO 01 SEGURA
-Esta versão mantém o carregamento original da Fase 40 e guarda os arquivos separados apenas como referência.
-Não usa js/parts no carregamento do site.
-
-Separação 02 CSS:
-O CSS foi dividido com segurança em arquivos menores. O JavaScript continua intacto.
+Regra de segurança:
+Toda melhoria deve ser testada primeiro em /fase33/ antes de ir para o site principal.
