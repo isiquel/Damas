@@ -89,53 +89,41 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
     let usuarioLogadoPorSenha = false;
     let emailAdministradorAtual = "";
 
-    function somenteTextoSeguro(valor, limite = 80) {
-        return String(valor ?? "")
-            .replace(/[<>`]/g, "")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, limite);
-    }
-
-    function nomeSeguro(valor) {
-        return somenteTextoSeguro(valor || "Jogador", 15) || "Jogador";
-    }
-
-    function salaSegura(valor) {
-        return String(valor ?? "")
-            .toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9_-]/g, "")
-            .slice(0, 15);
-    }
-
-    function numeroSeguro(valor, padrao = 0) {
-        const n = Number(valor);
-        return Number.isFinite(n) ? n : padrao;
-    }
-
-    function limparElemento(el) {
-        while (el.firstChild) el.removeChild(el.firstChild);
-    }
-
-    function criarTexto(tag, texto, className = "") {
-        const el = document.createElement(tag);
-        if (className) el.className = className;
-        el.innerText = String(texto ?? "");
-        return el;
-    }
+    // ================================================================
+    // 🧰 SEPARAÇÃO 04 — UTILITÁRIOS SEGUROS
+    // Estas funções pequenas foram movidas para js/utils.js.
+    // O app.js continua controlando as regras da Damas, Xadrez, Admin e salas.
+    // ================================================================
+    const {
+        somenteTextoSeguro,
+        nomeSeguro,
+        salaSegura,
+        numeroSeguro,
+        limparElemento,
+        criarTexto,
+        telefoneSeguro,
+        textoAvisoSeguro
+    } = window.TabuleiroArenaUtils || {};
 
 
-    function telefoneSeguro(valor) {
-        let n = String(valor ?? "").replace(/\D/g, "");
-        if (!n) return "";
-        if (n.length === 10 || n.length === 11) n = "55" + n;
-        return n.slice(0, 14);
-    }
+    // ================================================================
+    // 🪟 SEPARAÇÃO 05 — UI / ALERTAS / CONFIRMAÇÕES
+    // Estas funções visuais foram movidas para js/ui.js.
+    // O app.js continua controlando Damas, Xadrez, Admin, salas e regras.
+    // ================================================================
+    const TA_UI = window.TabuleiroArenaUI || {};
+    const exibirAlertaDoSistema = TA_UI.exibirAlertaDoSistema || ((titulo, texto) => {
+        const limpo = String(texto ?? '').replace(/<[^>]*>/g, '');
+        window.alert(`${titulo || 'Aviso'}
 
-    function textoAvisoSeguro(valor, limite = 220) {
-        return somenteTextoSeguro(valor || "", limite);
-    }
+${limpo}`);
+    });
+    const exibirConfirmacao = TA_UI.exibirConfirmacao || ((titulo, texto, callbackSim) => {
+        const limpo = String(texto ?? '').replace(/<[^>]*>/g, '');
+        if (window.confirm(`${titulo || 'Confirmar'}
+
+${limpo}`) && typeof callbackSim === 'function') callbackSim();
+    });
 
     async function registrarJogadorComunidade(nomeBase) {
         if (!playerId || !db) return;
@@ -509,16 +497,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         return { salaAlvo, refSala, snap, data: snap.exists() ? snap.val() : null };
     }
 
-    function exibirAlertaDoSistema(titulo, texto) {
-        document.getElementById('custom-alert-title').innerText = titulo;
-        document.getElementById('custom-alert-text').innerHTML = texto;
-        document.getElementById('custom-alert-modal').style.display = 'flex';
-    }
-    document.getElementById('close-alert-btn').addEventListener('click', () => {
-        document.getElementById('custom-alert-modal').style.display = 'none';
-        document.body.classList.remove('vitoria-animada');
-    });
-
     window.addEventListener('error', (ev) => {
         console.error('Erro geral capturado:', ev.error || ev.message);
         atualizarStatusSistema('Atenção: o navegador capturou um erro, mas o jogo tentou continuar funcionando. Abra o console se precisar diagnosticar.', '#f1c40f');
@@ -526,25 +504,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
     window.addEventListener('unhandledrejection', (ev) => {
         console.error('Promessa rejeitada capturada:', ev.reason);
         atualizarStatusSistema('Atenção: uma operação online falhou, mas o modo treino e a tela continuam disponíveis.', '#f1c40f');
-    });
-
-    let acaoConfirmadaCallback = null;
-    function exibirConfirmacao(titulo, texto, callbackSim) {
-        document.getElementById('custom-confirm-title').innerHTML = titulo;
-        document.getElementById('custom-confirm-text').innerHTML = texto;
-        document.getElementById('custom-confirm-modal').style.display = 'flex';
-        acaoConfirmadaCallback = callbackSim;
-    }
-
-    document.getElementById('btn-confirm-yes').addEventListener('click', () => {
-        document.getElementById('custom-confirm-modal').style.display = 'none';
-        if (acaoConfirmadaCallback) acaoConfirmadaCallback();
-        acaoConfirmadaCallback = null;
-    });
-
-    document.getElementById('btn-confirm-no').addEventListener('click', () => {
-        document.getElementById('custom-confirm-modal').style.display = 'none';
-        acaoConfirmadaCallback = null;
     });
 
     // 🔥 NOVO DISPARADOR DE COMPARTILHAMENTO DE SUGESTÕES PARA O WHATSAPP DO ISIQUEI
