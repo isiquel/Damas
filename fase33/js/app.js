@@ -7880,6 +7880,212 @@ Link: ${location.origin}${location.pathname}`;
                         .chess-public-tournament-actions { grid-template-columns:1fr; gap:10px; }
                         .chess-public-tournament-actions button { min-height:46px !important; font-size:.75rem !important; }
                     }
+                    /* PROFISSIONAL 14 — card público do torneio realmente organizado */
+                    #chess-public-tournaments-panel.chess-public-tournaments-panel {
+                        max-width: 760px !important;
+                        margin: 18px auto 22px auto !important;
+                        padding: 18px !important;
+                        border-radius: 22px !important;
+                        text-align: left !important;
+                        background: radial-gradient(circle at top left, rgba(34,211,238,.16), transparent 34%), linear-gradient(135deg, rgba(2,6,23,.96), rgba(8,47,73,.78)) !important;
+                        border: 1px solid rgba(56,189,248,.62) !important;
+                        box-shadow: 0 18px 42px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08) !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournaments-title {
+                        justify-content: flex-start !important;
+                        text-align: left !important;
+                        color: #fde68a !important;
+                        font-size: 1rem !important;
+                        line-height: 1.2 !important;
+                        margin: 0 0 6px 0 !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournaments-desc {
+                        max-width: none !important;
+                        text-align: left !important;
+                        color: #dbeafe !important;
+                        background: rgba(15,23,42,.50) !important;
+                        border: 1px solid rgba(148,163,184,.18) !important;
+                        border-left: 4px solid #38bdf8 !important;
+                        border-radius: 12px !important;
+                        padding: 9px 11px !important;
+                        margin: 0 0 13px 0 !important;
+                        font-size: .78rem !important;
+                        line-height: 1.35 !important;
+                    }
+                    #chess-public-tournaments-list {
+                        display: grid !important;
+                        gap: 12px !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-card {
+                        display: grid !important;
+                        grid-template-columns: 74px minmax(0, 1fr) !important;
+                        gap: 14px !important;
+                        padding: 16px !important;
+                        margin: 0 !important;
+                        border-radius: 18px !important;
+                        background: linear-gradient(135deg, rgba(15,23,42,.98), rgba(12,74,110,.64)) !important;
+                        border: 1px solid rgba(125,211,252,.38) !important;
+                        border-left: 5px solid #22d3ee !important;
+                        box-shadow: 0 14px 30px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08) !important;
+                        color: #e5e7eb !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-icon {
+                        width: 62px !important;
+                        height: 62px !important;
+                        border-radius: 50% !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        font-size: 1.65rem !important;
+                        background: radial-gradient(circle, rgba(250,204,21,.24), rgba(15,23,42,.92)) !important;
+                        border: 1px solid rgba(250,204,21,.42) !important;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 10px 18px rgba(0,0,0,.25) !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-content {
+                        min-width: 0 !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-head {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        gap: 10px !important;
+                        margin-bottom: 10px !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-name {
+                        color: #f8fafc !important;
+                        font-size: 1.05rem !important;
+                        font-weight: 1000 !important;
+                        line-height: 1.15 !important;
+                        text-align: left !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-badge {
+                        color: #bbf7d0 !important;
+                        background: rgba(22,163,74,.30) !important;
+                        border: 1px solid rgba(34,197,94,.58) !important;
+                        border-radius: 999px !important;
+                        padding: 5px 10px !important;
+                        font-size: .66rem !important;
+                        font-weight: 1000 !important;
+                        white-space: nowrap !important;
+                        text-transform: uppercase !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-info {
+                        display: grid !important;
+                        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                        gap: 8px !important;
+                        margin: 0 0 10px 0 !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-info-chip {
+                        background: rgba(15,23,42,.78) !important;
+                        border: 1px solid rgba(148,163,184,.22) !important;
+                        border-radius: 12px !important;
+                        padding: 8px 9px !important;
+                        min-height: 48px !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-info-label {
+                        color: #93c5fd !important;
+                        font-size: .58rem !important;
+                        font-weight: 1000 !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: .35px !important;
+                        margin-bottom: 3px !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-info-value {
+                        color: #f8fafc !important;
+                        font-size: .78rem !important;
+                        font-weight: 1000 !important;
+                        line-height: 1.15 !important;
+                        white-space: nowrap !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-message {
+                        display: block !important;
+                        width: 100% !important;
+                        box-sizing: border-box !important;
+                        background: rgba(2,6,23,.52) !important;
+                        border: 1px solid rgba(34,211,238,.18) !important;
+                        border-radius: 13px !important;
+                        padding: 10px 12px !important;
+                        color: #dbeafe !important;
+                        font-size: .78rem !important;
+                        line-height: 1.38 !important;
+                        margin: 0 0 12px 0 !important;
+                        text-align: left !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-link-hidden-note {
+                        display: none !important;
+                    }
+                    #chess-public-tournaments-panel .chess-public-tournament-actions {
+                        grid-column: 2 / 3 !important;
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 12px !important;
+                        margin-top: 2px !important;
+                        align-items: stretch !important;
+                    }
+                    @media (max-width: 560px) {
+                        #chess-public-tournaments-panel.chess-public-tournaments-panel {
+                            margin: 16px auto 20px auto !important;
+                            padding: 14px !important;
+                            border-radius: 20px !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournaments-title {
+                            justify-content: center !important;
+                            text-align: center !important;
+                            font-size: 1rem !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournaments-desc {
+                            text-align: center !important;
+                            font-size: .76rem !important;
+                            padding: 9px 10px !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-card {
+                            grid-template-columns: 1fr !important;
+                            gap: 10px !important;
+                            padding: 14px !important;
+                            border-left-width: 1px !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-icon {
+                            margin: 0 auto !important;
+                            width: 58px !important;
+                            height: 58px !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-head {
+                            flex-direction: column !important;
+                            align-items: center !important;
+                            text-align: center !important;
+                            gap: 6px !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-name {
+                            text-align: center !important;
+                            font-size: 1rem !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-info {
+                            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                            gap: 6px !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-info-chip {
+                            padding: 7px 5px !important;
+                            min-height: 45px !important;
+                            text-align: center !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-info-label {
+                            font-size: .52rem !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-info-value {
+                            font-size: .66rem !important;
+                            white-space: normal !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-message {
+                            text-align: center !important;
+                            font-size: .75rem !important;
+                        }
+                        #chess-public-tournaments-panel .chess-public-tournament-actions {
+                            grid-column: auto !important;
+                            grid-template-columns: 1fr !important;
+                            gap: 10px !important;
+                        }
+                    }
                     body.chess-board-visible #chess-public-tournaments-panel,
                     body.chess-admin-only #chess-public-tournaments-panel { display:none !important; }
                     .chess-global-ranking-panel {
@@ -8338,26 +8544,28 @@ Compartilhe com os amigos e entre no horário marcado.`;
             const horaTxt = partesData[1] || 'A definir';
             const salaTxt = (sala || 'a definir').toUpperCase();
             card.innerHTML = `
-                <div class="chess-public-tournament-head">
-                    <div class="chess-public-tournament-name">🏆 ${escapeHtmlXadrez(nome)}</div>
-                    <div class="chess-public-tournament-badge">Aberto</div>
+                <div class="chess-public-tournament-icon">🏆</div>
+                <div class="chess-public-tournament-content">
+                    <div class="chess-public-tournament-head">
+                        <div class="chess-public-tournament-name">${escapeHtmlXadrez(nome)}</div>
+                        <div class="chess-public-tournament-badge">Aberto</div>
+                    </div>
+                    <div class="chess-public-tournament-info">
+                        <div class="chess-public-info-chip">
+                            <div class="chess-public-info-label">Data</div>
+                            <div class="chess-public-info-value">📅 ${escapeHtmlXadrez(diaTxt)}</div>
+                        </div>
+                        <div class="chess-public-info-chip">
+                            <div class="chess-public-info-label">Horário</div>
+                            <div class="chess-public-info-value">🕘 ${escapeHtmlXadrez(horaTxt)}</div>
+                        </div>
+                        <div class="chess-public-info-chip">
+                            <div class="chess-public-info-label">Sala</div>
+                            <div class="chess-public-info-value">🏠 ${escapeHtmlXadrez(salaTxt)}</div>
+                        </div>
+                    </div>
+                    <div class="chess-public-tournament-message">${escapeHtmlXadrez(mensagem)}</div>
                 </div>
-                <div class="chess-public-tournament-info">
-                    <div class="chess-public-info-chip">
-                        <div class="chess-public-info-label">Data</div>
-                        <div class="chess-public-info-value">📅 ${escapeHtmlXadrez(diaTxt)}</div>
-                    </div>
-                    <div class="chess-public-info-chip">
-                        <div class="chess-public-info-label">Horário</div>
-                        <div class="chess-public-info-value">🕘 ${escapeHtmlXadrez(horaTxt)}</div>
-                    </div>
-                    <div class="chess-public-info-chip">
-                        <div class="chess-public-info-label">Sala</div>
-                        <div class="chess-public-info-value">🏠 ${escapeHtmlXadrez(salaTxt)}</div>
-                    </div>
-                </div>
-                <div class="chess-public-tournament-message">${escapeHtmlXadrez(mensagem)}</div>
-                <div class="chess-public-link-hidden-note">🔗 O link fica dentro do botão “Copiar convite”, sem poluir a tela.</div>
             `;
             const actions = document.createElement('div');
             actions.className = 'chess-public-tournament-actions';
@@ -8389,7 +8597,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 panel.className = 'chess-public-tournaments-panel';
                 panel.innerHTML = `
                     <div class="chess-public-tournaments-title">🏆 Torneios marcados</div>
-                    <div class="chess-public-tournaments-desc">Acompanhe os torneios oficiais publicados pelo administrador. Assista online ou copie o convite para enviar aos amigos.</div>
+                    <div class="chess-public-tournaments-desc">Acompanhe os torneios oficiais publicados pelo administrador.</div>
                     <div id="chess-public-tournaments-list"><div class="tiny-muted">Carregando torneios...</div></div>
                 `;
             }
