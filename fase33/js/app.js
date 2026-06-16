@@ -4917,6 +4917,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             // mas somente como aviso/assistir/copiar link. Edição continua só no Admin.
             garantirPainelPublicoTorneiosXadrez();
             carregarTorneiosPublicosXadrez(true);
+            carregarRankingGeralXadrez(true);
 
             if (card && !document.getElementById('chess-training-panel')) {
                 const training = document.createElement('div');
@@ -5977,6 +5978,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (chessLastResultShown !== textoEstado) {
                 chessLastResultShown = textoEstado;
                 registrarResultadoRankingTreinoXadrez(textoEstado);
+                registrarRankingGeralXadrezOnline(textoEstado);
             }
 
             let tipo = 'draw';
@@ -7191,7 +7193,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 return;
             }
             criarTabuleiroInicial();
-            await publicarEstadoXadrezOnline({ restartedBy: chessPlayerName || chessPlayerColor, restartedAt: Date.now() });
+            await publicarEstadoXadrezOnline({ restartedBy: chessPlayerName || chessPlayerColor, restartedAt: Date.now(), rankingResultKey: null, rankingResultRegisteredAt: null, winner: null, resignedBy: null });
             await push(ref(db, `chessRooms/${chessRoomId}/chat`), { name: 'Sistema', text: `${chessPlayerName || 'Jogador'} reiniciou a partida.`, createdAt: Date.now() });
             renderChessBoard();
             mostrarToastXadrez('♟️ Partida online reiniciada.');
@@ -7333,6 +7335,7 @@ Link: ${location.origin}${location.pathname}`;
                         at: Date.now()
                     }
                 });
+                registrarRankingGeralXadrezOnline(lastMoveMessage, { winnerOverride: vencedor, reason: 'desistencia' });
             });
             return;
         }
@@ -7566,6 +7569,7 @@ Link: ${location.origin}${location.pathname}`;
             restaurarMenuOnlineXadrez();
             garantirPainelPublicoTorneiosXadrez();
             carregarTorneiosPublicosXadrez(true);
+            carregarRankingGeralXadrez(true);
             if (!chessBoard.length) criarTabuleiroInicial();
             ocultarTabuleiroXadrezParaMenu();
             renderChessBoard();
@@ -7712,6 +7716,48 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-public-watch-btn { background:#0284c7; }
                     body.chess-board-visible #chess-public-tournaments-panel,
                     body.chess-admin-only #chess-public-tournaments-panel { display:none !important; }
+                    .chess-global-ranking-panel {
+                        max-width: 560px;
+                        margin: 0 auto 14px auto;
+                        background: linear-gradient(135deg, rgba(15,23,42,.86), rgba(30,64,175,.34));
+                        border: 1px solid rgba(59,130,246,.44);
+                        border-radius: 16px;
+                        padding: 12px;
+                        text-align: left;
+                        box-shadow: 0 12px 28px rgba(0,0,0,.28);
+                    }
+                    .chess-global-ranking-title {
+                        color:#93c5fd;
+                        font-size:.86rem;
+                        font-weight:1000;
+                        text-transform:uppercase;
+                        letter-spacing:.45px;
+                        margin-bottom:5px;
+                    }
+                    .chess-global-ranking-desc {
+                        color:#cbd5e1;
+                        font-size:.76rem;
+                        line-height:1.35;
+                        margin-bottom:8px;
+                    }
+                    .chess-global-ranking-row {
+                        display:grid;
+                        grid-template-columns: 34px 1fr auto;
+                        align-items:center;
+                        gap:8px;
+                        padding:8px;
+                        border-radius:10px;
+                        background:rgba(2,6,23,.68);
+                        border-left:4px solid rgba(59,130,246,.8);
+                        margin-bottom:7px;
+                        color:#e2e8f0;
+                    }
+                    .chess-global-ranking-pos { color:#facc15; font-weight:1000; font-size:.82rem; }
+                    .chess-global-ranking-name { font-weight:900; color:#fff; font-size:.82rem; }
+                    .chess-global-ranking-meta { color:#94a3b8; font-size:.70rem; line-height:1.3; }
+                    .chess-global-ranking-points { color:#86efac; font-weight:1000; font-size:.78rem; text-align:right; }
+                    body.chess-board-visible #chess-global-ranking-panel,
+                    body.chess-admin-only #chess-global-ranking-panel { display:none !important; }
                     /* ✅ FASE 13.8 - MENU LIMPO DO XADREZ: tabuleiro aparece só depois da escolha */
                     body.chess-selected:not(.chess-board-visible) #chess-status,
                     body.chess-selected:not(.chess-board-visible) #chess-toast,
@@ -8061,27 +8107,39 @@ Link: ${location.origin}${location.pathname}`;
             }
         }
 
-        function linkPublicoTorneioXadrez(sala) {
+        function linkPublicoTorneioXadrez(sala, modo = 'assistir') {
             const salaLimpa = normalizarSalaXadrez(sala || '');
             const url = new URL(location.origin + location.pathname);
             url.searchParams.set('jogo', 'xadrez');
             if (salaLimpa) url.searchParams.set('sala', salaLimpa);
-            url.searchParams.set('assistir', '1');
+            url.searchParams.set('modo', modo || 'assistir');
+            // mantém compatibilidade com os links antigos da Profissional 06
+            if ((modo || 'assistir') === 'assistir') url.searchParams.set('assistir', '1');
             return url.toString();
         }
 
-        async function copiarLinkPublicoTorneioXadrez(torneio) {
+        function montarConviteTorneioXadrez(torneio) {
             const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
             const sala = normalizarSalaXadrez(torneio?.room || '');
             const dataTxt = formatarDataTorneioXadrez(torneio?.date);
-            const mensagem = textoAvisoSeguro(torneio?.message || 'Entre e acompanhe o torneio de Xadrez.', 180);
-            const link = linkPublicoTorneioXadrez(sala);
-            const texto = `♟️ ${nome}\n📅 ${dataTxt}\n${sala ? 'Sala: ' + sala.toUpperCase() + '\n' : ''}${mensagem}\n\nLink para assistir: ${link}`;
+            const mensagem = textoAvisoSeguro(torneio?.message || 'Entre e acompanhe o torneio de Xadrez.', 220);
+            const link = torneio?.publicLink || linkPublicoTorneioXadrez(sala, 'assistir');
+            return `♟️ Torneio de Xadrez — ${nome}
+
+📅 Data/Hora: ${dataTxt}
+${sala ? '🏠 Sala: ' + sala.toUpperCase() + '\n' : ''}${mensagem}
+
+👀 Assista online aqui:
+${link}`;
+        }
+
+        async function copiarLinkPublicoTorneioXadrez(torneio) {
+            const texto = montarConviteTorneioXadrez(torneio);
             try {
                 await navigator.clipboard.writeText(texto);
-                mostrarToastXadrez('📋 Link do torneio copiado.');
+                mostrarToastXadrez('📋 Convite do torneio copiado.');
             } catch (_) {
-                mostrarToastXadrez(link);
+                mostrarToastXadrez('📋 Copie pelo link direto do torneio.');
             }
         }
 
@@ -8104,10 +8162,12 @@ Link: ${location.origin}${location.pathname}`;
             const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
             const sala = normalizarSalaXadrez(torneio?.room || '');
             const mensagem = textoAvisoSeguro(torneio?.message || 'Participe do torneio de Xadrez e acompanhe a sala oficial.', 180);
+            const link = torneio?.publicLink || linkPublicoTorneioXadrez(sala, 'assistir');
             card.innerHTML = `
                 <strong>♟️ ${escapeHtmlXadrez(nome)}</strong>
                 <div style="color:#cbd5e1; font-size:.75rem; line-height:1.35;">📅 ${escapeHtmlXadrez(formatarDataTorneioXadrez(torneio?.date))} • Sala: ${escapeHtmlXadrez((sala || 'a definir').toUpperCase())}</div>
                 <div style="color:#94a3b8; font-size:.74rem; line-height:1.35; margin-top:5px;">${escapeHtmlXadrez(mensagem)}</div>
+                <div style="color:#67e8f9; font-size:.68rem; line-height:1.25; margin-top:5px; word-break:break-all;">🔗 ${escapeHtmlXadrez(link)}</div>
             `;
             const actions = document.createElement('div');
             actions.className = 'chess-public-tournament-actions';
@@ -8182,6 +8242,161 @@ Link: ${location.origin}${location.pathname}`;
             });
         }
 
+        let chessRankingPublicUnsubscribe = null;
+
+        function garantirPainelRankingGeralXadrez() {
+            const card = document.querySelector('#chess-screen .chess-card');
+            if (!card) return null;
+            let panel = document.getElementById('chess-global-ranking-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'chess-global-ranking-panel';
+                panel.className = 'chess-global-ranking-panel';
+                panel.innerHTML = `
+                    <div class="chess-global-ranking-title">🏆 Ranking Geral do Xadrez</div>
+                    <div class="chess-global-ranking-desc">Vitórias, derrotas, empates e xeque-mates registrados nas partidas online.</div>
+                    <div id="chess-global-ranking-list"><div class="tiny-muted">Carregando ranking...</div></div>
+                `;
+            }
+            const publicPanel = document.getElementById('chess-public-tournaments-panel');
+            const trainingPanel = document.getElementById('chess-training-panel');
+            if (publicPanel && publicPanel.parentNode && publicPanel.nextElementSibling !== panel) {
+                publicPanel.insertAdjacentElement('afterend', panel);
+            } else if (!publicPanel && trainingPanel && trainingPanel.previousElementSibling !== panel) {
+                card.insertBefore(panel, trainingPanel);
+            } else if (!panel.parentNode) {
+                card.appendChild(panel);
+            }
+            return panel;
+        }
+
+        function criarLinhaRankingGeralXadrez(jogador, posicao) {
+            const row = document.createElement('div');
+            row.className = 'chess-global-ranking-row';
+            const nome = nomeSeguro(jogador?.name || 'Jogador');
+            const pontos = numeroSeguro(jogador?.points);
+            const vitorias = numeroSeguro(jogador?.wins);
+            const derrotas = numeroSeguro(jogador?.losses);
+            const empates = numeroSeguro(jogador?.draws);
+            const mates = numeroSeguro(jogador?.checkmates);
+            const mesPontos = numeroSeguro(jogador?.monthPoints);
+            row.innerHTML = `
+                <div class="chess-global-ranking-pos">#${posicao}</div>
+                <div>
+                    <div class="chess-global-ranking-name">${escapeHtmlXadrez(nome)}</div>
+                    <div class="chess-global-ranking-meta">${vitorias}V • ${derrotas}D • ${empates}E • ${mates} mates • mês: ${mesPontos} pts</div>
+                </div>
+                <div class="chess-global-ranking-points">${pontos} pts</div>
+            `;
+            return row;
+        }
+
+        function carregarRankingGeralXadrez(forcar = false) {
+            garantirPainelRankingGeralXadrez();
+            const list = document.getElementById('chess-global-ranking-list');
+            const panel = document.getElementById('chess-global-ranking-panel');
+            if (!list || !panel) return;
+            if (chessRankingPublicUnsubscribe) {
+                if (!forcar) return;
+                try { chessRankingPublicUnsubscribe(); } catch (_) {}
+                chessRankingPublicUnsubscribe = null;
+            }
+            chessRankingPublicUnsubscribe = onValue(ref(db, 'chessRanking'), (snapshot) => {
+                limparElemento(list);
+                const data = snapshot.val() || {};
+                const itens = Object.values(data)
+                    .filter(j => j && numeroSeguro(j.games) > 0)
+                    .sort((a, b) => numeroSeguro(b.points) - numeroSeguro(a.points) || numeroSeguro(b.wins) - numeroSeguro(a.wins) || numeroSeguro(b.updatedAt) - numeroSeguro(a.updatedAt))
+                    .slice(0, 10);
+                if (!itens.length) {
+                    list.appendChild(criarTexto('div', 'Nenhuma partida online de Xadrez registrada ainda.', 'tiny-muted'));
+                    return;
+                }
+                itens.forEach((jogador, idx) => list.appendChild(criarLinhaRankingGeralXadrez(jogador, idx + 1)));
+            });
+        }
+
+        function jogadorRankingXadrezId(player, cor) {
+            const id = somenteTextoSeguro(player?.id || '', 80).replace(/[^a-zA-Z0-9_-]/g, '');
+            if (id) return id;
+            const nome = somenteTextoSeguro(player?.name || cor || 'jogador', 50).toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+            return `anon_${cor || 'player'}_${nome || 'jogador'}`;
+        }
+
+        async function atualizarRankingGeralJogadorXadrez(player, cor, resultado, meta = {}) {
+            if (!player && !cor) return;
+            const id = jogadorRankingXadrezId(player, cor);
+            const nome = nomeSeguro(player?.name || (cor === 'white' ? 'Brancas' : 'Pretas'));
+            const monthKey = new Date().toISOString().slice(0, 7);
+            await runTransaction(ref(db, `chessRanking/${id}`), (atual) => {
+                const base = atual && typeof atual === 'object' ? atual : {};
+                const data = {
+                    id,
+                    name: nome,
+                    lastColor: cor || base.lastColor || '',
+                    games: numeroSeguro(base.games),
+                    wins: numeroSeguro(base.wins),
+                    losses: numeroSeguro(base.losses),
+                    draws: numeroSeguro(base.draws),
+                    checkmates: numeroSeguro(base.checkmates),
+                    points: numeroSeguro(base.points),
+                    monthKey: base.monthKey === monthKey ? base.monthKey : monthKey,
+                    monthPoints: base.monthKey === monthKey ? numeroSeguro(base.monthPoints) : 0,
+                    monthWins: base.monthKey === monthKey ? numeroSeguro(base.monthWins) : 0,
+                    monthGames: base.monthKey === monthKey ? numeroSeguro(base.monthGames) : 0,
+                    createdAt: base.createdAt || Date.now(),
+                    updatedAt: Date.now()
+                };
+                data.games += 1;
+                data.monthGames += 1;
+                if (resultado === 'draw') {
+                    data.draws += 1;
+                    data.points += 1;
+                    data.monthPoints += 1;
+                } else if (resultado === 'win') {
+                    data.wins += 1;
+                    data.points += 3;
+                    data.monthPoints += 3;
+                    data.monthWins += 1;
+                    if (meta.checkmate) data.checkmates += 1;
+                } else if (resultado === 'loss') {
+                    data.losses += 1;
+                }
+                return data;
+            });
+        }
+
+        async function registrarRankingGeralXadrezOnline(textoEstado, opts = {}) {
+            try {
+                if (chessMode !== 'online' || !chessRoomId || !chessRoomRef || chessIsSpectator) return;
+                const texto = String(textoEstado || lastMoveMessage || '');
+                if (!/Xeque-mate|Empate|afogamento|desist/i.test(texto)) return;
+                const players = (chessCurrentRoomData && chessCurrentRoomData.players) || chessRoomPlayers || {};
+                const white = players.white || null;
+                const black = players.black || null;
+                if (!white && !black) return;
+                const empate = /Empate|afogamento/i.test(texto);
+                const winner = opts.winnerOverride || (/brancas/i.test(texto) ? 'white' : /pretas/i.test(texto) ? 'black' : '');
+                const checkmate = /Xeque-mate/i.test(texto);
+                const keyBase = `${chessRoomId}_${chessCurrentRoomData?.createdAt || 'sala'}_${(moveHistory || []).length}_${texto.slice(0, 80)}`;
+                const key = keyBase.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 180);
+                const tx = await runTransaction(ref(db, `chessRooms/${chessRoomId}/rankingResultKey`), (current) => current || key);
+                if (tx?.snapshot?.val() !== key) return;
+
+                if (empate || !winner) {
+                    await atualizarRankingGeralJogadorXadrez(white, 'white', 'draw');
+                    await atualizarRankingGeralJogadorXadrez(black, 'black', 'draw');
+                } else {
+                    await atualizarRankingGeralJogadorXadrez(white, 'white', winner === 'white' ? 'win' : 'loss', { checkmate: checkmate && winner === 'white' });
+                    await atualizarRankingGeralJogadorXadrez(black, 'black', winner === 'black' ? 'win' : 'loss', { checkmate: checkmate && winner === 'black' });
+                }
+                await update(ref(db, `chessRooms/${chessRoomId}`), { rankingResultRegisteredAt: Date.now() });
+                carregarRankingGeralXadrez(true);
+            } catch (e) {
+                console.warn('Ranking geral do Xadrez não foi registrado:', e);
+            }
+        }
+
         function aplicarLinkDiretoTorneioXadrez() {
             try {
                 const params = new URLSearchParams(location.search);
@@ -8192,7 +8407,9 @@ Link: ${location.origin}${location.pathname}`;
                 const nameInput = document.getElementById('chess-online-name');
                 if (roomInput && sala) roomInput.value = sala;
                 if (nameInput && !normalizarCampoXadrez(nameInput.value)) nameInput.value = 'Espectador';
-                if (params.get('assistir') === '1' && sala) {
+                const modo = (params.get('modo') || '').toLowerCase();
+                const assistirDireto = params.get('assistir') === '1' || modo === 'assistir';
+                if (assistirDireto && sala) {
                     setTimeout(() => entrarXadrezOnline(true), 700);
                 }
             } catch (_) {}
@@ -8274,6 +8491,7 @@ Link: ${location.origin}${location.pathname}`;
                 date: data || '',
                 room: sala || '',
                 message: mensagem || `Novo torneio de Xadrez: ${nome}. Entre no Tabuleiro Arena para participar!`,
+                publicLink: linkPublicoTorneioXadrez(sala, 'assistir'),
                 status: 'aberto',
                 createdBy: auth.currentUser?.uid || '',
                 createdAt: Date.now(),
@@ -8330,7 +8548,7 @@ Link: ${location.origin}${location.pathname}`;
                 row.className = 'chess-tournament-card';
                 const nome = nomeSeguro(p.name || 'Jogador');
                 const telefone = telefoneSeguro(p.whatsapp || '');
-                const msg = encodeURIComponent(`${mensagemBase}\n\n${sala ? 'Código da sala: ' + sala.toUpperCase() + '\n' : ''}Link: ${location.origin}${location.pathname}`);
+                const msg = encodeURIComponent(`${mensagemBase}\n\n${sala ? 'Código da sala: ' + sala.toUpperCase() + '\n' : ''}Link para assistir: ${linkPublicoTorneioXadrez(sala, 'assistir')}`);
                 row.innerHTML = `<strong>📲 ${escapeHtmlXadrez(nome)}</strong><div style="color:#94a3b8; font-size:.75rem;">${escapeHtmlXadrez(telefone)}</div>`;
                 const btn = document.createElement('button');
                 btn.className = 'mini-action-btn';
@@ -8469,7 +8687,7 @@ Link: ${location.origin}${location.pathname}`;
             if (!(await exigirAdminSeguro())) return;
             const sala = obterSalaAdminXadrez(); if (!sala) return;
             const estado = estadoInicialSalaXadrezAdmin(sala);
-            await update(ref(db, `chessRooms/${sala}`), { board: estado.board, turn: 'white', gameOver: false, lastMoveMessage: 'Partida resetada pelo administrador do Xadrez.', lastChessMove: null, enPassantTarget: null, moveHistory: [], updatedAt: Date.now(), lastAdminAction: 'tabuleiro_resetado_admin_xadrez', lastAdminAt: Date.now() });
+            await update(ref(db, `chessRooms/${sala}`), { board: estado.board, turn: 'white', gameOver: false, lastMoveMessage: 'Partida resetada pelo administrador do Xadrez.', lastChessMove: null, enPassantTarget: null, moveHistory: [], rankingResultKey: null, rankingResultRegisteredAt: null, winner: null, resignedBy: null, updatedAt: Date.now(), lastAdminAction: 'tabuleiro_resetado_admin_xadrez', lastAdminAt: Date.now() });
             mostrarToastXadrez(`♟️ Tabuleiro da sala ${sala} resetado.`);
         }
 
