@@ -7800,6 +7800,38 @@ Link: ${location.origin}${location.pathname}`;
                         .chess-public-tournament-actions { grid-template-columns:1fr; gap:10px; }
                         .chess-public-tournament-actions button { min-height:46px; font-size:.76rem !important; }
                     }
+                    .chess-tournament-landing-panel {
+                        max-width: 620px;
+                        margin: 0 auto 16px auto;
+                        padding: 16px;
+                        border-radius: 20px;
+                        border: 1px solid rgba(34,211,238,.55);
+                        background: radial-gradient(circle at top, rgba(34,211,238,.20), transparent 38%), linear-gradient(135deg, rgba(2,6,23,.94), rgba(30,41,59,.88));
+                        box-shadow: 0 18px 38px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.08);
+                        text-align: center;
+                        color:#e2e8f0;
+                    }
+                    .chess-tournament-landing-kicker { color:#67e8f9; font-size:.72rem; font-weight:1000; text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; }
+                    .chess-tournament-landing-title { color:#fff; font-size:1.35rem; font-weight:1000; text-transform:uppercase; line-height:1.1; margin-bottom:8px; }
+                    .chess-tournament-landing-message { color:#cbd5e1; font-size:.82rem; line-height:1.45; margin:8px auto 12px auto; max-width:520px; }
+                    .chess-tournament-landing-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:12px 0; }
+                    .chess-tournament-landing-info { background:rgba(15,23,42,.72); border:1px solid rgba(148,163,184,.20); border-radius:13px; padding:10px 8px; }
+                    .chess-tournament-landing-info span { display:block; color:#94a3b8; font-size:.62rem; text-transform:uppercase; font-weight:900; margin-bottom:4px; }
+                    .chess-tournament-landing-info strong { display:block; color:#fef3c7; font-size:.84rem; line-height:1.15; }
+                    .chess-tournament-countdown { margin:10px auto 12px auto; padding:10px; border-radius:14px; background:rgba(8,47,73,.54); border:1px solid rgba(34,211,238,.32); color:#a7f3d0; font-size:.84rem; font-weight:900; }
+                    .chess-tournament-landing-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+                    .chess-tournament-landing-actions button { border-radius:14px !important; min-height:48px; padding:12px !important; font-size:.78rem !important; font-weight:1000 !important; letter-spacing:.35px; text-transform:uppercase; box-shadow:0 9px 20px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.16); }
+                    .btn-tournament-watch { background:linear-gradient(135deg,#06b6d4,#2563eb) !important; }
+                    .btn-tournament-play { background:linear-gradient(135deg,#22c55e,#16a34a) !important; }
+                    .btn-tournament-copy { background:linear-gradient(135deg,#4f46e5,#7c3aed) !important; }
+                    .btn-tournament-whatsapp { background:linear-gradient(135deg,#22c55e,#25d366) !important; }
+                    @media (max-width:620px) {
+                        .chess-tournament-landing-grid { grid-template-columns:1fr 1fr; }
+                        .chess-tournament-landing-actions { grid-template-columns:1fr; }
+                        .chess-tournament-landing-title { font-size:1.08rem; }
+                    }
+                    body.chess-board-visible #chess-tournament-landing-panel,
+                    body.chess-admin-only #chess-tournament-landing-panel { display:none !important; }
                     body.chess-board-visible #chess-public-tournaments-panel,
                     body.chess-admin-only #chess-public-tournaments-panel { display:none !important; }
                     .chess-global-ranking-panel {
@@ -8193,34 +8225,38 @@ Link: ${location.origin}${location.pathname}`;
             }
         }
 
-        function linkPublicoTorneioXadrez(sala, modo = 'assistir') {
+        function linkPublicoTorneioXadrez(sala, modo = 'assistir', torneioId = '') {
             const salaLimpa = normalizarSalaXadrez(sala || '');
             const url = new URL(location.origin + location.pathname);
             url.searchParams.set('jogo', 'xadrez');
             if (salaLimpa) url.searchParams.set('sala', salaLimpa);
-            url.searchParams.set('modo', modo || 'assistir');
+            const modoLimpo = modo || 'assistir';
+            url.searchParams.set('modo', modoLimpo);
+            const idLimpo = somenteTextoSeguro(torneioId || '', 90).replace(/[^a-zA-Z0-9_-]/g, '');
+            if (idLimpo) url.searchParams.set('torneio', idLimpo);
             // mantém compatibilidade com os links antigos da Profissional 06
-            if ((modo || 'assistir') === 'assistir') url.searchParams.set('assistir', '1');
+            if (modoLimpo === 'assistir') url.searchParams.set('assistir', '1');
             return url.toString();
         }
 
-        function montarConviteTorneioXadrez(torneio) {
+        function montarConviteTorneioXadrez(torneio, torneioId = '') {
             const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
             const sala = normalizarSalaXadrez(torneio?.room || '');
             const dataTxt = formatarDataTorneioXadrez(torneio?.date);
             const mensagem = textoAvisoSeguro(torneio?.message || 'Entre e acompanhe o torneio de Xadrez.', 220);
-            const link = torneio?.publicLink || linkPublicoTorneioXadrez(sala, 'assistir');
+            const link = linkPublicoTorneioXadrez(sala, 'assistir', torneioId);
             return `♟️ Torneio de Xadrez — ${nome}
 
 📅 Data/Hora: ${dataTxt}
-${sala ? '🏠 Sala: ' + sala.toUpperCase() + '\n' : ''}${mensagem}
+${sala ? '🏠 Sala: ' + sala.toUpperCase() + '
+' : ''}${mensagem}
 
-👀 Assista online aqui:
+👀 Página do torneio / assistir online:
 ${link}`;
         }
 
-        async function copiarLinkPublicoTorneioXadrez(torneio) {
-            const texto = montarConviteTorneioXadrez(torneio);
+        async function copiarLinkPublicoTorneioXadrez(torneio, torneioId = '') {
+            const texto = montarConviteTorneioXadrez(torneio, torneioId);
             try {
                 await navigator.clipboard.writeText(texto);
                 mostrarToastXadrez('📋 Convite do torneio copiado.');
@@ -8248,7 +8284,7 @@ ${link}`;
             const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
             const sala = normalizarSalaXadrez(torneio?.room || '');
             const mensagem = textoAvisoSeguro(torneio?.message || 'Participe do torneio de Xadrez e acompanhe a sala oficial.', 180);
-            const link = torneio?.publicLink || linkPublicoTorneioXadrez(sala, 'assistir');
+            const link = linkPublicoTorneioXadrez(sala, 'assistir', id);
             card.innerHTML = `
                 <strong>♟️ ${escapeHtmlXadrez(nome)}</strong>
                 <div style="color:#cbd5e1; font-size:.75rem; line-height:1.35;">📅 ${escapeHtmlXadrez(formatarDataTorneioXadrez(torneio?.date))} • Sala: ${escapeHtmlXadrez((sala || 'a definir').toUpperCase())}</div>
@@ -8266,7 +8302,7 @@ ${link}`;
             copiar.type = 'button';
             copiar.className = 'chess-public-copy-btn';
             copiar.textContent = '📋 Copiar convite';
-            copiar.onclick = () => copiarLinkPublicoTorneioXadrez(torneio);
+            copiar.onclick = () => copiarLinkPublicoTorneioXadrez(torneio, id);
             actions.appendChild(assistir);
             actions.appendChild(copiar);
             card.appendChild(actions);
@@ -8483,7 +8519,156 @@ ${link}`;
             }
         }
 
-        function aplicarLinkDiretoTorneioXadrez() {
+        let chessTournamentLandingCountdownTimer = null;
+
+        function garantirPaginaPublicaTorneioXadrez() {
+            const card = document.querySelector('#chess-screen .chess-card');
+            if (!card) return null;
+            let panel = document.getElementById('chess-tournament-landing-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'chess-tournament-landing-panel';
+                panel.className = 'chess-tournament-landing-panel';
+                panel.style.display = 'none';
+                panel.innerHTML = `
+                    <div class="chess-tournament-landing-kicker">Página oficial do torneio</div>
+                    <div id="chess-tournament-landing-title" class="chess-tournament-landing-title">Torneio de Xadrez</div>
+                    <div id="chess-tournament-landing-message" class="chess-tournament-landing-message">Confira os dados do torneio e escolha como deseja entrar.</div>
+                    <div class="chess-tournament-landing-grid">
+                        <div class="chess-tournament-landing-info"><span>Data</span><strong id="chess-tournament-landing-date">A definir</strong></div>
+                        <div class="chess-tournament-landing-info"><span>Horário</span><strong id="chess-tournament-landing-hour">A definir</strong></div>
+                        <div class="chess-tournament-landing-info"><span>Sala</span><strong id="chess-tournament-landing-room">A definir</strong></div>
+                        <div class="chess-tournament-landing-info"><span>Modalidade</span><strong>Xadrez</strong></div>
+                    </div>
+                    <div id="chess-tournament-countdown" class="chess-tournament-countdown">Carregando contagem regressiva...</div>
+                    <div class="chess-tournament-landing-actions">
+                        <button id="chess-tournament-watch-btn" class="btn-tournament-watch" type="button">👀 Assistir online</button>
+                        <button id="chess-tournament-play-btn" class="btn-tournament-play" type="button">♟️ Entrar como jogador</button>
+                        <button id="chess-tournament-copy-btn" class="btn-tournament-copy" type="button">📋 Copiar convite</button>
+                        <button id="chess-tournament-whatsapp-btn" class="btn-tournament-whatsapp" type="button">💬 Compartilhar WhatsApp</button>
+                    </div>
+                `;
+            }
+            const onlinePanel = document.getElementById('chess-online-panel');
+            if (onlinePanel && onlinePanel.parentNode && onlinePanel.previousElementSibling !== panel) {
+                onlinePanel.parentNode.insertBefore(panel, onlinePanel);
+            } else if (!panel.parentNode) {
+                card.appendChild(panel);
+            }
+            return panel;
+        }
+
+        function atualizarContagemPaginaTorneioXadrez(dataIso) {
+            const el = document.getElementById('chess-tournament-countdown');
+            if (!el) return;
+            if (chessTournamentLandingCountdownTimer) {
+                clearInterval(chessTournamentLandingCountdownTimer);
+                chessTournamentLandingCountdownTimer = null;
+            }
+            const alvo = dataIso ? new Date(dataIso).getTime() : 0;
+            const escrever = () => {
+                if (!alvo || Number.isNaN(alvo)) {
+                    el.textContent = '⏳ Horário será confirmado pelo administrador.';
+                    return;
+                }
+                const diff = alvo - Date.now();
+                if (diff <= 0) {
+                    el.textContent = '🟢 O torneio já está no horário. Entre na sala oficial.';
+                    return;
+                }
+                const dias = Math.floor(diff / 86400000);
+                const horas = Math.floor((diff % 86400000) / 3600000);
+                const minutos = Math.floor((diff % 3600000) / 60000);
+                const segundos = Math.floor((diff % 60000) / 1000);
+                const partes = [];
+                if (dias) partes.push(`${dias}d`);
+                partes.push(`${String(horas).padStart(2, '0')}h`, `${String(minutos).padStart(2, '0')}m`, `${String(segundos).padStart(2, '0')}s`);
+                el.textContent = `⏳ Faltam ${partes.join(' ')} para o torneio.`;
+            };
+            escrever();
+            chessTournamentLandingCountdownTimer = setInterval(escrever, 1000);
+        }
+
+        function renderizarPaginaPublicaTorneioXadrez(torneio, torneioId = '') {
+            const panel = garantirPaginaPublicaTorneioXadrez();
+            if (!panel) return;
+            const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
+            const sala = normalizarSalaXadrez(torneio?.room || '');
+            const mensagem = textoAvisoSeguro(torneio?.message || 'Entre no Tabuleiro Arena e acompanhe a sala oficial do torneio.', 220);
+            const dataIso = torneio?.date || '';
+            const dataObj = dataIso ? new Date(dataIso) : null;
+            const dataTxt = dataObj && !Number.isNaN(dataObj.getTime()) ? dataObj.toLocaleDateString('pt-BR') : 'A definir';
+            const horaTxt = dataObj && !Number.isNaN(dataObj.getTime()) ? dataObj.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) : 'A definir';
+
+            const titulo = document.getElementById('chess-tournament-landing-title');
+            const msg = document.getElementById('chess-tournament-landing-message');
+            const dataEl = document.getElementById('chess-tournament-landing-date');
+            const horaEl = document.getElementById('chess-tournament-landing-hour');
+            const salaEl = document.getElementById('chess-tournament-landing-room');
+            if (titulo) titulo.textContent = `🏆 ${nome}`;
+            if (msg) msg.textContent = mensagem;
+            if (dataEl) dataEl.textContent = dataTxt;
+            if (horaEl) horaEl.textContent = horaTxt;
+            if (salaEl) salaEl.textContent = sala ? sala.toUpperCase() : 'A definir';
+
+            const roomInput = document.getElementById('chess-online-room');
+            if (roomInput && sala) roomInput.value = sala;
+            const nameInput = document.getElementById('chess-online-name');
+            if (nameInput && !normalizarCampoXadrez(nameInput.value)) nameInput.value = 'Espectador';
+
+            const watchBtn = document.getElementById('chess-tournament-watch-btn');
+            if (watchBtn) watchBtn.onclick = () => assistirTorneioPublicoXadrez(torneio);
+            const playBtn = document.getElementById('chess-tournament-play-btn');
+            if (playBtn) playBtn.onclick = async () => {
+                const inputNome = document.getElementById('chess-online-name');
+                const inputSala = document.getElementById('chess-online-room');
+                if (inputNome && !normalizarCampoXadrez(inputNome.value)) inputNome.value = 'Jogador';
+                if (inputSala && sala) inputSala.value = sala;
+                await entrarXadrezOnline(false);
+            };
+            const copyBtn = document.getElementById('chess-tournament-copy-btn');
+            if (copyBtn) copyBtn.onclick = () => copiarLinkPublicoTorneioXadrez(torneio, torneioId);
+            const whatsBtn = document.getElementById('chess-tournament-whatsapp-btn');
+            if (whatsBtn) whatsBtn.onclick = () => {
+                const texto = encodeURIComponent(montarConviteTorneioXadrez(torneio, torneioId));
+                window.open(`https://wa.me/?text=${texto}`, '_blank');
+            };
+
+            panel.style.display = '';
+            atualizarContagemPaginaTorneioXadrez(dataIso);
+            setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'start' }), 250);
+        }
+
+        async function buscarTorneioXadrezPeloLink(params, sala) {
+            const id = somenteTextoSeguro(params.get('torneio') || params.get('t') || '', 90).replace(/[^a-zA-Z0-9_-]/g, '');
+            if (id) {
+                const snap = await get(ref(db, `chessTournaments/${id}`));
+                if (snap.exists()) return { id, torneio: snap.val() || {} };
+            }
+            const alvoSala = normalizarSalaXadrez(sala || '');
+            if (alvoSala) {
+                const snap = await get(ref(db, 'chessTournaments'));
+                const data = snap.val() || {};
+                const encontrado = Object.entries(data)
+                    .map(([tid, t]) => [tid, t || {}])
+                    .filter(([, t]) => String(t.status || 'aberto') !== 'encerrado')
+                    .filter(([, t]) => normalizarSalaXadrez(t.room || '') === alvoSala)
+                    .sort((a, b) => numeroSeguro(a[1].date ? new Date(a[1].date).getTime() : a[1].createdAt) - numeroSeguro(b[1].date ? new Date(b[1].date).getTime() : b[1].createdAt))[0];
+                if (encontrado) return { id: encontrado[0], torneio: encontrado[1] };
+            }
+            return {
+                id: '',
+                torneio: {
+                    name: 'Torneio de Xadrez',
+                    room: alvoSala,
+                    message: 'Entre no Tabuleiro Arena e acompanhe a sala oficial do torneio.',
+                    date: '',
+                    status: 'aberto'
+                }
+            };
+        }
+
+        async function aplicarLinkDiretoTorneioXadrez() {
             try {
                 const params = new URLSearchParams(location.search);
                 if ((params.get('jogo') || '').toLowerCase() !== 'xadrez') return;
@@ -8493,12 +8678,15 @@ ${link}`;
                 const nameInput = document.getElementById('chess-online-name');
                 if (roomInput && sala) roomInput.value = sala;
                 if (nameInput && !normalizarCampoXadrez(nameInput.value)) nameInput.value = 'Espectador';
-                const modo = (params.get('modo') || '').toLowerCase();
-                const assistirDireto = params.get('assistir') === '1' || modo === 'assistir';
-                if (assistirDireto && sala) {
+                const resultado = await buscarTorneioXadrezPeloLink(params, sala);
+                renderizarPaginaPublicaTorneioXadrez(resultado.torneio, resultado.id);
+                // Para entrar direto sem passar pela página, use no link: &auto=1
+                if (params.get('auto') === '1' && sala) {
                     setTimeout(() => entrarXadrezOnline(true), 700);
                 }
-            } catch (_) {}
+            } catch (e) {
+                console.warn('Não foi possível abrir a página pública do torneio:', e);
+            }
         }
 
         function criarCardTorneioXadrez(torneio, id) {
@@ -8571,13 +8759,14 @@ ${link}`;
                 return;
             }
             const novoRef = push(ref(db, 'chessTournaments'));
+            const novoTorneioId = novoRef.key || '';
             await set(novoRef, {
                 game: 'xadrez',
                 name: nome,
                 date: data || '',
                 room: sala || '',
                 message: mensagem || `Novo torneio de Xadrez: ${nome}. Entre no Tabuleiro Arena para participar!`,
-                publicLink: linkPublicoTorneioXadrez(sala, 'assistir'),
+                publicLink: linkPublicoTorneioXadrez(sala, 'assistir', novoTorneioId),
                 status: 'aberto',
                 createdBy: auth.currentUser?.uid || '',
                 createdAt: Date.now(),
