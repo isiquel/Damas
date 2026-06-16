@@ -7702,18 +7702,57 @@ Link: ${location.origin}${location.pathname}`;
                         margin-bottom:8px;
                     }
                     .chess-public-tournament-card {
-                        background: rgba(2,6,23,.72);
+                        background: linear-gradient(135deg, rgba(2,6,23,.82), rgba(15,23,42,.74));
+                        border: 1px solid rgba(250,204,21,.18);
                         border-left: 4px solid #facc15;
-                        border-radius: 10px;
-                        padding: 9px;
+                        border-radius: 14px;
+                        padding: 12px;
                         color:#e2e8f0;
-                        margin-bottom:8px;
+                        margin-bottom:10px;
+                        box-shadow: 0 10px 24px rgba(0,0,0,.22);
                     }
-                    .chess-public-tournament-card strong { color:#fde68a; display:block; margin-bottom:4px; }
-                    .chess-public-tournament-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-                    .chess-public-tournament-actions button { width:auto; padding:8px 10px; font-size:.70rem; border-radius:8px; text-transform:none; }
-                    .chess-public-copy-btn { background:#7c3aed; }
-                    .chess-public-watch-btn { background:#0284c7; }
+                    .chess-public-tournament-card strong { color:#fde68a; display:block; margin-bottom:5px; font-size:.92rem; }
+                    .chess-public-tournament-actions {
+                        display:grid;
+                        grid-template-columns:1fr 1fr;
+                        gap:12px;
+                        margin-top:12px;
+                        align-items:stretch;
+                    }
+                    .chess-public-tournament-actions button {
+                        width:100% !important;
+                        min-height:48px;
+                        padding:12px 14px !important;
+                        font-size:.78rem !important;
+                        line-height:1.1 !important;
+                        border-radius:14px !important;
+                        text-transform:uppercase !important;
+                        letter-spacing:.45px !important;
+                        font-weight:1000 !important;
+                        display:flex !important;
+                        align-items:center !important;
+                        justify-content:center !important;
+                        gap:8px !important;
+                        border:1px solid rgba(255,255,255,.14) !important;
+                        box-shadow:0 8px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.20) !important;
+                        text-shadow:0 1px 2px rgba(0,0,0,.35) !important;
+                    }
+                    .chess-public-watch-btn {
+                        background:linear-gradient(135deg,#0891b2,#2563eb) !important;
+                        color:#fff !important;
+                        border-color:rgba(34,211,238,.55) !important;
+                    }
+                    .chess-public-copy-btn {
+                        background:linear-gradient(135deg,#312e81,#7c3aed) !important;
+                        color:#fff !important;
+                        border-color:rgba(168,85,247,.55) !important;
+                    }
+                    .chess-public-watch-btn:hover, .chess-public-copy-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
+                    .chess-public-watch-btn:active, .chess-public-copy-btn:active { transform:translateY(0); filter:brightness(.98); }
+                    @media (max-width:560px) {
+                        .chess-public-tournament-actions { grid-template-columns:1fr; gap:10px; }
+                        .chess-public-tournament-actions button { min-height:46px; font-size:.76rem !important; }
+                    }
                     body.chess-board-visible #chess-public-tournaments-panel,
                     body.chess-admin-only #chess-public-tournaments-panel { display:none !important; }
                     .chess-global-ranking-panel {
@@ -8174,12 +8213,12 @@ ${link}`;
             const assistir = document.createElement('button');
             assistir.type = 'button';
             assistir.className = 'chess-public-watch-btn';
-            assistir.textContent = 'Assistir online';
+            assistir.textContent = '👀 Assistir online';
             assistir.onclick = () => assistirTorneioPublicoXadrez(torneio);
             const copiar = document.createElement('button');
             copiar.type = 'button';
             copiar.className = 'chess-public-copy-btn';
-            copiar.textContent = 'Copiar convite';
+            copiar.textContent = '📋 Copiar convite';
             copiar.onclick = () => copiarLinkPublicoTorneioXadrez(torneio);
             actions.appendChild(assistir);
             actions.appendChild(copiar);
