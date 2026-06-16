@@ -7514,6 +7514,22 @@ Link: ${location.origin}${location.pathname}`;
             }
         }
 
+
+
+        function restaurarMenuOnlineXadrez() {
+            const online = document.getElementById('chess-online-panel');
+            if (online) {
+                online.style.display = '';
+                online.removeAttribute('aria-hidden');
+            }
+            const status = document.getElementById('chess-online-status');
+            if (status) status.style.display = '';
+            const players = document.getElementById('chess-room-players-panel');
+            if (players && chessMode !== 'online') players.style.display = 'none';
+            const call = document.getElementById('chess-call-panel');
+            if (call) call.classList.remove('online-visible', 'call-active');
+        }
+
         function abrirXadrezArena() {
             // ✅ PROFISSIONAL 03: quando o jogador abre o Xadrez normal, o Admin do Xadrez fica fechado.
             esconderPainelAdminXadrezForaDoAdmin();
@@ -7534,6 +7550,7 @@ Link: ${location.origin}${location.pathname}`;
             if (chess) chess.style.display = 'block';
 
             instalarUiXadrezFase5();
+            restaurarMenuOnlineXadrez();
             if (!chessBoard.length) criarTabuleiroInicial();
             ocultarTabuleiroXadrezParaMenu();
             renderChessBoard();
