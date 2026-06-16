@@ -4913,6 +4913,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 else card.insertBefore(online, card.firstChild?.nextSibling || null);
             }
 
+            // ✅ PROFISSIONAL 06: garante que os torneios publicados apareçam no menu público do Xadrez,
+            // mas somente como aviso/assistir/copiar link. Edição continua só no Admin.
+            garantirPainelPublicoTorneiosXadrez();
+            carregarTorneiosPublicosXadrez(true);
+
             if (card && !document.getElementById('chess-training-panel')) {
                 const training = document.createElement('div');
                 training.id = 'chess-training-panel';
@@ -7506,10 +7511,37 @@ Link: ${location.origin}${location.pathname}`;
             focarTabuleiroXadrez(false);
         }
 
+        function esconderPainelAdminXadrezForaDoAdmin() {
+            const painelAdminXadrez = document.getElementById('chess-admin-panel');
+            if (painelAdminXadrez && !document.body.classList.contains('chess-admin-only')) {
+                painelAdminXadrez.style.display = 'none';
+                painelAdminXadrez.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+
+
+        function restaurarMenuOnlineXadrez() {
+            const online = document.getElementById('chess-online-panel');
+            if (online) {
+                online.style.display = '';
+                online.removeAttribute('aria-hidden');
+            }
+            const status = document.getElementById('chess-online-status');
+            if (status) status.style.display = '';
+            const players = document.getElementById('chess-room-players-panel');
+            if (players && chessMode !== 'online') players.style.display = 'none';
+            const call = document.getElementById('chess-call-panel');
+            if (call) call.classList.remove('online-visible', 'call-active');
+        }
+
         function abrirXadrezArena() {
+            // ✅ PROFISSIONAL 03: quando o jogador abre o Xadrez normal, o Admin do Xadrez fica fechado.
+            esconderPainelAdminXadrezForaDoAdmin();
             // ✅ FASE 13.4: garante que o Xadrez comum nunca herde o modo Admin.
             // Isso evita tela vazia/travada depois de sair da administração do Xadrez.
             document.body.classList.remove('platform-start-active', 'mode-selecting', 'game-selected', 'chess-admin-only', 'chess-focus-mode', 'chess-board-visible', 'chess-game-active');
+            esconderPainelAdminXadrezForaDoAdmin();
             document.body.classList.add('chess-selected', 'chess-menu-active');
 
             const hub = document.getElementById('games-hub-panel');
@@ -7523,6 +7555,9 @@ Link: ${location.origin}${location.pathname}`;
             if (chess) chess.style.display = 'block';
 
             instalarUiXadrezFase5();
+            restaurarMenuOnlineXadrez();
+            garantirPainelPublicoTorneiosXadrez();
+            carregarTorneiosPublicosXadrez(true);
             if (!chessBoard.length) criarTabuleiroInicial();
             ocultarTabuleiroXadrezParaMenu();
             renderChessBoard();
@@ -7534,6 +7569,7 @@ Link: ${location.origin}${location.pathname}`;
             try { encerrarChamadaXadrez(false); } catch (_) {}
             // ✅ FASE 13.4: remove também o modo Admin do Xadrez ao voltar para o hub.
             document.body.classList.remove('chess-selected', 'game-selected', 'chess-focus-mode', 'chess-admin-only', 'chess-beginner-mode', 'chess-board-visible', 'chess-menu-active', 'chess-game-active', 'chess-mode-online', 'chess-mode-training');
+            esconderPainelAdminXadrezForaDoAdmin();
             document.body.classList.add('platform-start-active', 'mode-selecting');
 
             const hub = document.getElementById('games-hub-panel');
@@ -7619,6 +7655,55 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
                     .chess-admin-room-row.blocked { border-left-color:#ef4444; }
                     .chess-admin-room-row:hover { background:#172554; }
+                    .chess-admin-tournament-box { margin:12px 0; padding:12px; border:1px solid rgba(34,211,238,.55); border-radius:12px; background:linear-gradient(135deg,rgba(8,47,73,.58),rgba(15,23,42,.84)); }
+                    .chess-admin-tournament-title { color:#67e8f9; font-size:.86rem; font-weight:1000; text-transform:uppercase; margin-bottom:8px; border-bottom:1px dashed rgba(103,232,249,.35); padding-bottom:7px; }
+                    .chess-admin-small-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+                    .chess-admin-small-grid .chess-admin-full { grid-column:1 / -1; }
+                    .chess-admin-tournament-box textarea { width:100%; min-height:72px; resize:vertical; margin:0 0 8px 0; text-align:left; border:1px solid #164e63; border-radius:8px; background:#020617; color:#e2e8f0; padding:10px; font-family:inherit; }
+                    .chess-admin-tournament-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+                    .chess-admin-tournament-list { margin-top:10px; max-height:180px; overflow-y:auto; }
+                    .chess-tournament-card { padding:9px; border-radius:10px; background:rgba(2,6,23,.72); border-left:4px solid #22d3ee; margin-bottom:8px; color:#e2e8f0; }
+                    .chess-tournament-card strong { color:#facc15; display:block; margin-bottom:4px; }
+                    .chess-tournament-card .mini-action-btn { width:auto; padding:7px 10px; margin-top:7px; font-size:.70rem; border-radius:8px; }
+                    .chess-public-tournaments-panel {
+                        max-width: 560px;
+                        margin: 0 auto 14px auto;
+                        background: linear-gradient(135deg, rgba(88,28,135,.46), rgba(2,6,23,.86));
+                        border: 1px solid rgba(250,204,21,.42);
+                        border-radius: 16px;
+                        padding: 12px;
+                        text-align: left;
+                        box-shadow: 0 12px 28px rgba(0,0,0,.28);
+                    }
+                    .chess-public-tournaments-title {
+                        color:#facc15;
+                        font-size:.86rem;
+                        font-weight:1000;
+                        text-transform:uppercase;
+                        letter-spacing:.45px;
+                        margin-bottom:5px;
+                    }
+                    .chess-public-tournaments-desc {
+                        color:#cbd5e1;
+                        font-size:.76rem;
+                        line-height:1.35;
+                        margin-bottom:8px;
+                    }
+                    .chess-public-tournament-card {
+                        background: rgba(2,6,23,.72);
+                        border-left: 4px solid #facc15;
+                        border-radius: 10px;
+                        padding: 9px;
+                        color:#e2e8f0;
+                        margin-bottom:8px;
+                    }
+                    .chess-public-tournament-card strong { color:#fde68a; display:block; margin-bottom:4px; }
+                    .chess-public-tournament-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+                    .chess-public-tournament-actions button { width:auto; padding:8px 10px; font-size:.70rem; border-radius:8px; text-transform:none; }
+                    .chess-public-copy-btn { background:#7c3aed; }
+                    .chess-public-watch-btn { background:#0284c7; }
+                    body.chess-board-visible #chess-public-tournaments-panel,
+                    body.chess-admin-only #chess-public-tournaments-panel { display:none !important; }
                     /* ✅ FASE 13.8 - MENU LIMPO DO XADREZ: tabuleiro aparece só depois da escolha */
                     body.chess-selected:not(.chess-board-visible) #chess-status,
                     body.chess-selected:not(.chess-board-visible) #chess-toast,
@@ -7861,8 +7946,26 @@ Link: ${location.origin}${location.pathname}`;
                     body.chess-admin-only .chess-warning {
                         display: none !important;
                     }
+                    /* ✅ PROFISSIONAL 03: segurança visual do Admin do Xadrez.
+                       O painel administrativo do Xadrez fica totalmente invisível fora do modo admin,
+                       mesmo que o HTML já tenha sido criado antes no navegador. */
+                    body:not(.chess-admin-only) #chess-admin-panel {
+                        display: none !important;
+                        visibility: hidden !important;
+                        pointer-events: none !important;
+                        height: 0 !important;
+                        max-height: 0 !important;
+                        overflow: hidden !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: 0 !important;
+                    }
                     body.chess-admin-only #chess-admin-panel {
                         display: block !important;
+                        visibility: visible !important;
+                        pointer-events: auto !important;
+                        height: auto !important;
+                        max-height: none !important;
                     }
                     body.chess-admin-only .chess-card {
                         max-width: 660px;
@@ -7882,7 +7985,7 @@ Link: ${location.origin}${location.pathname}`;
                 panel.id = 'chess-admin-panel';
                 panel.className = 'chess-admin-panel';
                 panel.innerHTML = `
-                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez — Fase 12.1</div>
+                    <div class="chess-admin-title">🛡️ Painel Admin do Xadrez</div>
                     <div class="chess-admin-desc">Controle próprio do Xadrez, igual à Damas, usando o caminho <strong>chessRooms</strong>. Esta tela é somente administração: sem tabuleiro, sem placar e sem histórico do jogo. A Damas continua preservada.</div>
                     <input id="chess-admin-room-input" type="text" maxlength="18" placeholder="Código da sala de Xadrez, ex: xadrez10">
                     <div class="chess-admin-grid">
@@ -7895,6 +7998,24 @@ Link: ${location.origin}${location.pathname}`;
                         <button id="chess-admin-delete-btn" type="button" style="background:#991b1b;">Excluir sala</button>
                         <button id="chess-admin-monitor-chat-btn" type="button" style="background:#2563eb;">Monitorar chat</button>
                     </div>
+
+                    <div class="chess-admin-tournament-box">
+                        <div class="chess-admin-tournament-title">🏆 Central de Torneios do Xadrez</div>
+                        <div class="chess-admin-desc">Use esta área para marcar torneios de Xadrez, gerar aviso para WhatsApp e definir a sala oficial da rodada.</div>
+                        <div class="chess-admin-small-grid">
+                            <input id="chess-tournament-name-input" class="chess-admin-full" type="text" maxlength="60" placeholder="Nome do torneio. Ex: Torneio de Xadrez de Sábado">
+                            <input id="chess-tournament-date-input" type="datetime-local">
+                            <input id="chess-tournament-room-input" type="text" maxlength="18" placeholder="Sala principal. Ex: xadrez10">
+                            <textarea id="chess-tournament-message-input" class="chess-admin-full" rows="3" placeholder="Mensagem do aviso para WhatsApp"></textarea>
+                        </div>
+                        <div class="chess-admin-tournament-actions">
+                            <button id="chess-admin-create-tournament-btn" type="button" style="background:#2563eb;">Criar / publicar torneio</button>
+                            <button id="chess-admin-whatsapp-tournament-btn" type="button" style="background:#22c55e;">Gerar avisos WhatsApp</button>
+                        </div>
+                        <div id="chess-admin-tournament-list" class="chess-admin-tournament-list"><div style="color:#94a3b8; font-style:italic;">Torneios de Xadrez criados aparecerão aqui.</div></div>
+                        <div id="chess-admin-whatsapp-list" class="chess-admin-tournament-list"></div>
+                    </div>
+
                     <div id="chess-admin-panorama" class="chess-admin-desc">📊 Sincronizando salas de Xadrez...</div>
                     <div id="chess-admin-rooms-list" class="chess-admin-list">Carregando salas...</div>
                     <div id="chess-admin-chat-monitor" class="chess-admin-chat-monitor" style="display:none;">Selecione uma sala e clique em monitorar chat.</div>
@@ -7902,6 +8023,10 @@ Link: ${location.origin}${location.pathname}`;
                 const online = document.getElementById('chess-online-panel');
                 if (online) online.insertAdjacentElement('afterend', panel);
                 else card.insertBefore(panel, document.getElementById('chess-status') || card.firstChild);
+                if (!document.body.classList.contains('chess-admin-only')) {
+                    panel.style.display = 'none';
+                    panel.setAttribute('aria-hidden', 'true');
+                }
 
                 document.getElementById('chess-admin-create-btn')?.addEventListener('click', adminCriarLiberarSalaXadrez);
                 document.getElementById('chess-admin-block-btn')?.addEventListener('click', adminBloquearSalaXadrez);
@@ -7911,7 +8036,303 @@ Link: ${location.origin}${location.pathname}`;
                 document.getElementById('chess-admin-reset-btn')?.addEventListener('click', adminResetarSalaXadrez);
                 document.getElementById('chess-admin-delete-btn')?.addEventListener('click', adminExcluirSalaXadrez);
                 document.getElementById('chess-admin-monitor-chat-btn')?.addEventListener('click', adminMonitorarChatXadrez);
+                document.getElementById('chess-admin-create-tournament-btn')?.addEventListener('click', criarTorneioXadrezAdmin);
+                document.getElementById('chess-admin-whatsapp-tournament-btn')?.addEventListener('click', gerarAvisosXadrezWhatsapp);
+                carregarTorneiosXadrezAdmin();
             }
+        }
+
+        function formatarDataTorneioXadrez(valor) {
+            if (!valor) return 'Data a definir';
+            try {
+                const d = new Date(valor);
+                if (Number.isNaN(d.getTime())) return String(valor);
+                return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            } catch (_) {
+                return String(valor);
+            }
+        }
+
+        function linkPublicoTorneioXadrez(sala) {
+            const salaLimpa = normalizarSalaXadrez(sala || '');
+            const url = new URL(location.origin + location.pathname);
+            url.searchParams.set('jogo', 'xadrez');
+            if (salaLimpa) url.searchParams.set('sala', salaLimpa);
+            url.searchParams.set('assistir', '1');
+            return url.toString();
+        }
+
+        async function copiarLinkPublicoTorneioXadrez(torneio) {
+            const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
+            const sala = normalizarSalaXadrez(torneio?.room || '');
+            const dataTxt = formatarDataTorneioXadrez(torneio?.date);
+            const mensagem = textoAvisoSeguro(torneio?.message || 'Entre e acompanhe o torneio de Xadrez.', 180);
+            const link = linkPublicoTorneioXadrez(sala);
+            const texto = `♟️ ${nome}\n📅 ${dataTxt}\n${sala ? 'Sala: ' + sala.toUpperCase() + '\n' : ''}${mensagem}\n\nLink para assistir: ${link}`;
+            try {
+                await navigator.clipboard.writeText(texto);
+                mostrarToastXadrez('📋 Link do torneio copiado.');
+            } catch (_) {
+                mostrarToastXadrez(link);
+            }
+        }
+
+        async function assistirTorneioPublicoXadrez(torneio) {
+            const sala = normalizarSalaXadrez(torneio?.room || '');
+            if (!sala) {
+                exibirAlertaDoSistema('Torneio de Xadrez', 'Este torneio ainda não tem sala definida.');
+                return;
+            }
+            const nameInput = document.getElementById('chess-online-name');
+            const roomInput = document.getElementById('chess-online-room');
+            if (nameInput && !normalizarCampoXadrez(nameInput.value)) nameInput.value = 'Espectador';
+            if (roomInput) roomInput.value = sala;
+            await entrarXadrezOnline(true);
+        }
+
+        function criarCardTorneioPublicoXadrez(torneio, id) {
+            const card = document.createElement('div');
+            card.className = 'chess-public-tournament-card';
+            const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
+            const sala = normalizarSalaXadrez(torneio?.room || '');
+            const mensagem = textoAvisoSeguro(torneio?.message || 'Participe do torneio de Xadrez e acompanhe a sala oficial.', 180);
+            card.innerHTML = `
+                <strong>♟️ ${escapeHtmlXadrez(nome)}</strong>
+                <div style="color:#cbd5e1; font-size:.75rem; line-height:1.35;">📅 ${escapeHtmlXadrez(formatarDataTorneioXadrez(torneio?.date))} • Sala: ${escapeHtmlXadrez((sala || 'a definir').toUpperCase())}</div>
+                <div style="color:#94a3b8; font-size:.74rem; line-height:1.35; margin-top:5px;">${escapeHtmlXadrez(mensagem)}</div>
+            `;
+            const actions = document.createElement('div');
+            actions.className = 'chess-public-tournament-actions';
+            const assistir = document.createElement('button');
+            assistir.type = 'button';
+            assistir.className = 'chess-public-watch-btn';
+            assistir.textContent = 'Assistir online';
+            assistir.onclick = () => assistirTorneioPublicoXadrez(torneio);
+            const copiar = document.createElement('button');
+            copiar.type = 'button';
+            copiar.className = 'chess-public-copy-btn';
+            copiar.textContent = 'Copiar convite';
+            copiar.onclick = () => copiarLinkPublicoTorneioXadrez(torneio);
+            actions.appendChild(assistir);
+            actions.appendChild(copiar);
+            card.appendChild(actions);
+            return card;
+        }
+
+        function garantirPainelPublicoTorneiosXadrez() {
+            const card = document.querySelector('#chess-screen .chess-card');
+            if (!card) return null;
+            let panel = document.getElementById('chess-public-tournaments-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'chess-public-tournaments-panel';
+                panel.className = 'chess-public-tournaments-panel';
+                panel.innerHTML = `
+                    <div class="chess-public-tournaments-title">🏆 Torneios marcados — assista online</div>
+                    <div class="chess-public-tournaments-desc">Torneios criados pelo administrador aparecem aqui para todos. O jogador pode assistir a sala oficial ou copiar o convite para enviar aos amigos.</div>
+                    <div id="chess-public-tournaments-list"><div class="tiny-muted">Carregando torneios...</div></div>
+                `;
+            }
+            const onlinePanel = document.getElementById('chess-online-panel');
+            const trainingPanel = document.getElementById('chess-training-panel');
+            if (onlinePanel && onlinePanel.nextElementSibling !== panel) {
+                onlinePanel.insertAdjacentElement('afterend', panel);
+            } else if (!onlinePanel && trainingPanel && trainingPanel.previousElementSibling !== panel) {
+                card.insertBefore(panel, trainingPanel);
+            } else if (!panel.parentNode) {
+                card.appendChild(panel);
+            }
+            return panel;
+        }
+
+        let chessTournamentsPublicUnsubscribe = null;
+        function carregarTorneiosPublicosXadrez(forcar = false) {
+            garantirPainelPublicoTorneiosXadrez();
+            const list = document.getElementById('chess-public-tournaments-list');
+            const panel = document.getElementById('chess-public-tournaments-panel');
+            if (!list || !panel) return;
+            if (chessTournamentsPublicUnsubscribe) {
+                if (!forcar) return;
+                try { chessTournamentsPublicUnsubscribe(); } catch (_) {}
+                chessTournamentsPublicUnsubscribe = null;
+            }
+            chessTournamentsPublicUnsubscribe = onValue(ref(db, 'chessTournaments'), (snapshot) => {
+                limparElemento(list);
+                const data = snapshot.val() || {};
+                const itens = Object.entries(data)
+                    .map(([id, t]) => [id, t || {}])
+                    .filter(([, t]) => String(t.status || 'aberto') !== 'encerrado')
+                    .sort((a, b) => numeroSeguro(a[1].date ? new Date(a[1].date).getTime() : a[1].createdAt) - numeroSeguro(b[1].date ? new Date(b[1].date).getTime() : b[1].createdAt))
+                    .slice(0, 5);
+                if (!itens.length) {
+                    panel.style.display = 'none';
+                    list.appendChild(criarTexto('div', 'Nenhum torneio de Xadrez publicado no momento.', 'tiny-muted'));
+                    return;
+                }
+                panel.style.display = '';
+                itens.forEach(([id, t]) => list.appendChild(criarCardTorneioPublicoXadrez(t, id)));
+            });
+        }
+
+        function aplicarLinkDiretoTorneioXadrez() {
+            try {
+                const params = new URLSearchParams(location.search);
+                if ((params.get('jogo') || '').toLowerCase() !== 'xadrez') return;
+                const sala = normalizarSalaXadrez(params.get('sala') || '');
+                abrirXadrezArena();
+                const roomInput = document.getElementById('chess-online-room');
+                const nameInput = document.getElementById('chess-online-name');
+                if (roomInput && sala) roomInput.value = sala;
+                if (nameInput && !normalizarCampoXadrez(nameInput.value)) nameInput.value = 'Espectador';
+                if (params.get('assistir') === '1' && sala) {
+                    setTimeout(() => entrarXadrezOnline(true), 700);
+                }
+            } catch (_) {}
+        }
+
+        function criarCardTorneioXadrez(torneio, id) {
+            const card = document.createElement('div');
+            card.className = 'chess-tournament-card';
+            const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
+            const sala = normalizarSalaXadrez(torneio?.room || '') || 'a definir';
+            const status = somenteTextoSeguro(torneio?.status || 'aberto', 20);
+            const mensagem = textoAvisoSeguro(torneio?.message || 'Participe do torneio de Xadrez e acompanhe as salas oficiais.', 180);
+            card.innerHTML = `
+                <strong>♟️ ${escapeHtmlXadrez(nome)}</strong>
+                <div style="color:#cbd5e1; font-size:.75rem; line-height:1.35;">📅 ${escapeHtmlXadrez(formatarDataTorneioXadrez(torneio?.date))} • Sala: ${escapeHtmlXadrez(String(sala).toUpperCase())} • Status: ${escapeHtmlXadrez(status)}</div>
+                <div style="color:#94a3b8; font-size:.74rem; line-height:1.35; margin-top:5px;">${escapeHtmlXadrez(mensagem)}</div>
+            `;
+            const actions = document.createElement('div');
+            actions.style.display = 'grid';
+            actions.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+            actions.style.gap = '8px';
+            actions.style.marginTop = '8px';
+            const usarSala = document.createElement('button');
+            usarSala.className = 'mini-action-btn';
+            usarSala.type = 'button';
+            usarSala.textContent = 'Usar sala no painel';
+            usarSala.onclick = () => {
+                const salaInput = document.getElementById('chess-admin-room-input');
+                const torneioInput = document.getElementById('chess-tournament-room-input');
+                if (salaInput && sala !== 'a definir') salaInput.value = sala;
+                if (torneioInput && sala !== 'a definir') torneioInput.value = sala;
+            };
+            actions.appendChild(usarSala);
+            if (status !== 'encerrado') {
+                const encerrar = document.createElement('button');
+                encerrar.className = 'mini-action-btn';
+                encerrar.type = 'button';
+                encerrar.style.background = '#dc2626';
+                encerrar.textContent = 'Encerrar';
+                encerrar.onclick = async () => {
+                    if (!(await exigirAdminSeguro())) return;
+                    await update(ref(db, `chessTournaments/${id}`), { status: 'encerrado', closedAt: Date.now() });
+                    mostrarToastXadrez('🏁 Torneio de Xadrez encerrado.');
+                };
+                actions.appendChild(encerrar);
+            }
+            const excluir = document.createElement('button');
+            excluir.className = 'mini-action-btn';
+            excluir.type = 'button';
+            excluir.style.background = '#991b1b';
+            excluir.textContent = 'Excluir torneio';
+            excluir.onclick = async () => {
+                if (!(await exigirAdminSeguro())) return;
+                const ok = window.confirm(`Excluir o torneio "${nome}" de vez?`);
+                if (!ok) return;
+                await remove(ref(db, `chessTournaments/${id}`));
+                mostrarToastXadrez('🗑️ Torneio de Xadrez excluído.');
+            };
+            actions.appendChild(excluir);
+            card.appendChild(actions);
+            return card;
+        }
+
+        async function criarTorneioXadrezAdmin() {
+            if (!(await exigirAdminSeguro())) return;
+            const nome = somenteTextoSeguro(document.getElementById('chess-tournament-name-input')?.value || '', 60);
+            const data = document.getElementById('chess-tournament-date-input')?.value || '';
+            const salaDigitada = document.getElementById('chess-tournament-room-input')?.value || document.getElementById('chess-admin-room-input')?.value || '';
+            const sala = normalizarSalaXadrez(salaDigitada);
+            const mensagem = textoAvisoSeguro(document.getElementById('chess-tournament-message-input')?.value || '', 240);
+            if (!nome) {
+                exibirAlertaDoSistema('Torneio de Xadrez', 'Digite o nome do torneio.');
+                return;
+            }
+            const novoRef = push(ref(db, 'chessTournaments'));
+            await set(novoRef, {
+                game: 'xadrez',
+                name: nome,
+                date: data || '',
+                room: sala || '',
+                message: mensagem || `Novo torneio de Xadrez: ${nome}. Entre no Tabuleiro Arena para participar!`,
+                status: 'aberto',
+                createdBy: auth.currentUser?.uid || '',
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            });
+            if (sala) {
+                await update(ref(db, `chessRooms/${sala}`), { isAuthorized: true, tournamentRoom: true, updatedAt: Date.now(), lastAdminAction: 'sala_vinculada_torneio_xadrez' });
+            }
+            mostrarToastXadrez(`🏆 Torneio de Xadrez publicado: ${nome}`);
+            exibirAlertaDoSistema('Torneio publicado 🏆', `O torneio de Xadrez <strong>${nome}</strong> foi criado no painel do Xadrez.`);
+        }
+
+        let chessTournamentsAdminUnsubscribe = null;
+        function carregarTorneiosXadrezAdmin() {
+            const list = document.getElementById('chess-admin-tournament-list');
+            if (!list) return;
+            if (chessTournamentsAdminUnsubscribe) chessTournamentsAdminUnsubscribe();
+            chessTournamentsAdminUnsubscribe = onValue(ref(db, 'chessTournaments'), (snapshot) => {
+                limparElemento(list);
+                const data = snapshot.val();
+                if (!data) {
+                    list.appendChild(criarTexto('div', 'Nenhum torneio de Xadrez criado ainda.', 'tiny-muted'));
+                    return;
+                }
+                const itens = Object.entries(data)
+                    .map(([id, t]) => [id, t || {}])
+                    .sort((a, b) => numeroSeguro(b[1].createdAt) - numeroSeguro(a[1].createdAt))
+                    .slice(0, 8);
+                if (!itens.length) {
+                    list.appendChild(criarTexto('div', 'Nenhum torneio de Xadrez criado ainda.', 'tiny-muted'));
+                    return;
+                }
+                itens.forEach(([id, t]) => list.appendChild(criarCardTorneioXadrez(t, id)));
+            });
+        }
+
+        async function gerarAvisosXadrezWhatsapp() {
+            if (!(await exigirAdminSeguro())) return;
+            const box = document.getElementById('chess-admin-whatsapp-list');
+            if (!box) return;
+            limparElemento(box);
+            const sala = normalizarSalaXadrez(document.getElementById('chess-tournament-room-input')?.value || document.getElementById('chess-admin-room-input')?.value || '');
+            const nomeTorneio = somenteTextoSeguro(document.getElementById('chess-tournament-name-input')?.value || 'Torneio de Xadrez', 60);
+            const mensagemBase = textoAvisoSeguro(document.getElementById('chess-tournament-message-input')?.value || `Olá! Temos torneio de Xadrez no Tabuleiro Arena: ${nomeTorneio}. ${sala ? 'Sala: ' + sala.toUpperCase() : 'Entre no app para participar.'}`, 240);
+            const snap = await get(ref(db, 'players'));
+            const players = snap.val() || {};
+            const autorizados = Object.values(players).filter(p => p && p.whatsappConsent && p.whatsapp);
+            if (!autorizados.length) {
+                box.appendChild(criarTexto('div', 'Nenhum jogador com WhatsApp autorizado foi encontrado.', 'tiny-muted'));
+                return;
+            }
+            autorizados.slice(0, 40).forEach(p => {
+                const row = document.createElement('div');
+                row.className = 'chess-tournament-card';
+                const nome = nomeSeguro(p.name || 'Jogador');
+                const telefone = telefoneSeguro(p.whatsapp || '');
+                const msg = encodeURIComponent(`${mensagemBase}\n\n${sala ? 'Código da sala: ' + sala.toUpperCase() + '\n' : ''}Link: ${location.origin}${location.pathname}`);
+                row.innerHTML = `<strong>📲 ${escapeHtmlXadrez(nome)}</strong><div style="color:#94a3b8; font-size:.75rem;">${escapeHtmlXadrez(telefone)}</div>`;
+                const btn = document.createElement('button');
+                btn.className = 'mini-action-btn';
+                btn.type = 'button';
+                btn.style.background = '#22c55e';
+                btn.textContent = 'Enviar WhatsApp';
+                btn.onclick = () => window.open(`https://wa.me/${telefone}?text=${msg}`, '_blank');
+                row.appendChild(btn);
+                box.appendChild(row);
+            });
         }
 
         async function abrirAdminXadrezCentral() {
@@ -7933,10 +8354,13 @@ Link: ${location.origin}${location.pathname}`;
             const chess = document.getElementById('chess-screen');
             if (chess) chess.style.display = 'block';
             const panel = document.getElementById('chess-admin-panel');
-            if (panel) panel.style.display = 'block';
+            if (panel) {
+                panel.style.display = 'block';
+                panel.setAttribute('aria-hidden', 'false');
+            }
             const online = document.getElementById('chess-online-panel');
             if (online) online.style.display = 'none';
-            atualizarStatusOnlineXadrez('🛡️ Fase 12.1 ativa: modo administrador limpo do Xadrez. Só o painel administrativo fica visível.');
+            atualizarStatusOnlineXadrez('🛡️ Modo administrador do Xadrez ativo. Só o painel administrativo fica visível.');
             ativarDashboardAdminXadrez();
             panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -8556,6 +8980,7 @@ Link: ${location.origin}${location.pathname}`;
             document.getElementById('chess-training-medium-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', false));
             document.getElementById('chess-training-hard-btn')?.addEventListener('click', () => iniciarTreinoXadrez('dificil', false));
             document.getElementById('chess-training-learn-btn')?.addEventListener('click', () => iniciarTreinoXadrez('medio', true));
+            setTimeout(aplicarLinkDiretoTorneioXadrez, 300);
             document.getElementById('chess-training-tip-btn')?.addEventListener('click', atualizarDicaTreinoXadrez);
             document.getElementById('chess-result-close-btn')?.addEventListener('click', () => { const p = document.getElementById('chess-result-panel'); if (p) p.style.display = 'none'; });
             document.getElementById('chess-result-again-btn')?.addEventListener('click', () => { resetChessGame(); focarTabuleiroXadrez(false); });

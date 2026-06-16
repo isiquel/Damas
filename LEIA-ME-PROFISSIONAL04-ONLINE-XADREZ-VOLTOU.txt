@@ -1,0 +1,1 @@
+Profissional 04: corrigido o menu do Xadrez para mostrar novamente o painel Jogar Online/Assistir/Treinar. A Central de Torneios do Xadrez permanece somente no Admin.

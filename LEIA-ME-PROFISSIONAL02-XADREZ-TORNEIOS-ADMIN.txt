@@ -1,0 +1,13 @@
+PROFISSIONAL 02 — Torneios do Xadrez dentro do Admin
+
+O que esta versão faz:
+- Remove a ideia de Central Profissional na tela inicial.
+- Mantém a tela inicial limpa como estava na Separação 06.
+- Adiciona Central de Torneios do Xadrez dentro do Painel Admin do Xadrez.
+- Usa a Damas como referência: criar/publicar torneio, sala oficial e aviso WhatsApp.
+- Não mexe nas regras da Damas.
+- Não mexe nas regras do Xadrez.
+- Não mexe na lógica online dos jogos.
+- Não mexe no Admin da Damas.
+
+Teste primeiro na /fase33/ antes de publicar no principal.

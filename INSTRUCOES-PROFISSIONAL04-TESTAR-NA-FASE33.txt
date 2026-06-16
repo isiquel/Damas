@@ -1,0 +1,1 @@
+Suba na pasta fase33 e teste: 1) Xadrez Arena deve mostrar o painel Jogar Online; 2) Central de Torneios não aparece no menu público; 3) Admin > Administrar Xadrez mostra Central de Torneios; 4) Damas normal.
