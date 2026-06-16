@@ -7506,10 +7506,21 @@ Link: ${location.origin}${location.pathname}`;
             focarTabuleiroXadrez(false);
         }
 
+        function esconderPainelAdminXadrezForaDoAdmin() {
+            const painelAdminXadrez = document.getElementById('chess-admin-panel');
+            if (painelAdminXadrez && !document.body.classList.contains('chess-admin-only')) {
+                painelAdminXadrez.style.display = 'none';
+                painelAdminXadrez.setAttribute('aria-hidden', 'true');
+            }
+        }
+
         function abrirXadrezArena() {
+            // ✅ PROFISSIONAL 03: quando o jogador abre o Xadrez normal, o Admin do Xadrez fica fechado.
+            esconderPainelAdminXadrezForaDoAdmin();
             // ✅ FASE 13.4: garante que o Xadrez comum nunca herde o modo Admin.
             // Isso evita tela vazia/travada depois de sair da administração do Xadrez.
             document.body.classList.remove('platform-start-active', 'mode-selecting', 'game-selected', 'chess-admin-only', 'chess-focus-mode', 'chess-board-visible', 'chess-game-active');
+            esconderPainelAdminXadrezForaDoAdmin();
             document.body.classList.add('chess-selected', 'chess-menu-active');
 
             const hub = document.getElementById('games-hub-panel');
@@ -7534,6 +7545,7 @@ Link: ${location.origin}${location.pathname}`;
             try { encerrarChamadaXadrez(false); } catch (_) {}
             // ✅ FASE 13.4: remove também o modo Admin do Xadrez ao voltar para o hub.
             document.body.classList.remove('chess-selected', 'game-selected', 'chess-focus-mode', 'chess-admin-only', 'chess-beginner-mode', 'chess-board-visible', 'chess-menu-active', 'chess-game-active', 'chess-mode-online', 'chess-mode-training');
+            esconderPainelAdminXadrezForaDoAdmin();
             document.body.classList.add('platform-start-active', 'mode-selecting');
 
             const hub = document.getElementById('games-hub-panel');
@@ -7871,8 +7883,26 @@ Link: ${location.origin}${location.pathname}`;
                     body.chess-admin-only .chess-warning {
                         display: none !important;
                     }
+                    /* ✅ PROFISSIONAL 03: segurança visual do Admin do Xadrez.
+                       O painel administrativo do Xadrez fica totalmente invisível fora do modo admin,
+                       mesmo que o HTML já tenha sido criado antes no navegador. */
+                    body:not(.chess-admin-only) #chess-admin-panel {
+                        display: none !important;
+                        visibility: hidden !important;
+                        pointer-events: none !important;
+                        height: 0 !important;
+                        max-height: 0 !important;
+                        overflow: hidden !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: 0 !important;
+                    }
                     body.chess-admin-only #chess-admin-panel {
                         display: block !important;
+                        visibility: visible !important;
+                        pointer-events: auto !important;
+                        height: auto !important;
+                        max-height: none !important;
                     }
                     body.chess-admin-only .chess-card {
                         max-width: 660px;
@@ -7930,6 +7960,10 @@ Link: ${location.origin}${location.pathname}`;
                 const online = document.getElementById('chess-online-panel');
                 if (online) online.insertAdjacentElement('afterend', panel);
                 else card.insertBefore(panel, document.getElementById('chess-status') || card.firstChild);
+                if (!document.body.classList.contains('chess-admin-only')) {
+                    panel.style.display = 'none';
+                    panel.setAttribute('aria-hidden', 'true');
+                }
 
                 document.getElementById('chess-admin-create-btn')?.addEventListener('click', adminCriarLiberarSalaXadrez);
                 document.getElementById('chess-admin-block-btn')?.addEventListener('click', adminBloquearSalaXadrez);
@@ -8106,7 +8140,10 @@ Link: ${location.origin}${location.pathname}`;
             const chess = document.getElementById('chess-screen');
             if (chess) chess.style.display = 'block';
             const panel = document.getElementById('chess-admin-panel');
-            if (panel) panel.style.display = 'block';
+            if (panel) {
+                panel.style.display = 'block';
+                panel.setAttribute('aria-hidden', 'false');
+            }
             const online = document.getElementById('chess-online-panel');
             if (online) online.style.display = 'none';
             atualizarStatusOnlineXadrez('🛡️ Modo administrador do Xadrez ativo. Só o painel administrativo fica visível.');
