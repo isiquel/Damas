@@ -1,0 +1,33 @@
+COMO TESTAR — PROFISSIONAL 05
+
+1. Suba estes arquivos na pasta Damas/fase33:
+   - index.html
+   - LEIA-ME.txt
+   - LEIA-ME-SEPARACAO02-CSS.txt
+   - LEIA-ME-SEPARACAO03-JS-CONFIG.txt
+   - LEIA-ME-SEPARACAO04-JS-UTILS.txt
+   - LEIA-ME-SEPARACAO05-UI.txt
+   - LEIA-ME-SEPARACAO06-CHAT-UI.txt
+   - LEIA-ME-PROFISSIONAL02-XADREZ-TORNEIOS-ADMIN.txt
+   - LEIA-ME-PROFISSIONAL03-XADREZ-TORNEIOS-SO-ADMIN.txt
+   - LEIA-ME-PROFISSIONAL04-ONLINE-XADREZ-VOLTOU.txt
+   - LEIA-ME-PROFISSIONAL05-XADREZ-TORNEIOS-PUBLICOS.txt
+   - INSTRUCOES-PROFISSIONAL05-TESTAR-NA-FASE33.txt
+   - css
+   - js
+
+2. Teste o link:
+   https://damas-nine.vercel.app/fase33/?v=profissional05
+
+3. Checklist:
+   [ ] Tela inicial abre normal
+   [ ] Xadrez abre normal
+   [ ] Jogar Online / Assistir aparece normal
+   [ ] Central de Torneios NÃO aparece editável no menu público
+   [ ] Torneio publicado aparece no menu público como card de leitura
+   [ ] Botão Copiar link copia o convite
+   [ ] Botão Assistir sala entra como espectador
+   [ ] Painel Admin > Administrar Xadrez abre normal
+   [ ] Admin do Xadrez mostra Criar/Publicar, Encerrar e Excluir torneio
+   [ ] Excluir torneio remove o torneio da lista
+   [ ] Damas continua normal
