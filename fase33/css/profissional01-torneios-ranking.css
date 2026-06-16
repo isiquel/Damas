@@ -1,0 +1,171 @@
+/* ============================================================
+   TABULEIRO ARENA - PROFISSIONAL 01
+   Central visual de Torneios, Ranking e Manual.
+   Seguro: não mexe nas regras de Damas, Xadrez, Firebase ou Admin.
+   ============================================================ */
+
+.professional-arena-panel {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(2, 6, 23, 0.96), rgba(15, 23, 42, 0.98));
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    text-align: left;
+}
+
+.professional-arena-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.professional-arena-title {
+    color: #e0f2fe;
+    font-size: .92rem;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: .55px;
+    line-height: 1.25;
+}
+
+.professional-arena-subtitle {
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: .76rem;
+    line-height: 1.35;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+.professional-arena-badge {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(46, 204, 113, 0.14);
+    border: 1px solid rgba(46, 204, 113, 0.42);
+    color: #86efac;
+    font-size: .66rem;
+    font-weight: 1000;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.professional-arena-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.professional-arena-action {
+    min-height: 64px;
+    padding: 10px 9px;
+    border-radius: 12px;
+    background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff;
+    text-align: left;
+    text-transform: none;
+    line-height: 1.2;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.professional-arena-action:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(56, 189, 248, .45);
+    background: #111c31;
+}
+
+.professional-arena-action strong {
+    display: block;
+    color: #fff;
+    font-size: .78rem;
+    margin-bottom: 4px;
+}
+
+.professional-arena-action span {
+    display: block;
+    color: #cbd5e1;
+    font-size: .68rem;
+    font-weight: 600;
+}
+
+.professional-arena-footnote {
+    margin-top: 9px;
+    color: #94a3b8;
+    font-size: .7rem;
+    line-height: 1.35;
+}
+
+.professional-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1600;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(2, 6, 23, .78);
+    backdrop-filter: blur(7px);
+}
+
+.professional-modal-overlay.show {
+    display: flex;
+}
+
+.professional-modal-card {
+    width: min(94vw, 520px);
+    max-height: 86vh;
+    overflow: auto;
+    border-radius: 18px;
+    border: 1px solid rgba(56, 189, 248, 0.42);
+    background: linear-gradient(135deg, #0f172a, #111827);
+    box-shadow: 0 24px 70px rgba(0,0,0,.7);
+    padding: 18px;
+    text-align: left;
+}
+
+.professional-modal-card h2 {
+    color: #38bdf8;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.professional-modal-card p,
+.professional-modal-card li {
+    color: #e2e8f0;
+    font-size: .88rem;
+    line-height: 1.48;
+    margin-bottom: 8px;
+}
+
+.professional-modal-card ul {
+    margin-left: 18px;
+    margin-bottom: 12px;
+}
+
+.professional-modal-close {
+    background: #334155;
+    margin-top: 10px;
+}
+
+@media (max-width: 520px) {
+    .professional-arena-head {
+        flex-direction: column;
+    }
+    .professional-arena-grid {
+        grid-template-columns: 1fr;
+    }
+    .professional-arena-action {
+        min-height: 56px;
+    }
+}
+
+.professional-focus-ring {
+    outline: 3px solid rgba(56, 189, 248, .82);
+    box-shadow: 0 0 0 6px rgba(56, 189, 248, .16), 0 12px 28px rgba(0,0,0,.35);
+}

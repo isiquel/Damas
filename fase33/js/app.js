@@ -1362,6 +1362,15 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
 
     toggleChatVisibility.addEventListener('click', () => {
         isChatMutedLocally = !isChatMutedLocally;
+        if (window.TabuleiroChatUI && typeof window.TabuleiroChatUI.aplicarEstadoChatNormal === 'function') {
+            window.TabuleiroChatUI.aplicarEstadoChatNormal({
+                muted: isChatMutedLocally,
+                button: toggleChatVisibility,
+                messages: chatBoxMessages,
+                inputWrapper: chatInputWrapper
+            });
+            return;
+        }
         if (isChatMutedLocally) {
             toggleChatVisibility.innerText = "Ligar Chat";
             toggleChatVisibility.classList.add('off');
@@ -1397,6 +1406,10 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
     chatInputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') pushChatMessage(); });
 
     function appendChatRow(author, text) {
+        if (window.TabuleiroChatUI && typeof window.TabuleiroChatUI.adicionarLinhaChatNormal === 'function') {
+            window.TabuleiroChatUI.adicionarLinhaChatNormal(chatBoxMessages, author, text);
+            return;
+        }
         const row = document.createElement('div');
         row.className = "chat-msg-row";
         const authorSpan = document.createElement('span');

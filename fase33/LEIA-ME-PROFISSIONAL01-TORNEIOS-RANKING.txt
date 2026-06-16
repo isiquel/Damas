@@ -1,0 +1,28 @@
+TABULEIRO ARENA — PROFISSIONAL 01
+Central visual de Torneios, Ranking e Manual
+
+O QUE FOI FEITO
+- Criado css/profissional01-torneios-ranking.css
+- Criado js/profissional01-torneios-ranking.js
+- Adicionada uma central visual na tela inicial
+- Botões: Torneios, Ranking, Manual rápido e Admin
+
+O QUE NÃO FOI MEXIDO
+- Damas
+- Xadrez
+- Firebase
+- Salas online
+- Regras do jogo
+- Ranking real
+- Chat real
+- Admin real
+
+COMO TESTAR
+1. Subir primeiro na pasta /fase33/
+2. Acessar: https://damas-nine.vercel.app/fase33/?v=profissional01
+3. Conferir se a tela inicial abre normal
+4. Conferir se Damas e Xadrez continuam normais
+5. Conferir se Admin abre normal
+6. Conferir se o painel Central Profissional aparece na tela inicial
+
+NÃO PUBLICAR NO PRINCIPAL ANTES DE TESTAR NA /fase33/.
