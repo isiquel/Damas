@@ -1,0 +1,11 @@
+PROFISSIONAL 11 — Excluir torneios e limpeza automática
+
+O que foi corrigido:
+- Admin da Damas agora tem botão Excluir nos torneios.
+- Admin do Xadrez mantém botão Excluir nos torneios.
+- Torneios encerrados antigos são limpos automaticamente depois de 30 dias quando o admin abre o painel.
+- A limpeza vale para Damas e Xadrez.
+- Jogadores comuns não ganham acesso de edição/exclusão.
+- Damas, Xadrez, salas online, ranking e regras não foram alterados.
+
+Teste primeiro na /fase33/ antes de publicar no principal.
