@@ -172,6 +172,29 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
         return card;
     }
 
+    const TORNEIO_AUTO_DELETE_MS = 30 * 24 * 60 * 60 * 1000;
+
+    function torneioEncerradoAntigo(torneio) {
+        if (!torneio || torneio.status !== 'encerrado') return false;
+        const base = numeroSeguro(torneio.closedAt || torneio.updatedAt || torneio.createdAt);
+        if (!base) return false;
+        return Date.now() - base > TORNEIO_AUTO_DELETE_MS;
+    }
+
+    async function limparTorneiosEncerradosAntigos(caminho, nomeJogo) {
+        try {
+            if (!auth.currentUser) return;
+            const snap = await get(ref(db, caminho));
+            const data = snap.val() || {};
+            const antigos = Object.entries(data).filter(([_, t]) => torneioEncerradoAntigo(t || {}));
+            if (!antigos.length) return;
+            await Promise.all(antigos.map(([id]) => remove(ref(db, `${caminho}/${id}`))));
+            console.log(`Torneios antigos removidos automaticamente (${nomeJogo}):`, antigos.length);
+        } catch (e) {
+            console.warn(`Não foi possível limpar torneios antigos de ${nomeJogo}:`, e);
+        }
+    }
+
     function carregarTorneiosLobby() {
         const list = document.getElementById('tournament-lobby-list');
         if (!list) return;
@@ -269,6 +292,7 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
     function carregarTorneiosAdmin() {
         const list = document.getElementById('admin-tournament-list');
         if (!list) return;
+        limparTorneiosEncerradosAntigos('tournaments', 'Damas');
         onValue(ref(db, 'tournaments'), (snapshot) => {
             limparElemento(list);
             const data = snapshot.val();
@@ -281,15 +305,38 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
                 .slice(0, 8)
                 .forEach(([id, t]) => {
                     const card = criarCardTorneio(t || {}, id);
+                    const actions = document.createElement('div');
+                    actions.style.display = 'grid';
+                    actions.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+                    actions.style.gap = '8px';
+                    actions.style.marginTop = '8px';
+
                     const closeBtn = document.createElement('button');
                     closeBtn.className = 'mini-action-btn';
                     closeBtn.style.backgroundColor = '#991b1b';
                     closeBtn.innerText = 'Encerrar';
                     closeBtn.onclick = async () => {
                         if (!(await exigirAdminSeguro())) return;
-                        await update(ref(db, `tournaments/${id}`), { status: 'encerrado', closedAt: Date.now() });
+                        await update(ref(db, `tournaments/${id}`), { status: 'encerrado', closedAt: Date.now(), updatedAt: Date.now() });
+                        exibirAlertaDoSistema('Torneio encerrado', 'O torneio foi marcado como encerrado.');
                     };
-                    card.appendChild(closeBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'mini-action-btn';
+                    deleteBtn.style.backgroundColor = '#7f1d1d';
+                    deleteBtn.innerText = 'Excluir';
+                    deleteBtn.onclick = async () => {
+                        if (!(await exigirAdminSeguro())) return;
+                        const nomeTorneio = somenteTextoSeguro(t?.name || 'Torneio de Damas', 60);
+                        const ok = window.confirm(`Excluir o torneio "${nomeTorneio}" de vez?`);
+                        if (!ok) return;
+                        await remove(ref(db, `tournaments/${id}`));
+                        await registrarLogAdmin('excluiu_torneio', nomeTorneio);
+                        exibirAlertaDoSistema('Torneio excluído', 'O torneio foi removido do sistema.');
+                    };
+
+                    actions.append(closeBtn, deleteBtn);
+                    card.appendChild(actions);
                     list.appendChild(card);
                 });
         });
@@ -8490,7 +8537,7 @@ ${link}`;
                 encerrar.textContent = 'Encerrar';
                 encerrar.onclick = async () => {
                     if (!(await exigirAdminSeguro())) return;
-                    await update(ref(db, `chessTournaments/${id}`), { status: 'encerrado', closedAt: Date.now() });
+                    await update(ref(db, `chessTournaments/${id}`), { status: 'encerrado', closedAt: Date.now(), updatedAt: Date.now() });
                     mostrarToastXadrez('🏁 Torneio de Xadrez encerrado.');
                 };
                 actions.appendChild(encerrar);
@@ -8547,6 +8594,7 @@ ${link}`;
         function carregarTorneiosXadrezAdmin() {
             const list = document.getElementById('chess-admin-tournament-list');
             if (!list) return;
+            limparTorneiosEncerradosAntigos('chessTournaments', 'Xadrez');
             if (chessTournamentsAdminUnsubscribe) chessTournamentsAdminUnsubscribe();
             chessTournamentsAdminUnsubscribe = onValue(ref(db, 'chessTournaments'), (snapshot) => {
                 limparElemento(list);
