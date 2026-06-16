@@ -8210,13 +8210,17 @@ Link: ${location.origin}${location.pathname}`;
             const dataTxt = formatarDataTorneioXadrez(torneio?.date);
             const mensagem = textoAvisoSeguro(torneio?.message || 'Entre e acompanhe o torneio de Xadrez.', 220);
             const link = torneio?.publicLink || linkPublicoTorneioXadrez(sala, 'assistir');
-            return `♟️ Torneio de Xadrez — ${nome}
+            return `🏆 Convite oficial — Tabuleiro Arena
 
+♟️ Torneio de Xadrez: ${nome}
 📅 Data/Hora: ${dataTxt}
-${sala ? '🏠 Sala: ' + sala.toUpperCase() + '\n' : ''}${mensagem}
+${sala ? '🏠 Sala: ' + sala.toUpperCase() + '\n' : ''}
+${mensagem}
 
-👀 Assista online aqui:
-${link}`;
+👀 Para assistir online, acesse:
+${link}
+
+Compartilhe com os amigos e entre no horário marcado.`;
         }
 
         async function copiarLinkPublicoTorneioXadrez(torneio) {
@@ -8283,7 +8287,7 @@ ${link}`;
                 panel.className = 'chess-public-tournaments-panel';
                 panel.innerHTML = `
                     <div class="chess-public-tournaments-title">🏆 Torneios marcados — assista online</div>
-                    <div class="chess-public-tournaments-desc">Torneios criados pelo administrador aparecem aqui para todos. O jogador pode assistir a sala oficial ou copiar o convite para enviar aos amigos.</div>
+                    <div class="chess-public-tournaments-desc">Torneios criados pelo administrador aparecem aqui para todos. O jogador pode assistir a sala oficial ou copiar um convite pronto para enviar aos amigos.</div>
                     <div id="chess-public-tournaments-list"><div class="tiny-muted">Carregando torneios...</div></div>
                 `;
             }
@@ -8635,7 +8639,14 @@ ${link}`;
                 row.className = 'chess-tournament-card';
                 const nome = nomeSeguro(p.name || 'Jogador');
                 const telefone = telefoneSeguro(p.whatsapp || '');
-                const msg = encodeURIComponent(`${mensagemBase}\n\n${sala ? 'Código da sala: ' + sala.toUpperCase() + '\n' : ''}Link para assistir: ${linkPublicoTorneioXadrez(sala, 'assistir')}`);
+                const convite = montarConviteTorneioXadrez({
+                    name: nomeTorneio,
+                    room: sala,
+                    date: document.getElementById('chess-tournament-date-input')?.value || '',
+                    message: mensagemBase,
+                    publicLink: linkPublicoTorneioXadrez(sala, 'assistir')
+                });
+                const msg = encodeURIComponent(convite);
                 row.innerHTML = `<strong>📲 ${escapeHtmlXadrez(nome)}</strong><div style="color:#94a3b8; font-size:.75rem;">${escapeHtmlXadrez(telefone)}</div>`;
                 const btn = document.createElement('button');
                 btn.className = 'mini-action-btn';
