@@ -1,0 +1,18 @@
+INSTRUÇÕES — PROFISSIONAL 07
+
+1. Suba este pacote primeiro dentro da pasta /fase33/.
+2. Acesse:
+   https://damas-nine.vercel.app/fase33/?v=profissional07
+
+Checklist:
+1. Tela inicial abre.
+2. Damas funciona.
+3. Xadrez online entra na sala.
+4. Faça uma jogada que dê xeque.
+5. No modo online NÃO deve aparecer barra vermelha dizendo xeque.
+6. O adversário deve conseguir jogar somente movimentos legais para sair do xeque.
+7. Xeque-mate deve continuar encerrando a partida com modal bonito.
+8. Admin do Xadrez abre.
+9. Torneios do Xadrez continuam funcionando.
+
+Se tudo estiver certo na /fase33/, publique no principal.

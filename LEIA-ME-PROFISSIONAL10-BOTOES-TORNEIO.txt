@@ -1,0 +1,19 @@
+PROFISSIONAL 10 — Botões do torneio mais bonitos
+
+Correção visual pequena e segura.
+
+O que muda:
+- Melhora os botões públicos do torneio de Xadrez.
+- "Assistir online" vira botão principal azul/ciano.
+- "Copiar convite" vira botão secundário roxo/índigo.
+- Aumenta o espaçamento entre os botões.
+- Adiciona borda, sombra, cantos arredondados e ícones.
+
+O que NÃO muda:
+- Não altera Damas.
+- Não altera regras do Xadrez.
+- Não altera Firebase.
+- Não altera sala online.
+- Não altera Admin.
+- Não altera ranking.
+- Não altera torneios, apenas o visual dos botões públicos.
