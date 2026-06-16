@@ -6641,7 +6641,15 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 chessGameOver = true;
                 return 'Empate por afogamento: o jogador da vez não tem movimento legal.';
             }
-            if (emXeque) return `${mensagemBase ? mensagemBase + ' ' : ''}Xeque no rei das ${nomeCor(chessTurn)}.`;
+
+            // REGRA PROFISSIONAL ONLINE:
+            // Xeque não termina a partida. O jogador em xeque só pode fazer uma jogada legal
+            // que defenda o rei, mas no modo online não mostramos aviso vermelho nem entregamos
+            // dica de que o rei está em xeque. Isso evita ajuda visual ao adversário/jogador.
+            if (emXeque) {
+                if (chessMode === 'online') return mensagemBase || '';
+                return `${mensagemBase ? mensagemBase + ' ' : ''}Xeque no rei das ${nomeCor(chessTurn)}.`;
+            }
             return mensagemBase || '';
         }
 
