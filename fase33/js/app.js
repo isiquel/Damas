@@ -10924,6 +10924,293 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 };
             }
 
+
+            /* ✅ PROFISSIONAL 27 — BALÃO PEQUENO EM CIMA DA PEÇA
+               Correção real: não usa popup grande no meio da tela. Ao tocar numa peça
+               no Xadrez online com # no nome, abre um balão pequeno perto da peça,
+               com explicação objetiva e melhor dica didática para aula. */
+            function instalarCssBubbleProfessorXadrez27() {
+                if (document.getElementById('teacher-piece-bubble-27-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-piece-bubble-27-style';
+                style.textContent = `
+                    #teacher-piece-bubble-27 {
+                        position: fixed !important;
+                        z-index: 999999 !important;
+                        width: min(318px, calc(100vw - 18px));
+                        max-height: min(430px, calc(100vh - 18px));
+                        overflow: auto;
+                        display: none;
+                        border-radius: 16px;
+                        border: 1px solid rgba(250, 204, 21, .58);
+                        background: linear-gradient(180deg, rgba(8,13,28,.98), rgba(3,8,20,.99));
+                        color: #eaf6ff;
+                        box-shadow: 0 18px 48px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04), 0 0 26px rgba(250,204,21,.18);
+                        padding: 10px;
+                        font-family: inherit;
+                        text-align: left;
+                    }
+                    #teacher-piece-bubble-27.open { display: block !important; animation: teacherBubble27In .12s ease-out; }
+                    @keyframes teacherBubble27In { from { transform: translateY(5px) scale(.98); opacity:.65; } to { transform: translateY(0) scale(1); opacity:1; } }
+                    #teacher-piece-bubble-27::after {
+                        content: '';
+                        position: fixed;
+                        left: var(--arrow-left, 24px);
+                        top: var(--arrow-top, 24px);
+                        width: 13px;
+                        height: 13px;
+                        transform: rotate(45deg);
+                        background: rgba(8,13,28,.98);
+                        border-left: 1px solid rgba(250,204,21,.50);
+                        border-top: 1px solid rgba(250,204,21,.50);
+                        pointer-events: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-head-27 {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 8px;
+                        padding-bottom: 7px;
+                        border-bottom: 1px solid rgba(148,163,184,.18);
+                    }
+                    #teacher-piece-bubble-27 .bubble-titlewrap-27 { display:flex; gap:8px; align-items:center; min-width:0; }
+                    #teacher-piece-bubble-27 .bubble-symbol-27 {
+                        width: 34px; height: 34px; min-width:34px;
+                        border-radius: 12px;
+                        display:flex; align-items:center; justify-content:center;
+                        font-size: 1.45rem;
+                        background: rgba(250,204,21,.16);
+                        border: 1px solid rgba(250,204,21,.34);
+                        color: #fef3c7;
+                    }
+                    #teacher-piece-bubble-27 .bubble-title-27 {
+                        font-size: .93rem;
+                        line-height: 1.12;
+                        font-weight: 1000;
+                        color: #f8fafc;
+                    }
+                    #teacher-piece-bubble-27 .bubble-sub-27 {
+                        margin-top: 2px;
+                        color: #93c5fd;
+                        font-size: .68rem;
+                        font-weight: 850;
+                    }
+                    #teacher-piece-bubble-27 .bubble-close-27 {
+                        width: 28px; height: 28px; min-width: 28px;
+                        border-radius: 10px;
+                        border: 1px solid rgba(148,163,184,.25);
+                        background: rgba(15,23,42,.86);
+                        color: #e5e7eb;
+                        font-weight: 1000;
+                        cursor: pointer;
+                        line-height: 1;
+                    }
+                    #teacher-piece-bubble-27 .bubble-body-27 { padding-top: 8px; font-size: .76rem; line-height: 1.33; }
+                    #teacher-piece-bubble-27 .bubble-section-27 {
+                        border: 1px solid rgba(148,163,184,.14);
+                        background: rgba(15,23,42,.58);
+                        border-radius: 11px;
+                        padding: 7px 8px;
+                        margin-top: 6px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-label-27 {
+                        display:block;
+                        color:#86efac;
+                        font-size:.61rem;
+                        letter-spacing:.08em;
+                        text-transform:uppercase;
+                        font-weight:1000;
+                        margin-bottom:3px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-best-27 {
+                        border-color: rgba(250,204,21,.30);
+                        background: rgba(113,63,18,.22);
+                        color:#fef3c7;
+                        font-weight: 750;
+                    }
+                    #teacher-piece-bubble-27 .bubble-audio-27 {
+                        border-color: rgba(56,189,248,.27);
+                        background: rgba(14,116,144,.16);
+                        color:#dff6ff;
+                    }
+                    #teacher-piece-bubble-27 .bubble-moves-27 {
+                        display:flex;
+                        flex-wrap:wrap;
+                        gap:4px;
+                        margin-top:4px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-27 {
+                        border-radius:999px;
+                        padding:3px 6px;
+                        background: rgba(37,99,235,.20);
+                        border: 1px solid rgba(96,165,250,.26);
+                        color:#bfdbfe;
+                        font-size:.66rem;
+                        font-weight:900;
+                    }
+                    #chess-board .chess-square.teacher-selected-27,
+                    .chess-square.teacher-selected-27 {
+                        outline: 3px solid rgba(250,204,21,.92) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 18px rgba(250,204,21,.38) !important;
+                    }
+                    @media (max-width: 520px) {
+                        #teacher-piece-bubble-27 { width: min(292px, calc(100vw - 12px)); padding: 9px; border-radius: 14px; }
+                        #teacher-piece-bubble-27 .bubble-body-27 { font-size: .72rem; }
+                        #teacher-piece-bubble-27 .bubble-section-27 { padding: 6px 7px; }
+                        #teacher-piece-bubble-27 .bubble-title-27 { font-size: .86rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function escapeBubble27(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function garantirBubbleProfessorXadrez27() {
+                instalarCssBubbleProfessorXadrez27();
+                let bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) {
+                    bubble = document.createElement('div');
+                    bubble.id = 'teacher-piece-bubble-27';
+                    bubble.innerHTML = `
+                        <div class="bubble-head-27">
+                            <div class="bubble-titlewrap-27">
+                                <div class="bubble-symbol-27">♟</div>
+                                <div>
+                                    <div class="bubble-title-27">Peça selecionada</div>
+                                    <div class="bubble-sub-27">Manual do professor</div>
+                                </div>
+                            </div>
+                            <button class="bubble-close-27" type="button" aria-label="Fechar">×</button>
+                        </div>
+                        <div class="bubble-body-27"></div>
+                    `;
+                    document.body.appendChild(bubble);
+                    bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
+                }
+                return bubble;
+            }
+
+            function posicionarBubbleProfessorXadrez27(bubble, rect) {
+                const margem = 8;
+                const bw = bubble.offsetWidth || Math.min(318, window.innerWidth - 18);
+                const bh = bubble.offsetHeight || 280;
+                const centro = rect ? (rect.left + rect.width / 2) : (window.innerWidth / 2);
+                let left = Math.round(centro - bw / 2);
+                left = Math.max(margem, Math.min(left, window.innerWidth - bw - margem));
+                let top = rect ? Math.round(rect.top - bh - 12) : 80;
+                let arrowTop = rect ? Math.round(rect.top - 7) : top;
+                if (top < margem) {
+                    top = rect ? Math.round(rect.bottom + 12) : margem;
+                    arrowTop = rect ? Math.round(rect.bottom + 1) : top;
+                }
+                if (top + bh > window.innerHeight - margem) top = Math.max(margem, window.innerHeight - bh - margem);
+                const arrowLeft = Math.max(18, Math.min(centro, window.innerWidth - 18));
+                bubble.style.left = `${left}px`;
+                bubble.style.top = `${top}px`;
+                bubble.style.setProperty('--arrow-left', `${arrowLeft}px`);
+                bubble.style.setProperty('--arrow-top', `${arrowTop}px`);
+            }
+
+            function abrirBubbleProfessorXadrez27(dados = {}) {
+                const bubble = garantirBubbleProfessorXadrez27();
+                const movimentos = Array.isArray(dados.ondePodeIr) && dados.ondePodeIr.length
+                    ? dados.ondePodeIr.slice(0, 10).map(m => `<span class="bubble-move-27">${escapeBubble27(m)}</span>`).join('')
+                    : '<span class="bubble-move-27">Sem casa legal agora</span>';
+                const simbolo = bubble.querySelector('.bubble-symbol-27');
+                const titulo = bubble.querySelector('.bubble-title-27');
+                const sub = bubble.querySelector('.bubble-sub-27');
+                const body = bubble.querySelector('.bubble-body-27');
+                if (simbolo) simbolo.textContent = dados.simbolo || '♟';
+                if (titulo) titulo.textContent = dados.titulo || 'Peça selecionada';
+                if (sub) sub.textContent = `${dados.jogo || 'Xadrez online'} • ${dados.posicao || '—'}`;
+                if (body) body.innerHTML = `
+                    <div class="bubble-section-27">
+                        <span class="bubble-label-27">O que é</span>
+                        ${escapeBubble27(dados.oQueE || 'Esta peça faz parte da posição e precisa ser analisada antes da jogada.')}
+                    </div>
+                    <div class="bubble-section-27">
+                        <span class="bubble-label-27">O que faz</span>
+                        ${escapeBubble27(dados.comoAnda || 'Ela se move conforme a regra da peça e pode atacar ou defender casas importantes.')}
+                    </div>
+                    <div class="bubble-section-27">
+                        <span class="bubble-label-27">Onde pode ir agora</span>
+                        <div class="bubble-moves-27">${movimentos}</div>
+                    </div>
+                    <div class="bubble-section-27 bubble-best-27">
+                        <span class="bubble-label-27">Melhor dica na posição</span>
+                        ${escapeBubble27(dados.melhorJogada || dados.porque || 'A melhor orientação é olhar o que a peça ganha, o que protege e se fica segura depois do lance.')}
+                    </div>
+                    <div class="bubble-section-27 bubble-audio-27">
+                        <span class="bubble-label-27">Como instruir o aluno</span>
+                        “${escapeBubble27(dados.fraseAula || 'Antes de jogar, observe o que a peça ataca, o que ela protege e qual fraqueza ela pode deixar.') }”
+                    </div>
+                `;
+                bubble.classList.add('open');
+                bubble.style.left = '-9999px';
+                bubble.style.top = '8px';
+                requestAnimationFrame(() => posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect));
+            }
+
+            function limparMarcacaoBubbleProfessorXadrez27() {
+                document.querySelectorAll('.teacher-selected-27').forEach(el => el.classList.remove('teacher-selected-27'));
+            }
+
+            function marcarPecaBubbleProfessorXadrez27(row, col) {
+                limparMarcacaoBubbleProfessorXadrez27();
+                const el = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+                if (el) el.classList.add('teacher-selected-27');
+            }
+
+            window.abrirBubbleProfessorXadrez27 = abrirBubbleProfessorXadrez27;
+
+            let ultimoBubbleProfessorXadrez27 = 0;
+            function tentarAbrirBubbleProfessorXadrez27(row, col) {
+                try {
+                    const peca = chessBoard?.[row]?.[col] || null;
+                    const clicouDestinoDeJogada = !!(selectedSquare && Array.isArray(legalMoves) && legalMoves.some(m => m.row === row && m.col === col));
+                    const pode = !!(chessProfessorPrivadoAtivo && chessMode === 'online' && !chessIsSpectator && document.body.classList.contains('chess-board-visible') && peca && !clicouDestinoDeJogada);
+                    if (!pode) return false;
+                    let movimentos = [];
+                    try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                    const rect = rectQuadradoXadrez26(row, col);
+                    const dados = criarDadosPopupXadrez26(peca, row, col, movimentos, rect);
+                    marcarPecaBubbleProfessorXadrez27(row, col);
+                    abrirBubbleProfessorXadrez27(dados);
+                    ultimoBubbleProfessorXadrez27 = Date.now();
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            document.addEventListener('click', (ev) => {
+                const square = ev.target && ev.target.closest ? ev.target.closest('#chess-board .chess-square[data-row][data-col]') : null;
+                if (!square) return;
+                const row = Number(square.dataset.row);
+                const col = Number(square.dataset.col);
+                if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+                setTimeout(() => {
+                    if (Date.now() - ultimoBubbleProfessorXadrez27 < 90) return;
+                    tentarAbrirBubbleProfessorXadrez27(row, col);
+                }, 25);
+            }, true);
+
+            document.addEventListener('click', (ev) => {
+                if (!ev.target || !ev.target.closest) return;
+                if (ev.target.closest('#teacher-piece-bubble-27')) return;
+                if (ev.target.closest('#chess-board .chess-square')) return;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble) bubble.classList.remove('open');
+            }, true);
+
             const clickAnterior26 = handleChessSquareClick;
             handleChessSquareClick = async function handleChessSquareClickPopupProfessor26(row, col) {
                 const pecaAntes = chessBoard?.[row]?.[col] || null;
@@ -10936,8 +11223,15 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     anchorRect = rectQuadradoXadrez26(row, col);
                 }
                 const retorno = await clickAnterior26.apply(this, arguments);
-                if (podeAbrir && window.abrirPopupProfessorPeca25) {
-                    setTimeout(() => window.abrirPopupProfessorPeca25(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect)), 120);
+                if (podeAbrir) {
+                    setTimeout(() => {
+                        try {
+                            marcarPecaBubbleProfessorXadrez27(row, col);
+                            abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
+                        } catch (_) {
+                            if (window.abrirPopupProfessorPeca25) window.abrirPopupProfessorPeca25(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
+                        }
+                    }, 80);
                 }
                 return retorno;
             };
