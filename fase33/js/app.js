@@ -11054,121 +11054,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         outline-offset: -4px !important;
                         box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 18px rgba(250,204,21,.38) !important;
                     }
-                    /* ✅ PROFISSIONAL 28 — GUIA COLORIDO PRIVADO DO PROFESSOR */
-                    #teacher-piece-bubble-27 .bubble-guide-row-28 {
-                        margin-top: 7px;
-                        display: grid;
-                        gap: 6px;
-                    }
-                    #teacher-piece-bubble-27 .bubble-guide-toggle-28 {
-                        width: 100%;
-                        border: 1px solid rgba(34,197,94,.35);
-                        background: linear-gradient(135deg, rgba(20,184,166,.22), rgba(34,197,94,.14));
-                        color: #dcfce7;
-                        border-radius: 11px;
-                        padding: 7px 9px;
-                        font-weight: 1000;
-                        font-size: .70rem;
-                        cursor: pointer;
-                        text-align: center;
-                    }
-                    #teacher-piece-bubble-27 .bubble-legend-28 {
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 4px;
-                        color: #cbd5e1;
-                        font-size: .62rem;
-                        line-height: 1.25;
-                    }
-                    #teacher-piece-bubble-27 .bubble-legend-28 span {
-                        border-radius: 999px;
-                        padding: 3px 6px;
-                        border: 1px solid rgba(148,163,184,.18);
-                        background: rgba(15,23,42,.55);
-                        font-weight: 900;
-                    }
-                    #teacher-piece-bubble-27 .legend-origin-28 { color:#fde68a; }
-                    #teacher-piece-bubble-27 .legend-best-28 { color:#bbf7d0; }
-                    #teacher-piece-bubble-27 .legend-good-28 { color:#bfdbfe; }
-                    #teacher-piece-bubble-27 .legend-capture-28 { color:#fecaca; }
-                    #teacher-piece-bubble-27 .legend-risk-28 { color:#fed7aa; }
-                    #chess-board .chess-square.teacher-guide-origin-28,
-                    .chess-square.teacher-guide-origin-28 {
-                        position: relative !important;
-                        outline: 3px solid rgba(250,204,21,.96) !important;
-                        outline-offset: -4px !important;
-                        box-shadow: inset 0 0 0 4px rgba(250,204,21,.22), 0 0 20px rgba(250,204,21,.35) !important;
-                    }
-                    #chess-board .chess-square.teacher-guide-best-28,
-                    .chess-square.teacher-guide-best-28 {
-                        position: relative !important;
-                        outline: 4px solid rgba(34,197,94,.96) !important;
-                        outline-offset: -5px !important;
-                        box-shadow: inset 0 0 0 999px rgba(34,197,94,.25), 0 0 22px rgba(34,197,94,.55) !important;
-                    }
-                    #chess-board .chess-square.teacher-guide-good-28,
-                    .chess-square.teacher-guide-good-28 {
-                        position: relative !important;
-                        outline: 3px solid rgba(59,130,246,.82) !important;
-                        outline-offset: -5px !important;
-                        box-shadow: inset 0 0 0 999px rgba(59,130,246,.14) !important;
-                    }
-                    #chess-board .chess-square.teacher-guide-capture-28,
-                    .chess-square.teacher-guide-capture-28 {
-                        position: relative !important;
-                        outline: 3px solid rgba(239,68,68,.90) !important;
-                        outline-offset: -5px !important;
-                        box-shadow: inset 0 0 0 999px rgba(239,68,68,.18), 0 0 16px rgba(239,68,68,.35) !important;
-                    }
-                    #chess-board .chess-square.teacher-guide-risk-28,
-                    .chess-square.teacher-guide-risk-28 {
-                        position: relative !important;
-                        outline: 3px dashed rgba(249,115,22,.94) !important;
-                        outline-offset: -5px !important;
-                        box-shadow: inset 0 0 0 999px rgba(249,115,22,.16) !important;
-                    }
-                    #chess-board .chess-square.teacher-guide-best-28::before,
-                    #chess-board .chess-square.teacher-guide-good-28::before,
-                    #chess-board .chess-square.teacher-guide-capture-28::before,
-                    #chess-board .chess-square.teacher-guide-risk-28::before,
-                    .chess-square.teacher-guide-best-28::before,
-                    .chess-square.teacher-guide-good-28::before,
-                    .chess-square.teacher-guide-capture-28::before,
-                    .chess-square.teacher-guide-risk-28::before {
-                        content: attr(data-prof-guide-label-28);
-                        position: absolute;
-                        left: 50%;
-                        top: 3px;
-                        transform: translateX(-50%);
-                        z-index: 50;
-                        pointer-events: none;
-                        border-radius: 999px;
-                        padding: 2px 5px;
-                        font-size: clamp(8px, 1.45vw, 10px);
-                        font-weight: 1000;
-                        letter-spacing: .02em;
-                        color: #07111f;
-                        background: rgba(250,250,250,.92);
-                        box-shadow: 0 2px 8px rgba(0,0,0,.28);
-                        white-space: nowrap;
-                    }
-                    #chess-board .chess-square.teacher-guide-origin-28::after,
-                    .chess-square.teacher-guide-origin-28::after {
-                        content: 'PEÇA';
-                        position: absolute;
-                        left: 50%;
-                        bottom: 3px;
-                        transform: translateX(-50%);
-                        z-index: 50;
-                        pointer-events: none;
-                        border-radius: 999px;
-                        padding: 2px 5px;
-                        font-size: clamp(8px, 1.45vw, 10px);
-                        font-weight: 1000;
-                        color: #1c1917;
-                        background: rgba(254,240,138,.96);
-                        box-shadow: 0 2px 8px rgba(0,0,0,.25);
-                    }
                     @media (max-width: 520px) {
                         #teacher-piece-bubble-27 { width: min(292px, calc(100vw - 12px)); padding: 9px; border-radius: 14px; }
                         #teacher-piece-bubble-27 .bubble-body-27 { font-size: .72rem; }
@@ -11208,7 +11093,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         <div class="bubble-body-27"></div>
                     `;
                     document.body.appendChild(bubble);
-                    bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => { bubble.classList.remove('open'); try { limparGuiaProfessorXadrez28(); } catch (_) {} });
+                    bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
                 }
                 return bubble;
             }
@@ -11233,9 +11118,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 bubble.style.setProperty('--arrow-left', `${arrowLeft}px`);
                 bubble.style.setProperty('--arrow-top', `${arrowTop}px`);
             }
-
-            let guiaProfessorXadrez28Ativo = true;
-            let ultimoGuiaProfessorXadrez28 = null;
 
             function abrirBubbleProfessorXadrez27(dados = {}) {
                 const bubble = garantirBubbleProfessorXadrez27();
@@ -11270,113 +11152,21 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         <span class="bubble-label-27">Como instruir o aluno</span>
                         “${escapeBubble27(dados.fraseAula || 'Antes de jogar, observe o que a peça ataca, o que ela protege e qual fraqueza ela pode deixar.') }”
                     </div>
-                    <div class="bubble-guide-row-28">
-                        <button id="teacher-guide-toggle-28" class="bubble-guide-toggle-28" type="button">
-                            ${guiaProfessorXadrez28Ativo ? '🎯 Guia colorido ligado no tabuleiro' : '🎯 Mostrar guia colorido no tabuleiro'}
-                        </button>
-                        <div class="bubble-legend-28" aria-label="Legenda do guia do professor">
-                            <span class="legend-origin-28">Amarelo = peça</span>
-                            <span class="legend-best-28">Verde = melhor dica</span>
-                            <span class="legend-good-28">Azul = boa opção</span>
-                            <span class="legend-capture-28">Vermelho = captura</span>
-                            <span class="legend-risk-28">Laranja = cuidado</span>
-                        </div>
-                    </div>
                 `;
-                const btnGuia28 = bubble.querySelector('#teacher-guide-toggle-28');
-                if (btnGuia28) {
-                    btnGuia28.onclick = (ev) => {
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                        guiaProfessorXadrez28Ativo = !guiaProfessorXadrez28Ativo;
-                        btnGuia28.textContent = guiaProfessorXadrez28Ativo ? '🎯 Guia colorido ligado no tabuleiro' : '🎯 Mostrar guia colorido no tabuleiro';
-                        if (guiaProfessorXadrez28Ativo && ultimoGuiaProfessorXadrez28) {
-                            aplicarGuiaProfessorXadrez28(ultimoGuiaProfessorXadrez28.peca, ultimoGuiaProfessorXadrez28.row, ultimoGuiaProfessorXadrez28.col, ultimoGuiaProfessorXadrez28.movimentos);
-                        } else {
-                            limparGuiaProfessorXadrez28();
-                        }
-                    };
-                }
                 bubble.classList.add('open');
                 bubble.style.left = '-9999px';
                 bubble.style.top = '8px';
                 requestAnimationFrame(() => posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect));
             }
 
-            function limparGuiaProfessorXadrez28() {
-                document.querySelectorAll('.teacher-selected-27, .teacher-guide-origin-28, .teacher-guide-best-28, .teacher-guide-good-28, .teacher-guide-capture-28, .teacher-guide-risk-28')
-                    .forEach(el => {
-                        el.classList.remove('teacher-selected-27', 'teacher-guide-origin-28', 'teacher-guide-best-28', 'teacher-guide-good-28', 'teacher-guide-capture-28', 'teacher-guide-risk-28');
-                        try { delete el.dataset.profGuideLabel28; } catch (_) { el.removeAttribute('data-prof-guide-label-28'); }
-                    });
-            }
-
             function limparMarcacaoBubbleProfessorXadrez27() {
-                limparGuiaProfessorXadrez28();
+                document.querySelectorAll('.teacher-selected-27').forEach(el => el.classList.remove('teacher-selected-27'));
             }
 
             function marcarPecaBubbleProfessorXadrez27(row, col) {
                 limparMarcacaoBubbleProfessorXadrez27();
                 const el = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
-                if (el) el.classList.add('teacher-selected-27', 'teacher-guide-origin-28');
-            }
-
-            function avaliarGuiaProfessorXadrez28(peca, row, col, movimentos) {
-                const lista = Array.isArray(movimentos) ? movimentos : [];
-                const adv = adversario26(peca?.color);
-                return lista.map(m => {
-                    let score = 0;
-                    const destino = chessBoard?.[m.row]?.[m.col] || null;
-                    const captura = !!(m.capture || (destino && destino.color && destino.color !== peca.color));
-                    const valorDestino = destino ? valorPeca26(destino.type) : 0;
-                    const centroDestino = centro26(m.row, m.col);
-                    let atacado = false;
-                    let defendido = false;
-                    try { atacado = quadradoAtacado(chessBoard, m.row, m.col, adv); } catch (_) {}
-                    try { defendido = quadradoAtacado(chessBoard, m.row, m.col, peca.color); } catch (_) {}
-                    const risco = !!(atacado && !defendido && peca.type !== 'king');
-
-                    if (captura) score += valorDestino + 140;
-                    if (m.castle) score += 290;
-                    if (m.enPassant) score += 180;
-                    if (centroDestino >= 5.5) score += 80;
-                    if ((peca.type === 'knight' || peca.type === 'bishop') && (peca.color === 'white' ? row === 7 : row === 0)) score += 120;
-                    if (peca.type === 'rook' && (col === 0 || col === 7) && (m.col === 3 || m.col === 4)) score += 45;
-                    if (peca.type === 'queen' && captura) score += 25;
-                    if (peca.type === 'pawn' && (m.row === 0 || m.row === 7)) score += 900;
-                    if (!atacado) score += 45;
-                    if (atacado && defendido && peca.type !== 'king') score -= 30;
-                    if (risco) score -= Math.min(280, Math.max(90, valorPeca26(peca.type) / 3));
-
-                    return { move: m, score, captura, risco, atacado, defendido, valorDestino };
-                }).sort((a, b) => b.score - a.score);
-            }
-
-            function aplicarGuiaProfessorXadrez28(peca, row, col, movimentos) {
-                ultimoGuiaProfessorXadrez28 = { peca, row, col, movimentos: Array.isArray(movimentos) ? movimentos.slice() : [] };
-                limparGuiaProfessorXadrez28();
-                const origem = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
-                if (origem) origem.classList.add('teacher-selected-27', 'teacher-guide-origin-28');
-                if (!guiaProfessorXadrez28Ativo || !peca) return;
-                const avaliadas = avaliarGuiaProfessorXadrez28(peca, row, col, movimentos).slice(0, 10);
-                avaliadas.forEach((item, idx) => {
-                    const m = item.move;
-                    const el = document.querySelector(`#chess-board .chess-square[data-row="${m.row}"][data-col="${m.col}"]`);
-                    if (!el) return;
-                    if (idx === 0) {
-                        el.classList.add('teacher-guide-best-28');
-                        el.dataset.profGuideLabel28 = item.captura ? 'MELHOR CAPTURA' : (m.castle ? 'MELHOR ROQUE' : 'MELHOR');
-                    } else if (item.captura) {
-                        el.classList.add('teacher-guide-capture-28');
-                        el.dataset.profGuideLabel28 = 'CAPTURA';
-                    } else if (item.risco) {
-                        el.classList.add('teacher-guide-risk-28');
-                        el.dataset.profGuideLabel28 = 'CUIDADO';
-                    } else {
-                        el.classList.add('teacher-guide-good-28');
-                        el.dataset.profGuideLabel28 = 'OPÇÃO';
-                    }
-                });
+                if (el) el.classList.add('teacher-selected-27');
             }
 
             window.abrirBubbleProfessorXadrez27 = abrirBubbleProfessorXadrez27;
@@ -11393,7 +11183,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     const rect = rectQuadradoXadrez26(row, col);
                     const dados = criarDadosPopupXadrez26(peca, row, col, movimentos, rect);
                     marcarPecaBubbleProfessorXadrez27(row, col);
-                    aplicarGuiaProfessorXadrez28(peca, row, col, movimentos);
                     abrirBubbleProfessorXadrez27(dados);
                     ultimoBubbleProfessorXadrez27 = Date.now();
                     return true;
@@ -11420,7 +11209,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (ev.target.closest('#chess-board .chess-square')) return;
                 const bubble = document.getElementById('teacher-piece-bubble-27');
                 if (bubble) bubble.classList.remove('open');
-                limparGuiaProfessorXadrez28();
             }, true);
 
             const clickAnterior26 = handleChessSquareClick;
@@ -11439,7 +11227,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     setTimeout(() => {
                         try {
                             marcarPecaBubbleProfessorXadrez27(row, col);
-                            aplicarGuiaProfessorXadrez28(pecaAntes, row, col, movimentosAntes);
                             abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
                         } catch (_) {
                             if (window.abrirPopupProfessorPeca25) window.abrirPopupProfessorPeca25(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
@@ -14021,8 +13808,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
 
 
-/* ✅ PROFISSIONAL 28 - Guia colorido privado no tabuleiro do professor aplicado sobre a base Profissional 27. */
-
 /* ✅ FASE 36.12 - Reforço sem remendo: manter controles no tabuleiro se a sala online já estiver ativa. */
 document.addEventListener('click', async (ev) => {
     const alvo = ev.target;
@@ -14053,261 +13838,309 @@ setInterval(() => {
 }, 1000);
 
 /* =====================================================================
-   ✅ PROFISSIONAL 29 — DICA DO PROFESSOR SEM ATRAPALHAR A JOGADA
-   Mantém o guia colorido e o balão aprovado, mas o balão não abre mais
-   automaticamente em cima do tabuleiro. Ao selecionar a peça no Xadrez
-   online com # no nome, aparece apenas um botão pequeno “Dica”.
-   O professor abre o quadro só quando quiser. O aluno não vê nada.
+   ✅ PROFISSIONAL 28 — BALÃO DO PROFESSOR ARRASTÁVEL / SEM ATRAPALHAR
+   Mantém o balão aprovado da peça, mas ele não fica preso em cima da peça.
+   Quando abrir, vai para um canto seguro. O professor pode arrastar o
+   quadrinho para onde quiser, e a posição fica salva no aparelho dele.
+   Não aparece para o aluno e não altera Firebase, jogada ou regras.
 ===================================================================== */
-(function instalarProfessorDicaSemAtrapalhar29() {
-    if (window.__professorDicaSemAtrapalhar29) return;
-    window.__professorDicaSemAtrapalhar29 = true;
+(function instalarBalaoProfessorArrastavel28() {
+    if (window.__balaoProfessorArrastavel28Instalado) return;
+    window.__balaoProfessorArrastavel28Instalado = true;
 
-    let abrindoManual29 = false;
-    let ultimoOrigin29 = null;
+    const STORAGE_KEY = 'tabuleiro_arena_teacher_bubble_pos_28';
+    let arrastando = false;
+    let reposicionando = false;
+    let observerBubble = null;
+    let ultimoAuto = 0;
 
-    function instalarCss29() {
-        if (document.getElementById('professor-dica-sem-atrapalhar-29-style')) return;
+    function instalarCss28() {
+        if (document.getElementById('teacher-bubble-drag-28-style')) return;
         const style = document.createElement('style');
-        style.id = 'professor-dica-sem-atrapalhar-29-style';
+        style.id = 'teacher-bubble-drag-28-style';
         style.textContent = `
-            #teacher-piece-tip-toggle-29 {
-                position: fixed;
-                z-index: 1000002;
-                display: none;
+            #teacher-piece-bubble-27.professor-floating-28 {
+                z-index: 1000005 !important;
+                touch-action: none;
+                max-height: min(72vh, 430px) !important;
+            }
+            #teacher-piece-bubble-27.professor-floating-28::after {
+                display: none !important;
+            }
+            #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27 {
+                cursor: grab;
+                user-select: none;
+                -webkit-user-select: none;
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background: linear-gradient(180deg, rgba(8,13,28,.99), rgba(8,13,28,.94));
+                border-radius: 12px 12px 0 0;
+                margin: -2px -2px 0 -2px;
+                padding: 8px 8px 7px 8px;
+            }
+            #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27:active {
+                cursor: grabbing;
+            }
+            #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27::after {
+                content: '↔ arraste';
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 5px;
-                min-width: 74px;
-                height: 32px;
-                padding: 0 10px;
+                height: 22px;
+                padding: 0 7px;
                 border-radius: 999px;
-                border: 1px solid rgba(125, 211, 252, .72);
-                background: linear-gradient(135deg, rgba(14,165,233,.98), rgba(37,99,235,.98));
-                color: #ffffff;
-                font-size: .74rem;
+                border: 1px solid rgba(125,211,252,.25);
+                background: rgba(14,116,144,.18);
+                color: #bae6fd;
+                font-size: .58rem;
                 font-weight: 1000;
-                letter-spacing: .01em;
-                box-shadow: 0 10px 24px rgba(2, 6, 23, .42), 0 0 16px rgba(14,165,233,.36);
-                cursor: pointer;
-                user-select: none;
-                -webkit-tap-highlight-color: transparent;
-            }
-            #teacher-piece-tip-toggle-29.show {
-                display: inline-flex;
-            }
-            #teacher-piece-tip-toggle-29:active {
-                transform: scale(.98);
-            }
-            #teacher-piece-bubble-27.open:not(.manual-open-29) {
-                display: none !important;
-                pointer-events: none !important;
-                visibility: hidden !important;
-            }
-            #teacher-piece-bubble-27.manual-open-29.open {
-                display: block !important;
-                pointer-events: auto !important;
-                visibility: visible !important;
-            }
-            #teacher-piece-bubble-27.manual-open-29 {
-                max-height: min(70vh, 430px) !important;
-                overflow: auto !important;
-            }
-            #teacher-piece-bubble-27.manual-open-29::before {
-                content: 'Aberto pelo professor';
-                display: block;
-                margin: 0 0 6px 0;
-                font-size: .62rem;
-                font-weight: 1000;
+                letter-spacing: .04em;
                 text-transform: uppercase;
-                letter-spacing: .07em;
-                color: #93c5fd;
-                text-align: center;
+                white-space: nowrap;
+                margin-left: auto;
+            }
+            #teacher-piece-bubble-27.professor-floating-28.bubble-dragging-28 {
+                opacity: .96;
+                box-shadow: 0 20px 58px rgba(0,0,0,.66), 0 0 0 1px rgba(125,211,252,.16), 0 0 26px rgba(56,189,248,.24) !important;
+            }
+            #teacher-piece-bubble-27.professor-floating-28 .bubble-close-27 {
+                cursor: pointer !important;
+            }
+            #teacher-piece-bubble-27.professor-floating-28 .bubble-reset-28 {
+                width: auto;
+                min-width: 30px;
+                height: 28px;
+                border-radius: 10px;
+                border: 1px solid rgba(148,163,184,.25);
+                background: rgba(15,23,42,.86);
+                color: #e5e7eb;
+                font-weight: 1000;
+                cursor: pointer;
+                line-height: 1;
+                padding: 0 7px;
+                margin-right: 4px;
+                font-size: .68rem;
             }
             @media (max-width: 520px) {
-                #teacher-piece-tip-toggle-29 {
-                    min-width: 64px;
-                    height: 30px;
-                    padding: 0 8px;
-                    font-size: .68rem;
-                }
-                #teacher-piece-bubble-27.manual-open-29 {
+                #teacher-piece-bubble-27.professor-floating-28 {
                     width: min(286px, calc(100vw - 14px)) !important;
-                    max-height: 62vh !important;
+                    max-height: min(64vh, 390px) !important;
+                }
+                #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27::after {
+                    content: '↔';
+                    padding: 0 6px;
+                    font-size: .64rem;
                 }
             }
         `;
         document.head.appendChild(style);
     }
 
-    function garantirBotao29() {
-        instalarCss29();
-        let btn = document.getElementById('teacher-piece-tip-toggle-29');
-        if (!btn) {
-            btn = document.createElement('button');
-            btn.id = 'teacher-piece-tip-toggle-29';
-            btn.type = 'button';
-            btn.textContent = '📘 Dica';
-            btn.setAttribute('aria-label', 'Abrir dica do professor');
-            document.body.appendChild(btn);
-            btn.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-                abrirQuadroManual29();
-            }, true);
-        }
-        return btn;
-    }
-
-    function professorXadrezAtivo29() {
+    function parsePos28(raw) {
         try {
-            return !!(
-                window.chessProfessorPrivadoAtivo ||
-                (typeof chessProfessorPrivadoAtivo !== 'undefined' && chessProfessorPrivadoAtivo)
-            );
-        } catch (_) {
-            return false;
-        }
+            const obj = JSON.parse(raw || '{}');
+            const left = Number(obj.left);
+            const top = Number(obj.top);
+            if (Number.isFinite(left) && Number.isFinite(top)) return { left, top };
+        } catch (_) {}
+        return null;
     }
 
-    function tabuleiroXadrezOnlineVisivel29() {
-        try {
-            return !!(
-                document.body.classList.contains('chess-board-visible') &&
-                typeof chessMode !== 'undefined' && chessMode === 'online' &&
-                typeof chessIsSpectator !== 'undefined' && !chessIsSpectator
-            );
-        } catch (_) {
-            return false;
-        }
+    function carregarPos28() {
+        try { return parsePos28(localStorage.getItem(STORAGE_KEY)); } catch (_) { return null; }
     }
 
-    function encontrarOrigem29() {
-        return document.querySelector('#chess-board .chess-square.teacher-guide-origin-28[data-row][data-col], #chess-board .chess-square.teacher-selected-27[data-row][data-col]');
+    function salvarPos28(left, top) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
     }
 
-    function posicionarBotao29() {
-        const btn = garantirBotao29();
-        const origem = encontrarOrigem29();
-        if (!professorXadrezAtivo29() || !tabuleiroXadrezOnlineVisivel29() || !origem) {
-            btn.classList.remove('show');
-            return false;
-        }
-        const rect = origem.getBoundingClientRect();
-        ultimoOrigin29 = rect;
-        const margem = 6;
-        const bw = btn.offsetWidth || 74;
-        const bh = btn.offsetHeight || 32;
-        let left = Math.round(rect.left + rect.width / 2 - bw / 2);
-        left = Math.max(margem, Math.min(left, window.innerWidth - bw - margem));
-        let top = Math.round(rect.top - bh - 5);
-        if (top < margem) top = Math.round(rect.bottom + 5);
-        if (top + bh > window.innerHeight - margem) top = Math.max(margem, Math.round(rect.top + 4));
-        btn.style.left = `${left}px`;
-        btn.style.top = `${top}px`;
-        btn.classList.add('show');
-        return true;
+    function apagarPos28() {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     }
 
-    function posicionarQuadroManual29(bubble) {
-        const origem = encontrarOrigem29();
-        const rect = origem ? origem.getBoundingClientRect() : ultimoOrigin29;
+    function clamp28(left, top, el) {
+        const margem = 7;
+        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 14);
+        const h = Math.min(el?.offsetHeight || 320, window.innerHeight - 14);
+        return {
+            left: Math.max(margem, Math.min(Math.round(left), window.innerWidth - w - margem)),
+            top: Math.max(margem, Math.min(Math.round(top), window.innerHeight - h - margem))
+        };
+    }
+
+    function posicaoSegura28(el) {
         const margem = 8;
-        const bw = Math.min(bubble.offsetWidth || 318, window.innerWidth - (margem * 2));
-        const bh = Math.min(bubble.offsetHeight || 360, window.innerHeight - (margem * 2));
-        const centro = rect ? (rect.left + rect.width / 2) : (window.innerWidth / 2);
-        let left = Math.round(centro - bw / 2);
-        left = Math.max(margem, Math.min(left, window.innerWidth - bw - margem));
-        let top = rect ? Math.round(rect.top - bh - 14) : 76;
-        if (top < margem) top = rect ? Math.round(rect.bottom + 42) : margem;
-        if (top + bh > window.innerHeight - margem) top = Math.max(margem, window.innerHeight - bh - margem);
-        bubble.style.left = `${left}px`;
-        bubble.style.top = `${top}px`;
-    }
+        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 16);
+        const h = Math.min(el?.offsetHeight || 330, window.innerHeight - 16);
+        const board = document.getElementById('chess-board');
+        const rect = board ? board.getBoundingClientRect() : null;
 
-    function esconderAutoBubble29() {
-        const bubble = document.getElementById('teacher-piece-bubble-27');
-        if (!bubble) return;
-        if (abrindoManual29) return;
-        if (bubble.classList.contains('open') && !bubble.classList.contains('manual-open-29')) {
-            bubble.classList.remove('open');
-            bubble.classList.remove('manual-open-29');
-            posicionarBotao29();
+        let left;
+        let top;
+
+        if (rect && rect.width > 40 && rect.height > 40) {
+            const espacoDireita = window.innerWidth - rect.right;
+            const espacoEsquerda = rect.left;
+
+            if (espacoDireita >= w + 12) {
+                left = rect.right + 10;
+                top = rect.top;
+            } else if (espacoEsquerda >= w + 12) {
+                left = rect.left - w - 10;
+                top = rect.top;
+            } else {
+                // Celular ou tela estreita: coloca no canto superior direito.
+                // Se atrapalhar, o professor arrasta para baixo/lado.
+                left = window.innerWidth - w - margem;
+                top = Math.max(margem, Math.min(rect.top - 4, window.innerHeight - h - margem));
+            }
+        } else {
+            left = window.innerWidth - w - margem;
+            top = 76;
         }
+
+        return clamp28(left, top, el);
     }
 
-    function abrirQuadroManual29() {
-        const bubble = document.getElementById('teacher-piece-bubble-27');
-        if (!bubble) return;
-        abrindoManual29 = true;
-        bubble.classList.add('manual-open-29');
-        bubble.classList.add('open');
-        requestAnimationFrame(() => {
-            posicionarQuadroManual29(bubble);
-            setTimeout(() => { abrindoManual29 = false; }, 120);
-        });
+    function aplicarPosicao28(el, usarSalva) {
+        if (!el || !el.classList.contains('open') || arrastando) return;
+        const salva = usarSalva ? carregarPos28() : null;
+        const pos = salva ? clamp28(salva.left, salva.top, el) : posicaoSegura28(el);
+        reposicionando = true;
+        el.classList.add('professor-floating-28');
+        el.style.left = `${pos.left}px`;
+        el.style.top = `${pos.top}px`;
+        el.style.setProperty('--arrow-left', '-9999px');
+        el.style.setProperty('--arrow-top', '-9999px');
+        setTimeout(() => { reposicionando = false; }, 40);
     }
 
-    function fecharQuadroManual29() {
-        const bubble = document.getElementById('teacher-piece-bubble-27');
-        if (bubble) {
-            bubble.classList.remove('open');
-            bubble.classList.remove('manual-open-29');
-        }
-        abrindoManual29 = false;
-        posicionarBotao29();
+    function colocarBotaoReset28(el) {
+        const head = el.querySelector('.bubble-head-27');
+        const close = el.querySelector('.bubble-close-27');
+        if (!head || !close || head.querySelector('.bubble-reset-28')) return;
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.className = 'bubble-reset-28';
+        reset.title = 'Voltar o quadro para o canto';
+        reset.textContent = 'Canto';
+        reset.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            apagarPos28();
+            el.dataset.teacherBubbleMoved28 = '0';
+            aplicarPosicao28(el, false);
+        }, true);
+        close.insertAdjacentElement('beforebegin', reset);
     }
 
-    function instalarObservadores29() {
-        const bodyObserver = new MutationObserver(() => {
+    function ligarArraste28(el) {
+        if (!el || el.dataset.dragProfessor28 === '1') return;
+        el.dataset.dragProfessor28 = '1';
+        el.classList.add('professor-floating-28');
+        colocarBotaoReset28(el);
+
+        const head = el.querySelector('.bubble-head-27');
+        if (!head) return;
+
+        let startX = 0;
+        let startY = 0;
+        let baseLeft = 0;
+        let baseTop = 0;
+        let pointerId = null;
+
+        const iniciar = (ev) => {
+            const alvo = ev.target;
+            if (alvo && alvo.closest && (alvo.closest('.bubble-close-27') || alvo.closest('.bubble-reset-28'))) return;
+            if (ev.button !== undefined && ev.button !== 0) return;
+            const p = ev.touches ? ev.touches[0] : ev;
+            if (!p) return;
+            arrastando = true;
+            pointerId = ev.pointerId ?? null;
+            startX = p.clientX;
+            startY = p.clientY;
+            const rect = el.getBoundingClientRect();
+            baseLeft = rect.left;
+            baseTop = rect.top;
+            el.classList.add('bubble-dragging-28');
+            try { if (ev.pointerId !== undefined && head.setPointerCapture) head.setPointerCapture(ev.pointerId); } catch (_) {}
+            ev.preventDefault();
+            ev.stopPropagation();
+        };
+
+        const mover = (ev) => {
+            if (!arrastando) return;
+            if (pointerId !== null && ev.pointerId !== undefined && ev.pointerId !== pointerId) return;
+            const p = ev.touches ? ev.touches[0] : ev;
+            if (!p) return;
+            const pos = clamp28(baseLeft + (p.clientX - startX), baseTop + (p.clientY - startY), el);
+            el.style.left = `${pos.left}px`;
+            el.style.top = `${pos.top}px`;
+            ev.preventDefault();
+        };
+
+        const terminar = (ev) => {
+            if (!arrastando) return;
+            arrastando = false;
+            pointerId = null;
+            el.classList.remove('bubble-dragging-28');
+            const rect = el.getBoundingClientRect();
+            const pos = clamp28(rect.left, rect.top, el);
+            el.style.left = `${pos.left}px`;
+            el.style.top = `${pos.top}px`;
+            el.dataset.teacherBubbleMoved28 = '1';
+            salvarPos28(pos.left, pos.top);
+            try { if (ev?.pointerId !== undefined && head.releasePointerCapture) head.releasePointerCapture(ev.pointerId); } catch (_) {}
+        };
+
+        head.addEventListener('pointerdown', iniciar, true);
+        window.addEventListener('pointermove', mover, { capture: true, passive: false });
+        window.addEventListener('pointerup', terminar, true);
+        window.addEventListener('pointercancel', terminar, true);
+
+        head.addEventListener('touchstart', iniciar, { capture: true, passive: false });
+        window.addEventListener('touchmove', mover, { capture: true, passive: false });
+        window.addEventListener('touchend', terminar, true);
+        window.addEventListener('touchcancel', terminar, true);
+    }
+
+    function observarBubble28(el) {
+        if (!el || el.dataset.observerProfessor28 === '1') return;
+        el.dataset.observerProfessor28 = '1';
+        ligarArraste28(el);
+        observerBubble = new MutationObserver(() => {
+            if (reposicionando || arrastando) return;
+            if (!el.classList.contains('open')) return;
+            const agora = Date.now();
+            if (agora - ultimoAuto < 45) return;
+            ultimoAuto = agora;
             setTimeout(() => {
-                esconderAutoBubble29();
-                posicionarBotao29();
+                if (!el.classList.contains('open') || arrastando) return;
+                aplicarPosicao28(el, !!carregarPos28());
             }, 30);
         });
-        bodyObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-prof-guide-label-28'] });
-
-        document.addEventListener('click', (ev) => {
-            const target = ev.target;
-            if (!target || !target.closest) return;
-            if (target.closest('#teacher-piece-tip-toggle-29')) return;
-            if (target.closest('#teacher-piece-bubble-27 .bubble-close-27')) {
-                fecharQuadroManual29();
-                return;
-            }
-            if (target.closest('#teacher-piece-bubble-27')) return;
-            if (target.closest('#chess-board .chess-square')) {
-                const bubble = document.getElementById('teacher-piece-bubble-27');
-                if (bubble && bubble.classList.contains('manual-open-29')) {
-                    bubble.classList.remove('open');
-                    bubble.classList.remove('manual-open-29');
-                }
-                setTimeout(() => {
-                    esconderAutoBubble29();
-                    posicionarBotao29();
-                }, 80);
-                return;
-            }
-            const bubble = document.getElementById('teacher-piece-bubble-27');
-            if (bubble && bubble.classList.contains('manual-open-29')) fecharQuadroManual29();
-        }, true);
-
-        window.addEventListener('resize', () => {
-            posicionarBotao29();
-            const bubble = document.getElementById('teacher-piece-bubble-27');
-            if (bubble && bubble.classList.contains('manual-open-29')) posicionarQuadroManual29(bubble);
-        });
-
-        setInterval(() => {
-            esconderAutoBubble29();
-            posicionarBotao29();
-            const bubble = document.getElementById('teacher-piece-bubble-27');
-            if (bubble && bubble.classList.contains('manual-open-29')) posicionarQuadroManual29(bubble);
-        }, 650);
+        observerBubble.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
     }
 
-    instalarCss29();
-    garantirBotao29();
-    instalarObservadores29();
+    function procurarBubble28() {
+        instalarCss28();
+        const el = document.getElementById('teacher-piece-bubble-27');
+        if (!el) return;
+        el.classList.add('professor-floating-28');
+        ligarArraste28(el);
+        observarBubble28(el);
+        if (el.classList.contains('open')) aplicarPosicao28(el, !!carregarPos28());
+    }
+
+    const bodyObserver = new MutationObserver(() => procurarBubble28());
+    if (document.body) bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('DOMContentLoaded', () => setTimeout(procurarBubble28, 300));
+    setTimeout(procurarBubble28, 600);
+    setInterval(procurarBubble28, 1200);
+    window.addEventListener('resize', () => {
+        const el = document.getElementById('teacher-piece-bubble-27');
+        if (el && el.classList.contains('open')) aplicarPosicao28(el, !!carregarPos28());
+    });
 })();
