@@ -4964,7 +4964,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             // mas somente como aviso/assistir/copiar link. Edição continua só no Admin.
             garantirPainelPublicoTorneiosXadrez();
             carregarTorneiosPublicosXadrez(true);
-            carregarRankingGeralXadrez(true);
+            removerPainelRankingGeralXadrez();
 
             if (card && !document.getElementById('chess-training-panel')) {
                 const training = document.createElement('div');
@@ -5545,6 +5545,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function mostrarTabuleiroXadrezAposEscolha() {
             document.body.classList.add('chess-board-visible', 'chess-game-active');
             document.body.classList.remove('chess-menu-active');
+            ocultarPainelPublicoXadrezDurantePartida();
             const status = document.getElementById('chess-status');
             if (status) status.style.display = '';
             const wrap = document.querySelector('#chess-screen .chess-board-wrap');
@@ -5556,6 +5557,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         function ocultarTabuleiroXadrezParaMenu() {
             document.body.classList.remove('chess-board-visible', 'chess-game-active');
             document.body.classList.add('chess-menu-active');
+            mostrarPainelPublicoXadrezNoMenu();
             selectedSquare = null;
             legalMoves = [];
             lastMoveMessage = 'Escolha como deseja jogar. Na parte de treino, você pode conhecer as peças antes de começar. O tabuleiro abrirá só depois de selecionar Online, Treino ou Aprender do Zero.';
@@ -7616,7 +7618,7 @@ Link: ${location.origin}${location.pathname}`;
             restaurarMenuOnlineXadrez();
             garantirPainelPublicoTorneiosXadrez();
             carregarTorneiosPublicosXadrez(true);
-            carregarRankingGeralXadrez(true);
+            removerPainelRankingGeralXadrez();
             if (!chessBoard.length) criarTabuleiroInicial();
             ocultarTabuleiroXadrezParaMenu();
             renderChessBoard();
@@ -8532,6 +8534,41 @@ Compartilhe com os amigos e entre no horário marcado.`;
             await entrarXadrezOnline(true);
         }
 
+        function ocultarPainelPublicoXadrezDurantePartida() {
+            const torneios = document.getElementById('chess-public-tournaments-panel');
+            const ranking = document.getElementById('chess-global-ranking-panel');
+            if (torneios) torneios.style.setProperty('display', 'none', 'important');
+            if (ranking) ranking.style.setProperty('display', 'none', 'important');
+        }
+
+        function mostrarPainelPublicoXadrezNoMenu() {
+            const torneios = document.getElementById('chess-public-tournaments-panel');
+            if (torneios && torneios.dataset.temTorneio === '1') torneios.style.removeProperty('display');
+            removerPainelRankingGeralXadrez();
+        }
+
+        function removerPainelRankingGeralXadrez() {
+            const ranking = document.getElementById('chess-global-ranking-panel');
+            if (ranking) ranking.remove();
+        }
+
+        function mensagemPublicaLimpaTorneioXadrez(torneio) {
+            let msg = String(torneio?.message || '').trim();
+            msg = msg.replace(/https?:\/\/\S+/gi, '').trim();
+            msg = msg.replace(/🔗\s*O link.*$/i, '').trim();
+            msg = msg.replace(/📅\s*Data:.*$/i, '').trim();
+            msg = msg.replace(/\s*Data:\s*\d{1,2}\/\d{1,2}\/\d{2,4}.*$/i, '').trim();
+            msg = msg.replace(/\s*Hor[aá]rio:\s*\d{1,2}:\d{2}.*$/i, '').trim();
+            msg = msg.replace(/\s*Sala:\s*\S+.*$/i, '').trim();
+            msg = msg.replace(/\s*Entre p.*$/i, '').trim();
+            msg = msg.replace(/\s+/g, ' ').trim();
+            if (!msg || /convite oficial|convite especial|tabuleiro arena/i.test(msg)) {
+                return 'Convite especial! Participe ou acompanhe nosso torneio de Xadrez no Tabuleiro Arena.';
+            }
+            if (msg.length > 130) msg = msg.slice(0, 130).trim() + '...';
+            return msg;
+        }
+
         function criarCardTorneioPublicoXadrez(torneio, id) {
             // PROFISSIONAL 15 — card público do torneio organizado de verdade, com estilo direto no próprio card.
             // Motivo: evitar que CSS antigo/cache deixe o texto solto e embolado no menu público do Xadrez.
@@ -8555,7 +8592,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
             const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
             const sala = normalizarSalaXadrez(torneio?.room || '');
-            const mensagem = textoAvisoSeguro(torneio?.message || 'Participe ou acompanhe a sala oficial do torneio.', 145);
+            const mensagem = mensagemPublicaLimpaTorneioXadrez(torneio);
             const dataTxt = formatarDataTorneioXadrez(torneio?.date);
             const partesData = dataTxt.split(',').map(p => p.trim());
             const diaTxt = partesData[0] || 'A definir';
@@ -8724,11 +8761,17 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     .sort((a, b) => numeroSeguro(a[1].date ? new Date(a[1].date).getTime() : a[1].createdAt) - numeroSeguro(b[1].date ? new Date(b[1].date).getTime() : b[1].createdAt))
                     .slice(0, 5);
                 if (!itens.length) {
+                    panel.dataset.temTorneio = '0';
                     panel.style.display = 'none';
                     list.appendChild(criarTexto('div', 'Nenhum torneio de Xadrez publicado no momento.', 'tiny-muted'));
                     return;
                 }
-                panel.style.display = '';
+                panel.dataset.temTorneio = '1';
+                if (document.body.classList.contains('chess-board-visible')) {
+                    panel.style.setProperty('display', 'none', 'important');
+                } else {
+                    panel.style.removeProperty('display');
+                }
                 itens.forEach(([id, t]) => list.appendChild(criarCardTorneioPublicoXadrez(t, id)));
             });
         }
@@ -8736,29 +8779,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
         let chessRankingPublicUnsubscribe = null;
 
         function garantirPainelRankingGeralXadrez() {
-            const card = document.querySelector('#chess-screen .chess-card');
-            if (!card) return null;
-            let panel = document.getElementById('chess-global-ranking-panel');
-            if (!panel) {
-                panel = document.createElement('div');
-                panel.id = 'chess-global-ranking-panel';
-                panel.className = 'chess-global-ranking-panel';
-                panel.innerHTML = `
-                    <div class="chess-global-ranking-title">🏆 Ranking Geral do Xadrez</div>
-                    <div class="chess-global-ranking-desc">Vitórias, derrotas, empates e xeque-mates registrados nas partidas online.</div>
-                    <div id="chess-global-ranking-list"><div class="tiny-muted">Carregando ranking...</div></div>
-                `;
-            }
-            const publicPanel = document.getElementById('chess-public-tournaments-panel');
-            const trainingPanel = document.getElementById('chess-training-panel');
-            if (publicPanel && publicPanel.parentNode && publicPanel.nextElementSibling !== panel) {
-                publicPanel.insertAdjacentElement('afterend', panel);
-            } else if (!publicPanel && trainingPanel && trainingPanel.previousElementSibling !== panel) {
-                card.insertBefore(panel, trainingPanel);
-            } else if (!panel.parentNode) {
-                card.appendChild(panel);
-            }
-            return panel;
+            // PROFISSIONAL 16: ranking público foi retirado do menu do Xadrez.
+            // O registro do ranking continua ativo por trás; a tela de ranking será feita em um menu próprio depois.
+            removerPainelRankingGeralXadrez();
+            return null;
         }
 
         function criarLinhaRankingGeralXadrez(jogador, posicao) {
@@ -8783,28 +8807,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
         }
 
         function carregarRankingGeralXadrez(forcar = false) {
-            garantirPainelRankingGeralXadrez();
-            const list = document.getElementById('chess-global-ranking-list');
-            const panel = document.getElementById('chess-global-ranking-panel');
-            if (!list || !panel) return;
-            if (chessRankingPublicUnsubscribe) {
-                if (!forcar) return;
-                try { chessRankingPublicUnsubscribe(); } catch (_) {}
-                chessRankingPublicUnsubscribe = null;
-            }
-            chessRankingPublicUnsubscribe = onValue(ref(db, 'chessRanking'), (snapshot) => {
-                limparElemento(list);
-                const data = snapshot.val() || {};
-                const itens = Object.values(data)
-                    .filter(j => j && numeroSeguro(j.games) > 0)
-                    .sort((a, b) => numeroSeguro(b.points) - numeroSeguro(a.points) || numeroSeguro(b.wins) - numeroSeguro(a.wins) || numeroSeguro(b.updatedAt) - numeroSeguro(a.updatedAt))
-                    .slice(0, 10);
-                if (!itens.length) {
-                    list.appendChild(criarTexto('div', 'Nenhuma partida online de Xadrez registrada ainda.', 'tiny-muted'));
-                    return;
-                }
-                itens.forEach((jogador, idx) => list.appendChild(criarLinhaRankingGeralXadrez(jogador, idx + 1)));
-            });
+            // PROFISSIONAL 16: não mostra ranking geral solto no menu nem em cima do tabuleiro.
+            // Mantém apenas as funções de registro para uma futura tela própria de ranking.
+            removerPainelRankingGeralXadrez();
         }
 
         function jogadorRankingXadrezId(player, cor) {
