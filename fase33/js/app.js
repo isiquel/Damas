@@ -11693,13 +11693,14 @@ Compartilhe com os amigos e entre no horário marcado.`;
         let damasProfessorTexto21 = '';
         let damasProfessorRecolhido21 = false;
         let damasProfessorUltimaDica21 = null;
+        let damasProfessorPedidoCapturado21 = false;
 
         instalarCssProfessorDamas21();
         garantirPainelProfessorDamas21();
 
         function detectarProfessorDamas21(nome) {
             const n = String(nome || '').trim();
-            return /^#/.test(n) || /#$/.test(n);
+            return damasProfessorPedidoCapturado21 || /^#/.test(n) || /#$/.test(n);
         }
 
         function limparNomeProfessorDamas21(nome) {
@@ -11712,14 +11713,19 @@ Compartilhe com os amigos e entre no horário marcado.`;
         }
 
         function professorDamasPodeAparecer21() {
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            const telaJogoVisivel = !!(
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                (!boardWrapper || boardWrapper.offsetParent !== null || boardWrapper.style.display !== 'none')
+            );
+            const papelValido = isPracticeMode || playerRole === 'p1' || playerRole === 'p2';
             return !!(
                 damasProfessorAtivo21 &&
                 currentGameState &&
                 currentGameState.board &&
-                gameScreen &&
-                gameScreen.style.display !== 'none' &&
-                !isPracticeMode &&
-                (playerRole === 'p1' || playerRole === 'p2')
+                telaJogoVisivel &&
+                papelValido
             );
         }
 
@@ -11858,6 +11864,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     background: rgba(20, 83, 45, .20);
                 }
                 #damas-teacher-private-panel.teacher-collapsed .damas-teacher-body { display: none; }
+                body.damas-professor-ativo-21 #damas-teacher-private-panel.teacher-visible { display: block !important; }
+                body.damas-professor-ativo-21 #damas-teacher-private-panel { visibility: visible !important; opacity: 1 !important; }
                 .square.teacher-damas-from { outline: 3px solid rgba(34,197,94,.98); outline-offset: -4px; box-shadow: inset 0 0 20px rgba(34,197,94,.30); }
                 .square.teacher-damas-to { outline: 3px solid rgba(250,204,21,.98); outline-offset: -4px; box-shadow: inset 0 0 24px rgba(250,204,21,.32); }
                 .square.teacher-damas-danger { outline: 3px solid rgba(239,68,68,.96); outline-offset: -4px; box-shadow: inset 0 0 24px rgba(239,68,68,.32); }
@@ -11890,7 +11898,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 `;
                 const boardWrapper = document.getElementById('normal-board-wrapper');
                 if (boardWrapper && boardWrapper.parentNode) {
-                    boardWrapper.insertAdjacentElement('afterend', panel);
+                    boardWrapper.insertAdjacentElement('beforebegin', panel);
                 } else if (gameScreen) {
                     gameScreen.appendChild(panel);
                 }
@@ -11906,7 +11914,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     aplicarMarcacoesProfessorDamas21();
                 });
             }
-            panel.classList.toggle('teacher-visible', professorDamasPodeAparecer21());
+            const podeVerAgora = professorDamasPodeAparecer21();
+            panel.classList.toggle('teacher-visible', podeVerAgora);
+            document.body.classList.toggle('damas-professor-ativo-21', podeVerAgora);
             panel.classList.toggle('teacher-collapsed', damasProfessorRecolhido21);
             const btn = panel.querySelector('#damas-teacher-collapse-btn');
             if (btn) btn.textContent = damasProfessorRecolhido21 ? '+' : '−';
@@ -11924,7 +11934,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     : 'Professor inteligente de Damas ligado. Observe a jogada do aluno e use o painel para explicar ataque, defesa, captura obrigatória e coroação.';
             }
             body.innerHTML = damasProfessorTexto21;
-            panel.classList.toggle('teacher-visible', professorDamasPodeAparecer21());
+            const podeVerAgora = professorDamasPodeAparecer21();
+            panel.classList.toggle('teacher-visible', podeVerAgora);
+            document.body.classList.toggle('damas-professor-ativo-21', podeVerAgora);
         }
 
         function adversarioTemCapturaDamas21(board, lado) {
@@ -12094,6 +12106,34 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (info.danger) mark(`[data-row="${info.danger.r}"][data-col="${info.danger.c}"]`, 'teacher-damas-danger');
         }
 
+
+        function prepararAtivacaoProfessorDamas21() {
+            const raw = String(nameInput?.value || '').trim();
+            const pedido = /^#/.test(raw) || /#$/.test(raw);
+            damasProfessorPedidoCapturado21 = pedido;
+            try { sessionStorage.setItem('damas_professor_privado_ativo_21', pedido ? '1' : '0'); } catch (_) {}
+            if (pedido && nameInput) {
+                const limpo = limparNomeProfessorDamas21(raw);
+                nameInput.value = limpo;
+                try { localStorage.setItem('damas_nome_jogador', limpo); } catch (_) {}
+            }
+            return pedido;
+        }
+
+        if (joinBtn) {
+            joinBtn.addEventListener('click', prepararAtivacaoProfessorDamas21, true);
+        }
+        [btnChooseEasy, btnChooseMedium, btnChooseHard, btnChooseLearn].filter(Boolean).forEach((btn) => {
+            btn.addEventListener('click', () => {
+                prepararAtivacaoProfessorDamas21();
+                damasProfessorAtivo21 = damasProfessorPedidoCapturado21;
+                setTimeout(() => {
+                    garantirPainelProfessorDamas21();
+                    atualizarProfessorDamas21(damasProfessorAtivo21 ? 'Professor inteligente de Damas ligado no treino. Toque numa peça ou clique em Analisar posição para receber dicas deste aparelho.' : '');
+                }, 350);
+            }, true);
+        });
+
         const joinRoomOriginalDamas21 = joinRoom;
         joinRoom = async function joinRoomProfessorDamas21(roomName, playerName, forceSpectator) {
             const rawName = String(playerName || nameInput?.value || '').trim();
@@ -12101,10 +12141,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             damasProfessorAtivo21 = !!(solicitado && !forceSpectator);
             damasProfessorTexto21 = '';
             damasProfessorUltimaDica21 = null;
-            const nomeLimpo = solicitado ? limparNomeProfessorDamas21(rawName) : playerName;
+            const nomeLimpo = solicitado ? limparNomeProfessorDamas21(rawName || nameInput?.value) : playerName;
             if (solicitado && nameInput) nameInput.value = nomeLimpo;
             const resp = await joinRoomOriginalDamas21.call(this, roomName, nomeLimpo, forceSpectator);
-            damasProfessorAtivo21 = !!(solicitado && !forceSpectator && (playerRole === 'p1' || playerRole === 'p2') && !isPracticeMode);
+            damasProfessorAtivo21 = !!(solicitado && !forceSpectator && (playerRole === 'p1' || playerRole === 'p2' || isPracticeMode));
             garantirPainelProfessorDamas21();
             atualizarProfessorDamas21(damasProfessorAtivo21
                 ? 'Professor inteligente de Damas ligado. Toque numa peça ou clique em Analisar posição para receber dicas neste aparelho.'
@@ -12117,8 +12157,11 @@ Compartilhe com os amigos e entre no horário marcado.`;
             leaveBtn.addEventListener('click', () => {
                 setTimeout(() => {
                     damasProfessorAtivo21 = false;
+                    damasProfessorPedidoCapturado21 = false;
                     damasProfessorTexto21 = '';
                     damasProfessorUltimaDica21 = null;
+                    try { sessionStorage.setItem('damas_professor_privado_ativo_21', '0'); } catch (_) {}
+                    document.body.classList.remove('damas-professor-ativo-21');
                     garantirPainelProfessorDamas21();
                 }, 120);
             });
@@ -12165,13 +12208,358 @@ Compartilhe com os amigos e entre no horário marcado.`;
         };
 
         setInterval(() => {
-            if (!damasProfessorAtivo21) return;
+            if (!damasProfessorAtivo21 && !damasProfessorPedidoCapturado21) return;
+            if (damasProfessorPedidoCapturado21 && currentGameState?.board && (playerRole === 'p1' || playerRole === 'p2' || isPracticeMode)) {
+                damasProfessorAtivo21 = true;
+            }
             garantirPainelProfessorDamas21();
+            atualizarProfessorDamas21();
             if (professorDamasPodeAparecer21()) aplicarMarcacoesProfessorDamas21();
-        }, 1200);
+        }, 700);
     }
 
+    // PROFISSIONAL 22 — reforço de ativação do Professor de Damas.
+    // Corrige casos em que o # era limpo antes do painel reconhecer o professor.
     instalarProfessorInteligenteDamas21();
+
+    /* =====================================================================
+       ✅ PROFISSIONAL 23 — CORREÇÃO DEFINITIVA DO PROFESSOR NA DAMAS
+       Reforço independente por cima da versão 21/22.
+       Motivo: em alguns celulares o # era limpo ou a tela mudava antes do painel
+       receber a classe de visível. Este reforço captura o pedido antes do clique,
+       guarda na sessão do aparelho do professor e força o painel acima do tabuleiro.
+       Não grava nada na sala, não aparece para o aluno e não altera a partida.
+    ===================================================================== */
+    function instalarReforcoDefinitivoProfessorDamas23() {
+        if (window.__professorDamas23Instalado) return;
+        window.__professorDamas23Instalado = true;
+
+        let professorDamas23Ativo = false;
+        let professorDamas23Texto = '';
+        let professorDamas23Ultima = null;
+
+        function temHashProfessor23(nome) {
+            const n = String(nome || '').trim();
+            return /^#/.test(n) || /#$/.test(n);
+        }
+
+        function limparNomeProfessor23(nome) {
+            const limpo = String(nome || '')
+                .replace(/^#+/, '')
+                .replace(/#+$/, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return nomeSeguro(limpo || 'Professor');
+        }
+
+        function salvarAtivo23(valor) {
+            professorDamas23Ativo = !!valor;
+            try { sessionStorage.setItem('damas_professor_privado_ativo_23', professorDamas23Ativo ? '1' : '0'); } catch (_) {}
+            try { sessionStorage.setItem('damas_professor_privado_ativo_21', professorDamas23Ativo ? '1' : '0'); } catch (_) {}
+        }
+
+        function lerAtivoSalvo23() {
+            try {
+                if (sessionStorage.getItem('damas_professor_privado_ativo_23') === '1') professorDamas23Ativo = true;
+                if (sessionStorage.getItem('damas_professor_privado_ativo_21') === '1') professorDamas23Ativo = true;
+            } catch (_) {}
+            return professorDamas23Ativo;
+        }
+
+        function capturarPedidoProfessor23(limparCampoAgora = false) {
+            const raw = String(nameInput?.value || '').trim();
+            if (temHashProfessor23(raw)) {
+                salvarAtivo23(true);
+                if (limparCampoAgora && nameInput) {
+                    const limpo = limparNomeProfessor23(raw);
+                    nameInput.value = limpo;
+                    try { localStorage.setItem('damas_nome_jogador', limpo); } catch (_) {}
+                }
+                return true;
+            }
+            return lerAtivoSalvo23();
+        }
+
+        function instalarCssProfessorDamas23() {
+            if (document.getElementById('professor-damas-23-style')) return;
+            const style = document.createElement('style');
+            style.id = 'professor-damas-23-style';
+            style.textContent = `
+                #damas-teacher-private-panel.damas-teacher-force-23 {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    width: min(780px, calc(100% - 14px)) !important;
+                    margin: 10px auto 12px auto !important;
+                    position: relative !important;
+                    z-index: 30 !important;
+                }
+                body.damas-professor-force-23 #damas-teacher-private-panel {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+                #damas-teacher-private-panel .damas-teacher-alerta-23 {
+                    display: block;
+                    margin-top: 8px;
+                    padding: 8px 10px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(34,197,94,.35);
+                    background: rgba(20,83,45,.24);
+                    color: #bbf7d0;
+                    font-size: .80rem;
+                    font-weight: 800;
+                }
+                #damas-teacher-private-panel .damas-teacher-lista-23 {
+                    margin: 8px 0 0 0;
+                    padding-left: 18px;
+                }
+                #damas-teacher-private-panel .damas-teacher-lista-23 li {
+                    margin: 4px 0;
+                }
+                .square.teacher-damas-from,
+                .square.teacher-damas23-from { outline: 3px solid rgba(34,197,94,.98) !important; outline-offset: -4px; box-shadow: inset 0 0 20px rgba(34,197,94,.30) !important; }
+                .square.teacher-damas-to,
+                .square.teacher-damas23-to { outline: 3px solid rgba(250,204,21,.98) !important; outline-offset: -4px; box-shadow: inset 0 0 24px rgba(250,204,21,.32) !important; }
+                .square.teacher-damas-danger,
+                .square.teacher-damas23-danger { outline: 3px solid rgba(239,68,68,.96) !important; outline-offset: -4px; box-shadow: inset 0 0 24px rgba(239,68,68,.32) !important; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function ladoProfessor23() {
+            if (playerRole === 'p2') return 2;
+            if (playerRole === 'p1') return 1;
+            return currentGameState?.turn === 2 ? 2 : 1;
+        }
+
+        function nomeLado23(lado) {
+            return lado === 2 ? 'pretas' : 'vermelhas';
+        }
+
+        function coord23(r, c) {
+            const letras = 'ABCDEFGH';
+            return `${letras[c] || '?'}${8 - r}`;
+        }
+
+        function tipoPeca23(peca) {
+            return (peca === 2 || peca === 4) ? 'dama' : 'peça comum';
+        }
+
+        function movimentoTexto23(m) {
+            if (!m) return '—';
+            return `${coord23(m.fromR, m.fromC)} → ${coord23(m.toR, m.toC)}`;
+        }
+
+        function podeMostrarProfessor23() {
+            lerAtivoSalvo23();
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            const estaNaTelaDamas = !!(
+                professorDamas23Ativo &&
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                boardWrapper &&
+                boardWrapper.style.display !== 'none' &&
+                adminPanel?.style.display !== 'block' &&
+                currentGameState &&
+                currentGameState.board
+            );
+            return estaNaTelaDamas;
+        }
+
+        function garantirPainel23() {
+            instalarCssProfessorDamas23();
+            let panel = document.getElementById('damas-teacher-private-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'damas-teacher-private-panel';
+                panel.innerHTML = `
+                    <div class="damas-teacher-head">
+                        <div class="damas-teacher-title">🎓 Professor inteligente de Damas <span class="damas-teacher-badge">privado</span></div>
+                        <div class="damas-teacher-actions">
+                            <button id="damas-teacher-analyze-btn" type="button" class="damas-teacher-btn">Analisar posição</button>
+                            <button id="damas-teacher-collapse-btn" type="button" class="damas-teacher-btn secondary">−</button>
+                        </div>
+                    </div>
+                    <div id="damas-teacher-private-content" class="damas-teacher-body"></div>
+                `;
+            }
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            if (boardWrapper && panel.parentNode !== boardWrapper.parentNode) {
+                boardWrapper.insertAdjacentElement('beforebegin', panel);
+            } else if (boardWrapper && panel.nextElementSibling !== boardWrapper) {
+                boardWrapper.insertAdjacentElement('beforebegin', panel);
+            } else if (!panel.parentNode && gameScreen) {
+                gameScreen.appendChild(panel);
+            }
+            return panel;
+        }
+
+        function pontuarMovimento23(board, move, lado) {
+            let pontos = 0;
+            const razoes = [];
+            const peca = board?.[move.fromR]?.[move.fromC] || 0;
+            if (move.capture) { pontos += 90; razoes.push('captura peça adversária'); }
+            if ((peca === 1 && move.toR === 0) || (peca === 3 && move.toR === 7)) { pontos += 80; razoes.push('coroa e vira dama'); }
+            if (peca === 2 || peca === 4) { pontos += 16; razoes.push('usa a força da dama nas diagonais'); }
+            if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) { pontos += 18; razoes.push('controla o centro'); }
+            if (lado === 1 && move.toR < move.fromR) { pontos += 8; razoes.push('avança com segurança'); }
+            if (lado === 2 && move.toR > move.fromR) { pontos += 8; razoes.push('avança com segurança'); }
+            if (move.toC === 0 || move.toC === 7) { pontos -= 6; razoes.push('vai para a lateral, explique o cuidado'); }
+            if (!razoes.length) razoes.push('melhora a posição e ajuda na explicação');
+            return { move, pontos, razoes };
+        }
+
+        function melhoresMovimentos23(lado, board, filtroCasa = null, limite = 4) {
+            let moves = [];
+            try { moves = computeAllValidMovesEngine(lado, board, null) || []; } catch (_) { moves = []; }
+            if (filtroCasa) moves = moves.filter(m => m.fromR === filtroCasa.r && m.fromC === filtroCasa.c);
+            return moves
+                .map(m => pontuarMovimento23(board, m, lado))
+                .sort((a, b) => b.pontos - a.pontos)
+                .slice(0, limite);
+        }
+
+        function renderSugestoes23(titulo, itens) {
+            if (!itens || !itens.length) {
+                return `<span class="damas-teacher-section-title">${titulo}</span><span class="damas-teacher-muted">Não encontrei movimento desta peça agora. Use a posição para ensinar proteção, captura obrigatória e avanço seguro.</span>`;
+            }
+            professorDamas23Ultima = itens[0];
+            return `
+                <span class="damas-teacher-section-title">${titulo}</span>
+                <ol class="damas-teacher-lista-23">
+                    ${itens.map((item, i) => `<li><strong>${i === 0 ? 'Melhor dica' : 'Opção'}:</strong> ${movimentoTexto23(item.move)}<br><span class="damas-teacher-muted">Por quê: ${item.razoes.join('; ')}.</span></li>`).join('')}
+                </ol>
+            `;
+        }
+
+        function criarAnalise23() {
+            const board = currentGameState?.board;
+            const lado = ladoProfessor23();
+            if (!board) return 'Aguardando o tabuleiro carregar...';
+            const todos = melhoresMovimentos23(lado, board, null, 4);
+            const capturas = todos.filter(i => i.move?.capture).length;
+            return `
+                <strong>Professor de Damas ligado neste aparelho.</strong><br>
+                <span class="damas-teacher-muted">Você está analisando as ${nomeLado23(lado)}. O aluno não vê este painel.</span>
+                ${capturas ? '<span class="damas-teacher-alerta-23">⚠️ Existe captura boa/obrigatória para explicar.</span>' : '<span class="damas-teacher-alerta-23">✅ Não vi captura principal agora. Trabalhe avanço, defesa e centro.</span>'}
+                ${renderSugestoes23('Melhores ideias da posição', todos)}
+            `;
+        }
+
+        function criarDicaPeca23(r, c) {
+            const board = currentGameState?.board;
+            if (!board) return '';
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return '';
+            const lado = (peca === 1 || peca === 2) ? 1 : 2;
+            const ladoProf = ladoProfessor23();
+            if (lado !== ladoProf) {
+                return `<strong>Peça do aluno em ${coord23(r, c)}.</strong><br><span class="damas-teacher-muted">Use esta peça para explicar ameaça, defesa e possíveis capturas que ele pode deixar.</span>${renderSugestoes23('Ideias para o seu lado', melhoresMovimentos23(ladoProf, board, null, 3))}`;
+            }
+            const sugestoes = melhoresMovimentos23(ladoProf, board, { r, c }, 4);
+            let movimentos = [];
+            try { movimentos = computeValidMovesForPieceEngine(r, c, board, true) || []; } catch (_) { movimentos = []; }
+            return `
+                <strong>${tipoPeca23(peca)} das ${nomeLado23(lado)}</strong> em <strong>${coord23(r, c)}</strong>.<br>
+                <span class="damas-teacher-muted">Movimentos legais desta peça: ${movimentos.length}. Capturas: ${movimentos.filter(m => m.capture).length}.</span>
+                ${renderSugestoes23('Melhores dicas dessa peça', sugestoes)}
+            `;
+        }
+
+        function atualizarPainel23(texto = '') {
+            const panel = garantirPainel23();
+            const pode = podeMostrarProfessor23();
+            if (texto) professorDamas23Texto = texto;
+            if (pode && !professorDamas23Texto) professorDamas23Texto = criarAnalise23();
+            const body = document.getElementById('damas-teacher-private-content');
+            if (body && pode) body.innerHTML = professorDamas23Texto || criarAnalise23();
+            panel.classList.toggle('teacher-visible', pode);
+            panel.classList.toggle('damas-teacher-force-23', pode);
+            document.body.classList.toggle('damas-professor-force-23', pode);
+            if (pode) panel.style.setProperty('display', 'block', 'important');
+            else panel.style.removeProperty('display');
+            aplicarMarcacoes23();
+        }
+
+        function aplicarMarcacoes23() {
+            const board = document.getElementById('board');
+            if (!board) return;
+            board.querySelectorAll('.teacher-damas23-from,.teacher-damas23-to,.teacher-damas23-danger').forEach(el => {
+                el.classList.remove('teacher-damas23-from','teacher-damas23-to','teacher-damas23-danger');
+            });
+            if (!podeMostrarProfessor23() || !professorDamas23Ultima?.move) return;
+            const m = professorDamas23Ultima.move;
+            const marcar = (r, c, cls) => {
+                const el = board.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                if (el) el.classList.add(cls);
+            };
+            marcar(m.fromR, m.fromC, 'teacher-damas23-from');
+            marcar(m.toR, m.toC, 'teacher-damas23-to');
+            if (m.capture) marcar(m.capture.r, m.capture.c, 'teacher-damas23-danger');
+        }
+
+        if (nameInput) {
+            ['input','change','keyup','blur'].forEach(evt => {
+                nameInput.addEventListener(evt, () => capturarPedidoProfessor23(false), true);
+            });
+        }
+        [joinBtn, practiceBtn, btnChooseEasy, btnChooseMedium, btnChooseHard, btnChooseLearn].filter(Boolean).forEach(btn => {
+            btn.addEventListener('click', () => capturarPedidoProfessor23(true), true);
+        });
+
+        const joinAnterior23 = joinRoom;
+        joinRoom = async function joinRoomReforcoProfessorDamas23(roomName, playerName, forceSpectator) {
+            const tinhaPedido = capturarPedidoProfessor23(true) || professorDamas23Ativo;
+            const nomeFinal = tinhaPedido ? limparNomeProfessor23(playerName || nameInput?.value) : playerName;
+            const resp = await joinAnterior23.call(this, roomName, nomeFinal, forceSpectator);
+            if (tinhaPedido && !forceSpectator && playerRole !== 'admin') salvarAtivo23(true);
+            setTimeout(() => atualizarPainel23(criarAnalise23()), 250);
+            return resp;
+        };
+
+        const gerarAnterior23 = generateBoardUI;
+        generateBoardUI = function generateBoardUIReforcoProfessorDamas23(board) {
+            const retorno = gerarAnterior23.apply(this, arguments);
+            setTimeout(() => atualizarPainel23(), 30);
+            return retorno;
+        };
+
+        const clicarAnterior23 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionReforcoProfessorDamas23(r, c) {
+            if (podeMostrarProfessor23()) {
+                const dica = criarDicaPeca23(r, c);
+                if (dica) atualizarPainel23(dica);
+            }
+            const retorno = clicarAnterior23.apply(this, arguments);
+            setTimeout(() => atualizarPainel23(), 80);
+            return retorno;
+        };
+
+        if (leaveBtn) {
+            leaveBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    salvarAtivo23(false);
+                    professorDamas23Texto = '';
+                    professorDamas23Ultima = null;
+                    atualizarPainel23('');
+                }, 160);
+            });
+        }
+
+        document.addEventListener('click', (ev) => {
+            if (ev.target && ev.target.closest && ev.target.closest('#damas-teacher-analyze-btn')) {
+                if (podeMostrarProfessor23()) atualizarPainel23(criarAnalise23());
+            }
+        }, true);
+
+        setInterval(() => {
+            capturarPedidoProfessor23(false);
+            if (professorDamas23Ativo) atualizarPainel23();
+        }, 500);
+    }
+
+    instalarReforcoDefinitivoProfessorDamas23();
 
 
 })();
