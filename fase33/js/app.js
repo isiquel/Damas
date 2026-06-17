@@ -11682,6 +11682,498 @@ Compartilhe com os amigos e entre no horário marcado.`;
     };
 
 
+    /* =====================================================================
+       ✅ PROFISSIONAL 21 — PROFESSOR INTELIGENTE NA DAMAS
+       Baseado no modo Professor do Xadrez: ativa com # no nome (#Isiquel ou Isiquel#),
+       aparece apenas no aparelho do professor e usa as regras/movimentos da Damas.
+       Não mexe no Firebase da partida, não joga sozinho, não reinicia sala e não altera o aluno.
+    ===================================================================== */
+    function instalarProfessorInteligenteDamas21() {
+        let damasProfessorAtivo21 = false;
+        let damasProfessorTexto21 = '';
+        let damasProfessorRecolhido21 = false;
+        let damasProfessorUltimaDica21 = null;
+
+        instalarCssProfessorDamas21();
+        garantirPainelProfessorDamas21();
+
+        function detectarProfessorDamas21(nome) {
+            const n = String(nome || '').trim();
+            return /^#/.test(n) || /#$/.test(n);
+        }
+
+        function limparNomeProfessorDamas21(nome) {
+            const limpo = String(nome || '')
+                .replace(/^#+/, '')
+                .replace(/#+$/, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return nomeSeguro(limpo || 'Professor');
+        }
+
+        function professorDamasPodeAparecer21() {
+            return !!(
+                damasProfessorAtivo21 &&
+                currentGameState &&
+                currentGameState.board &&
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                !isPracticeMode &&
+                (playerRole === 'p1' || playerRole === 'p2')
+            );
+        }
+
+        function ladoProfessorDamas21() {
+            if (playerRole === 'p2') return 2;
+            return 1;
+        }
+
+        function nomeLadoDamas21(lado) {
+            return lado === 2 ? 'pretas' : 'vermelhas';
+        }
+
+        function nomePecaDamas21(peca) {
+            if (peca === 2 || peca === 4) return 'Dama';
+            return 'Peça comum';
+        }
+
+        function coordenadaDamas21(r, c) {
+            const letras = 'ABCDEFGH';
+            return `${letras[c] || '?'}${8 - r}`;
+        }
+
+        function movimentoCoordDamas21(move) {
+            if (!move) return '—';
+            return `${coordenadaDamas21(move.fromR, move.fromC)} → ${coordenadaDamas21(move.toR, move.toC)}`;
+        }
+
+        function valorPecaDamas21(peca) {
+            if (peca === 2 || peca === 4) return 320;
+            if (peca) return 115;
+            return 0;
+        }
+
+        function cloneBoardDamas21(board) {
+            return (board || []).map(row => Array.isArray(row) ? row.slice() : []);
+        }
+
+        function instalarCssProfessorDamas21() {
+            if (document.getElementById('professor-damas-21-style')) return;
+            const style = document.createElement('style');
+            style.id = 'professor-damas-21-style';
+            style.textContent = `
+                #damas-teacher-private-panel {
+                    display: none;
+                    width: min(760px, calc(100% - 18px));
+                    margin: 10px auto 12px auto;
+                    border-radius: 18px;
+                    border: 1px solid rgba(34, 197, 94, .55);
+                    background: linear-gradient(180deg, rgba(4, 24, 30, .96), rgba(6, 18, 26, .98));
+                    box-shadow: 0 16px 34px rgba(0, 0, 0, .38), 0 0 20px rgba(34, 197, 94, .13);
+                    color: #e5f6ef;
+                    overflow: hidden;
+                    position: relative;
+                    z-index: 5;
+                }
+                #damas-teacher-private-panel.teacher-visible { display: block; }
+                #damas-teacher-private-panel .damas-teacher-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                    padding: 12px 14px;
+                    border-bottom: 1px solid rgba(148, 163, 184, .22);
+                    background: rgba(15, 118, 110, .18);
+                }
+                #damas-teacher-private-panel .damas-teacher-title {
+                    font-weight: 900;
+                    font-size: .96rem;
+                    letter-spacing: .02em;
+                    color: #d1fae5;
+                }
+                #damas-teacher-private-panel .damas-teacher-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 3px 8px;
+                    border-radius: 999px;
+                    background: rgba(34, 197, 94, .16);
+                    border: 1px solid rgba(34, 197, 94, .32);
+                    color: #86efac;
+                    font-size: .68rem;
+                    margin-left: 5px;
+                    text-transform: uppercase;
+                }
+                #damas-teacher-private-panel .damas-teacher-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    flex-wrap: wrap;
+                    justify-content: flex-end;
+                }
+                #damas-teacher-private-panel .damas-teacher-btn {
+                    width: auto;
+                    min-width: 38px;
+                    padding: 7px 10px;
+                    margin: 0;
+                    border: 0;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-size: .76rem;
+                    font-weight: 900;
+                    color: #052e2b;
+                    background: linear-gradient(135deg, #86efac, #22c55e);
+                    box-shadow: none;
+                }
+                #damas-teacher-private-panel .damas-teacher-btn.secondary {
+                    color: #e5f6ef;
+                    background: rgba(15, 23, 42, .82);
+                    border: 1px solid rgba(148, 163, 184, .30);
+                }
+                #damas-teacher-private-panel .damas-teacher-body {
+                    padding: 12px 14px 14px 14px;
+                    font-size: .86rem;
+                    line-height: 1.45;
+                    color: #dbeafe;
+                }
+                #damas-teacher-private-panel .damas-teacher-body strong { color: #fef3c7; }
+                #damas-teacher-private-panel .damas-teacher-muted { color: #9ca3af; font-size: .78rem; }
+                #damas-teacher-private-panel .damas-teacher-section-title {
+                    display: block;
+                    color: #86efac;
+                    text-transform: uppercase;
+                    font-size: .70rem;
+                    letter-spacing: .08em;
+                    font-weight: 900;
+                    margin: 8px 0 5px 0;
+                }
+                #damas-teacher-private-panel .damas-teacher-tip {
+                    padding: 8px 9px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(148, 163, 184, .18);
+                    background: rgba(2, 6, 23, .28);
+                    margin-top: 6px;
+                }
+                #damas-teacher-private-panel .damas-teacher-tip.best {
+                    border-color: rgba(34, 197, 94, .42);
+                    background: rgba(20, 83, 45, .20);
+                }
+                #damas-teacher-private-panel.teacher-collapsed .damas-teacher-body { display: none; }
+                .square.teacher-damas-from { outline: 3px solid rgba(34,197,94,.98); outline-offset: -4px; box-shadow: inset 0 0 20px rgba(34,197,94,.30); }
+                .square.teacher-damas-to { outline: 3px solid rgba(250,204,21,.98); outline-offset: -4px; box-shadow: inset 0 0 24px rgba(250,204,21,.32); }
+                .square.teacher-damas-danger { outline: 3px solid rgba(239,68,68,.96); outline-offset: -4px; box-shadow: inset 0 0 24px rgba(239,68,68,.32); }
+                @media (max-width: 620px) {
+                    #damas-teacher-private-panel { width: calc(100% - 8px); border-radius: 14px; margin-top: 8px; }
+                    #damas-teacher-private-panel .damas-teacher-head { padding: 10px; align-items: flex-start; }
+                    #damas-teacher-private-panel .damas-teacher-title { font-size: .87rem; }
+                    #damas-teacher-private-panel .damas-teacher-actions { gap: 5px; }
+                    #damas-teacher-private-panel .damas-teacher-btn { padding: 6px 8px; font-size: .70rem; }
+                    #damas-teacher-private-panel .damas-teacher-body { padding: 10px; font-size: .80rem; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function garantirPainelProfessorDamas21() {
+            let panel = document.getElementById('damas-teacher-private-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'damas-teacher-private-panel';
+                panel.innerHTML = `
+                    <div class="damas-teacher-head">
+                        <div class="damas-teacher-title">🎓 Professor inteligente de Damas <span class="damas-teacher-badge">privado</span></div>
+                        <div class="damas-teacher-actions">
+                            <button id="damas-teacher-analyze-btn" type="button" class="damas-teacher-btn">Analisar posição</button>
+                            <button id="damas-teacher-collapse-btn" type="button" class="damas-teacher-btn secondary">−</button>
+                        </div>
+                    </div>
+                    <div id="damas-teacher-private-content" class="damas-teacher-body"></div>
+                `;
+                const boardWrapper = document.getElementById('normal-board-wrapper');
+                if (boardWrapper && boardWrapper.parentNode) {
+                    boardWrapper.insertAdjacentElement('afterend', panel);
+                } else if (gameScreen) {
+                    gameScreen.appendChild(panel);
+                }
+                const collapse = panel.querySelector('#damas-teacher-collapse-btn');
+                const analyze = panel.querySelector('#damas-teacher-analyze-btn');
+                if (collapse) collapse.addEventListener('click', () => {
+                    damasProfessorRecolhido21 = !damasProfessorRecolhido21;
+                    panel.classList.toggle('teacher-collapsed', damasProfessorRecolhido21);
+                    collapse.textContent = damasProfessorRecolhido21 ? '+' : '−';
+                });
+                if (analyze) analyze.addEventListener('click', () => {
+                    atualizarProfessorDamas21(criarAnalisePosicaoDamas21());
+                    aplicarMarcacoesProfessorDamas21();
+                });
+            }
+            panel.classList.toggle('teacher-visible', professorDamasPodeAparecer21());
+            panel.classList.toggle('teacher-collapsed', damasProfessorRecolhido21);
+            const btn = panel.querySelector('#damas-teacher-collapse-btn');
+            if (btn) btn.textContent = damasProfessorRecolhido21 ? '+' : '−';
+            return panel;
+        }
+
+        function atualizarProfessorDamas21(texto = '') {
+            const panel = garantirPainelProfessorDamas21();
+            const body = document.getElementById('damas-teacher-private-content');
+            if (!body) return;
+            if (texto) damasProfessorTexto21 = texto;
+            if (!damasProfessorTexto21) {
+                damasProfessorTexto21 = currentGameState?.turn === ladoProfessorDamas21()
+                    ? 'Professor inteligente de Damas ligado. Toque numa peça ou clique em Analisar posição para receber dicas de aula neste aparelho.'
+                    : 'Professor inteligente de Damas ligado. Observe a jogada do aluno e use o painel para explicar ataque, defesa, captura obrigatória e coroação.';
+            }
+            body.innerHTML = damasProfessorTexto21;
+            panel.classList.toggle('teacher-visible', professorDamasPodeAparecer21());
+        }
+
+        function adversarioTemCapturaDamas21(board, lado) {
+            const adv = lado === 1 ? 2 : 1;
+            return computeAllValidMovesEngine(adv, board, null).filter(m => m.capture).length > 0;
+        }
+
+        function movimentoGeraCapturaObrigatoriaDamas21(applied, lado, move) {
+            if (!move.capture) return false;
+            const novas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+            return novas.length > 0;
+        }
+
+        function pontuarMovimentoProfessorDamas21(board, move, lado) {
+            const pecaAntes = board?.[move.fromR]?.[move.fromC] || 0;
+            const applied = aplicarMovimentoEngine(board, move);
+            let nextTurn = lado === 1 ? 2 : 1;
+            let nextForced = null;
+            if (move.capture) {
+                const novas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                if (novas.length > 0) {
+                    nextTurn = lado;
+                    nextForced = { r: applied.toR, c: applied.toC };
+                }
+            }
+
+            let score = lado === 2
+                ? minimaxRobo(applied.board, 3, nextTurn, -Infinity, Infinity, nextForced)
+                : -minimaxRobo(applied.board, 3, nextTurn, -Infinity, Infinity, nextForced);
+
+            const razoes = [];
+            if (move.capture) {
+                const capturada = board?.[move.capture.r]?.[move.capture.c] || 0;
+                score += 120 + valorPecaDamas21(capturada) * 0.25;
+                razoes.push(capturada === 2 || capturada === 4 ? 'captura uma dama adversária' : 'cumpre a captura obrigatória');
+            }
+            if ((pecaAntes === 1 && move.toR === 0) || (pecaAntes === 3 && move.toR === 7)) {
+                score += 240;
+                razoes.push('coroa e vira dama');
+            }
+            if (movimentoGeraCapturaObrigatoriaDamas21(applied, lado, move)) {
+                score += 160;
+                razoes.push('mantém sequência de captura');
+            }
+            if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) {
+                score += 28;
+                razoes.push('ganha controle central');
+            }
+            if (move.toC === 0 || move.toC === 7) {
+                score += 12;
+                razoes.push('usa a lateral para reduzir ataques por um lado');
+            }
+            if (!adversarioTemCapturaDamas21(applied.board, lado)) {
+                score += 45;
+                razoes.push('não entrega captura imediata fácil');
+            } else {
+                score -= 55;
+                razoes.push('atenção: pode permitir resposta com captura');
+            }
+
+            if (!razoes.length) razoes.push('melhora a posição e mantém opções');
+            return { move, score, razoes, applied };
+        }
+
+        function melhoresMovimentosProfessorDamas21(lado, board = currentGameState?.board, filtroPeca = null, limite = 3) {
+            if (!board) return [];
+            let forced = null;
+            if (lockPieceForMultiCapture && currentGameState?.turn === lado) forced = lockPieceForMultiCapture;
+            let movimentos = computeAllValidMovesEngine(lado, board, forced);
+            if (filtroPeca) movimentos = movimentos.filter(m => m.fromR === filtroPeca.r && m.fromC === filtroPeca.c);
+            if (!movimentos.length) return [];
+            return movimentos
+                .map(m => pontuarMovimentoProfessorDamas21(board, m, lado))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, limite);
+        }
+
+        function renderSugestoesProfessorDamas21(lista, titulo = 'Dicas fortes da posição') {
+            if (!lista || !lista.length) {
+                return '<span class="damas-teacher-section-title">Dicas da posição</span><span class="damas-teacher-muted">Não encontrei uma jogada forte agora. Use a posição para ensinar proteção, avanço seguro e captura obrigatória.</span>';
+            }
+            return `
+                <span class="damas-teacher-section-title">${titulo}</span>
+                ${lista.map((item, idx) => `
+                    <div class="damas-teacher-tip ${idx === 0 ? 'best' : ''}">
+                        <strong>${idx === 0 ? 'Melhor dica' : 'Outra ideia'}:</strong> ${movimentoCoordDamas21(item.move)}<br>
+                        <span class="damas-teacher-muted">Por quê: ${item.razoes.join('; ')}.</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function criarAnalisePosicaoDamas21() {
+            if (!currentGameState?.board) return 'Sem tabuleiro carregado para analisar.';
+            const lado = ladoProfessorDamas21();
+            const vez = currentGameState.turn === lado ? 'sua vez de jogar' : 'vez do aluno/oponente';
+            const lista = melhoresMovimentosProfessorDamas21(lado, currentGameState.board, null, 3);
+            damasProfessorUltimaDica21 = lista[0]?.move ? { move: lista[0].move, danger: null } : null;
+            return `
+                <strong>🎯 Análise das ${nomeLadoDamas21(lado)}:</strong> ${vez}.<br>
+                <span class="damas-teacher-muted">Use estas ideias para explicar por áudio: captura obrigatória, segurança, coroação e controle das diagonais.</span>
+                ${renderSugestoesProfessorDamas21(lista, 'Melhores dicas da posição')}
+            `;
+        }
+
+        function criarDicaPecaDamas21(r, c) {
+            if (!currentGameState?.board) return '';
+            const board = currentGameState.board;
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return '';
+            const dono = donoDaPecaEngine(peca);
+            const lado = ladoProfessorDamas21();
+            const movimentosDaPeca = computeValidMovesForPieceEngine(r, c, board, false);
+            const capturas = movimentosDaPeca.filter(m => m.capture);
+            const casas = movimentosDaPeca.slice(0, 8).map(movimentoCoordDamas21).join(', ') || 'sem movimento seguro agora';
+
+            if (dono !== lado) {
+                const ameacas = melhoresMovimentosProfessorDamas21(dono, board, { r, c }, 2);
+                damasProfessorUltimaDica21 = ameacas[0]?.move ? { move: ameacas[0].move, danger: { r, c } } : { move: null, danger: { r, c } };
+                return `
+                    <strong>👀 Peça do aluno/oponente em ${coordenadaDamas21(r, c)}.</strong><br>
+                    <span class="damas-teacher-muted">Ela tem ${movimentosDaPeca.length} movimento(s) e ${capturas.length} captura(s). Use isso para explicar ameaça e defesa.</span><br>
+                    ${renderSugestoesProfessorDamas21(ameacas, 'O que essa peça pode ameaçar')}
+                `;
+            }
+
+            let forced = null;
+            if (lockPieceForMultiCapture && currentGameState?.turn === lado) forced = lockPieceForMultiCapture;
+            let movimentos = forced ? computeValidMovesForPieceEngine(r, c, board, true) : movimentosDaPeca;
+            const existeCapturaObrigatoria = computeAllValidMovesEngine(dono, board, forced).some(m => m.capture);
+            if (existeCapturaObrigatoria) movimentos = movimentos.filter(m => m.capture);
+            const sugestoes = melhoresMovimentosProfessorDamas21(lado, board, { r, c }, 3);
+            damasProfessorUltimaDica21 = sugestoes[0]?.move ? { move: sugestoes[0].move, danger: null } : null;
+
+            return `
+                <strong>${nomePecaDamas21(peca)} das ${nomeLadoDamas21(lado)}</strong> em <strong>${coordenadaDamas21(r, c)}</strong>.<br>
+                <strong>Casas possíveis:</strong> ${movimentos.length} movimento(s), ${movimentos.filter(m => m.capture).length} captura(s).<br>
+                <span class="damas-teacher-muted">${casas}</span><br>
+                ${existeCapturaObrigatoria ? '<div class="damas-teacher-tip best"><strong>Regra importante:</strong> existe captura obrigatória. Ensine o aluno que, na Damas, quando dá para capturar, a tomada deve ser feita.</div>' : ''}
+                ${renderSugestoesProfessorDamas21(sugestoes, 'Melhores dicas dessa peça')}
+            `;
+        }
+
+        function mensagemAposJogadaDamas21(pecaAntes, move) {
+            if (!pecaAntes || !move) return criarAnalisePosicaoDamas21();
+            const partes = [];
+            partes.push(`<strong>✅ Jogada feita:</strong> ${movimentoCoordDamas21(move)}.`);
+            if (move.capture) partes.push('Explique que a captura era o caminho principal porque ganha material e, em muitos casos, é obrigatória.');
+            if ((pecaAntes === 1 && move.toR === 0) || (pecaAntes === 3 && move.toR === 7)) partes.push('Essa jogada coroou a peça. Agora ela virou dama e controla diagonais longas.');
+            if (currentGameState?.turn !== ladoProfessorDamas21()) partes.push('Agora observe a resposta do aluno e procure mostrar se ele deixou captura, defesa ou caminho para coroação.');
+            return `${partes.join('<br>')}<br>${renderSugestoesProfessorDamas21(melhoresMovimentosProfessorDamas21(ladoProfessorDamas21(), currentGameState?.board, null, 2), 'Próximas ideias para explicar')}`;
+        }
+
+        function aplicarMarcacoesProfessorDamas21() {
+            if (!professorDamasPodeAparecer21()) return;
+            const info = damasProfessorUltimaDica21;
+            if (!info) return;
+            const mark = (sel, cls) => {
+                const el = boardEl?.querySelector(sel);
+                if (el) el.classList.add(cls);
+            };
+            if (info.move) {
+                mark(`[data-row="${info.move.fromR}"][data-col="${info.move.fromC}"]`, 'teacher-damas-from');
+                mark(`[data-row="${info.move.toR}"][data-col="${info.move.toC}"]`, 'teacher-damas-to');
+                if (info.move.capture) mark(`[data-row="${info.move.capture.r}"][data-col="${info.move.capture.c}"]`, 'teacher-damas-danger');
+            }
+            if (info.danger) mark(`[data-row="${info.danger.r}"][data-col="${info.danger.c}"]`, 'teacher-damas-danger');
+        }
+
+        const joinRoomOriginalDamas21 = joinRoom;
+        joinRoom = async function joinRoomProfessorDamas21(roomName, playerName, forceSpectator) {
+            const rawName = String(playerName || nameInput?.value || '').trim();
+            const solicitado = detectarProfessorDamas21(rawName);
+            damasProfessorAtivo21 = !!(solicitado && !forceSpectator);
+            damasProfessorTexto21 = '';
+            damasProfessorUltimaDica21 = null;
+            const nomeLimpo = solicitado ? limparNomeProfessorDamas21(rawName) : playerName;
+            if (solicitado && nameInput) nameInput.value = nomeLimpo;
+            const resp = await joinRoomOriginalDamas21.call(this, roomName, nomeLimpo, forceSpectator);
+            damasProfessorAtivo21 = !!(solicitado && !forceSpectator && (playerRole === 'p1' || playerRole === 'p2') && !isPracticeMode);
+            garantirPainelProfessorDamas21();
+            atualizarProfessorDamas21(damasProfessorAtivo21
+                ? 'Professor inteligente de Damas ligado. Toque numa peça ou clique em Analisar posição para receber dicas neste aparelho.'
+                : '');
+            aplicarMarcacoesProfessorDamas21();
+            return resp;
+        };
+
+        if (leaveBtn) {
+            leaveBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    damasProfessorAtivo21 = false;
+                    damasProfessorTexto21 = '';
+                    damasProfessorUltimaDica21 = null;
+                    garantirPainelProfessorDamas21();
+                }, 120);
+            });
+        }
+
+        const gerarOriginalDamas21 = generateBoardUI;
+        generateBoardUI = function generateBoardUIProfessorDamas21(board) {
+            const retorno = gerarOriginalDamas21.apply(this, arguments);
+            garantirPainelProfessorDamas21();
+            atualizarProfessorDamas21();
+            aplicarMarcacoesProfessorDamas21();
+            return retorno;
+        };
+
+        const clickOriginalDamas21 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionProfessorDamas21(r, c) {
+            if (damasProfessorAtivo21 && currentGameState?.board && professorDamasPodeAparecer21()) {
+                const peca = currentGameState.board?.[r]?.[c] || 0;
+                if (peca) {
+                    const texto = criarDicaPecaDamas21(r, c);
+                    if (texto) atualizarProfessorDamas21(texto);
+                }
+            }
+            const retorno = clickOriginalDamas21.apply(this, arguments);
+            setTimeout(() => {
+                garantirPainelProfessorDamas21();
+                aplicarMarcacoesProfessorDamas21();
+            }, 30);
+            return retorno;
+        };
+
+        const moverOriginalDamas21 = executeGameMove;
+        executeGameMove = function executeGameMoveProfessorDamas21(move) {
+            const boardAntes = cloneBoardDamas21(currentGameState?.board || []);
+            const pecaAntes = boardAntes?.[move?.fromR]?.[move?.fromC] || 0;
+            const retorno = moverOriginalDamas21.apply(this, arguments);
+            if (damasProfessorAtivo21 && professorDamasPodeAparecer21()) {
+                setTimeout(() => {
+                    atualizarProfessorDamas21(mensagemAposJogadaDamas21(pecaAntes, move));
+                    aplicarMarcacoesProfessorDamas21();
+                }, 80);
+            }
+            return retorno;
+        };
+
+        setInterval(() => {
+            if (!damasProfessorAtivo21) return;
+            garantirPainelProfessorDamas21();
+            if (professorDamasPodeAparecer21()) aplicarMarcacoesProfessorDamas21();
+        }, 1200);
+    }
+
+    instalarProfessorInteligenteDamas21();
+
+
 })();
 
 
