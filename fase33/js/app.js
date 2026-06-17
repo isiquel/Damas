@@ -4362,6 +4362,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessAdminUnsubscribeRooms = null;
         let chessAdminUnsubscribeChat = null;
 
+        // ✅ PROFISSIONAL 19 - MANUAL PRIVADO DO PROFESSOR
+        // Ativa somente no aparelho de quem entrou com # no nome.
+        // Não grava aviso na sala, não altera o Firebase e não aparece para o outro jogador.
+        let chessProfessorPrivadoAtivo = false;
+        let chessProfessorPrivadoTexto = '';
+        let chessProfessorPrivadoRecolhido = false;
+
         // ✅ FASE 13.5 - MODO TREINO DO XADREZ
         // Mantém a Damas preservada. A máquina joga somente dentro do módulo do Xadrez.
         let chessTrainingActive = false;
@@ -6832,7 +6839,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     square.setAttribute('role', 'button');
                     square.setAttribute('aria-label', `Casa ${alg(row, col)}`);
 
-                    const mostrarAjudasVisuaisXadrez = chessMode === 'training';
+                    const mostrarAjudasVisuaisXadrez = chessMode === 'training' || (chessProfessorPrivadoAtivo && chessMode === 'online');
                     const mostrarProfessorAprenderXadrez = chessMode === 'training' && chessTrainingLearnMode;
 
                     if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) square.classList.add('selected');
@@ -10111,6 +10118,362 @@ Compartilhe com os amigos e entre no horário marcado.`;
         }
 
         instalarFase30XadrezTabuleiroCentralizado();
+
+        /* ✅ PROFISSIONAL 19 — MANUAL PRIVADO DO PROFESSOR
+           Ativa com # no nome (#Isiquel ou Isiquel#), aparece apenas no aparelho do professor
+           e entrega orientação pedagógica sem alterar partida, Firebase, Damas, Admin, torneios ou sala online. */
+        function instalarManualPrivadoProfessorXadrez19() {
+            instalarCssManualPrivadoProfessorXadrez19();
+            garantirPainelManualPrivadoProfessorXadrez19();
+
+            function detectarProfessorPrivadoPorNomeXadrez19(nome) {
+                const raw = String(nome || '').trim();
+                return raw.length > 1 && (raw.startsWith('#') || raw.endsWith('#'));
+            }
+
+            function limparNomeProfessorPrivadoXadrez19(nome) {
+                return String(nome || '')
+                    .trim()
+                    .replace(/^#+\s*/g, '')
+                    .replace(/\s*#+$/g, '')
+                    .replace(/\s+/g, ' ')
+                    .slice(0, 18);
+            }
+
+            function professorPrivadoPodeAparecerXadrez19() {
+                return !!(chessProfessorPrivadoAtivo && chessMode === 'online' && document.body.classList.contains('chess-board-visible'));
+            }
+
+            function instalarCssManualPrivadoProfessorXadrez19() {
+                if (document.getElementById('chess-private-teacher-style-19')) return;
+                const style = document.createElement('style');
+                style.id = 'chess-private-teacher-style-19';
+                style.textContent = `
+                    #chess-private-teacher-panel {
+                        max-width: 520px;
+                        margin: 12px auto 0 auto;
+                        background: linear-gradient(135deg, rgba(2,6,23,.98), rgba(15,23,42,.98));
+                        border: 1px solid rgba(56,189,248,.42);
+                        border-radius: 14px;
+                        padding: 10px;
+                        text-align: left;
+                        box-shadow: 0 14px 36px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+                        color: #e2e8f0;
+                    }
+                    #chess-private-teacher-panel .teacher-head {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        margin-bottom: 8px;
+                    }
+                    #chess-private-teacher-panel .teacher-title {
+                        color: #7dd3fc;
+                        font-size: .78rem;
+                        font-weight: 1000;
+                        letter-spacing: .45px;
+                        text-transform: uppercase;
+                    }
+                    #chess-private-teacher-panel .teacher-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        margin-left: 6px;
+                        padding: 2px 7px;
+                        border-radius: 999px;
+                        background: rgba(16,185,129,.13);
+                        border: 1px solid rgba(16,185,129,.35);
+                        color: #86efac;
+                        font-size: .64rem;
+                        font-weight: 900;
+                        vertical-align: middle;
+                    }
+                    #chess-private-teacher-toggle {
+                        width: auto;
+                        min-width: 34px;
+                        padding: 5px 9px;
+                        border-radius: 8px;
+                        background: #0f766e;
+                        color: white;
+                        font-size: .78rem;
+                        line-height: 1;
+                    }
+                    #chess-private-teacher-body { display: block; }
+                    #chess-private-teacher-panel.teacher-collapsed #chess-private-teacher-body { display: none; }
+                    #chess-private-teacher-text {
+                        background: rgba(15,23,42,.84);
+                        border: 1px solid rgba(148,163,184,.16);
+                        border-radius: 10px;
+                        padding: 10px;
+                        color: #dbeafe;
+                        font-size: .84rem;
+                        line-height: 1.45;
+                        min-height: 58px;
+                    }
+                    #chess-private-teacher-text strong { color: #facc15; }
+                    #chess-private-teacher-text .muted { color: #94a3b8; }
+                    #chess-private-teacher-text .good { color: #86efac; font-weight: 900; }
+                    #chess-private-teacher-text .warn { color: #fbbf24; font-weight: 900; }
+                    #chess-private-teacher-text .danger { color: #fca5a5; font-weight: 900; }
+                    .teacher-tip-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 7px;
+                        margin-top: 8px;
+                    }
+                    .teacher-tip-pill {
+                        background: rgba(30,41,59,.72);
+                        border: 1px solid rgba(255,255,255,.08);
+                        border-radius: 9px;
+                        padding: 7px 8px;
+                        color: #cbd5e1;
+                        font-size: .72rem;
+                        line-height: 1.25;
+                    }
+                    body:not(.chess-board-visible) #chess-private-teacher-panel,
+                    body.chess-menu-active #chess-private-teacher-panel { display: none !important; }
+                    @media(max-width:560px){
+                        #chess-private-teacher-panel { margin-top: 10px; padding: 9px; }
+                        .teacher-tip-grid { grid-template-columns: 1fr; }
+                        #chess-private-teacher-text { font-size: .8rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function garantirPainelManualPrivadoProfessorXadrez19() {
+                if (document.getElementById('chess-private-teacher-panel')) return document.getElementById('chess-private-teacher-panel');
+                const actions = document.querySelector('#chess-screen .chess-actions');
+                const card = document.querySelector('#chess-screen .chess-card');
+                if (!actions && !card) return null;
+                const panel = document.createElement('div');
+                panel.id = 'chess-private-teacher-panel';
+                panel.style.display = 'none';
+                panel.innerHTML = `
+                    <div class="teacher-head">
+                        <div class="teacher-title">🎓 Manual privado do professor <span class="teacher-badge">só neste aparelho</span></div>
+                        <button id="chess-private-teacher-toggle" type="button" aria-label="Recolher manual">−</button>
+                    </div>
+                    <div id="chess-private-teacher-body">
+                        <div id="chess-private-teacher-text">
+                            Toque em uma peça para receber uma orientação de aula. Use as dicas para explicar por áudio ou vídeo.
+                        </div>
+                        <div class="teacher-tip-grid">
+                            <div class="teacher-tip-pill">🟨 peça tocada</div>
+                            <div class="teacher-tip-pill">🟢 casas legais</div>
+                            <div class="teacher-tip-pill">🔴 captura possível</div>
+                            <div class="teacher-tip-pill">🛡️ foco: ensinar, defender e explicar</div>
+                        </div>
+                    </div>
+                `;
+                if (actions && actions.parentNode) actions.insertAdjacentElement('afterend', panel);
+                else card.appendChild(panel);
+                const btn = panel.querySelector('#chess-private-teacher-toggle');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        chessProfessorPrivadoRecolhido = !chessProfessorPrivadoRecolhido;
+                        panel.classList.toggle('teacher-collapsed', chessProfessorPrivadoRecolhido);
+                        btn.textContent = chessProfessorPrivadoRecolhido ? '+' : '−';
+                    });
+                }
+                return panel;
+            }
+
+            function corDaPecaTextoProfessorXadrez19(cor) {
+                return cor === 'white' ? 'brancas' : 'pretas';
+            }
+
+            function casasMovimentosProfessorXadrez19(movimentos) {
+                const casas = (movimentos || []).slice(0, 12).map(m => alg(m.row, m.col));
+                if (!casas.length) return 'nenhuma casa legal agora';
+                return casas.join(', ') + ((movimentos || []).length > 12 ? '...' : '');
+            }
+
+            function diagnosticarPecaProfessorXadrez19(peca, row, col, movimentos) {
+                const adversario = corOposta(peca.color);
+                const ameacada = quadradoAtacado(chessBoard, row, col, adversario);
+                const protegida = quadradoAtacado(chessBoard, row, col, peca.color);
+                const capturas = (movimentos || []).filter(m => m.capture);
+                const centro = row >= 2 && row <= 5 && col >= 2 && col <= 5;
+                const inicio = (peca.color === 'white' && row >= 6) || (peca.color === 'black' && row <= 1);
+                let foco = 'Explique para o aluno o objetivo da peça antes de jogar.';
+
+                if (reiEstaEmXeque(chessBoard, peca.color)) {
+                    foco = 'O rei desse lado está em xeque: ensine que a prioridade é fugir, bloquear ou capturar a ameaça.';
+                } else if (capturas.length) {
+                    foco = 'Existe captura possível. Oriente o aluno a conferir se a peça ficará protegida depois da captura.';
+                } else if (peca.type === 'king') {
+                    foco = 'Com o rei, a aula é segurança: ele não deve entrar em casa atacada.';
+                } else if (peca.type === 'pawn') {
+                    foco = 'Com peão, ensine estrutura, avanço com apoio e captura somente na diagonal.';
+                } else if ((peca.type === 'knight' || peca.type === 'bishop') && inicio) {
+                    foco = 'Boa chance para ensinar desenvolvimento: tirar cavalo e bispo ajuda a controlar o centro.';
+                } else if (peca.type === 'queen') {
+                    foco = 'A dama é forte, mas explique o cuidado para não sair cedo demais e virar alvo.';
+                } else if (peca.type === 'rook') {
+                    foco = 'A torre fica melhor em coluna aberta. Explique linhas retas e apoio a peões.';
+                } else if (centro) {
+                    foco = 'Essa peça influencia o centro. Use isso para explicar controle de espaço.';
+                }
+
+                const risco = ameacada
+                    ? (protegida ? '<span class="warn">A peça está ameaçada, mas parece ter defesa.</span>' : '<span class="danger">A peça está ameaçada e pode estar sem defesa.</span>')
+                    : '<span class="good">A peça não parece estar atacada diretamente agora.</span>';
+
+                return { risco, foco, capturas };
+            }
+
+            function criarDicaManualPrivadoProfessorXadrez19(peca, row, col, movimentos, contexto = '') {
+                if (!peca) {
+                    return 'Toque em uma peça para preparar uma explicação para o aluno. O manual não altera a partida.';
+                }
+                const diag = diagnosticarPecaProfessorXadrez19(peca, row, col, movimentos);
+                const movimentosQtd = (movimentos || []).length;
+                const capturasQtd = diag.capturas.length;
+                const vez = chessTurn === peca.color ? 'é a vez desse lado jogar' : 'não é a vez desse lado agora';
+                const movimentoTexto = textoMovimentoPecaXadrez(peca.type);
+                return `
+                    <strong>${nomePeca[peca.type]} ${corDaPecaTextoProfessorXadrez19(peca.color)}</strong> em <strong>${alg(row, col)}</strong> — ${vez}.<br>
+                    <span class="muted">${movimentoTexto}</span><br>
+                    ${diag.risco}<br>
+                    <strong>Casas legais:</strong> ${movimentosQtd} movimento(s), ${capturasQtd} captura(s). <span class="muted">${casasMovimentosProfessorXadrez19(movimentos)}</span><br>
+                    <strong>Como explicar:</strong> ${diag.foco}${contexto ? `<br><span class="muted">${contexto}</span>` : ''}
+                `;
+            }
+
+            function atualizarManualPrivadoProfessorXadrez19(texto = '') {
+                const panel = garantirPainelManualPrivadoProfessorXadrez19();
+                const el = document.getElementById('chess-private-teacher-text');
+                if (!panel || !el) return;
+                const ativo = professorPrivadoPodeAparecerXadrez19();
+                panel.style.display = ativo ? 'block' : 'none';
+                panel.classList.toggle('teacher-collapsed', chessProfessorPrivadoRecolhido);
+                const btn = document.getElementById('chess-private-teacher-toggle');
+                if (btn) btn.textContent = chessProfessorPrivadoRecolhido ? '+' : '−';
+                if (!ativo) return;
+                if (texto) chessProfessorPrivadoTexto = texto;
+                if (!chessProfessorPrivadoTexto) {
+                    chessProfessorPrivadoTexto = chessPlayerColor === chessTurn
+                        ? 'Manual privado ligado. É sua vez: toque em uma peça sua para preparar a explicação da jogada.'
+                        : 'Manual privado ligado. Observe a posição do aluno e toque em uma peça para preparar uma explicação por áudio ou vídeo.';
+                }
+                el.innerHTML = chessProfessorPrivadoTexto;
+            }
+
+            function atualizarManualPorPecaProfessorXadrez19(row, col, contexto = '') {
+                const peca = chessBoard[row]?.[col] || null;
+                const movimentos = peca ? calcularMovimentosLegais(row, col, chessBoard) : [];
+                selectedSquare = peca ? { row, col } : null;
+                legalMoves = movimentos;
+                chessProfessorPrivadoTexto = criarDicaManualPrivadoProfessorXadrez19(peca, row, col, movimentos, contexto);
+                atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoTexto);
+                renderChessBoard();
+            }
+
+            function mensagemAposJogadaProfessorXadrez19(peca, fromRow, fromCol, move, estado = '') {
+                if (!peca) return '';
+                const partes = [];
+                partes.push(`<strong>Jogada feita:</strong> ${nomePeca[peca.type]} de ${alg(fromRow, fromCol)} para ${alg(move.row, move.col)}.`);
+                if (move.capture) partes.push('<span class="good">Houve captura.</span> Explique que ganhar material é bom quando a peça não fica vulnerável em seguida.');
+                if (move.castle) partes.push('<span class="good">Roque realizado.</span> Ótimo momento para ensinar segurança do rei.');
+                if (/Xeque-mate/i.test(estado || '')) partes.push('<span class="good">Xeque-mate.</span> Explique que o rei não tem fuga, bloqueio nem captura da ameaça.');
+                else if (/Xeque/i.test(estado || '')) partes.push('<span class="warn">Xeque.</span> Explique que o lado ameaçado precisa responder ao rei primeiro.');
+                else if (jogadaPodeGerarXequeContra(peca.color)) partes.push('<span class="warn">Atenção didática:</span> depois da jogada, procure mostrar possíveis ameaças contra o rei.');
+                else partes.push('Use a posição final para perguntar ao aluno: “qual peça ficou melhor e qual peça precisa de defesa agora?”');
+                return partes.join('<br>');
+            }
+
+            const entrarOriginalProfessor19 = entrarXadrezOnline;
+            entrarXadrezOnline = async function entrarXadrezOnlineProfessor19(assistir = false) {
+                const nameInput = document.getElementById('chess-online-name');
+                const fallbackInput = document.getElementById('name-input');
+                const rawName = String(nameInput?.value || fallbackInput?.value || '').trim();
+                const professorSolicitado = detectarProfessorPrivadoPorNomeXadrez19(rawName);
+                chessProfessorPrivadoAtivo = professorSolicitado;
+                chessProfessorPrivadoTexto = '';
+                if (professorSolicitado) {
+                    const limpo = limparNomeProfessorPrivadoXadrez19(rawName) || 'Professor';
+                    if (nameInput) nameInput.value = limpo;
+                    if (fallbackInput && !nameInput) fallbackInput.value = limpo;
+                }
+                const resp = await entrarOriginalProfessor19.apply(this, arguments);
+                // O entrar online chama sairXadrezOnline(false) para limpar escutas antigas.
+                // Por isso religamos o manual aqui somente se a conexão online realmente ficou ativa.
+                chessProfessorPrivadoAtivo = !!(professorSolicitado && chessMode === 'online');
+                garantirPainelManualPrivadoProfessorXadrez19();
+                atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoAtivo
+                    ? 'Manual privado ligado. Toque em uma peça para receber orientação de aula neste aparelho.'
+                    : '');
+                return resp;
+            };
+
+            const sairOriginalProfessor19 = sairXadrezOnline;
+            sairXadrezOnline = function sairXadrezOnlineProfessor19() {
+                const retorno = sairOriginalProfessor19.apply(this, arguments);
+                chessProfessorPrivadoAtivo = false;
+                chessProfessorPrivadoTexto = '';
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (panel) panel.style.display = 'none';
+                return retorno;
+            };
+
+            const ocultarOriginalProfessor19 = ocultarTabuleiroXadrezParaMenu;
+            ocultarTabuleiroXadrezParaMenu = function ocultarTabuleiroXadrezParaMenuProfessor19() {
+                const retorno = ocultarOriginalProfessor19.apply(this, arguments);
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (panel) panel.style.display = 'none';
+                return retorno;
+            };
+
+            const renderOriginalProfessor19 = renderChessBoard;
+            renderChessBoard = function renderChessBoardProfessor19() {
+                const retorno = renderOriginalProfessor19.apply(this, arguments);
+                garantirPainelManualPrivadoProfessorXadrez19();
+                atualizarManualPrivadoProfessorXadrez19();
+                return retorno;
+            };
+
+            const clickOriginalProfessor19 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickProfessor19(row, col) {
+                if (professorPrivadoPodeAparecerXadrez19()) {
+                    const peca = chessBoard[row]?.[col] || null;
+                    // Quando não é a vez do professor, ou quando ele toca peça do aluno,
+                    // o clique vira apenas consulta pedagógica local e não mexe na sala.
+                    if (peca && (chessIsSpectator || chessPlayerColor !== chessTurn || peca.color !== chessPlayerColor)) {
+                        atualizarManualPorPecaProfessorXadrez19(row, col, 'Consulta local do professor: nada foi enviado para a sala online.');
+                        return;
+                    }
+                }
+                const retorno = await clickOriginalProfessor19.apply(this, arguments);
+                if (professorPrivadoPodeAparecerXadrez19()) {
+                    if (selectedSquare && chessBoard[selectedSquare.row]?.[selectedSquare.col]) {
+                        const peca = chessBoard[selectedSquare.row][selectedSquare.col];
+                        const texto = criarDicaManualPrivadoProfessorXadrez19(peca, selectedSquare.row, selectedSquare.col, legalMoves || [], 'Agora escolha uma casa legal, se quiser jogar.');
+                        atualizarManualPrivadoProfessorXadrez19(texto);
+                    } else {
+                        atualizarManualPrivadoProfessorXadrez19();
+                    }
+                }
+                return retorno;
+            };
+
+            const moverOriginalProfessor19 = executarMovimentoXadrez;
+            executarMovimentoXadrez = async function executarMovimentoXadrezProfessor19(fromRow, fromCol, move) {
+                const pecaAntes = chessBoard[fromRow]?.[fromCol] ? { ...chessBoard[fromRow][fromCol] } : null;
+                const retorno = await moverOriginalProfessor19.apply(this, arguments);
+                if (professorPrivadoPodeAparecerXadrez19() && pecaAntes) {
+                    atualizarManualPrivadoProfessorXadrez19(mensagemAposJogadaProfessorXadrez19(pecaAntes, fromRow, fromCol, move, lastMoveMessage || ''));
+                }
+                return retorno;
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                garantirPainelManualPrivadoProfessorXadrez19();
+                atualizarManualPrivadoProfessorXadrez19();
+            });
+        }
+
+        instalarManualPrivadoProfessorXadrez19();
 
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
