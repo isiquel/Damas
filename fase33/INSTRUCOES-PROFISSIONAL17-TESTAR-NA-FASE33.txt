@@ -1,0 +1,32 @@
+TESTE PRIMEIRO SOMENTE NA /fase33/
+
+Suba estes itens dentro da pasta fase33:
+
+index.html
+LEIA-ME.txt
+LEIA-ME-PROFISSIONAL17-INSCRICAO-TORNEIOS.txt
+INSTRUCOES-PROFISSIONAL17-TESTAR-NA-FASE33.txt
+css
+js
+
+Link de teste:
+https://damas-nine.vercel.app/fase33/?v=profissional17
+
+Checklist:
+
+1. Entrar no Xadrez.
+2. Ver se o card de torneios está bonito e organizado.
+3. Entrar numa sala online e depois voltar ao menu.
+4. Ver se o card de torneios não quebra/embolou.
+5. Ao entrar no tabuleiro, não pode aparecer torneio nem ranking acima do tabuleiro.
+6. No menu do Xadrez, clicar em "Fazer inscrição".
+7. Preencher nome, WhatsApp e nível.
+8. Enviar inscrição.
+9. Entrar no Painel Admin > Administrar Xadrez.
+10. Ver se aparece a área "Interessados em torneios".
+11. Testar Copiar WhatsApp, Marcar chamado e Excluir.
+12. Damas continua funcionando.
+13. Xadrez online continua funcionando.
+14. Admin continua funcionando.
+
+Não publique no principal antes de testar na /fase33/.

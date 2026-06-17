@@ -1,0 +1,15 @@
+PROFISSIONAL 26 — POPUP PEQUENO ACIMA DA PEÇA
+
+Correção feita:
+- O popup do Modo Professor agora abre como um quadro pequeno perto/acima da peça selecionada.
+- Mostra o que é a peça, o que ela faz, onde pode ir e uma melhor dica didática para instruir o aluno.
+- O popup aparece apenas no aparelho do professor quando o nome usa #.
+- Não aparece nada para o aluno.
+- Não altera Firebase, sala, jogada, torneios ou admin.
+- Mantém o jogo funcionando normal.
+
+Como ativar:
+- Entrar com # no começo ou no final do nome.
+Exemplos:
+#Isiquel
+Isiquel#

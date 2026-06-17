@@ -1,0 +1,24 @@
+PROFISSIONAL 17 — INSCRIÇÃO PARA TORNEIOS + CARD FIRME
+
+O que foi feito:
+
+1. Corrigido o bug do card público de torneios do Xadrez.
+   - O card não deve mais ficar quebrado/embolado ao entrar numa sala e voltar ao menu.
+   - Torneios marcados continuam aparecendo somente no menu público do Xadrez.
+   - Ao entrar no tabuleiro online, essa área fica escondida para não poluir o jogo.
+
+2. Adicionado botão público: "Quero participar de torneios".
+   - A pessoa informa nome, WhatsApp e nível: fácil, médio ou avançado.
+   - A inscrição é salva em chessTournamentInterests no Firebase.
+
+3. Adicionado no Admin do Xadrez a área "Interessados em torneios".
+   - O administrador vê nome, WhatsApp, nível e data da inscrição.
+   - Botões: Copiar WhatsApp, Marcar chamado e Excluir.
+
+O que NÃO foi alterado:
+- Regras da Damas.
+- Regras do Xadrez.
+- Jogo online.
+- Ranking.
+- Admin da Damas.
+- Firebase principal das salas.

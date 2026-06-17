@@ -1,0 +1,26 @@
+INSTRUÇÕES — TESTAR PROFISSIONAL 03 NA /fase33/
+
+1. Suba estes itens dentro de Damas/fase33:
+   - index.html
+   - LEIA-ME.txt
+   - LEIA-ME-SEPARACAO02-CSS.txt
+   - LEIA-ME-SEPARACAO03-JS-CONFIG.txt
+   - LEIA-ME-SEPARACAO04-JS-UTILS.txt
+   - LEIA-ME-SEPARACAO05-UI.txt
+   - LEIA-ME-SEPARACAO06-CHAT-UI.txt
+   - LEIA-ME-PROFISSIONAL03-XADREZ-TORNEIOS-SO-ADMIN.txt
+   - INSTRUCOES-PROFISSIONAL03-TESTAR-NA-FASE33.txt
+   - css
+   - js
+
+2. Teste:
+   https://damas-nine.vercel.app/fase33/?v=profissional03
+
+Checklist:
+1. Tela inicial não mostra Central Profissional.
+2. Entrar no Xadrez pelo menu normal não mostra Central de Torneios do Xadrez.
+3. Jogar Xadrez contra robô funciona.
+4. Xadrez online funciona.
+5. Painel do Dono > Administrar Xadrez abre.
+6. Dentro do Admin do Xadrez aparece Central de Torneios do Xadrez.
+7. Admin da Damas continua normal.

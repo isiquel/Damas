@@ -1,0 +1,14 @@
+PROFISSIONAL 16 — LIMPEZA DO XADREZ ONLINE
+
+Correções feitas:
+- Torneios marcados aparecem somente no menu público do Xadrez.
+- Torneios marcados não aparecem mais em cima do tabuleiro durante a partida online.
+- Ranking Geral do Xadrez foi removido do menu público e do tabuleiro.
+- O registro interno do ranking continua no sistema; a exibição ficará para uma tela própria de Ranking futuramente.
+- O convite do torneio público foi limpo para não repetir Data/Horário/Sala dentro da mensagem.
+- Damas não foi alterada.
+- Regras do Xadrez não foram alteradas.
+- Admin não foi alterado.
+- Firebase não foi alterado.
+
+Teste primeiro na pasta /fase33/ antes de publicar no principal.

@@ -1,0 +1,13 @@
+PROFISSIONAL 16 — Torneio público só no menu do Xadrez
+
+O que foi corrigido:
+- O bloco "Torneios marcados" aparece somente no menu público do Xadrez.
+- Ao entrar para jogar online/treino, o bloco de torneios some e não fica acima do tabuleiro.
+- O bloco "Ranking Geral do Xadrez" foi retirado do menu público e da parte de cima do tabuleiro.
+- O ranking continua sendo registrado por trás; uma tela própria de ranking pode ser feita depois.
+- O texto do convite público do torneio foi limpo para não duplicar data, horário, sala nem ficar embolado.
+- Damas não foi alterada.
+- Admin não foi alterado.
+- Regras do Xadrez não foram alteradas.
+
+Teste primeiro na /fase33/.

@@ -1,0 +1,36 @@
+PROFISSIONAL 19 — MANUAL PRIVADO DO PROFESSOR
+
+O QUE FOI FEITO
+- Foi criado um Manual Privado do Professor para o Xadrez online.
+- Ele ativa somente no aparelho de quem entrou com # no começo ou no final do nome.
+- Exemplo: #Isiquel ou Isiquel#.
+- O # é removido do nome antes de entrar na sala, para o outro jogador ver somente o nome normal.
+- O painel aparece somente para o professor, abaixo dos controles do tabuleiro.
+- O aluno não vê painel, não vê aviso e não recebe alteração na tela.
+
+O QUE O MANUAL MOSTRA
+- Explicação da peça tocada.
+- Casas legais da peça tocada.
+- Quantidade de movimentos e capturas possíveis.
+- Alerta pedagógico se a peça parece estar ameaçada.
+- Orientação para explicar por áudio ou vídeo.
+- Dica didática depois da jogada.
+
+O QUE NÃO FOI ALTERADO
+- Damas não foi alterada.
+- Admin não foi alterado.
+- Torneios não foram alterados.
+- Inscrições de torneio não foram alteradas.
+- Espectador não reinicia partida.
+- Firebase das partidas não recebeu campo novo para o manual.
+- O manual é local, somente no aparelho do professor.
+
+COMO USAR
+1. Abra o Xadrez.
+2. No nome, digite com # no começo ou no final.
+   Exemplo: #Isiquel
+3. Digite a sala.
+4. Clique em Entrar/Jogar.
+5. O jogo entra com o nome limpo, sem o #.
+6. O Manual Privado aparece somente no aparelho do professor.
+7. Toque em uma peça para ver as orientações de aula.

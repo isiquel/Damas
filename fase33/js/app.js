@@ -14144,3 +14144,314 @@ setInterval(() => {
         if (el && el.classList.contains('open')) aplicarPosicao28(el, !!carregarPos28());
     });
 })();
+
+/* =====================================================================
+   ✅ PROFISSIONAL 29 — BALÃO DO PROFESSOR FORA DO TABULEIRO + ARRASTE REAL
+   Correção: o balão não fica mais preso em cima da peça. Ele é forçado para
+   um canto seguro e pode ser arrastado pela barra de cima ou pelo botão Mover.
+   Não altera jogada, Firebase, torneios, admin, Damas ou Xadrez.
+===================================================================== */
+(function instalarBalaoProfessorSeguro29() {
+    if (window.__balaoProfessorSeguro29Instalado) return;
+    window.__balaoProfessorSeguro29Instalado = true;
+
+    const STORAGE_KEY = 'tabuleiro_arena_teacher_bubble_pos_29';
+    let dragging = false;
+    let lastApply = 0;
+    let forceTimer = null;
+
+    function css29() {
+        if (document.getElementById('teacher-bubble-safe-29-style')) return;
+        const style = document.createElement('style');
+        style.id = 'teacher-bubble-safe-29-style';
+        style.textContent = `
+            #teacher-piece-bubble-27.teacher-safe-29 {
+                position: fixed !important;
+                z-index: 2147483000 !important;
+                transform: none !important;
+                right: auto !important;
+                bottom: auto !important;
+                margin: 0 !important;
+                width: min(318px, calc(100vw - 14px)) !important;
+                max-height: min(70vh, 430px) !important;
+                overflow: auto !important;
+                touch-action: none !important;
+                will-change: left, top !important;
+            }
+            #teacher-piece-bubble-27.teacher-safe-29::after {
+                display: none !important;
+                opacity: 0 !important;
+            }
+            #teacher-piece-bubble-27.teacher-safe-29 .bubble-head-27 {
+                cursor: move !important;
+                touch-action: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 5 !important;
+                background: linear-gradient(180deg, rgba(8,13,28,.99), rgba(8,13,28,.95)) !important;
+                border-radius: 12px 12px 0 0 !important;
+            }
+            #teacher-piece-bubble-27.teacher-safe-29 .teacher-drag-handle-29,
+            #teacher-piece-bubble-27.teacher-safe-29 .teacher-corner-29 {
+                height: 27px !important;
+                border-radius: 10px !important;
+                border: 1px solid rgba(125,211,252,.28) !important;
+                background: rgba(14,116,144,.22) !important;
+                color: #bae6fd !important;
+                font-size: .64rem !important;
+                font-weight: 1000 !important;
+                padding: 0 7px !important;
+                line-height: 1 !important;
+                cursor: move !important;
+                white-space: nowrap !important;
+                margin-left: 4px !important;
+            }
+            #teacher-piece-bubble-27.teacher-safe-29 .teacher-corner-29 {
+                cursor: pointer !important;
+                background: rgba(15,23,42,.86) !important;
+                color: #e5e7eb !important;
+                border-color: rgba(148,163,184,.28) !important;
+            }
+            #teacher-piece-bubble-27.teacher-safe-29.teacher-dragging-29 {
+                opacity: .96 !important;
+                box-shadow: 0 22px 64px rgba(0,0,0,.70), 0 0 0 1px rgba(125,211,252,.20), 0 0 28px rgba(56,189,248,.25) !important;
+            }
+            @media (max-width: 520px) {
+                #teacher-piece-bubble-27.teacher-safe-29 {
+                    width: min(292px, calc(100vw - 12px)) !important;
+                    max-height: min(62vh, 390px) !important;
+                    font-size: .92rem !important;
+                }
+                #teacher-piece-bubble-27.teacher-safe-29 .teacher-drag-handle-29 { font-size: .58rem !important; padding: 0 5px !important; }
+                #teacher-piece-bubble-27.teacher-safe-29 .teacher-corner-29 { font-size: .58rem !important; padding: 0 5px !important; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function readPos29() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const left = Number(raw.left);
+            const top = Number(raw.top);
+            if (Number.isFinite(left) && Number.isFinite(top)) return { left, top };
+        } catch (_) {}
+        return null;
+    }
+
+    function savePos29(left, top) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+    }
+
+    function clearPos29() {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    }
+
+    function clamp29(left, top, el) {
+        const m = 6;
+        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 12);
+        const h = Math.min(el?.offsetHeight || 330, window.innerHeight - 12);
+        return {
+            left: Math.max(m, Math.min(Math.round(left), window.innerWidth - w - m)),
+            top: Math.max(m, Math.min(Math.round(top), window.innerHeight - h - m))
+        };
+    }
+
+    function safeCorner29(el) {
+        const m = 8;
+        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 16);
+        const h = Math.min(el?.offsetHeight || 340, window.innerHeight - 16);
+        const board = document.getElementById('chess-board') || document.querySelector('.chess-board, .board, #board');
+        const rect = board ? board.getBoundingClientRect() : null;
+        let left = window.innerWidth - w - m;
+        let top = 76;
+
+        if (rect && rect.width > 80 && rect.height > 80) {
+            const rightSpace = window.innerWidth - rect.right;
+            const leftSpace = rect.left;
+            const belowSpace = window.innerHeight - rect.bottom;
+            const aboveSpace = rect.top;
+
+            if (rightSpace >= w + 12) {
+                left = rect.right + 10;
+                top = rect.top;
+            } else if (leftSpace >= w + 12) {
+                left = rect.left - w - 10;
+                top = rect.top;
+            } else if (belowSpace >= Math.min(h, 210) + 12) {
+                left = Math.min(window.innerWidth - w - m, Math.max(m, rect.left));
+                top = rect.bottom + 10;
+            } else if (aboveSpace >= Math.min(h, 210) + 12) {
+                left = Math.min(window.innerWidth - w - m, Math.max(m, rect.left));
+                top = Math.max(m, rect.top - Math.min(h, 330) - 10);
+            } else {
+                // Tela apertada: abre no canto superior direito para não cobrir a peça tocada.
+                left = window.innerWidth - w - m;
+                top = m + 54;
+            }
+        }
+        return clamp29(left, top, el);
+    }
+
+    function ensureButtons29(el) {
+        const head = el.querySelector('.bubble-head-27');
+        const close = el.querySelector('.bubble-close-27');
+        if (!head || !close) return;
+
+        if (!head.querySelector('.teacher-drag-handle-29')) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'teacher-drag-handle-29';
+            btn.title = 'Segure aqui para mover o quadro';
+            btn.textContent = 'Mover';
+            close.insertAdjacentElement('beforebegin', btn);
+        }
+
+        if (!head.querySelector('.teacher-corner-29')) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'teacher-corner-29';
+            btn.title = 'Voltar para um canto seguro';
+            btn.textContent = 'Canto';
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                clearPos29();
+                applyPos29(el, false, true);
+            }, true);
+            close.insertAdjacentElement('beforebegin', btn);
+        }
+    }
+
+    function applyPos29(el, useSaved = true, forceSafe = false) {
+        if (!el || dragging || !el.classList.contains('open')) return;
+        css29();
+        el.classList.add('teacher-safe-29');
+        el.classList.add('professor-floating-28');
+        ensureButtons29(el);
+        const saved = (!forceSafe && useSaved) ? readPos29() : null;
+        const pos = saved ? clamp29(saved.left, saved.top, el) : safeCorner29(el);
+        el.style.setProperty('position', 'fixed', 'important');
+        el.style.setProperty('left', `${pos.left}px`, 'important');
+        el.style.setProperty('top', `${pos.top}px`, 'important');
+        el.style.setProperty('right', 'auto', 'important');
+        el.style.setProperty('bottom', 'auto', 'important');
+        el.style.setProperty('transform', 'none', 'important');
+        el.style.setProperty('--arrow-left', '-9999px');
+        el.style.setProperty('--arrow-top', '-9999px');
+        lastApply = Date.now();
+    }
+
+    function scheduleApply29(useSaved = true) {
+        const el = document.getElementById('teacher-piece-bubble-27');
+        if (!el || !el.classList.contains('open')) return;
+        [0, 20, 60, 120, 220, 420].forEach(delay => {
+            setTimeout(() => applyPos29(el, useSaved, false), delay);
+        });
+    }
+
+    function enableDrag29(el) {
+        if (!el || el.dataset.teacherDrag29 === '1') return;
+        el.dataset.teacherDrag29 = '1';
+        css29();
+        el.classList.add('teacher-safe-29');
+        ensureButtons29(el);
+
+        let startX = 0;
+        let startY = 0;
+        let baseLeft = 0;
+        let baseTop = 0;
+        let activePointer = null;
+
+        const isHandle = (target) => {
+            if (!target || !target.closest) return false;
+            if (target.closest('.bubble-close-27') || target.closest('.teacher-corner-29')) return false;
+            return !!(target.closest('.teacher-drag-handle-29') || target.closest('.bubble-head-27'));
+        };
+
+        const begin = (ev) => {
+            if (!isHandle(ev.target)) return;
+            if (ev.button !== undefined && ev.button !== 0) return;
+            const p = ev.touches ? ev.touches[0] : ev;
+            if (!p) return;
+            dragging = true;
+            activePointer = ev.pointerId ?? null;
+            const rect = el.getBoundingClientRect();
+            baseLeft = rect.left;
+            baseTop = rect.top;
+            startX = p.clientX;
+            startY = p.clientY;
+            el.classList.add('teacher-dragging-29');
+            el.classList.add('teacher-safe-29');
+            try { if (ev.pointerId !== undefined && ev.target.setPointerCapture) ev.target.setPointerCapture(ev.pointerId); } catch (_) {}
+            ev.preventDefault();
+            ev.stopPropagation();
+        };
+
+        const move = (ev) => {
+            if (!dragging) return;
+            if (activePointer !== null && ev.pointerId !== undefined && ev.pointerId !== activePointer) return;
+            const p = ev.touches ? ev.touches[0] : ev;
+            if (!p) return;
+            const pos = clamp29(baseLeft + (p.clientX - startX), baseTop + (p.clientY - startY), el);
+            el.style.setProperty('left', `${pos.left}px`, 'important');
+            el.style.setProperty('top', `${pos.top}px`, 'important');
+            el.style.setProperty('right', 'auto', 'important');
+            el.style.setProperty('bottom', 'auto', 'important');
+            el.style.setProperty('transform', 'none', 'important');
+            ev.preventDefault();
+            ev.stopPropagation();
+        };
+
+        const end = (ev) => {
+            if (!dragging) return;
+            dragging = false;
+            activePointer = null;
+            el.classList.remove('teacher-dragging-29');
+            const r = el.getBoundingClientRect();
+            const pos = clamp29(r.left, r.top, el);
+            el.style.setProperty('left', `${pos.left}px`, 'important');
+            el.style.setProperty('top', `${pos.top}px`, 'important');
+            savePos29(pos.left, pos.top);
+            ev?.preventDefault?.();
+            ev?.stopPropagation?.();
+        };
+
+        document.addEventListener('pointerdown', begin, true);
+        document.addEventListener('pointermove', move, { capture: true, passive: false });
+        document.addEventListener('pointerup', end, true);
+        document.addEventListener('pointercancel', end, true);
+        document.addEventListener('touchstart', begin, { capture: true, passive: false });
+        document.addEventListener('touchmove', move, { capture: true, passive: false });
+        document.addEventListener('touchend', end, true);
+        document.addEventListener('touchcancel', end, true);
+    }
+
+    function scan29() {
+        css29();
+        const el = document.getElementById('teacher-piece-bubble-27');
+        if (!el) return;
+        enableDrag29(el);
+        if (el.classList.contains('open')) {
+            const now = Date.now();
+            if (!dragging && now - lastApply > 35) applyPos29(el, true, false);
+        }
+    }
+
+    const obs = new MutationObserver(() => {
+        scan29();
+        clearTimeout(forceTimer);
+        forceTimer = setTimeout(() => scheduleApply29(true), 8);
+    });
+    if (document.body) obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+    document.addEventListener('DOMContentLoaded', () => setTimeout(scan29, 200));
+    setTimeout(scan29, 300);
+    setInterval(scan29, 700);
+    window.addEventListener('resize', () => {
+        const el = document.getElementById('teacher-piece-bubble-27');
+        if (el && el.classList.contains('open')) applyPos29(el, true, false);
+    });
+})();

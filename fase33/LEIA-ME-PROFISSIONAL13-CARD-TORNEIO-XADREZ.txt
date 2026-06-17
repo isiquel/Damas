@@ -1,0 +1,22 @@
+PROFISSIONAL 13 — CARD PÚBLICO DO TORNEIO DO XADREZ
+
+Esta versão melhora somente o visual do bloco público de torneios do Xadrez.
+
+O que mudou:
+- O torneio agora aparece em um card mais profissional.
+- O link grande não aparece mais na tela, para não poluir o visual.
+- Data, horário e sala aparecem separados em pequenos blocos.
+- Botão Assistir Online ficou como ação principal azul.
+- Botão Copiar Convite ficou como ação secundária roxa/escura.
+- Ranking ficou separado visualmente do torneio.
+
+O que NÃO foi alterado:
+- Regras da Damas.
+- Regras do Xadrez.
+- Firebase.
+- Admin.
+- Ranking.
+- Salas online.
+- Exclusão de torneios.
+
+Teste primeiro na /fase33/ antes de publicar no principal.

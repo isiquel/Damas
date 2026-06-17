@@ -1,0 +1,20 @@
+PROFISSIONAL 20 — PROFESSOR INTELIGENTE AVANÇADO
+
+Base usada: Profissional 19 — Manual Privado do Professor.
+
+O que foi melhorado:
+- Mantém ativação com # no nome: #Isiquel ou Isiquel#.
+- O painel continua aparecendo apenas no aparelho do professor.
+- O aluno não vê painel, aviso, dica ou alteração visual.
+- Adiciona botão "Analisar posição" dentro do painel do professor.
+- Ao tocar numa peça, mostra casas legais, risco, explicação didática e dicas mais fortes daquela peça.
+- A análise mostra sugestões por princípios de xadrez: sair do xeque, capturar com segurança, desenvolver peças, controlar o centro, rocar, proteger rei, evitar peça sem defesa.
+- Não joga sozinho, não move peças automaticamente e não altera Firebase.
+- Não mexe na Damas.
+- Não mexe nos torneios.
+- Não mexe no Admin.
+- Não reinicia partida.
+- Não mexe na entrada de espectadores.
+
+Observação:
+Este recurso é um Professor Inteligente de apoio didático, não um motor profissional perfeito de xadrez.

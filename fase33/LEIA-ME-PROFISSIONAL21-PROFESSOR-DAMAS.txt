@@ -1,0 +1,26 @@
+PROFISSIONAL 21 — PROFESSOR INTELIGENTE NA DAMAS
+
+Base usada: Profissional 20 — Professor Inteligente do Xadrez.
+
+O que foi adicionado:
+- Professor Inteligente também no jogo de Damas.
+- Ativa com # no começo ou no final do nome, exemplo: #Isiquel ou Isiquel#.
+- O painel aparece somente no aparelho do professor.
+- O aluno não vê nada.
+- O nome do professor entra limpo na sala, sem mostrar # para o aluno.
+- Funciona no online da Damas.
+- Usa regras da Damas: captura obrigatória, coroação, dama, sequência de captura, centro e segurança.
+- Botão Analisar posição.
+- Ao tocar numa peça, mostra orientação da peça e possíveis jogadas didáticas.
+- Marca no tabuleiro do professor a peça de origem, destino sugerido e captura/perigo.
+
+O que NÃO foi alterado:
+- Damas continua com as mesmas regras.
+- Xadrez continua como estava no Profissional 20.
+- Torneios não foram alterados.
+- Admin não foi alterado.
+- Firebase da sala não foi alterado pelo professor.
+- Espectador não reinicia partida.
+
+IMPORTANTE:
+Teste primeiro na pasta /fase33/ antes de publicar no principal.

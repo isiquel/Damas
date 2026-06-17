@@ -1,0 +1,23 @@
+PROFISSIONAL 23 — CORREÇÃO DEFINITIVA DO PROFESSOR NA DAMAS
+
+Esta versão corrige de forma mais forte o Professor Inteligente na Damas.
+
+O que foi feito:
+- O # agora é capturado antes de entrar na sala.
+- O pedido fica salvo na sessão do aparelho do professor.
+- O painel é forçado acima do tabuleiro da Damas quando a partida abre.
+- O nome entra limpo na sala, sem mostrar o # para o aluno.
+- O aluno não vê nada.
+- Funciona no online da Damas e também ajuda no treino.
+- Não altera o Xadrez.
+- Não altera torneios.
+- Não altera Admin.
+- Não reinicia partida.
+
+Como ativar:
+Digite o nome com # no começo ou no final.
+Exemplos:
+#Isiquel
+Isiquel#
+
+Depois entre na sala de Damas normalmente.

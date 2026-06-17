@@ -1,0 +1,11 @@
+TESTAR PRIMEIRO NA /fase33/
+
+1. Subir este pacote dentro da pasta fase33 no GitHub.
+2. Acessar: /fase33/?v=profissional06
+3. Entrar no Admin > Administrar Xadrez.
+4. Criar/publicar um torneio com nome, data, sala e mensagem.
+5. Voltar ao menu público do Xadrez.
+6. Conferir se aparece: "Torneios marcados — assista online".
+7. Testar os botões Assistir online e Copiar convite.
+8. Voltar ao Admin do Xadrez e testar Excluir torneio.
+9. Conferir se Damas e Xadrez continuam funcionando.

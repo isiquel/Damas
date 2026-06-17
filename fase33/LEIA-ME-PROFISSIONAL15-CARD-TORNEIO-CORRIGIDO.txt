@@ -1,0 +1,21 @@
+PROFISSIONAL 15 — CARD PÚBLICO DO TORNEIO CORRIGIDO DE VERDADE
+
+Correção focada somente no visual do bloco público de torneios do Xadrez.
+
+O que foi corrigido:
+- O texto de torneios não fica mais solto/embolado.
+- O bloco “Torneios marcados” agora fica dentro de um card organizado.
+- Nome do torneio, status, data, horário e sala ficam separados e legíveis.
+- O convite fica dentro do card, sem bagunçar a tela.
+- O link grande continua escondido e só é usado pelo botão “Copiar convite”.
+- Botões “Assistir online” e “Copiar convite” continuam bonitos e separados.
+- Ranking continua separado abaixo.
+
+O que não foi mexido:
+- Damas
+- Regras do Xadrez
+- Admin
+- Firebase
+- Ranking
+- Online
+- Sair da sala

@@ -1,0 +1,23 @@
+PROFISSIONAL 22 — CORRIGE PROFESSOR INTELIGENTE NA DAMAS
+
+Esta versão corrige a ativação do Professor Inteligente no jogo de Damas.
+
+O que foi ajustado:
+- O # agora é capturado antes do sistema limpar o nome.
+- O painel aparece acima do tabuleiro de Damas, mais fácil de ver.
+- O nome entra limpo na sala, sem mostrar o # para o aluno.
+- O Professor de Damas aparece só no aparelho de quem entrou com #.
+- Funciona melhor no online e também no treino de Damas.
+- Não mexe no Xadrez.
+- Não mexe nos torneios.
+- Não mexe no Admin.
+- Não altera as regras nem reinicia partida.
+
+Como ativar:
+Use # no começo ou no final do nome antes de entrar na Damas.
+Exemplos:
+#Isiquel
+Isiquel#
+
+Depois entre em uma sala de Damas como jogador.
+O painel deve aparecer acima do tabuleiro.

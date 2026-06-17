@@ -1,0 +1,22 @@
+PROFISSIONAL 28 — BALÃO DO PROFESSOR ARRASTÁVEL
+
+Esta versão mantém o balão do professor que já estava funcionando no Xadrez online.
+
+Correção feita:
+- O balão não fica mais preso em cima da peça.
+- Quando abrir, ele vai para um canto seguro da tela.
+- O professor pode arrastar o quadrinho pela parte de cima.
+- A posição fica salva no aparelho do professor.
+- Foi adicionado o botão “Canto” para devolver o quadro para o canto seguro.
+
+O que continua igual:
+- Ativa com # no nome do professor.
+- Aparece só para o professor.
+- O aluno não vê nada.
+- A peça selecionada continua marcada/colorida.
+- Não mexe no Firebase da partida.
+- Não reinicia a partida.
+- Não mexe em torneios.
+- Não mexe no Admin.
+- Não mexe nas regras do Xadrez.
+- Não mexe na Damas.

@@ -1,0 +1,19 @@
+PROFISSIONAL 29 — BALÃO DO PROFESSOR FORA DO TABULEIRO
+
+Correção feita em cima da Profissional 28.
+
+O balão do Modo Professor agora é forçado para um canto seguro da tela e não fica mais preso na frente da peça selecionada.
+
+Também foi reforçado o arraste:
+- botão Mover no topo do balão;
+- pode arrastar pela barra de cima;
+- botão Canto para voltar para a posição segura;
+- posição salva no aparelho do professor.
+
+Não altera:
+- Firebase da partida;
+- regras da Damas;
+- regras do Xadrez;
+- torneios;
+- admin;
+- espectador.

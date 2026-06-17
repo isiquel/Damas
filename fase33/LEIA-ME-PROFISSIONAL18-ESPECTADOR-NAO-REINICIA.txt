@@ -1,0 +1,13 @@
+PROFISSIONAL 18 — ESPECTADOR NÃO REINICIA PARTIDA
+
+Correção feita com cuidado:
+- Corrigido o problema em que um espectador entrando na sala podia sobrescrever/restaurar o tabuleiro do Xadrez.
+- Agora espectador grava somente presença em chessRooms/{sala}/spectators.
+- O espectador não escreve board, turn, moveHistory, jogadores, status nem resultado da partida.
+- Jogadores continuam jogando sem reiniciar quando alguém entra para assistir.
+- Damas não foi alterada.
+- Admin não foi alterado.
+- Torneios e inscrições não foram alterados.
+- Regras do Xadrez não foram alteradas.
+
+Teste primeiro na /fase33/ antes de publicar no principal.

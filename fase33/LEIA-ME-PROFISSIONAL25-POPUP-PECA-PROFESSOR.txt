@@ -1,0 +1,28 @@
+PROFISSIONAL 25 — POPUP DIDÁTICO DA PEÇA NO MODO PROFESSOR
+
+O que foi adicionado:
+- No Xadrez online, quando o professor entra com # no nome e toca numa peça, abre um popup privado explicando:
+  - o que é aquela peça;
+  - o que ela faz;
+  - para onde pode ir naquela posição;
+  - por que aquela peça é importante no jogo;
+  - uma frase pronta para o professor instruir por áudio/vídeo.
+
+- Na Damas online, quando o professor entra com # no nome e toca numa peça, abre um popup privado explicando:
+  - peça comum ou dama;
+  - movimento correto pela regra da Damas;
+  - capturas disponíveis;
+  - captura obrigatória;
+  - coroação;
+  - por que aquilo importa para ensinar.
+
+Segurança:
+- O popup aparece só no aparelho do professor.
+- O aluno não vê nada.
+- Não grava aviso na sala.
+- Não mexe no Firebase da partida.
+- Não muda tabuleiro, jogada, vez, sala, admin, torneios ou ranking.
+- Não reinicia partida.
+
+Base usada:
+- Profissional 24 — Menu com Ativado.

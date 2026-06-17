@@ -1,0 +1,29 @@
+PROFISSIONAL 12 — CONVITE DO TORNEIO MAIS PROFISSIONAL E SEGURO
+
+Base usada: Profissional 11 — Excluir torneios.
+
+Objetivo desta atualização:
+- Melhorar somente o texto do convite do torneio de Xadrez.
+- Melhorar o convite copiado pelo botão “Copiar convite”.
+- Melhorar o texto usado no botão de WhatsApp do Admin do Xadrez.
+
+O que NÃO foi feito:
+- Não foi criada página pública nova.
+- Não foi alterado o carregamento inicial do jogo.
+- Não foi alterada a regra da Damas.
+- Não foi alterada a regra do Xadrez.
+- Não foi alterado Firebase, salas, ranking ou admin.
+
+Motivo:
+A tentativa anterior de criar uma página pública completa do torneio travou a abertura do jogo. Por isso esta versão é mais segura: ela mantém o fluxo atual funcionando e melhora apenas o convite.
+
+Teste obrigatório:
+1. Abrir a tela inicial.
+2. Abrir Damas.
+3. Abrir Xadrez.
+4. Abrir Admin do Xadrez.
+5. Criar torneio.
+6. No menu público do Xadrez, clicar em “Copiar convite”.
+7. Ver se o texto copiado ficou bonito.
+8. Testar “Assistir online”.
+9. Excluir torneio.

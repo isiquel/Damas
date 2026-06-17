@@ -1,0 +1,13 @@
+PROFISSIONAL 27 — BALÃO PEQUENO EM CIMA DA PEÇA
+
+Correção feita com mais atenção:
+- No Xadrez online, com # no nome, ao tocar numa peça abre um balão pequeno perto/acima da peça.
+- O balão explica o que é a peça, o que ela faz, para onde pode ir naquela posição e uma melhor dica didática.
+- O balão fica apenas no aparelho do professor.
+- O aluno não vê nada.
+- Também mantém o painel Professor Inteligente que já estava funcionando.
+- Não mexe no Firebase da partida.
+- Não reinicia a partida.
+- Não mexe na Damas, torneios ou Admin.
+
+Teste primeiro na pasta /fase33/.

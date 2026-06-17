@@ -1,0 +1,24 @@
+TESTE PRIMEIRO NA /fase33/
+
+Enviar dentro da pasta fase33:
+- index.html
+- LEIA-ME.txt
+- LEIA-ME-PROFISSIONAL14-CARD-TORNEIO-ORGANIZADO.txt
+- INSTRUCOES-PROFISSIONAL14-TESTAR-NA-FASE33.txt
+- css
+- js
+
+Link de teste:
+https://damas-nine.vercel.app/fase33/?v=profissional14
+
+Checklist:
+1. Tela inicial abre.
+2. Xadrez abre normal.
+3. Torneio aparece no menu público do Xadrez.
+4. O texto do torneio fica dentro de um quadrinho bonito.
+5. Link grande não aparece.
+6. Botão Assistir online funciona.
+7. Botão Copiar convite funciona.
+8. Ranking fica separado abaixo.
+9. Admin do Xadrez abre normal.
+10. Damas continua normal.

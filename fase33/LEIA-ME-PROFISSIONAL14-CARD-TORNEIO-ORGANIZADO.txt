@@ -1,0 +1,19 @@
+PROFISSIONAL 14 — Card público do torneio do Xadrez organizado
+
+Correção visual segura baseada na Profissional 13.
+
+O que foi corrigido:
+- Organiza o bloco público “Torneios marcados” em um card bonito.
+- Coloca título, descrição, nome do torneio, status, data, horário e sala dentro do mesmo quadrinho.
+- Remove texto solto e visual embolado acima dos botões.
+- Mantém o link escondido dentro do botão “Copiar convite”.
+- Mantém botões “Assistir online” e “Copiar convite” separados e profissionais.
+- Separa melhor o Ranking Geral do Xadrez do card do torneio.
+
+Não altera:
+- Regras da Damas.
+- Regras do Xadrez.
+- Firebase.
+- Admin.
+- Ranking.
+- Sala online.

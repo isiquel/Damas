@@ -1,0 +1,21 @@
+INSTRUÇÕES — PROFISSIONAL 24
+
+1. Suba estes arquivos dentro da pasta fase33:
+   - index.html
+   - LEIA-ME.txt
+   - LEIA-ME-PROFISSIONAL24-MENU-ATIVADO.txt
+   - INSTRUCOES-PROFISSIONAL24-TESTAR-NA-FASE33.txt
+   - css
+   - js
+
+2. Teste no link:
+   https://damas-nine.vercel.app/fase33/?v=profissional24
+
+3. Confira:
+   - No menu principal, o selo deve aparecer como Ativado.
+   - Não deve aparecer Fase 40 no texto visual do Xadrez.
+   - Damas continua abrindo.
+   - Xadrez continua abrindo.
+   - Admin continua abrindo.
+
+4. Se estiver tudo certo, depois publique no principal.

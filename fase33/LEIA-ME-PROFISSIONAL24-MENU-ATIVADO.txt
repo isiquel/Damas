@@ -1,0 +1,13 @@
+Tabuleiro Arena — Profissional 24
+
+Correção pequena e segura:
+- No menu principal, onde aparecia "Fase 40", agora aparece "Ativado".
+- Também troquei os textos visíveis do Xadrez que falavam "Fase 40" por textos com "Ativado".
+- Não mexi nas regras da Damas.
+- Não mexi nas regras do Xadrez.
+- Não mexi em torneios.
+- Não mexi no Admin.
+- Não mexi no Firebase.
+- Mantive a base da Profissional 23.
+
+Teste primeiro na pasta /fase33/.
