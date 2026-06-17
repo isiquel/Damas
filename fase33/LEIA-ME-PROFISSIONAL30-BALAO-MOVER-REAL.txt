@@ -1,0 +1,13 @@
+PROFISSIONAL 30 — BALÃO DO PROFESSOR COM MOVER REAL
+
+Correção feita:
+- O balão do professor agora tem botão grande "☰ MOVER".
+- O professor pode segurar no botão MOVER ou na barra de cima e arrastar o balão.
+- O balão abre em canto seguro e não fica preso na frente da peça.
+- A posição escolhida fica salva no aparelho do professor.
+- O botão CANTO volta o balão para um canto seguro.
+- Continua aparecendo só para quem entrou com # no nome.
+- O aluno não vê nada.
+- Não mexe na partida, Firebase, Damas, Xadrez, torneios nem Admin.
+
+Teste primeiro na /fase33/.

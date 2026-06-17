@@ -1,0 +1,12 @@
+TESTE NA /fase33/
+
+1. Envie os arquivos do pacote para a pasta fase33.
+2. Acesse: https://damas-nine.vercel.app/fase33/?v=profissional16
+3. Entre no Xadrez.
+4. No menu do Xadrez, veja se aparece Torneios marcados.
+5. Clique em Entrar/Jogar ou Assistir.
+6. Depois que o tabuleiro abrir, NÃO pode aparecer Torneios marcados acima do tabuleiro.
+7. NÃO pode aparecer Ranking Geral do Xadrez acima do tabuleiro.
+8. O tabuleiro deve ficar limpo, com nomes dos jogadores, tabuleiro, controles e chat.
+9. Volte ao menu do Xadrez e confirme que o torneio aparece de novo no menu.
+10. Teste Damas e Admin.

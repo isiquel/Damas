@@ -1,0 +1,27 @@
+COMO TESTAR — PROFISSIONAL 02
+
+1. Suba estes arquivos dentro da pasta fase33 do GitHub:
+   - index.html
+   - LEIA-ME.txt
+   - LEIA-ME-SEPARACAO02-CSS.txt
+   - LEIA-ME-SEPARACAO03-JS-CONFIG.txt
+   - LEIA-ME-SEPARACAO04-JS-UTILS.txt
+   - LEIA-ME-SEPARACAO05-UI.txt
+   - LEIA-ME-SEPARACAO06-CHAT-UI.txt
+   - LEIA-ME-PROFISSIONAL02-XADREZ-TORNEIOS-ADMIN.txt
+   - INSTRUCOES-PROFISSIONAL02-TESTAR-NA-FASE33.txt
+   - css
+   - js
+
+2. Teste:
+   https://damas-nine.vercel.app/fase33/?v=profissional02
+
+3. Checklist:
+   - Tela inicial não deve mostrar Central Profissional.
+   - Damas abre normal.
+   - Xadrez abre normal.
+   - Admin da Damas abre normal.
+   - Admin do Xadrez abre normal.
+   - Dentro do Admin do Xadrez aparece Central de Torneios do Xadrez.
+   - Criar/Publicar torneio do Xadrez funciona.
+   - Gerar avisos WhatsApp abre a lista.

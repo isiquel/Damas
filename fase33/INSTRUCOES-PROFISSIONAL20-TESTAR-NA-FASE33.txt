@@ -1,0 +1,26 @@
+TESTE PRIMEIRO NA /fase33/
+
+Suba estes itens dentro da pasta fase33:
+- index.html
+- LEIA-ME.txt
+- LEIA-ME-PROFISSIONAL20-PROFESSOR-INTELIGENTE.txt
+- INSTRUCOES-PROFISSIONAL20-TESTAR-NA-FASE33.txt
+- css
+- js
+
+Link para testar:
+https://damas-nine.vercel.app/fase33/?v=profissional20
+
+Checklist:
+1. Entrar no Xadrez.
+2. Colocar o nome com #, exemplo: #Isiquel.
+3. Entrar online em uma sala.
+4. O painel Professor Inteligente deve aparecer só no aparelho do professor.
+5. No aparelho do aluno não pode aparecer nada.
+6. Tocar numa peça e conferir se aparecem dicas da peça.
+7. Clicar em "Analisar posição" e conferir se aparecem dicas da posição.
+8. Fazer jogadas e confirmar que a partida não reinicia.
+9. Entrar como espectador e confirmar que não reinicia a partida.
+10. Conferir se Damas, Admin, torneios e inscrições continuam funcionando.
+
+Não publique no principal antes de confirmar na fase33.

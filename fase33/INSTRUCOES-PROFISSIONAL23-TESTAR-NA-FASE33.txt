@@ -1,0 +1,27 @@
+TESTE PRIMEIRO NA /fase33/
+
+Envie estes itens para dentro da pasta fase33:
+
+index.html
+LEIA-ME.txt
+LEIA-ME-PROFISSIONAL23-CORRECAO-DEFINITIVA-PROFESSOR-DAMAS.txt
+INSTRUCOES-PROFISSIONAL23-TESTAR-NA-FASE33.txt
+css
+js
+
+Link para testar:
+https://damas-nine.vercel.app/fase33/?v=profissional23
+
+Checklist:
+1. Entrar em Damas.
+2. Colocar o nome como #Isiquel ou Isiquel#.
+3. Entrar online numa sala como jogador.
+4. O painel Professor Inteligente de Damas deve aparecer acima do tabuleiro.
+5. O aluno entra com nome normal e não vê nada.
+6. Tocar numa peça e verificar as dicas.
+7. Clicar em Analisar posição.
+8. Sair da sala e entrar sem # para confirmar que o painel não aparece.
+9. Conferir se o Xadrez continua funcionando igual.
+10. Conferir se a Damas não reinicia a partida.
+
+Não publicar no principal antes de confirmar na /fase33/.

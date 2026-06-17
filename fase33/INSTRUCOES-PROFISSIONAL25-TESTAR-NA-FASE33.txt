@@ -1,0 +1,31 @@
+INSTRUÇÕES — TESTAR PROFISSIONAL 25 NA /FASE33/
+
+1. Abra o ZIP.
+2. Envie para dentro da pasta fase33 no GitHub:
+   - index.html
+   - LEIA-ME.txt
+   - LEIA-ME-PROFISSIONAL25-POPUP-PECA-PROFESSOR.txt
+   - INSTRUCOES-PROFISSIONAL25-TESTAR-NA-FASE33.txt
+   - css
+   - js
+
+3. Teste por este link:
+   https://damas-nine.vercel.app/fase33/?v=profissional25
+
+CHECKLIST XADREZ:
+1. Entrar no Xadrez com nome #Isiquel.
+2. Entrar em sala online.
+3. O aluno entra com nome normal.
+4. No aparelho do professor, tocar numa peça.
+5. Deve abrir popup explicando a peça.
+6. No aparelho do aluno não pode aparecer nada.
+7. Fechar popup e continuar jogando normal.
+
+CHECKLIST DAMAS:
+1. Entrar em Damas com nome #Isiquel.
+2. Entrar em sala online.
+3. Tocar numa peça comum ou dama.
+4. Deve abrir popup explicando movimento, captura, coroação e função da peça.
+5. No aparelho do aluno não pode aparecer nada.
+
+NÃO publicar no principal antes de confirmar na /fase33/.
