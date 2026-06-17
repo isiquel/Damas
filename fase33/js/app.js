@@ -10655,6 +10655,129 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
         instalarManualPrivadoProfessorXadrez19();
 
+        /* =====================================================================
+           ✅ PROFISSIONAL 25 — POPUP DIDÁTICO DA PEÇA NO XADREZ ONLINE
+           Quando o professor entra com # no nome e toca numa peça no online,
+           abre um popup privado explicando o que é a peça, como anda, onde pode
+           ir naquele momento e como usar isso na explicação por áudio/vídeo.
+           Não aparece para o aluno e não altera Firebase, jogada ou tabuleiro.
+        ===================================================================== */
+        function instalarPopupDidaticoPecaXadrez25() {
+            if (window.__popupPecaXadrez25Instalado) return;
+            window.__popupPecaXadrez25Instalado = true;
+
+            const explicacoes = {
+                king: {
+                    movimento: 'Anda uma casa por vez em qualquer direção, mas nunca pode entrar numa casa atacada. Também pode fazer o roque quando as regras permitem.',
+                    funcao: 'O Rei é a peça mais importante. A partida inteira gira em torno de proteger o Rei e atacar o Rei adversário.',
+                    fala: 'Explique ao aluno: antes de atacar, olhe se o Rei está seguro. Um ataque bonito não vale nada se o Rei ficar exposto.'
+                },
+                queen: {
+                    movimento: 'Anda quantas casas livres quiser na vertical, horizontal e diagonal.',
+                    funcao: 'A Dama é a peça mais forte do xadrez. Ela ataca muito, defende muito e cria ameaças rápidas.',
+                    fala: 'Explique ao aluno: a Dama é poderosa, mas não deve sair sozinha sem apoio, porque pode virar alvo.'
+                },
+                rook: {
+                    movimento: 'Anda quantas casas livres quiser na vertical e na horizontal.',
+                    funcao: 'A Torre domina colunas e linhas. Fica muito forte quando entra em coluna aberta ou no final da partida.',
+                    fala: 'Explique ao aluno: Torre gosta de caminho livre. Peão parado na frente da Torre diminui a força dela.'
+                },
+                bishop: {
+                    movimento: 'Anda quantas casas livres quiser pelas diagonais. Um Bispo de casa clara fica sempre nas casas claras; o de casa escura fica nas casas escuras.',
+                    funcao: 'O Bispo trabalha em diagonal, cria pressão de longe e pode prender peças importantes.',
+                    fala: 'Explique ao aluno: o Bispo parece quieto, mas ataca de longe. Antes de mover, olhe a diagonal inteira.'
+                },
+                knight: {
+                    movimento: 'Anda em formato de L: duas casas para um lado e uma para o outro. É a única peça que pula por cima das outras.',
+                    funcao: 'O Cavalo é ótimo para garfos, ataques surpresa e casas centrais. Ele confunde iniciantes porque pula peças.',
+                    fala: 'Explique ao aluno: Cavalo no centro ataca mais casas. Cavalo no canto fica fraco.'
+                },
+                pawn: {
+                    movimento: 'Anda uma casa para frente. No primeiro movimento pode andar duas. Captura uma casa na diagonal. Quando chega ao fim do tabuleiro pode virar outra peça.',
+                    funcao: 'O Peão parece simples, mas controla casas, protege peças e pode virar Dama no final.',
+                    fala: 'Explique ao aluno: Peão não anda para trás. Cada avanço precisa ter propósito, porque depois não dá para voltar.'
+                }
+            };
+
+            function professorPodeUsarPopup25() {
+                return !!(
+                    chessProfessorPrivadoAtivo &&
+                    chessMode === 'online' &&
+                    !chessIsSpectator &&
+                    document.body.classList.contains('chess-board-visible') &&
+                    Array.isArray(chessBoard)
+                );
+            }
+
+            function movimentosTexto25(movimentos) {
+                if (!movimentos || !movimentos.length) return ['Sem casa legal agora'];
+                return movimentos.slice(0, 14).map(m => {
+                    let txt = alg(m.row, m.col);
+                    if (m.capture) txt += ' captura';
+                    if (m.castle) txt += m.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                    if (m.enPassant) txt += ' en passant';
+                    return txt;
+                });
+            }
+
+            function corTexto25(cor) {
+                return cor === 'white' ? 'branca' : 'preta';
+            }
+
+            function criarDadosPopup25(peca, row, col, movimentos) {
+                const info = explicacoes[peca.type] || explicacoes.pawn;
+                const capturas = (movimentos || []).filter(m => m.capture).length;
+                const casas = movimentosTexto25(movimentos);
+                const ladoDoProfessor = peca.color === chessPlayerColor;
+                let porQueAgora = '';
+                if (!movimentos || !movimentos.length) {
+                    porQueAgora = 'Nesta posição ela não tem movimento legal. Use isso para ensinar bloqueio, proteção do Rei ou peça presa.';
+                } else if (capturas > 0) {
+                    porQueAgora = 'Nesta posição existem capturas. É uma boa hora para ensinar ganho de material, troca de peças e cálculo antes de jogar.';
+                } else if (peca.type === 'king') {
+                    porQueAgora = 'Use esta posição para ensinar segurança do Rei: o Rei só pode ir para casas que não estejam atacadas.';
+                } else if (peca.type === 'pawn') {
+                    porQueAgora = 'Use esta posição para ensinar controle de casas e avanço com objetivo. Peão avançado demais pode ficar fraco.';
+                } else {
+                    porQueAgora = 'Use esta peça para mostrar plano de jogo: melhorar posição, atacar com apoio e defender antes de avançar.';
+                }
+                if (!ladoDoProfessor) {
+                    porQueAgora = 'Esta é uma peça do aluno/adversário. Use o popup para explicar o que ela ameaça, como ela se movimenta e como você pode responder com calma.';
+                }
+                return {
+                    jogo: 'Xadrez online',
+                    simbolo: pecasUnicode[peca.color]?.[peca.type] || '♟',
+                    titulo: `${nomePeca[peca.type] || 'Peça'} ${corTexto25(peca.color)}`,
+                    posicao: alg(row, col),
+                    oQueE: info.funcao,
+                    comoAnda: info.movimento,
+                    ondePodeIr: casas,
+                    porque: porQueAgora,
+                    fraseAula: info.fala
+                };
+            }
+
+            const clickAnterior25 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickPopupProfessor25(row, col) {
+                const pecaAntes = chessBoard?.[row]?.[col] || null;
+                const clicouDestinoDeJogada = !!(selectedSquare && Array.isArray(legalMoves) && legalMoves.some(m => m.row === row && m.col === col));
+                const deveAbrir = !!(professorPodeUsarPopup25() && pecaAntes && !clicouDestinoDeJogada);
+                let movimentosAntes = [];
+                if (deveAbrir) {
+                    try { movimentosAntes = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentosAntes = []; }
+                }
+                const retorno = await clickAnterior25.apply(this, arguments);
+                if (deveAbrir && window.abrirPopupProfessorPeca25) {
+                    setTimeout(() => {
+                        window.abrirPopupProfessorPeca25(criarDadosPopup25(pecaAntes, row, col, movimentosAntes));
+                    }, 60);
+                }
+                return retorno;
+            };
+        }
+
+        instalarPopupDidaticoPecaXadrez25();
+
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
         window.desfazerJogadaXadrez = desfazerJogada;
@@ -12560,6 +12683,369 @@ Compartilhe com os amigos e entre no horário marcado.`;
     }
 
     instalarReforcoDefinitivoProfessorDamas23();
+
+    /* =====================================================================
+       ✅ PROFISSIONAL 25 — POPUP DIDÁTICO DA PEÇA NO MODO PROFESSOR
+       Popup privado para o professor explicar a peça selecionada no online.
+       Serve para Xadrez e Damas. Não aparece para aluno, não grava na sala,
+       não muda Firebase, não altera jogadas e não reinicia partida.
+    ===================================================================== */
+    function instalarPopupProfessorPeca25Global() {
+        if (window.__popupProfessorPeca25GlobalInstalado) return;
+        window.__popupProfessorPeca25GlobalInstalado = true;
+
+        function instalarCssPopup25() {
+            if (document.getElementById('popup-professor-peca-25-style')) return;
+            const style = document.createElement('style');
+            style.id = 'popup-professor-peca-25-style';
+            style.textContent = `
+                #teacher-piece-popup-25 {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 999999;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 18px;
+                    background: rgba(2, 6, 23, .72);
+                    backdrop-filter: blur(5px);
+                }
+                #teacher-piece-popup-25.open { display: flex; }
+                #teacher-piece-popup-25 .teacher-piece-card {
+                    width: min(520px, 96vw);
+                    max-height: 88vh;
+                    overflow: auto;
+                    border-radius: 22px;
+                    border: 1px solid rgba(34, 197, 94, .45);
+                    background: linear-gradient(180deg, rgba(8, 25, 38, .98), rgba(4, 13, 24, .99));
+                    box-shadow: 0 25px 70px rgba(0, 0, 0, .55), 0 0 28px rgba(34,197,94,.14);
+                    color: #e5f6ef;
+                }
+                #teacher-piece-popup-25 .teacher-piece-head {
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 14px 15px;
+                    border-bottom: 1px solid rgba(148, 163, 184, .20);
+                    background: rgba(15, 118, 110, .18);
+                }
+                #teacher-piece-popup-25 .teacher-piece-titlebox {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-width: 0;
+                }
+                #teacher-piece-popup-25 .teacher-piece-symbol {
+                    width: 44px;
+                    height: 44px;
+                    min-width: 44px;
+                    border-radius: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.75rem;
+                    background: rgba(250, 204, 21, .13);
+                    border: 1px solid rgba(250, 204, 21, .32);
+                    color: #fef3c7;
+                }
+                #teacher-piece-popup-25 .teacher-piece-title {
+                    font-weight: 950;
+                    font-size: 1rem;
+                    line-height: 1.15;
+                    color: #f8fafc;
+                }
+                #teacher-piece-popup-25 .teacher-piece-subtitle {
+                    margin-top: 3px;
+                    font-size: .75rem;
+                    color: #94a3b8;
+                    font-weight: 700;
+                }
+                #teacher-piece-popup-25 .teacher-piece-close {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(148, 163, 184, .25);
+                    background: rgba(15, 23, 42, .84);
+                    color: #e5e7eb;
+                    cursor: pointer;
+                    font-weight: 950;
+                    font-size: 1.05rem;
+                }
+                #teacher-piece-popup-25 .teacher-piece-body {
+                    padding: 14px 15px 16px 15px;
+                    font-size: .89rem;
+                    line-height: 1.48;
+                }
+                #teacher-piece-popup-25 .teacher-piece-section {
+                    margin: 0 0 10px 0;
+                    padding: 10px 11px;
+                    border-radius: 14px;
+                    border: 1px solid rgba(148, 163, 184, .16);
+                    background: rgba(2, 6, 23, .26);
+                }
+                #teacher-piece-popup-25 .teacher-piece-label {
+                    display: block;
+                    margin-bottom: 4px;
+                    color: #86efac;
+                    text-transform: uppercase;
+                    font-size: .68rem;
+                    letter-spacing: .08em;
+                    font-weight: 950;
+                }
+                #teacher-piece-popup-25 .teacher-piece-moves {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    margin-top: 6px;
+                }
+                #teacher-piece-popup-25 .teacher-piece-move {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 5px 8px;
+                    border-radius: 999px;
+                    background: rgba(14, 165, 233, .14);
+                    border: 1px solid rgba(56, 189, 248, .24);
+                    color: #bfdbfe;
+                    font-weight: 850;
+                    font-size: .76rem;
+                }
+                #teacher-piece-popup-25 .teacher-piece-audio {
+                    border-color: rgba(250, 204, 21, .28);
+                    background: rgba(113, 63, 18, .18);
+                    color: #fef3c7;
+                }
+                #teacher-piece-popup-25 .teacher-piece-footer {
+                    display: flex;
+                    gap: 8px;
+                    justify-content: flex-end;
+                    padding: 0 15px 15px 15px;
+                }
+                #teacher-piece-popup-25 .teacher-piece-ok {
+                    border: 0;
+                    border-radius: 13px;
+                    padding: 10px 14px;
+                    cursor: pointer;
+                    color: #052e2b;
+                    font-weight: 950;
+                    background: linear-gradient(135deg, #86efac, #22c55e);
+                }
+                @media (max-width: 620px) {
+                    #teacher-piece-popup-25 { padding: 10px; align-items: flex-end; }
+                    #teacher-piece-popup-25 .teacher-piece-card { width: 100%; max-height: 86vh; border-radius: 19px; }
+                    #teacher-piece-popup-25 .teacher-piece-head { padding: 12px; }
+                    #teacher-piece-popup-25 .teacher-piece-body { padding: 12px; font-size: .83rem; }
+                    #teacher-piece-popup-25 .teacher-piece-symbol { width: 40px; height: 40px; min-width: 40px; font-size: 1.45rem; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function escape25(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function garantirPopup25() {
+            instalarCssPopup25();
+            let overlay = document.getElementById('teacher-piece-popup-25');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'teacher-piece-popup-25';
+                overlay.innerHTML = `
+                    <div class="teacher-piece-card" role="dialog" aria-modal="true" aria-label="Manual do professor">
+                        <div class="teacher-piece-head">
+                            <div class="teacher-piece-titlebox">
+                                <div id="teacher-piece-symbol-25" class="teacher-piece-symbol">♟</div>
+                                <div>
+                                    <div id="teacher-piece-title-25" class="teacher-piece-title">Manual do Professor</div>
+                                    <div id="teacher-piece-subtitle-25" class="teacher-piece-subtitle">Explicação privada</div>
+                                </div>
+                            </div>
+                            <button id="teacher-piece-close-25" class="teacher-piece-close" type="button">×</button>
+                        </div>
+                        <div id="teacher-piece-body-25" class="teacher-piece-body"></div>
+                        <div class="teacher-piece-footer">
+                            <button id="teacher-piece-ok-25" class="teacher-piece-ok" type="button">Entendi</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                const fechar = () => overlay.classList.remove('open');
+                overlay.addEventListener('click', (ev) => {
+                    if (ev.target === overlay) fechar();
+                });
+                overlay.querySelector('#teacher-piece-close-25')?.addEventListener('click', fechar);
+                overlay.querySelector('#teacher-piece-ok-25')?.addEventListener('click', fechar);
+                document.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Escape') fechar();
+                });
+            }
+            return overlay;
+        }
+
+        window.abrirPopupProfessorPeca25 = function abrirPopupProfessorPeca25(dados = {}) {
+            const overlay = garantirPopup25();
+            const simbolo = overlay.querySelector('#teacher-piece-symbol-25');
+            const title = overlay.querySelector('#teacher-piece-title-25');
+            const subtitle = overlay.querySelector('#teacher-piece-subtitle-25');
+            const body = overlay.querySelector('#teacher-piece-body-25');
+            const movimentos = Array.isArray(dados.ondePodeIr) && dados.ondePodeIr.length
+                ? dados.ondePodeIr.map(m => `<span class="teacher-piece-move">${escape25(m)}</span>`).join('')
+                : '<span class="teacher-piece-move">Sem casa legal agora</span>';
+
+            if (simbolo) simbolo.textContent = dados.simbolo || '♟';
+            if (title) title.textContent = dados.titulo || 'Peça selecionada';
+            if (subtitle) subtitle.textContent = `${dados.jogo || 'Jogo'} • posição ${dados.posicao || '—'}`;
+            if (body) {
+                body.innerHTML = `
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">O que é esta peça</span>
+                        ${escape25(dados.oQueE || 'Esta peça faz parte da estratégia da posição.')}
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">O que ela faz</span>
+                        ${escape25(dados.comoAnda || 'Ela se movimenta conforme as regras do jogo.')}
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">Onde pode ir agora</span>
+                        <div class="teacher-piece-moves">${movimentos}</div>
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">Por que isso importa no jogo</span>
+                        ${escape25(dados.porque || 'Use esta posição para ensinar ataque, defesa e cuidado antes de jogar.')}
+                    </div>
+                    <div class="teacher-piece-section teacher-piece-audio">
+                        <span class="teacher-piece-label">Frase para instruir por áudio</span>
+                        “${escape25(dados.fraseAula || 'Observe a peça, veja para onde ela pode ir e pense no que ela protege ou ameaça antes de jogar.')}”
+                    </div>
+                `;
+            }
+            overlay.classList.add('open');
+        };
+    }
+
+    function instalarPopupDidaticoPecaDamas25() {
+        if (window.__popupPecaDamas25Instalado) return;
+        window.__popupPecaDamas25Instalado = true;
+
+        function professorDamasAtivo25() {
+            let ativo = false;
+            try {
+                ativo = sessionStorage.getItem('damas_professor_privado_ativo_23') === '1' || sessionStorage.getItem('damas_professor_privado_ativo_21') === '1';
+            } catch (_) {}
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            return !!(
+                ativo &&
+                !isPracticeMode &&
+                (playerRole === 'p1' || playerRole === 'p2') &&
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                boardWrapper &&
+                boardWrapper.style.display !== 'none' &&
+                currentGameState &&
+                currentGameState.board
+            );
+        }
+
+        function coord25(r, c) {
+            const letras = 'ABCDEFGH';
+            return `${letras[c] || '?'}${8 - r}`;
+        }
+
+        function dono25(peca) {
+            if (peca === 1 || peca === 2) return 1;
+            if (peca === 3 || peca === 4) return 2;
+            return 0;
+        }
+
+        function ladoNome25(lado) {
+            return lado === 2 ? 'pretas' : 'vermelhas';
+        }
+
+        function tipoNome25(peca) {
+            return (peca === 2 || peca === 4) ? 'Dama' : 'Peça comum';
+        }
+
+        function movimentosTextoDamas25(movs) {
+            if (!movs || !movs.length) return ['Sem casa legal agora'];
+            return movs.slice(0, 14).map(m => {
+                let txt = `${coord25(m.fromR, m.fromC)} → ${coord25(m.toR, m.toC)}`;
+                if (m.capture) txt += ` captura em ${coord25(m.capture.r, m.capture.c)}`;
+                return txt;
+            });
+        }
+
+        function criarDadosPopupDamas25(r, c) {
+            const board = currentGameState?.board;
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return null;
+            let movimentos = [];
+            try { movimentos = computeValidMovesForPieceEngine(r, c, board, false) || []; } catch (_) { movimentos = []; }
+            let capturasObrigatorias = [];
+            try { capturasObrigatorias = computeAllValidMovesEngine(dono25(peca), board, null).filter(m => m.capture); } catch (_) { capturasObrigatorias = []; }
+            const eDama = peca === 2 || peca === 4;
+            const capturasDaPeca = movimentos.filter(m => m.capture).length;
+            const lado = dono25(peca);
+            const doProfessor = (playerRole === 'p1' && lado === 1) || (playerRole === 'p2' && lado === 2);
+
+            let oQueE = eDama
+                ? 'A Dama é a peça coroada. Ela é mais forte porque anda pelas diagonais longas enquanto houver caminho livre.'
+                : 'A peça comum é a base da Damas. Ela avança pelas diagonais, protege caminhos e tenta chegar ao outro lado para virar Dama.';
+            let comoAnda = eDama
+                ? 'A Dama anda em qualquer diagonal, para frente ou para trás, quantas casas livres puder. Para capturar, ela pula a peça adversária e cai numa casa livre depois dela.'
+                : 'A peça comum anda uma casa na diagonal para frente. Ela captura pulando a peça adversária na diagonal. Neste jogo, quando existe captura, a captura deve ser feita.';
+            let porque = '';
+            if (capturasDaPeca > 0) {
+                porque = 'Esta peça tem captura disponível. Use isso para ensinar que na Damas ganhar material e respeitar a captura obrigatória muda a partida.';
+            } else if (capturasObrigatorias.length > 0) {
+                porque = 'Existe captura obrigatória para este lado, mas talvez não seja com esta peça. Ensine o aluno a procurar todas as capturas antes de andar.';
+            } else if (eDama) {
+                porque = 'A Dama controla muitas diagonais. Ela serve para atacar de longe, defender peças e cortar caminhos do adversário.';
+            } else {
+                porque = 'Esta peça ajuda no avanço, no controle do centro e na formação de defesa. O objetivo é avançar sem deixar captura fácil.';
+            }
+            if (!doProfessor) {
+                porque = 'Esta é uma peça do aluno/adversário. Use para explicar o que ela ameaça, quais caminhos ela tem e como evitar deixar captura para ela.';
+            }
+
+            return {
+                jogo: 'Damas online',
+                simbolo: eDama ? '👑' : '●',
+                titulo: `${tipoNome25(peca)} ${ladoNome25(lado)}`,
+                posicao: coord25(r, c),
+                oQueE,
+                comoAnda,
+                ondePodeIr: movimentosTextoDamas25(movimentos),
+                porque,
+                fraseAula: eDama
+                    ? 'A Dama é forte porque domina diagonais longas; antes de mover, olhe tudo o que ela ataca e tudo o que ela precisa defender.'
+                    : 'Antes de andar, procure captura obrigatória, veja se a peça ficará protegida e pense se ela está avançando com segurança.'
+            };
+        }
+
+        const clicarAnterior25 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionPopupDamas25(r, c) {
+            const board = currentGameState?.board;
+            const pecaAntes = board?.[r]?.[c] || 0;
+            const clicouDestino = !!(selectedPiece && Array.isArray(validMoves) && validMoves.some(m => m.toR === r && m.toC === c));
+            const deveAbrir = !!(professorDamasAtivo25() && pecaAntes && !clicouDestino);
+            const dados = deveAbrir ? criarDadosPopupDamas25(r, c) : null;
+            const retorno = clicarAnterior25.apply(this, arguments);
+            if (dados && window.abrirPopupProfessorPeca25) {
+                setTimeout(() => window.abrirPopupProfessorPeca25(dados), 60);
+            }
+            return retorno;
+        };
+    }
+
+    instalarPopupProfessorPeca25Global();
+    instalarPopupDidaticoPecaDamas25();
 
 
 })();
