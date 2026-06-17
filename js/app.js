@@ -6923,16 +6923,22 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             if (remotoLimpo && !tabuleiroXadrezPrecisaRestaurar(remotoLimpo)) {
                 chessBoard = remotoLimpo;
             } else {
-                criarTabuleiroInicial();
-                lastMoveMessage = 'A sala online estava sem peças ou sem tabuleiro válido. O Xadrez restaurou a posição inicial automaticamente.';
-                if (chessRoomRef) {
-                    setTimeout(() => {
-                        try {
-                            update(chessRoomRef, { ...estadoXadrezParaFirebase(), repairedAt: Date.now() });
-                        } catch (e) {
-                            console.warn('Não consegui reparar a sala online no Firebase:', e);
-                        }
-                    }, 80);
+                // ✅ PROFISSIONAL 18: espectador nunca repara a sala no Firebase.
+                // Se por algum motivo o snapshot vier incompleto, ele apenas aguarda nova sincronização.
+                if (chessIsSpectator) {
+                    lastMoveMessage = data.lastMoveMessage || 'Aguardando sincronização do tabuleiro online.';
+                } else {
+                    criarTabuleiroInicial();
+                    lastMoveMessage = 'A sala online estava sem peças ou sem tabuleiro válido. O Xadrez restaurou a posição inicial automaticamente.';
+                    if (chessRoomRef) {
+                        setTimeout(() => {
+                            try {
+                                update(chessRoomRef, { ...estadoXadrezParaFirebase(), repairedAt: Date.now() });
+                            } catch (e) {
+                                console.warn('Não consegui reparar a sala online no Firebase:', e);
+                            }
+                        }, 80);
+                    }
                 }
             }
 
@@ -7066,19 +7072,23 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 sala.updatedAt = agora;
                 sala.mode = 'xadrez';
 
-                // Se a sala antiga veio vazia, corrompida, com peça quebrada ou sem reis, restaura forte.
+                // ✅ PROFISSIONAL 18: espectador nunca pode restaurar/resetar tabuleiro.
+                // Antes, ao assistir uma sala em andamento, o sistema validava a sala e podia escrever
+                // o tabuleiro inicial novamente. Agora somente jogador/admin pode reparar sala quebrada.
                 const boardLimpoDaSala = clonarTabuleiro(sala.board);
                 if (!boardLimpoDaSala || tabuleiroXadrezPrecisaRestaurar(boardLimpoDaSala)) {
-                    criarTabuleiroInicial();
-                    const estado = estadoXadrezParaFirebase();
-                    sala.board = estado.board;
-                    sala.turn = estado.turn;
-                    sala.gameOver = false;
-                    sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 12 online ativa.';
-                    sala.lastChessMove = null;
-                    sala.enPassantTarget = null;
-                    sala.moveHistory = [];
-                    sala.repairedAt = agora;
+                    if (!assistir) {
+                        criarTabuleiroInicial();
+                        const estado = estadoXadrezParaFirebase();
+                        sala.board = estado.board;
+                        sala.turn = estado.turn;
+                        sala.gameOver = false;
+                        sala.lastMoveMessage = 'Sala criada/restaurada com o tabuleiro inicial do Xadrez. Fase 12 online ativa.';
+                        sala.lastChessMove = null;
+                        sala.enPassantTarget = null;
+                        sala.moveHistory = [];
+                        sala.repairedAt = agora;
+                    }
                 } else {
                     sala.board = boardLimpoDaSala;
                 }
@@ -7129,7 +7139,18 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     sala.lastMoveMessage = 'Fase 12 ativa: sala online com painel Admin próprio, controle de salas, desistência, visão das pretas, alerta de vez, chat, histórico e placar.';
                 }
 
-                await set(chessRoomRef, sala);
+                // ✅ PROFISSIONAL 18: quem entra como espectador só grava presença em /spectators.
+                // Não usamos set() na sala inteira, porque isso pode sobrescrever board/turn/moveHistory
+                // e reiniciar a partida dos jogadores que já estavam jogando.
+                if (chessIsSpectator) {
+                    await update(chessRoomRef, {
+                        [`spectators/${uid}`]: { id: uid, name: chessPlayerName, connectedAt: agora },
+                        updatedAt: agora,
+                        mode: 'xadrez'
+                    });
+                } else {
+                    await set(chessRoomRef, sala);
+                }
 
                 try {
                     if (chessPlayerColor === 'white' || chessPlayerColor === 'black') {
