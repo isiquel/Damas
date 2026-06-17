@@ -11054,6 +11054,121 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         outline-offset: -4px !important;
                         box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 18px rgba(250,204,21,.38) !important;
                     }
+                    /* ✅ PROFISSIONAL 28 — GUIA COLORIDO PRIVADO DO PROFESSOR */
+                    #teacher-piece-bubble-27 .bubble-guide-row-28 {
+                        margin-top: 7px;
+                        display: grid;
+                        gap: 6px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-toggle-28 {
+                        width: 100%;
+                        border: 1px solid rgba(34,197,94,.35);
+                        background: linear-gradient(135deg, rgba(20,184,166,.22), rgba(34,197,94,.14));
+                        color: #dcfce7;
+                        border-radius: 11px;
+                        padding: 7px 9px;
+                        font-weight: 1000;
+                        font-size: .70rem;
+                        cursor: pointer;
+                        text-align: center;
+                    }
+                    #teacher-piece-bubble-27 .bubble-legend-28 {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 4px;
+                        color: #cbd5e1;
+                        font-size: .62rem;
+                        line-height: 1.25;
+                    }
+                    #teacher-piece-bubble-27 .bubble-legend-28 span {
+                        border-radius: 999px;
+                        padding: 3px 6px;
+                        border: 1px solid rgba(148,163,184,.18);
+                        background: rgba(15,23,42,.55);
+                        font-weight: 900;
+                    }
+                    #teacher-piece-bubble-27 .legend-origin-28 { color:#fde68a; }
+                    #teacher-piece-bubble-27 .legend-best-28 { color:#bbf7d0; }
+                    #teacher-piece-bubble-27 .legend-good-28 { color:#bfdbfe; }
+                    #teacher-piece-bubble-27 .legend-capture-28 { color:#fecaca; }
+                    #teacher-piece-bubble-27 .legend-risk-28 { color:#fed7aa; }
+                    #chess-board .chess-square.teacher-guide-origin-28,
+                    .chess-square.teacher-guide-origin-28 {
+                        position: relative !important;
+                        outline: 3px solid rgba(250,204,21,.96) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 4px rgba(250,204,21,.22), 0 0 20px rgba(250,204,21,.35) !important;
+                    }
+                    #chess-board .chess-square.teacher-guide-best-28,
+                    .chess-square.teacher-guide-best-28 {
+                        position: relative !important;
+                        outline: 4px solid rgba(34,197,94,.96) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 999px rgba(34,197,94,.25), 0 0 22px rgba(34,197,94,.55) !important;
+                    }
+                    #chess-board .chess-square.teacher-guide-good-28,
+                    .chess-square.teacher-guide-good-28 {
+                        position: relative !important;
+                        outline: 3px solid rgba(59,130,246,.82) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 999px rgba(59,130,246,.14) !important;
+                    }
+                    #chess-board .chess-square.teacher-guide-capture-28,
+                    .chess-square.teacher-guide-capture-28 {
+                        position: relative !important;
+                        outline: 3px solid rgba(239,68,68,.90) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 999px rgba(239,68,68,.18), 0 0 16px rgba(239,68,68,.35) !important;
+                    }
+                    #chess-board .chess-square.teacher-guide-risk-28,
+                    .chess-square.teacher-guide-risk-28 {
+                        position: relative !important;
+                        outline: 3px dashed rgba(249,115,22,.94) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 999px rgba(249,115,22,.16) !important;
+                    }
+                    #chess-board .chess-square.teacher-guide-best-28::before,
+                    #chess-board .chess-square.teacher-guide-good-28::before,
+                    #chess-board .chess-square.teacher-guide-capture-28::before,
+                    #chess-board .chess-square.teacher-guide-risk-28::before,
+                    .chess-square.teacher-guide-best-28::before,
+                    .chess-square.teacher-guide-good-28::before,
+                    .chess-square.teacher-guide-capture-28::before,
+                    .chess-square.teacher-guide-risk-28::before {
+                        content: attr(data-prof-guide-label-28);
+                        position: absolute;
+                        left: 50%;
+                        top: 3px;
+                        transform: translateX(-50%);
+                        z-index: 50;
+                        pointer-events: none;
+                        border-radius: 999px;
+                        padding: 2px 5px;
+                        font-size: clamp(8px, 1.45vw, 10px);
+                        font-weight: 1000;
+                        letter-spacing: .02em;
+                        color: #07111f;
+                        background: rgba(250,250,250,.92);
+                        box-shadow: 0 2px 8px rgba(0,0,0,.28);
+                        white-space: nowrap;
+                    }
+                    #chess-board .chess-square.teacher-guide-origin-28::after,
+                    .chess-square.teacher-guide-origin-28::after {
+                        content: 'PEÇA';
+                        position: absolute;
+                        left: 50%;
+                        bottom: 3px;
+                        transform: translateX(-50%);
+                        z-index: 50;
+                        pointer-events: none;
+                        border-radius: 999px;
+                        padding: 2px 5px;
+                        font-size: clamp(8px, 1.45vw, 10px);
+                        font-weight: 1000;
+                        color: #1c1917;
+                        background: rgba(254,240,138,.96);
+                        box-shadow: 0 2px 8px rgba(0,0,0,.25);
+                    }
                     @media (max-width: 520px) {
                         #teacher-piece-bubble-27 { width: min(292px, calc(100vw - 12px)); padding: 9px; border-radius: 14px; }
                         #teacher-piece-bubble-27 .bubble-body-27 { font-size: .72rem; }
@@ -11093,7 +11208,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         <div class="bubble-body-27"></div>
                     `;
                     document.body.appendChild(bubble);
-                    bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
+                    bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => { bubble.classList.remove('open'); try { limparGuiaProfessorXadrez28(); } catch (_) {} });
                 }
                 return bubble;
             }
@@ -11118,6 +11233,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 bubble.style.setProperty('--arrow-left', `${arrowLeft}px`);
                 bubble.style.setProperty('--arrow-top', `${arrowTop}px`);
             }
+
+            let guiaProfessorXadrez28Ativo = true;
+            let ultimoGuiaProfessorXadrez28 = null;
 
             function abrirBubbleProfessorXadrez27(dados = {}) {
                 const bubble = garantirBubbleProfessorXadrez27();
@@ -11152,21 +11270,113 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         <span class="bubble-label-27">Como instruir o aluno</span>
                         “${escapeBubble27(dados.fraseAula || 'Antes de jogar, observe o que a peça ataca, o que ela protege e qual fraqueza ela pode deixar.') }”
                     </div>
+                    <div class="bubble-guide-row-28">
+                        <button id="teacher-guide-toggle-28" class="bubble-guide-toggle-28" type="button">
+                            ${guiaProfessorXadrez28Ativo ? '🎯 Guia colorido ligado no tabuleiro' : '🎯 Mostrar guia colorido no tabuleiro'}
+                        </button>
+                        <div class="bubble-legend-28" aria-label="Legenda do guia do professor">
+                            <span class="legend-origin-28">Amarelo = peça</span>
+                            <span class="legend-best-28">Verde = melhor dica</span>
+                            <span class="legend-good-28">Azul = boa opção</span>
+                            <span class="legend-capture-28">Vermelho = captura</span>
+                            <span class="legend-risk-28">Laranja = cuidado</span>
+                        </div>
+                    </div>
                 `;
+                const btnGuia28 = bubble.querySelector('#teacher-guide-toggle-28');
+                if (btnGuia28) {
+                    btnGuia28.onclick = (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        guiaProfessorXadrez28Ativo = !guiaProfessorXadrez28Ativo;
+                        btnGuia28.textContent = guiaProfessorXadrez28Ativo ? '🎯 Guia colorido ligado no tabuleiro' : '🎯 Mostrar guia colorido no tabuleiro';
+                        if (guiaProfessorXadrez28Ativo && ultimoGuiaProfessorXadrez28) {
+                            aplicarGuiaProfessorXadrez28(ultimoGuiaProfessorXadrez28.peca, ultimoGuiaProfessorXadrez28.row, ultimoGuiaProfessorXadrez28.col, ultimoGuiaProfessorXadrez28.movimentos);
+                        } else {
+                            limparGuiaProfessorXadrez28();
+                        }
+                    };
+                }
                 bubble.classList.add('open');
                 bubble.style.left = '-9999px';
                 bubble.style.top = '8px';
                 requestAnimationFrame(() => posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect));
             }
 
+            function limparGuiaProfessorXadrez28() {
+                document.querySelectorAll('.teacher-selected-27, .teacher-guide-origin-28, .teacher-guide-best-28, .teacher-guide-good-28, .teacher-guide-capture-28, .teacher-guide-risk-28')
+                    .forEach(el => {
+                        el.classList.remove('teacher-selected-27', 'teacher-guide-origin-28', 'teacher-guide-best-28', 'teacher-guide-good-28', 'teacher-guide-capture-28', 'teacher-guide-risk-28');
+                        try { delete el.dataset.profGuideLabel28; } catch (_) { el.removeAttribute('data-prof-guide-label-28'); }
+                    });
+            }
+
             function limparMarcacaoBubbleProfessorXadrez27() {
-                document.querySelectorAll('.teacher-selected-27').forEach(el => el.classList.remove('teacher-selected-27'));
+                limparGuiaProfessorXadrez28();
             }
 
             function marcarPecaBubbleProfessorXadrez27(row, col) {
                 limparMarcacaoBubbleProfessorXadrez27();
                 const el = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
-                if (el) el.classList.add('teacher-selected-27');
+                if (el) el.classList.add('teacher-selected-27', 'teacher-guide-origin-28');
+            }
+
+            function avaliarGuiaProfessorXadrez28(peca, row, col, movimentos) {
+                const lista = Array.isArray(movimentos) ? movimentos : [];
+                const adv = adversario26(peca?.color);
+                return lista.map(m => {
+                    let score = 0;
+                    const destino = chessBoard?.[m.row]?.[m.col] || null;
+                    const captura = !!(m.capture || (destino && destino.color && destino.color !== peca.color));
+                    const valorDestino = destino ? valorPeca26(destino.type) : 0;
+                    const centroDestino = centro26(m.row, m.col);
+                    let atacado = false;
+                    let defendido = false;
+                    try { atacado = quadradoAtacado(chessBoard, m.row, m.col, adv); } catch (_) {}
+                    try { defendido = quadradoAtacado(chessBoard, m.row, m.col, peca.color); } catch (_) {}
+                    const risco = !!(atacado && !defendido && peca.type !== 'king');
+
+                    if (captura) score += valorDestino + 140;
+                    if (m.castle) score += 290;
+                    if (m.enPassant) score += 180;
+                    if (centroDestino >= 5.5) score += 80;
+                    if ((peca.type === 'knight' || peca.type === 'bishop') && (peca.color === 'white' ? row === 7 : row === 0)) score += 120;
+                    if (peca.type === 'rook' && (col === 0 || col === 7) && (m.col === 3 || m.col === 4)) score += 45;
+                    if (peca.type === 'queen' && captura) score += 25;
+                    if (peca.type === 'pawn' && (m.row === 0 || m.row === 7)) score += 900;
+                    if (!atacado) score += 45;
+                    if (atacado && defendido && peca.type !== 'king') score -= 30;
+                    if (risco) score -= Math.min(280, Math.max(90, valorPeca26(peca.type) / 3));
+
+                    return { move: m, score, captura, risco, atacado, defendido, valorDestino };
+                }).sort((a, b) => b.score - a.score);
+            }
+
+            function aplicarGuiaProfessorXadrez28(peca, row, col, movimentos) {
+                ultimoGuiaProfessorXadrez28 = { peca, row, col, movimentos: Array.isArray(movimentos) ? movimentos.slice() : [] };
+                limparGuiaProfessorXadrez28();
+                const origem = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+                if (origem) origem.classList.add('teacher-selected-27', 'teacher-guide-origin-28');
+                if (!guiaProfessorXadrez28Ativo || !peca) return;
+                const avaliadas = avaliarGuiaProfessorXadrez28(peca, row, col, movimentos).slice(0, 10);
+                avaliadas.forEach((item, idx) => {
+                    const m = item.move;
+                    const el = document.querySelector(`#chess-board .chess-square[data-row="${m.row}"][data-col="${m.col}"]`);
+                    if (!el) return;
+                    if (idx === 0) {
+                        el.classList.add('teacher-guide-best-28');
+                        el.dataset.profGuideLabel28 = item.captura ? 'MELHOR CAPTURA' : (m.castle ? 'MELHOR ROQUE' : 'MELHOR');
+                    } else if (item.captura) {
+                        el.classList.add('teacher-guide-capture-28');
+                        el.dataset.profGuideLabel28 = 'CAPTURA';
+                    } else if (item.risco) {
+                        el.classList.add('teacher-guide-risk-28');
+                        el.dataset.profGuideLabel28 = 'CUIDADO';
+                    } else {
+                        el.classList.add('teacher-guide-good-28');
+                        el.dataset.profGuideLabel28 = 'OPÇÃO';
+                    }
+                });
             }
 
             window.abrirBubbleProfessorXadrez27 = abrirBubbleProfessorXadrez27;
@@ -11183,6 +11393,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     const rect = rectQuadradoXadrez26(row, col);
                     const dados = criarDadosPopupXadrez26(peca, row, col, movimentos, rect);
                     marcarPecaBubbleProfessorXadrez27(row, col);
+                    aplicarGuiaProfessorXadrez28(peca, row, col, movimentos);
                     abrirBubbleProfessorXadrez27(dados);
                     ultimoBubbleProfessorXadrez27 = Date.now();
                     return true;
@@ -11209,6 +11420,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (ev.target.closest('#chess-board .chess-square')) return;
                 const bubble = document.getElementById('teacher-piece-bubble-27');
                 if (bubble) bubble.classList.remove('open');
+                limparGuiaProfessorXadrez28();
             }, true);
 
             const clickAnterior26 = handleChessSquareClick;
@@ -11227,6 +11439,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     setTimeout(() => {
                         try {
                             marcarPecaBubbleProfessorXadrez27(row, col);
+                            aplicarGuiaProfessorXadrez28(pecaAntes, row, col, movimentosAntes);
                             abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
                         } catch (_) {
                             if (window.abrirPopupProfessorPeca25) window.abrirPopupProfessorPeca25(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
@@ -13807,6 +14020,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
 
 
+
+/* ✅ PROFISSIONAL 28 - Guia colorido privado no tabuleiro do professor aplicado sobre a base Profissional 27. */
 
 /* ✅ FASE 36.12 - Reforço sem remendo: manter controles no tabuleiro se a sala online já estiver ativa. */
 document.addEventListener('click', async (ev) => {
