@@ -10119,9 +10119,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
         instalarFase30XadrezTabuleiroCentralizado();
 
-        /* ✅ PROFISSIONAL 19 — MANUAL PRIVADO DO PROFESSOR
-           Ativa com # no nome (#Isiquel ou Isiquel#), aparece apenas no aparelho do professor
-           e entrega orientação pedagógica sem alterar partida, Firebase, Damas, Admin, torneios ou sala online. */
+        /* ✅ PROFISSIONAL 20 — PROFESSOR INTELIGENTE AVANÇADO
+           Baseado no Manual Privado do Professor: ativa com # no nome (#Isiquel ou Isiquel#),
+           aparece apenas no aparelho do professor e adiciona análise didática da posição.
+           Não joga sozinho, não altera partida, Firebase, Damas, Admin, torneios ou sala online. */
         function instalarManualPrivadoProfessorXadrez19() {
             instalarCssManualPrivadoProfessorXadrez19();
             garantirPainelManualPrivadoProfessorXadrez19();
@@ -10230,6 +10231,44 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         font-size: .72rem;
                         line-height: 1.25;
                     }
+                    #chess-private-teacher-panel .teacher-analyze-btn {
+                        grid-column: 1 / -1;
+                        width: 100%;
+                        margin-top: 1px;
+                        border: 1px solid rgba(56,189,248,.35);
+                        background: linear-gradient(135deg, #0f766e, #2563eb);
+                        color: #ffffff;
+                        font-weight: 1000;
+                        border-radius: 10px;
+                        padding: 8px 10px;
+                        box-shadow: 0 8px 18px rgba(37,99,235,.18);
+                    }
+                    #chess-private-teacher-text .teacher-section-title {
+                        display: block;
+                        margin-top: 9px;
+                        margin-bottom: 4px;
+                        color: #7dd3fc;
+                        font-weight: 1000;
+                        text-transform: uppercase;
+                        font-size: .7rem;
+                        letter-spacing: .35px;
+                    }
+                    #chess-private-teacher-text .teacher-move-list {
+                        margin: 7px 0 0 0;
+                        padding: 0;
+                        list-style: none;
+                    }
+                    #chess-private-teacher-text .teacher-move-list li {
+                        margin-top: 6px;
+                        padding: 7px 8px;
+                        border-radius: 9px;
+                        background: rgba(2,132,199,.12);
+                        border: 1px solid rgba(125,211,252,.16);
+                        color: #dbeafe;
+                    }
+                    #chess-private-teacher-text .teacher-move-main { color: #fef3c7; font-weight: 1000; }
+                    #chess-private-teacher-text .teacher-score { color: #86efac; font-weight: 1000; }
+                    #chess-private-teacher-text .teacher-small { color: #94a3b8; font-size: .75rem; }
                     body:not(.chess-board-visible) #chess-private-teacher-panel,
                     body.chess-menu-active #chess-private-teacher-panel { display: none !important; }
                     @media(max-width:560px){
@@ -10251,18 +10290,19 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 panel.style.display = 'none';
                 panel.innerHTML = `
                     <div class="teacher-head">
-                        <div class="teacher-title">🎓 Manual privado do professor <span class="teacher-badge">só neste aparelho</span></div>
+                        <div class="teacher-title">🎓 Professor inteligente <span class="teacher-badge">privado</span></div>
                         <button id="chess-private-teacher-toggle" type="button" aria-label="Recolher manual">−</button>
                     </div>
                     <div id="chess-private-teacher-body">
                         <div id="chess-private-teacher-text">
-                            Toque em uma peça para receber uma orientação de aula. Use as dicas para explicar por áudio ou vídeo.
+                            Toque em uma peça ou use a análise da posição para receber dicas de ensino neste aparelho.
                         </div>
                         <div class="teacher-tip-grid">
                             <div class="teacher-tip-pill">🟨 peça tocada</div>
                             <div class="teacher-tip-pill">🟢 casas legais</div>
                             <div class="teacher-tip-pill">🔴 captura possível</div>
                             <div class="teacher-tip-pill">🛡️ foco: ensinar, defender e explicar</div>
+                            <button id="chess-private-teacher-analyze-btn" class="teacher-analyze-btn" type="button">🔎 Analisar posição</button>
                         </div>
                     </div>
                 `;
@@ -10274,6 +10314,13 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         chessProfessorPrivadoRecolhido = !chessProfessorPrivadoRecolhido;
                         panel.classList.toggle('teacher-collapsed', chessProfessorPrivadoRecolhido);
                         btn.textContent = chessProfessorPrivadoRecolhido ? '+' : '−';
+                    });
+                }
+                const analyzeBtn = panel.querySelector('#chess-private-teacher-analyze-btn');
+                if (analyzeBtn) {
+                    analyzeBtn.addEventListener('click', () => {
+                        if (!professorPrivadoPodeAparecerXadrez19()) return;
+                        atualizarManualPrivadoProfessorXadrez19(criarAnalisePosicaoProfessorXadrez20(chessPlayerColor || chessTurn));
                     });
                 }
                 return panel;
@@ -10323,6 +10370,137 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 return { risco, foco, capturas };
             }
 
+            function valorProfessorXadrez20(tipo) {
+                return { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 }[tipo] || 0;
+            }
+
+            function pecaCapturadaProfessorXadrez20(board, move) {
+                if (!move) return null;
+                if (move.enPassant && move.enPassantCapture) return board[move.enPassantCapture.row]?.[move.enPassantCapture.col] || null;
+                return board[move.row]?.[move.col] || null;
+            }
+
+            function centroProfessorXadrez20(row, col) {
+                if ((row === 3 || row === 4) && (col === 3 || col === 4)) return 2;
+                if (row >= 2 && row <= 5 && col >= 2 && col <= 5) return 1;
+                return 0;
+            }
+
+            function descreverRazoesProfessorXadrez20(razoes) {
+                const unicas = [];
+                for (const r of razoes) {
+                    if (r && !unicas.includes(r)) unicas.push(r);
+                }
+                return unicas.slice(0, 3).join(' • ') || 'jogada útil para explicar desenvolvimento, defesa e plano.';
+            }
+
+            function pontuarMovimentoProfessorXadrez20(board, item, corBase) {
+                const peca = board[item.from.row]?.[item.from.col] || null;
+                if (!peca) return null;
+                const adversario = corOposta(peca.color);
+                const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                if (!temp) return null;
+
+                const capturada = pecaCapturadaProfessorXadrez20(board, item.to);
+                const destinoAtacado = peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario);
+                const destinoDefendido = quadradoAtacado(temp, item.to.row, item.to.col, peca.color);
+                const estavaAmeacada = peca.type !== 'king' && quadradoAtacado(board, item.from.row, item.from.col, adversario);
+                const ficaAmeacadaSemDefesa = destinoAtacado && !destinoDefendido;
+                const daXeque = reiEstaEmXeque(temp, adversario);
+                const respostasAdversario = todosMovimentosLegais(adversario, temp);
+                const mate = daXeque && respostasAdversario.length === 0;
+                const melhora = Math.round((avaliarPosicaoTreinoXadrez(temp, peca.color) - avaliarPosicaoTreinoXadrez(board, peca.color)) / 16);
+                const razoes = [];
+                let score = 0;
+
+                if (mate) { score += 10000; razoes.push('mostra xeque-mate'); }
+                else if (daXeque) { score += 120; razoes.push('cria xeque e obriga resposta'); }
+
+                if (reiEstaEmXeque(board, peca.color)) { score += 180; razoes.push('responde ao xeque'); }
+
+                if (capturada) {
+                    const ganho = valorProfessorXadrez20(capturada.type) - (destinoAtacado && !destinoDefendido ? valorProfessorXadrez20(peca.type) * 0.6 : 0);
+                    score += Math.max(20, ganho / 2.4);
+                    razoes.push(`captura ${nomePeca[capturada.type].toLowerCase()}`);
+                }
+
+                if (item.to.castle) { score += 110; razoes.push('faz roque e protege o rei'); }
+                if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) { score += 500; razoes.push('promove peão'); }
+
+                const centro = centroProfessorXadrez20(item.to.row, item.to.col);
+                if (centro === 2) { score += 34; razoes.push('ocupa o centro'); }
+                else if (centro === 1) { score += 16; razoes.push('melhora controle central'); }
+
+                const saiuBase = (peca.color === 'white' && item.from.row === 7) || (peca.color === 'black' && item.from.row === 0);
+                if ((peca.type === 'knight' || peca.type === 'bishop') && saiuBase) { score += 42; razoes.push('desenvolve peça'); }
+                if (peca.type === 'queen' && ((peca.color === 'white' && item.to.row < 6) || (peca.color === 'black' && item.to.row > 1))) {
+                    score -= 18;
+                    razoes.push('cuidado para não expor a dama cedo');
+                }
+                if (estavaAmeacada && !destinoAtacado) { score += 52; razoes.push('tira peça de ameaça'); }
+                if (destinoAtacado && destinoDefendido) { score -= Math.min(55, valorProfessorXadrez20(peca.type) / 20); razoes.push('destino atacado, mas defendido'); }
+                if (ficaAmeacadaSemDefesa) { score -= Math.min(160, valorProfessorXadrez20(peca.type) / 7); razoes.push('atenção: pode ficar sem defesa'); }
+                if (peca.type === 'king' && destinoAtacado) { score -= 300; razoes.push('rei em casa perigosa'); }
+
+                score += melhora;
+                if (melhora > 30) razoes.push('melhora a posição');
+                if (melhora < -35) razoes.push('pode piorar a posição');
+
+                return {
+                    item,
+                    peca,
+                    score,
+                    razoes: descreverRazoesProfessorXadrez20(razoes),
+                    texto: `${nomePeca[peca.type]} ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}`
+                };
+            }
+
+            function melhoresMovimentosProfessorXadrez20(cor, board = chessBoard, filtro = null, limite = 3) {
+                let movimentos = [];
+                if (filtro) {
+                    const peca = board[filtro.row]?.[filtro.col];
+                    if (peca) {
+                        movimentos = calcularMovimentosLegais(filtro.row, filtro.col, board).map(m => ({ from: { row: filtro.row, col: filtro.col }, to: m }));
+                    }
+                } else {
+                    movimentos = todosMovimentosLegais(cor, board);
+                }
+                return movimentos
+                    .map(item => pontuarMovimentoProfessorXadrez20(board, item, cor))
+                    .filter(Boolean)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limite);
+            }
+
+            function renderizarSugestoesProfessorXadrez20(lista, titulo = 'Dicas fortes para ensinar') {
+                if (!lista || !lista.length) {
+                    return '<span class="teacher-section-title">Professor inteligente</span><span class="muted">Não encontrei uma dica forte agora. Use a posição para ensinar segurança do rei e peças protegidas.</span>';
+                }
+                return `
+                    <span class="teacher-section-title">${titulo}</span>
+                    <ul class="teacher-move-list">
+                        ${lista.map((sug, idx) => `
+                            <li>
+                                <span class="teacher-move-main">${idx + 1}. ${sug.texto}</span><br>
+                                <span class="teacher-small">${sug.razoes}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div class="teacher-small" style="margin-top:7px;">Use como roteiro de aula: confirme no tabuleiro, explique o motivo e deixe o aluno pensar antes de jogar.</div>
+                `;
+            }
+
+            function criarAnalisePosicaoProfessorXadrez20(cor = chessTurn) {
+                const corAnalise = cor || chessTurn || 'white';
+                const emXeque = reiEstaEmXeque(chessBoard, corAnalise);
+                const lista = melhoresMovimentosProfessorXadrez20(corAnalise, chessBoard, null, 3);
+                const lado = corDaPecaTextoProfessorXadrez19(corAnalise);
+                const abertura = emXeque
+                    ? `<span class="danger">O rei das ${lado} está em xeque.</span> A aula deve começar mostrando as três defesas: fugir, capturar ou bloquear.`
+                    : `Análise didática das ${lado}. Priorize segurança do rei, desenvolvimento e peças protegidas.`;
+                return `${abertura}${renderizarSugestoesProfessorXadrez20(lista, 'Melhores dicas da posição')}`;
+            }
+
             function criarDicaManualPrivadoProfessorXadrez19(peca, row, col, movimentos, contexto = '') {
                 if (!peca) {
                     return 'Toque em uma peça para preparar uma explicação para o aluno. O manual não altera a partida.';
@@ -10332,12 +10510,14 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const capturasQtd = diag.capturas.length;
                 const vez = chessTurn === peca.color ? 'é a vez desse lado jogar' : 'não é a vez desse lado agora';
                 const movimentoTexto = textoMovimentoPecaXadrez(peca.type);
+                const sugestoes = melhoresMovimentosProfessorXadrez20(peca.color, chessBoard, { row, col }, 3);
                 return `
                     <strong>${nomePeca[peca.type]} ${corDaPecaTextoProfessorXadrez19(peca.color)}</strong> em <strong>${alg(row, col)}</strong> — ${vez}.<br>
                     <span class="muted">${movimentoTexto}</span><br>
                     ${diag.risco}<br>
                     <strong>Casas legais:</strong> ${movimentosQtd} movimento(s), ${capturasQtd} captura(s). <span class="muted">${casasMovimentosProfessorXadrez19(movimentos)}</span><br>
                     <strong>Como explicar:</strong> ${diag.foco}${contexto ? `<br><span class="muted">${contexto}</span>` : ''}
+                    ${renderizarSugestoesProfessorXadrez20(sugestoes, 'Melhores dicas dessa peça')}
                 `;
             }
 
@@ -10354,8 +10534,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (texto) chessProfessorPrivadoTexto = texto;
                 if (!chessProfessorPrivadoTexto) {
                     chessProfessorPrivadoTexto = chessPlayerColor === chessTurn
-                        ? 'Manual privado ligado. É sua vez: toque em uma peça sua para preparar a explicação da jogada.'
-                        : 'Manual privado ligado. Observe a posição do aluno e toque em uma peça para preparar uma explicação por áudio ou vídeo.';
+                        ? 'Professor inteligente ligado. Toque em uma peça ou clique em Analisar posição para ver dicas de ensino.'
+                        : 'Professor inteligente ligado. Observe a posição do aluno, toque numa peça ou clique em Analisar posição para preparar sua explicação.';
                 }
                 el.innerHTML = chessProfessorPrivadoTexto;
             }
@@ -10402,7 +10582,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 chessProfessorPrivadoAtivo = !!(professorSolicitado && chessMode === 'online');
                 garantirPainelManualPrivadoProfessorXadrez19();
                 atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoAtivo
-                    ? 'Manual privado ligado. Toque em uma peça para receber orientação de aula neste aparelho.'
+                    ? 'Professor inteligente ligado. Toque numa peça ou clique em Analisar posição para receber dicas de aula neste aparelho.'
                     : '');
                 return resp;
             };
