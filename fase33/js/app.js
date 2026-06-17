@@ -8533,8 +8533,26 @@ Compartilhe com os amigos e entre no horário marcado.`;
         }
 
         function criarCardTorneioPublicoXadrez(torneio, id) {
+            // PROFISSIONAL 15 — card público do torneio organizado de verdade, com estilo direto no próprio card.
+            // Motivo: evitar que CSS antigo/cache deixe o texto solto e embolado no menu público do Xadrez.
             const card = document.createElement('div');
-            card.className = 'chess-public-tournament-card';
+            card.className = 'chess-public-tournament-card chess-public-tournament-card-v15';
+            card.style.cssText = [
+                'box-sizing:border-box',
+                'width:100%',
+                'max-width:620px',
+                'margin:12px auto 0 auto',
+                'padding:16px',
+                'border-radius:18px',
+                'background:linear-gradient(135deg,rgba(2,6,23,.98),rgba(12,74,110,.60))',
+                'border:1px solid rgba(125,211,252,.40)',
+                'box-shadow:0 14px 32px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.08)',
+                'display:block',
+                'text-align:left',
+                'color:#e5e7eb',
+                'overflow:hidden'
+            ].join(';');
+
             const nome = somenteTextoSeguro(torneio?.name || 'Torneio de Xadrez', 60);
             const sala = normalizarSalaXadrez(torneio?.room || '');
             const mensagem = textoAvisoSeguro(torneio?.message || 'Participe ou acompanhe a sala oficial do torneio.', 145);
@@ -8543,47 +8561,106 @@ Compartilhe com os amigos e entre no horário marcado.`;
             const diaTxt = partesData[0] || 'A definir';
             const horaTxt = partesData[1] || 'A definir';
             const salaTxt = (sala || 'a definir').toUpperCase();
+
             card.innerHTML = `
-                <div class="chess-public-tournament-icon">🏆</div>
-                <div class="chess-public-tournament-content">
-                    <div class="chess-public-tournament-head">
-                        <div class="chess-public-tournament-name">${escapeHtmlXadrez(nome)}</div>
-                        <div class="chess-public-tournament-badge">Aberto</div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <div style="width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.65rem;background:radial-gradient(circle,rgba(250,204,21,.26),rgba(15,23,42,.94));border:1px solid rgba(250,204,21,.44);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 10px 18px rgba(0,0,0,.25);flex:0 0 auto;">🏆</div>
+                    <div style="min-width:0;flex:1;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <div style="font-size:1.02rem;font-weight:1000;line-height:1.15;color:#f8fafc;">${escapeHtmlXadrez(nome)}</div>
+                            <div style="background:rgba(22,163,74,.32);color:#bbf7d0;border:1px solid rgba(34,197,94,.60);border-radius:999px;padding:4px 10px;font-size:.66rem;font-weight:1000;text-transform:uppercase;line-height:1;">Aberto</div>
+                        </div>
+                        <div style="font-size:.72rem;color:#bfdbfe;margin-top:4px;line-height:1.3;">Torneio oficial publicado pelo administrador</div>
                     </div>
-                    <div class="chess-public-tournament-info">
-                        <div class="chess-public-info-chip">
-                            <div class="chess-public-info-label">Data</div>
-                            <div class="chess-public-info-value">📅 ${escapeHtmlXadrez(diaTxt)}</div>
-                        </div>
-                        <div class="chess-public-info-chip">
-                            <div class="chess-public-info-label">Horário</div>
-                            <div class="chess-public-info-value">🕘 ${escapeHtmlXadrez(horaTxt)}</div>
-                        </div>
-                        <div class="chess-public-info-chip">
-                            <div class="chess-public-info-label">Sala</div>
-                            <div class="chess-public-info-value">🏠 ${escapeHtmlXadrez(salaTxt)}</div>
-                        </div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px 0;">
+                    <div style="background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.23);border-radius:13px;padding:9px 8px;text-align:center;min-height:52px;box-sizing:border-box;">
+                        <div style="color:#93c5fd;font-size:.56rem;font-weight:1000;text-transform:uppercase;letter-spacing:.35px;margin-bottom:4px;">📅 Data</div>
+                        <div style="color:#f8fafc;font-size:.76rem;font-weight:1000;line-height:1.15;">${escapeHtmlXadrez(diaTxt)}</div>
                     </div>
-                    <div class="chess-public-tournament-message">${escapeHtmlXadrez(mensagem)}</div>
+                    <div style="background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.23);border-radius:13px;padding:9px 8px;text-align:center;min-height:52px;box-sizing:border-box;">
+                        <div style="color:#93c5fd;font-size:.56rem;font-weight:1000;text-transform:uppercase;letter-spacing:.35px;margin-bottom:4px;">🕘 Horário</div>
+                        <div style="color:#f8fafc;font-size:.76rem;font-weight:1000;line-height:1.15;">${escapeHtmlXadrez(horaTxt)}</div>
+                    </div>
+                    <div style="background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.23);border-radius:13px;padding:9px 8px;text-align:center;min-height:52px;box-sizing:border-box;">
+                        <div style="color:#93c5fd;font-size:.56rem;font-weight:1000;text-transform:uppercase;letter-spacing:.35px;margin-bottom:4px;">🏠 Sala</div>
+                        <div style="color:#f8fafc;font-size:.76rem;font-weight:1000;line-height:1.15;">${escapeHtmlXadrez(salaTxt)}</div>
+                    </div>
+                </div>
+                <div style="background:rgba(2,6,23,.52);border:1px solid rgba(34,211,238,.18);border-radius:13px;padding:10px 12px;color:#dbeafe;font-size:.78rem;line-height:1.38;margin:0 0 12px 0;text-align:center;box-sizing:border-box;">
+                    ${escapeHtmlXadrez(mensagem)}
                 </div>
             `;
+
             const actions = document.createElement('div');
             actions.className = 'chess-public-tournament-actions';
+            actions.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px;align-items:stretch;';
+
             const assistir = document.createElement('button');
             assistir.type = 'button';
             assistir.className = 'chess-public-watch-btn';
-            assistir.setAttribute('style', 'background:linear-gradient(135deg,#0ea5e9,#2563eb) !important;color:#fff !important;border:1px solid rgba(34,211,238,.70) !important;');
+            assistir.setAttribute('style', [
+                'width:100% !important',
+                'min-height:50px !important',
+                'padding:12px 14px !important',
+                'border-radius:14px !important',
+                'background:linear-gradient(135deg,#0ea5e9,#2563eb) !important',
+                'color:#fff !important',
+                'border:1px solid rgba(34,211,238,.72) !important',
+                'box-shadow:0 10px 20px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.18) !important',
+                'font-size:.78rem !important',
+                'font-weight:1000 !important',
+                'text-transform:uppercase !important',
+                'letter-spacing:.45px !important',
+                'display:flex !important',
+                'align-items:center !important',
+                'justify-content:center !important',
+                'gap:8px !important',
+                'margin:0 !important'
+            ].join(';'));
             assistir.textContent = '👀 Assistir online';
             assistir.onclick = () => assistirTorneioPublicoXadrez(torneio);
+
             const copiar = document.createElement('button');
             copiar.type = 'button';
             copiar.className = 'chess-public-copy-btn';
-            copiar.setAttribute('style', 'background:linear-gradient(135deg,#1e293b,#5b21b6) !important;color:#fff !important;border:1px solid rgba(168,85,247,.70) !important;');
+            copiar.setAttribute('style', [
+                'width:100% !important',
+                'min-height:50px !important',
+                'padding:12px 14px !important',
+                'border-radius:14px !important',
+                'background:linear-gradient(135deg,#1e293b,#5b21b6) !important',
+                'color:#fff !important',
+                'border:1px solid rgba(168,85,247,.72) !important',
+                'box-shadow:0 10px 20px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.18) !important',
+                'font-size:.78rem !important',
+                'font-weight:1000 !important',
+                'text-transform:uppercase !important',
+                'letter-spacing:.45px !important',
+                'display:flex !important',
+                'align-items:center !important',
+                'justify-content:center !important',
+                'gap:8px !important',
+                'margin:0 !important'
+            ].join(';'));
             copiar.textContent = '📋 Copiar convite';
             copiar.onclick = () => copiarLinkPublicoTorneioXadrez(torneio);
+
             actions.appendChild(assistir);
             actions.appendChild(copiar);
             card.appendChild(actions);
+
+            // Ajuste simples para telas estreitas sem depender de CSS externo.
+            if (window.matchMedia && window.matchMedia('(max-width: 560px)').matches) {
+                card.style.padding = '14px';
+                card.querySelectorAll('[style*="grid-template-columns:repeat(3"]').forEach(el => {
+                    el.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))';
+                    el.style.gap = '6px';
+                });
+                actions.style.gridTemplateColumns = '1fr';
+                actions.style.gap = '10px';
+            }
+
             return card;
         }
 
@@ -8594,11 +8671,25 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (!panel) {
                 panel = document.createElement('div');
                 panel.id = 'chess-public-tournaments-panel';
-                panel.className = 'chess-public-tournaments-panel';
+                panel.className = 'chess-public-tournaments-panel chess-public-tournaments-panel-v15';
+                panel.setAttribute('style', [
+                    'box-sizing:border-box',
+                    'width:100%',
+                    'max-width:760px',
+                    'margin:18px auto 22px auto',
+                    'padding:18px',
+                    'border-radius:22px',
+                    'background:radial-gradient(circle at top left,rgba(34,211,238,.16),transparent 34%),linear-gradient(135deg,rgba(2,6,23,.96),rgba(8,47,73,.78))',
+                    'border:1px solid rgba(56,189,248,.62)',
+                    'box-shadow:0 18px 42px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08)',
+                    'text-align:left',
+                    'color:#e5e7eb',
+                    'overflow:hidden'
+                ].join(';'));
                 panel.innerHTML = `
-                    <div class="chess-public-tournaments-title">🏆 Torneios marcados</div>
-                    <div class="chess-public-tournaments-desc">Acompanhe os torneios oficiais publicados pelo administrador.</div>
-                    <div id="chess-public-tournaments-list"><div class="tiny-muted">Carregando torneios...</div></div>
+                    <div class="chess-public-tournaments-title" style="display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;color:#fde68a;font-size:1.02rem;font-weight:1000;line-height:1.2;margin:0 0 6px 0;">🏆 Torneios marcados</div>
+                    <div class="chess-public-tournaments-desc" style="box-sizing:border-box;max-width:620px;margin:0 auto 14px auto;padding:9px 12px;border-radius:13px;background:rgba(15,23,42,.54);border:1px solid rgba(148,163,184,.18);color:#dbeafe;font-size:.78rem;line-height:1.35;text-align:center;">Acompanhe os torneios oficiais publicados pelo administrador.</div>
+                    <div id="chess-public-tournaments-list" style="display:grid;gap:12px;"><div class="tiny-muted">Carregando torneios...</div></div>
                 `;
             }
             const onlinePanel = document.getElementById('chess-online-panel');
