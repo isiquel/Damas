@@ -14,7 +14,7 @@
 
   window.TABULEIRO_ARENA_CONFIG = Object.freeze({
     appName: 'Tabuleiro Arena',
-    baseEstavel: 'Fase 40',
+    baseEstavel: 'Ativado',
     etapaOrganizacao: 'Separação 03 — JS Config Seguro',
     cameraXadrez: 'pausada',
     ambienteTeste: '/fase33/',

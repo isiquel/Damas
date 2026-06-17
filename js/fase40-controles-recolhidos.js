@@ -43,18 +43,18 @@
 
     function updatePhaseTexts() {
         const hubBadge = document.querySelector('#game-card-xadrez .game-mode-badge');
-        if (hubBadge) hubBadge.textContent = 'Fase 40';
+        if (hubBadge) hubBadge.textContent = 'Ativado';
 
         const subtitle = document.querySelector('#chess-screen .chess-subtitle');
         if (subtitle) {
-            subtitle.textContent = 'Fase 40: tabuleiro mais limpo e controles recolhidos no botão +. Jogo online, chat, sair da sala e modal de fim continuam ativos.';
+            subtitle.textContent = 'Ativado: tabuleiro limpo, controles recolhidos no botão +, jogo online, chat e sair da sala funcionando.';
         }
 
         const pill = document.querySelector('#chess-screen .chess-clean-game-pill');
         if (pill) pill.textContent = '♟️ Tabuleiro fixo + controles +';
 
         const warning = document.querySelector('#chess-screen .chess-warning');
-        if (warning) warning.textContent = '✅ Fase 40 ativa: câmera removida e controles do Xadrez recolhidos no +. Damas preservada.';
+        if (warning) warning.textContent = '✅ Ativado: câmera removida, controles do Xadrez recolhidos no + e Damas preservada.';
     }
 
     function ensureLeaveButtonInBoard() {

@@ -4362,6 +4362,13 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessAdminUnsubscribeRooms = null;
         let chessAdminUnsubscribeChat = null;
 
+        // ✅ PROFISSIONAL 19 - MANUAL PRIVADO DO PROFESSOR
+        // Ativa somente no aparelho de quem entrou com # no nome.
+        // Não grava aviso na sala, não altera o Firebase e não aparece para o outro jogador.
+        let chessProfessorPrivadoAtivo = false;
+        let chessProfessorPrivadoTexto = '';
+        let chessProfessorPrivadoRecolhido = false;
+
         // ✅ FASE 13.5 - MODO TREINO DO XADREZ
         // Mantém a Damas preservada. A máquina joga somente dentro do módulo do Xadrez.
         let chessTrainingActive = false;
@@ -6832,7 +6839,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                     square.setAttribute('role', 'button');
                     square.setAttribute('aria-label', `Casa ${alg(row, col)}`);
 
-                    const mostrarAjudasVisuaisXadrez = chessMode === 'training';
+                    const mostrarAjudasVisuaisXadrez = chessMode === 'training' || (chessProfessorPrivadoAtivo && chessMode === 'online');
                     const mostrarProfessorAprenderXadrez = chessMode === 'training' && chessTrainingLearnMode;
 
                     if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) square.classList.add('selected');
@@ -10112,6 +10119,542 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
         instalarFase30XadrezTabuleiroCentralizado();
 
+        /* ✅ PROFISSIONAL 20 — PROFESSOR INTELIGENTE AVANÇADO
+           Baseado no Manual Privado do Professor: ativa com # no nome (#Isiquel ou Isiquel#),
+           aparece apenas no aparelho do professor e adiciona análise didática da posição.
+           Não joga sozinho, não altera partida, Firebase, Damas, Admin, torneios ou sala online. */
+        function instalarManualPrivadoProfessorXadrez19() {
+            instalarCssManualPrivadoProfessorXadrez19();
+            garantirPainelManualPrivadoProfessorXadrez19();
+
+            function detectarProfessorPrivadoPorNomeXadrez19(nome) {
+                const raw = String(nome || '').trim();
+                return raw.length > 1 && (raw.startsWith('#') || raw.endsWith('#'));
+            }
+
+            function limparNomeProfessorPrivadoXadrez19(nome) {
+                return String(nome || '')
+                    .trim()
+                    .replace(/^#+\s*/g, '')
+                    .replace(/\s*#+$/g, '')
+                    .replace(/\s+/g, ' ')
+                    .slice(0, 18);
+            }
+
+            function professorPrivadoPodeAparecerXadrez19() {
+                return !!(chessProfessorPrivadoAtivo && chessMode === 'online' && document.body.classList.contains('chess-board-visible'));
+            }
+
+            function instalarCssManualPrivadoProfessorXadrez19() {
+                if (document.getElementById('chess-private-teacher-style-19')) return;
+                const style = document.createElement('style');
+                style.id = 'chess-private-teacher-style-19';
+                style.textContent = `
+                    #chess-private-teacher-panel {
+                        max-width: 520px;
+                        margin: 12px auto 0 auto;
+                        background: linear-gradient(135deg, rgba(2,6,23,.98), rgba(15,23,42,.98));
+                        border: 1px solid rgba(56,189,248,.42);
+                        border-radius: 14px;
+                        padding: 10px;
+                        text-align: left;
+                        box-shadow: 0 14px 36px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+                        color: #e2e8f0;
+                    }
+                    #chess-private-teacher-panel .teacher-head {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        margin-bottom: 8px;
+                    }
+                    #chess-private-teacher-panel .teacher-title {
+                        color: #7dd3fc;
+                        font-size: .78rem;
+                        font-weight: 1000;
+                        letter-spacing: .45px;
+                        text-transform: uppercase;
+                    }
+                    #chess-private-teacher-panel .teacher-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        margin-left: 6px;
+                        padding: 2px 7px;
+                        border-radius: 999px;
+                        background: rgba(16,185,129,.13);
+                        border: 1px solid rgba(16,185,129,.35);
+                        color: #86efac;
+                        font-size: .64rem;
+                        font-weight: 900;
+                        vertical-align: middle;
+                    }
+                    #chess-private-teacher-toggle {
+                        width: auto;
+                        min-width: 34px;
+                        padding: 5px 9px;
+                        border-radius: 8px;
+                        background: #0f766e;
+                        color: white;
+                        font-size: .78rem;
+                        line-height: 1;
+                    }
+                    #chess-private-teacher-body { display: block; }
+                    #chess-private-teacher-panel.teacher-collapsed #chess-private-teacher-body { display: none; }
+                    #chess-private-teacher-text {
+                        background: rgba(15,23,42,.84);
+                        border: 1px solid rgba(148,163,184,.16);
+                        border-radius: 10px;
+                        padding: 10px;
+                        color: #dbeafe;
+                        font-size: .84rem;
+                        line-height: 1.45;
+                        min-height: 58px;
+                    }
+                    #chess-private-teacher-text strong { color: #facc15; }
+                    #chess-private-teacher-text .muted { color: #94a3b8; }
+                    #chess-private-teacher-text .good { color: #86efac; font-weight: 900; }
+                    #chess-private-teacher-text .warn { color: #fbbf24; font-weight: 900; }
+                    #chess-private-teacher-text .danger { color: #fca5a5; font-weight: 900; }
+                    .teacher-tip-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 7px;
+                        margin-top: 8px;
+                    }
+                    .teacher-tip-pill {
+                        background: rgba(30,41,59,.72);
+                        border: 1px solid rgba(255,255,255,.08);
+                        border-radius: 9px;
+                        padding: 7px 8px;
+                        color: #cbd5e1;
+                        font-size: .72rem;
+                        line-height: 1.25;
+                    }
+                    #chess-private-teacher-panel .teacher-analyze-btn {
+                        grid-column: 1 / -1;
+                        width: 100%;
+                        margin-top: 1px;
+                        border: 1px solid rgba(56,189,248,.35);
+                        background: linear-gradient(135deg, #0f766e, #2563eb);
+                        color: #ffffff;
+                        font-weight: 1000;
+                        border-radius: 10px;
+                        padding: 8px 10px;
+                        box-shadow: 0 8px 18px rgba(37,99,235,.18);
+                    }
+                    #chess-private-teacher-text .teacher-section-title {
+                        display: block;
+                        margin-top: 9px;
+                        margin-bottom: 4px;
+                        color: #7dd3fc;
+                        font-weight: 1000;
+                        text-transform: uppercase;
+                        font-size: .7rem;
+                        letter-spacing: .35px;
+                    }
+                    #chess-private-teacher-text .teacher-move-list {
+                        margin: 7px 0 0 0;
+                        padding: 0;
+                        list-style: none;
+                    }
+                    #chess-private-teacher-text .teacher-move-list li {
+                        margin-top: 6px;
+                        padding: 7px 8px;
+                        border-radius: 9px;
+                        background: rgba(2,132,199,.12);
+                        border: 1px solid rgba(125,211,252,.16);
+                        color: #dbeafe;
+                    }
+                    #chess-private-teacher-text .teacher-move-main { color: #fef3c7; font-weight: 1000; }
+                    #chess-private-teacher-text .teacher-score { color: #86efac; font-weight: 1000; }
+                    #chess-private-teacher-text .teacher-small { color: #94a3b8; font-size: .75rem; }
+                    body:not(.chess-board-visible) #chess-private-teacher-panel,
+                    body.chess-menu-active #chess-private-teacher-panel { display: none !important; }
+                    @media(max-width:560px){
+                        #chess-private-teacher-panel { margin-top: 10px; padding: 9px; }
+                        .teacher-tip-grid { grid-template-columns: 1fr; }
+                        #chess-private-teacher-text { font-size: .8rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function garantirPainelManualPrivadoProfessorXadrez19() {
+                if (document.getElementById('chess-private-teacher-panel')) return document.getElementById('chess-private-teacher-panel');
+                const actions = document.querySelector('#chess-screen .chess-actions');
+                const card = document.querySelector('#chess-screen .chess-card');
+                if (!actions && !card) return null;
+                const panel = document.createElement('div');
+                panel.id = 'chess-private-teacher-panel';
+                panel.style.display = 'none';
+                panel.innerHTML = `
+                    <div class="teacher-head">
+                        <div class="teacher-title">🎓 Professor inteligente <span class="teacher-badge">privado</span></div>
+                        <button id="chess-private-teacher-toggle" type="button" aria-label="Recolher manual">−</button>
+                    </div>
+                    <div id="chess-private-teacher-body">
+                        <div id="chess-private-teacher-text">
+                            Toque em uma peça ou use a análise da posição para receber dicas de ensino neste aparelho.
+                        </div>
+                        <div class="teacher-tip-grid">
+                            <div class="teacher-tip-pill">🟨 peça tocada</div>
+                            <div class="teacher-tip-pill">🟢 casas legais</div>
+                            <div class="teacher-tip-pill">🔴 captura possível</div>
+                            <div class="teacher-tip-pill">🛡️ foco: ensinar, defender e explicar</div>
+                            <button id="chess-private-teacher-analyze-btn" class="teacher-analyze-btn" type="button">🔎 Analisar posição</button>
+                        </div>
+                    </div>
+                `;
+                if (actions && actions.parentNode) actions.insertAdjacentElement('afterend', panel);
+                else card.appendChild(panel);
+                const btn = panel.querySelector('#chess-private-teacher-toggle');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        chessProfessorPrivadoRecolhido = !chessProfessorPrivadoRecolhido;
+                        panel.classList.toggle('teacher-collapsed', chessProfessorPrivadoRecolhido);
+                        btn.textContent = chessProfessorPrivadoRecolhido ? '+' : '−';
+                    });
+                }
+                const analyzeBtn = panel.querySelector('#chess-private-teacher-analyze-btn');
+                if (analyzeBtn) {
+                    analyzeBtn.addEventListener('click', () => {
+                        if (!professorPrivadoPodeAparecerXadrez19()) return;
+                        atualizarManualPrivadoProfessorXadrez19(criarAnalisePosicaoProfessorXadrez20(chessPlayerColor || chessTurn));
+                    });
+                }
+                return panel;
+            }
+
+            function corDaPecaTextoProfessorXadrez19(cor) {
+                return cor === 'white' ? 'brancas' : 'pretas';
+            }
+
+            function casasMovimentosProfessorXadrez19(movimentos) {
+                const casas = (movimentos || []).slice(0, 12).map(m => alg(m.row, m.col));
+                if (!casas.length) return 'nenhuma casa legal agora';
+                return casas.join(', ') + ((movimentos || []).length > 12 ? '...' : '');
+            }
+
+            function diagnosticarPecaProfessorXadrez19(peca, row, col, movimentos) {
+                const adversario = corOposta(peca.color);
+                const ameacada = quadradoAtacado(chessBoard, row, col, adversario);
+                const protegida = quadradoAtacado(chessBoard, row, col, peca.color);
+                const capturas = (movimentos || []).filter(m => m.capture);
+                const centro = row >= 2 && row <= 5 && col >= 2 && col <= 5;
+                const inicio = (peca.color === 'white' && row >= 6) || (peca.color === 'black' && row <= 1);
+                let foco = 'Explique para o aluno o objetivo da peça antes de jogar.';
+
+                if (reiEstaEmXeque(chessBoard, peca.color)) {
+                    foco = 'O rei desse lado está em xeque: ensine que a prioridade é fugir, bloquear ou capturar a ameaça.';
+                } else if (capturas.length) {
+                    foco = 'Existe captura possível. Oriente o aluno a conferir se a peça ficará protegida depois da captura.';
+                } else if (peca.type === 'king') {
+                    foco = 'Com o rei, a aula é segurança: ele não deve entrar em casa atacada.';
+                } else if (peca.type === 'pawn') {
+                    foco = 'Com peão, ensine estrutura, avanço com apoio e captura somente na diagonal.';
+                } else if ((peca.type === 'knight' || peca.type === 'bishop') && inicio) {
+                    foco = 'Boa chance para ensinar desenvolvimento: tirar cavalo e bispo ajuda a controlar o centro.';
+                } else if (peca.type === 'queen') {
+                    foco = 'A dama é forte, mas explique o cuidado para não sair cedo demais e virar alvo.';
+                } else if (peca.type === 'rook') {
+                    foco = 'A torre fica melhor em coluna aberta. Explique linhas retas e apoio a peões.';
+                } else if (centro) {
+                    foco = 'Essa peça influencia o centro. Use isso para explicar controle de espaço.';
+                }
+
+                const risco = ameacada
+                    ? (protegida ? '<span class="warn">A peça está ameaçada, mas parece ter defesa.</span>' : '<span class="danger">A peça está ameaçada e pode estar sem defesa.</span>')
+                    : '<span class="good">A peça não parece estar atacada diretamente agora.</span>';
+
+                return { risco, foco, capturas };
+            }
+
+            function valorProfessorXadrez20(tipo) {
+                return { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 }[tipo] || 0;
+            }
+
+            function pecaCapturadaProfessorXadrez20(board, move) {
+                if (!move) return null;
+                if (move.enPassant && move.enPassantCapture) return board[move.enPassantCapture.row]?.[move.enPassantCapture.col] || null;
+                return board[move.row]?.[move.col] || null;
+            }
+
+            function centroProfessorXadrez20(row, col) {
+                if ((row === 3 || row === 4) && (col === 3 || col === 4)) return 2;
+                if (row >= 2 && row <= 5 && col >= 2 && col <= 5) return 1;
+                return 0;
+            }
+
+            function descreverRazoesProfessorXadrez20(razoes) {
+                const unicas = [];
+                for (const r of razoes) {
+                    if (r && !unicas.includes(r)) unicas.push(r);
+                }
+                return unicas.slice(0, 3).join(' • ') || 'jogada útil para explicar desenvolvimento, defesa e plano.';
+            }
+
+            function pontuarMovimentoProfessorXadrez20(board, item, corBase) {
+                const peca = board[item.from.row]?.[item.from.col] || null;
+                if (!peca) return null;
+                const adversario = corOposta(peca.color);
+                const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                if (!temp) return null;
+
+                const capturada = pecaCapturadaProfessorXadrez20(board, item.to);
+                const destinoAtacado = peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario);
+                const destinoDefendido = quadradoAtacado(temp, item.to.row, item.to.col, peca.color);
+                const estavaAmeacada = peca.type !== 'king' && quadradoAtacado(board, item.from.row, item.from.col, adversario);
+                const ficaAmeacadaSemDefesa = destinoAtacado && !destinoDefendido;
+                const daXeque = reiEstaEmXeque(temp, adversario);
+                const respostasAdversario = todosMovimentosLegais(adversario, temp);
+                const mate = daXeque && respostasAdversario.length === 0;
+                const melhora = Math.round((avaliarPosicaoTreinoXadrez(temp, peca.color) - avaliarPosicaoTreinoXadrez(board, peca.color)) / 16);
+                const razoes = [];
+                let score = 0;
+
+                if (mate) { score += 10000; razoes.push('mostra xeque-mate'); }
+                else if (daXeque) { score += 120; razoes.push('cria xeque e obriga resposta'); }
+
+                if (reiEstaEmXeque(board, peca.color)) { score += 180; razoes.push('responde ao xeque'); }
+
+                if (capturada) {
+                    const ganho = valorProfessorXadrez20(capturada.type) - (destinoAtacado && !destinoDefendido ? valorProfessorXadrez20(peca.type) * 0.6 : 0);
+                    score += Math.max(20, ganho / 2.4);
+                    razoes.push(`captura ${nomePeca[capturada.type].toLowerCase()}`);
+                }
+
+                if (item.to.castle) { score += 110; razoes.push('faz roque e protege o rei'); }
+                if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) { score += 500; razoes.push('promove peão'); }
+
+                const centro = centroProfessorXadrez20(item.to.row, item.to.col);
+                if (centro === 2) { score += 34; razoes.push('ocupa o centro'); }
+                else if (centro === 1) { score += 16; razoes.push('melhora controle central'); }
+
+                const saiuBase = (peca.color === 'white' && item.from.row === 7) || (peca.color === 'black' && item.from.row === 0);
+                if ((peca.type === 'knight' || peca.type === 'bishop') && saiuBase) { score += 42; razoes.push('desenvolve peça'); }
+                if (peca.type === 'queen' && ((peca.color === 'white' && item.to.row < 6) || (peca.color === 'black' && item.to.row > 1))) {
+                    score -= 18;
+                    razoes.push('cuidado para não expor a dama cedo');
+                }
+                if (estavaAmeacada && !destinoAtacado) { score += 52; razoes.push('tira peça de ameaça'); }
+                if (destinoAtacado && destinoDefendido) { score -= Math.min(55, valorProfessorXadrez20(peca.type) / 20); razoes.push('destino atacado, mas defendido'); }
+                if (ficaAmeacadaSemDefesa) { score -= Math.min(160, valorProfessorXadrez20(peca.type) / 7); razoes.push('atenção: pode ficar sem defesa'); }
+                if (peca.type === 'king' && destinoAtacado) { score -= 300; razoes.push('rei em casa perigosa'); }
+
+                score += melhora;
+                if (melhora > 30) razoes.push('melhora a posição');
+                if (melhora < -35) razoes.push('pode piorar a posição');
+
+                return {
+                    item,
+                    peca,
+                    score,
+                    razoes: descreverRazoesProfessorXadrez20(razoes),
+                    texto: `${nomePeca[peca.type]} ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}`
+                };
+            }
+
+            function melhoresMovimentosProfessorXadrez20(cor, board = chessBoard, filtro = null, limite = 3) {
+                let movimentos = [];
+                if (filtro) {
+                    const peca = board[filtro.row]?.[filtro.col];
+                    if (peca) {
+                        movimentos = calcularMovimentosLegais(filtro.row, filtro.col, board).map(m => ({ from: { row: filtro.row, col: filtro.col }, to: m }));
+                    }
+                } else {
+                    movimentos = todosMovimentosLegais(cor, board);
+                }
+                return movimentos
+                    .map(item => pontuarMovimentoProfessorXadrez20(board, item, cor))
+                    .filter(Boolean)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limite);
+            }
+
+            function renderizarSugestoesProfessorXadrez20(lista, titulo = 'Dicas fortes para ensinar') {
+                if (!lista || !lista.length) {
+                    return '<span class="teacher-section-title">Professor inteligente</span><span class="muted">Não encontrei uma dica forte agora. Use a posição para ensinar segurança do rei e peças protegidas.</span>';
+                }
+                return `
+                    <span class="teacher-section-title">${titulo}</span>
+                    <ul class="teacher-move-list">
+                        ${lista.map((sug, idx) => `
+                            <li>
+                                <span class="teacher-move-main">${idx + 1}. ${sug.texto}</span><br>
+                                <span class="teacher-small">${sug.razoes}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div class="teacher-small" style="margin-top:7px;">Use como roteiro de aula: confirme no tabuleiro, explique o motivo e deixe o aluno pensar antes de jogar.</div>
+                `;
+            }
+
+            function criarAnalisePosicaoProfessorXadrez20(cor = chessTurn) {
+                const corAnalise = cor || chessTurn || 'white';
+                const emXeque = reiEstaEmXeque(chessBoard, corAnalise);
+                const lista = melhoresMovimentosProfessorXadrez20(corAnalise, chessBoard, null, 3);
+                const lado = corDaPecaTextoProfessorXadrez19(corAnalise);
+                const abertura = emXeque
+                    ? `<span class="danger">O rei das ${lado} está em xeque.</span> A aula deve começar mostrando as três defesas: fugir, capturar ou bloquear.`
+                    : `Análise didática das ${lado}. Priorize segurança do rei, desenvolvimento e peças protegidas.`;
+                return `${abertura}${renderizarSugestoesProfessorXadrez20(lista, 'Melhores dicas da posição')}`;
+            }
+
+            function criarDicaManualPrivadoProfessorXadrez19(peca, row, col, movimentos, contexto = '') {
+                if (!peca) {
+                    return 'Toque em uma peça para preparar uma explicação para o aluno. O manual não altera a partida.';
+                }
+                const diag = diagnosticarPecaProfessorXadrez19(peca, row, col, movimentos);
+                const movimentosQtd = (movimentos || []).length;
+                const capturasQtd = diag.capturas.length;
+                const vez = chessTurn === peca.color ? 'é a vez desse lado jogar' : 'não é a vez desse lado agora';
+                const movimentoTexto = textoMovimentoPecaXadrez(peca.type);
+                const sugestoes = melhoresMovimentosProfessorXadrez20(peca.color, chessBoard, { row, col }, 3);
+                return `
+                    <strong>${nomePeca[peca.type]} ${corDaPecaTextoProfessorXadrez19(peca.color)}</strong> em <strong>${alg(row, col)}</strong> — ${vez}.<br>
+                    <span class="muted">${movimentoTexto}</span><br>
+                    ${diag.risco}<br>
+                    <strong>Casas legais:</strong> ${movimentosQtd} movimento(s), ${capturasQtd} captura(s). <span class="muted">${casasMovimentosProfessorXadrez19(movimentos)}</span><br>
+                    <strong>Como explicar:</strong> ${diag.foco}${contexto ? `<br><span class="muted">${contexto}</span>` : ''}
+                    ${renderizarSugestoesProfessorXadrez20(sugestoes, 'Melhores dicas dessa peça')}
+                `;
+            }
+
+            function atualizarManualPrivadoProfessorXadrez19(texto = '') {
+                const panel = garantirPainelManualPrivadoProfessorXadrez19();
+                const el = document.getElementById('chess-private-teacher-text');
+                if (!panel || !el) return;
+                const ativo = professorPrivadoPodeAparecerXadrez19();
+                panel.style.display = ativo ? 'block' : 'none';
+                panel.classList.toggle('teacher-collapsed', chessProfessorPrivadoRecolhido);
+                const btn = document.getElementById('chess-private-teacher-toggle');
+                if (btn) btn.textContent = chessProfessorPrivadoRecolhido ? '+' : '−';
+                if (!ativo) return;
+                if (texto) chessProfessorPrivadoTexto = texto;
+                if (!chessProfessorPrivadoTexto) {
+                    chessProfessorPrivadoTexto = chessPlayerColor === chessTurn
+                        ? 'Professor inteligente ligado. Toque em uma peça ou clique em Analisar posição para ver dicas de ensino.'
+                        : 'Professor inteligente ligado. Observe a posição do aluno, toque numa peça ou clique em Analisar posição para preparar sua explicação.';
+                }
+                el.innerHTML = chessProfessorPrivadoTexto;
+            }
+
+            function atualizarManualPorPecaProfessorXadrez19(row, col, contexto = '') {
+                const peca = chessBoard[row]?.[col] || null;
+                const movimentos = peca ? calcularMovimentosLegais(row, col, chessBoard) : [];
+                selectedSquare = peca ? { row, col } : null;
+                legalMoves = movimentos;
+                chessProfessorPrivadoTexto = criarDicaManualPrivadoProfessorXadrez19(peca, row, col, movimentos, contexto);
+                atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoTexto);
+                renderChessBoard();
+            }
+
+            function mensagemAposJogadaProfessorXadrez19(peca, fromRow, fromCol, move, estado = '') {
+                if (!peca) return '';
+                const partes = [];
+                partes.push(`<strong>Jogada feita:</strong> ${nomePeca[peca.type]} de ${alg(fromRow, fromCol)} para ${alg(move.row, move.col)}.`);
+                if (move.capture) partes.push('<span class="good">Houve captura.</span> Explique que ganhar material é bom quando a peça não fica vulnerável em seguida.');
+                if (move.castle) partes.push('<span class="good">Roque realizado.</span> Ótimo momento para ensinar segurança do rei.');
+                if (/Xeque-mate/i.test(estado || '')) partes.push('<span class="good">Xeque-mate.</span> Explique que o rei não tem fuga, bloqueio nem captura da ameaça.');
+                else if (/Xeque/i.test(estado || '')) partes.push('<span class="warn">Xeque.</span> Explique que o lado ameaçado precisa responder ao rei primeiro.');
+                else if (jogadaPodeGerarXequeContra(peca.color)) partes.push('<span class="warn">Atenção didática:</span> depois da jogada, procure mostrar possíveis ameaças contra o rei.');
+                else partes.push('Use a posição final para perguntar ao aluno: “qual peça ficou melhor e qual peça precisa de defesa agora?”');
+                return partes.join('<br>');
+            }
+
+            const entrarOriginalProfessor19 = entrarXadrezOnline;
+            entrarXadrezOnline = async function entrarXadrezOnlineProfessor19(assistir = false) {
+                const nameInput = document.getElementById('chess-online-name');
+                const fallbackInput = document.getElementById('name-input');
+                const rawName = String(nameInput?.value || fallbackInput?.value || '').trim();
+                const professorSolicitado = detectarProfessorPrivadoPorNomeXadrez19(rawName);
+                chessProfessorPrivadoAtivo = professorSolicitado;
+                chessProfessorPrivadoTexto = '';
+                if (professorSolicitado) {
+                    const limpo = limparNomeProfessorPrivadoXadrez19(rawName) || 'Professor';
+                    if (nameInput) nameInput.value = limpo;
+                    if (fallbackInput && !nameInput) fallbackInput.value = limpo;
+                }
+                const resp = await entrarOriginalProfessor19.apply(this, arguments);
+                // O entrar online chama sairXadrezOnline(false) para limpar escutas antigas.
+                // Por isso religamos o manual aqui somente se a conexão online realmente ficou ativa.
+                chessProfessorPrivadoAtivo = !!(professorSolicitado && chessMode === 'online');
+                garantirPainelManualPrivadoProfessorXadrez19();
+                atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoAtivo
+                    ? 'Professor inteligente ligado. Toque numa peça ou clique em Analisar posição para receber dicas de aula neste aparelho.'
+                    : '');
+                return resp;
+            };
+
+            const sairOriginalProfessor19 = sairXadrezOnline;
+            sairXadrezOnline = function sairXadrezOnlineProfessor19() {
+                const retorno = sairOriginalProfessor19.apply(this, arguments);
+                chessProfessorPrivadoAtivo = false;
+                chessProfessorPrivadoTexto = '';
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (panel) panel.style.display = 'none';
+                return retorno;
+            };
+
+            const ocultarOriginalProfessor19 = ocultarTabuleiroXadrezParaMenu;
+            ocultarTabuleiroXadrezParaMenu = function ocultarTabuleiroXadrezParaMenuProfessor19() {
+                const retorno = ocultarOriginalProfessor19.apply(this, arguments);
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (panel) panel.style.display = 'none';
+                return retorno;
+            };
+
+            const renderOriginalProfessor19 = renderChessBoard;
+            renderChessBoard = function renderChessBoardProfessor19() {
+                const retorno = renderOriginalProfessor19.apply(this, arguments);
+                garantirPainelManualPrivadoProfessorXadrez19();
+                atualizarManualPrivadoProfessorXadrez19();
+                return retorno;
+            };
+
+            const clickOriginalProfessor19 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickProfessor19(row, col) {
+                if (professorPrivadoPodeAparecerXadrez19()) {
+                    const peca = chessBoard[row]?.[col] || null;
+                    // Quando não é a vez do professor, ou quando ele toca peça do aluno,
+                    // o clique vira apenas consulta pedagógica local e não mexe na sala.
+                    if (peca && (chessIsSpectator || chessPlayerColor !== chessTurn || peca.color !== chessPlayerColor)) {
+                        atualizarManualPorPecaProfessorXadrez19(row, col, 'Consulta local do professor: nada foi enviado para a sala online.');
+                        return;
+                    }
+                }
+                const retorno = await clickOriginalProfessor19.apply(this, arguments);
+                if (professorPrivadoPodeAparecerXadrez19()) {
+                    if (selectedSquare && chessBoard[selectedSquare.row]?.[selectedSquare.col]) {
+                        const peca = chessBoard[selectedSquare.row][selectedSquare.col];
+                        const texto = criarDicaManualPrivadoProfessorXadrez19(peca, selectedSquare.row, selectedSquare.col, legalMoves || [], 'Agora escolha uma casa legal, se quiser jogar.');
+                        atualizarManualPrivadoProfessorXadrez19(texto);
+                    } else {
+                        atualizarManualPrivadoProfessorXadrez19();
+                    }
+                }
+                return retorno;
+            };
+
+            const moverOriginalProfessor19 = executarMovimentoXadrez;
+            executarMovimentoXadrez = async function executarMovimentoXadrezProfessor19(fromRow, fromCol, move) {
+                const pecaAntes = chessBoard[fromRow]?.[fromCol] ? { ...chessBoard[fromRow][fromCol] } : null;
+                const retorno = await moverOriginalProfessor19.apply(this, arguments);
+                if (professorPrivadoPodeAparecerXadrez19() && pecaAntes) {
+                    atualizarManualPrivadoProfessorXadrez19(mensagemAposJogadaProfessorXadrez19(pecaAntes, fromRow, fromCol, move, lastMoveMessage || ''));
+                }
+                return retorno;
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                garantirPainelManualPrivadoProfessorXadrez19();
+                atualizarManualPrivadoProfessorXadrez19();
+            });
+        }
+
+        instalarManualPrivadoProfessorXadrez19();
+
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
         window.desfazerJogadaXadrez = desfazerJogada;
@@ -11137,6 +11680,886 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
         });
     };
+
+
+    /* =====================================================================
+       ✅ PROFISSIONAL 21 — PROFESSOR INTELIGENTE NA DAMAS
+       Baseado no modo Professor do Xadrez: ativa com # no nome (#Isiquel ou Isiquel#),
+       aparece apenas no aparelho do professor e usa as regras/movimentos da Damas.
+       Não mexe no Firebase da partida, não joga sozinho, não reinicia sala e não altera o aluno.
+    ===================================================================== */
+    function instalarProfessorInteligenteDamas21() {
+        let damasProfessorAtivo21 = false;
+        let damasProfessorTexto21 = '';
+        let damasProfessorRecolhido21 = false;
+        let damasProfessorUltimaDica21 = null;
+        let damasProfessorPedidoCapturado21 = false;
+
+        instalarCssProfessorDamas21();
+        garantirPainelProfessorDamas21();
+
+        function detectarProfessorDamas21(nome) {
+            const n = String(nome || '').trim();
+            return damasProfessorPedidoCapturado21 || /^#/.test(n) || /#$/.test(n);
+        }
+
+        function limparNomeProfessorDamas21(nome) {
+            const limpo = String(nome || '')
+                .replace(/^#+/, '')
+                .replace(/#+$/, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return nomeSeguro(limpo || 'Professor');
+        }
+
+        function professorDamasPodeAparecer21() {
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            const telaJogoVisivel = !!(
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                (!boardWrapper || boardWrapper.offsetParent !== null || boardWrapper.style.display !== 'none')
+            );
+            const papelValido = isPracticeMode || playerRole === 'p1' || playerRole === 'p2';
+            return !!(
+                damasProfessorAtivo21 &&
+                currentGameState &&
+                currentGameState.board &&
+                telaJogoVisivel &&
+                papelValido
+            );
+        }
+
+        function ladoProfessorDamas21() {
+            if (playerRole === 'p2') return 2;
+            return 1;
+        }
+
+        function nomeLadoDamas21(lado) {
+            return lado === 2 ? 'pretas' : 'vermelhas';
+        }
+
+        function nomePecaDamas21(peca) {
+            if (peca === 2 || peca === 4) return 'Dama';
+            return 'Peça comum';
+        }
+
+        function coordenadaDamas21(r, c) {
+            const letras = 'ABCDEFGH';
+            return `${letras[c] || '?'}${8 - r}`;
+        }
+
+        function movimentoCoordDamas21(move) {
+            if (!move) return '—';
+            return `${coordenadaDamas21(move.fromR, move.fromC)} → ${coordenadaDamas21(move.toR, move.toC)}`;
+        }
+
+        function valorPecaDamas21(peca) {
+            if (peca === 2 || peca === 4) return 320;
+            if (peca) return 115;
+            return 0;
+        }
+
+        function cloneBoardDamas21(board) {
+            return (board || []).map(row => Array.isArray(row) ? row.slice() : []);
+        }
+
+        function instalarCssProfessorDamas21() {
+            if (document.getElementById('professor-damas-21-style')) return;
+            const style = document.createElement('style');
+            style.id = 'professor-damas-21-style';
+            style.textContent = `
+                #damas-teacher-private-panel {
+                    display: none;
+                    width: min(760px, calc(100% - 18px));
+                    margin: 10px auto 12px auto;
+                    border-radius: 18px;
+                    border: 1px solid rgba(34, 197, 94, .55);
+                    background: linear-gradient(180deg, rgba(4, 24, 30, .96), rgba(6, 18, 26, .98));
+                    box-shadow: 0 16px 34px rgba(0, 0, 0, .38), 0 0 20px rgba(34, 197, 94, .13);
+                    color: #e5f6ef;
+                    overflow: hidden;
+                    position: relative;
+                    z-index: 5;
+                }
+                #damas-teacher-private-panel.teacher-visible { display: block; }
+                #damas-teacher-private-panel .damas-teacher-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                    padding: 12px 14px;
+                    border-bottom: 1px solid rgba(148, 163, 184, .22);
+                    background: rgba(15, 118, 110, .18);
+                }
+                #damas-teacher-private-panel .damas-teacher-title {
+                    font-weight: 900;
+                    font-size: .96rem;
+                    letter-spacing: .02em;
+                    color: #d1fae5;
+                }
+                #damas-teacher-private-panel .damas-teacher-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 3px 8px;
+                    border-radius: 999px;
+                    background: rgba(34, 197, 94, .16);
+                    border: 1px solid rgba(34, 197, 94, .32);
+                    color: #86efac;
+                    font-size: .68rem;
+                    margin-left: 5px;
+                    text-transform: uppercase;
+                }
+                #damas-teacher-private-panel .damas-teacher-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    flex-wrap: wrap;
+                    justify-content: flex-end;
+                }
+                #damas-teacher-private-panel .damas-teacher-btn {
+                    width: auto;
+                    min-width: 38px;
+                    padding: 7px 10px;
+                    margin: 0;
+                    border: 0;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-size: .76rem;
+                    font-weight: 900;
+                    color: #052e2b;
+                    background: linear-gradient(135deg, #86efac, #22c55e);
+                    box-shadow: none;
+                }
+                #damas-teacher-private-panel .damas-teacher-btn.secondary {
+                    color: #e5f6ef;
+                    background: rgba(15, 23, 42, .82);
+                    border: 1px solid rgba(148, 163, 184, .30);
+                }
+                #damas-teacher-private-panel .damas-teacher-body {
+                    padding: 12px 14px 14px 14px;
+                    font-size: .86rem;
+                    line-height: 1.45;
+                    color: #dbeafe;
+                }
+                #damas-teacher-private-panel .damas-teacher-body strong { color: #fef3c7; }
+                #damas-teacher-private-panel .damas-teacher-muted { color: #9ca3af; font-size: .78rem; }
+                #damas-teacher-private-panel .damas-teacher-section-title {
+                    display: block;
+                    color: #86efac;
+                    text-transform: uppercase;
+                    font-size: .70rem;
+                    letter-spacing: .08em;
+                    font-weight: 900;
+                    margin: 8px 0 5px 0;
+                }
+                #damas-teacher-private-panel .damas-teacher-tip {
+                    padding: 8px 9px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(148, 163, 184, .18);
+                    background: rgba(2, 6, 23, .28);
+                    margin-top: 6px;
+                }
+                #damas-teacher-private-panel .damas-teacher-tip.best {
+                    border-color: rgba(34, 197, 94, .42);
+                    background: rgba(20, 83, 45, .20);
+                }
+                #damas-teacher-private-panel.teacher-collapsed .damas-teacher-body { display: none; }
+                body.damas-professor-ativo-21 #damas-teacher-private-panel.teacher-visible { display: block !important; }
+                body.damas-professor-ativo-21 #damas-teacher-private-panel { visibility: visible !important; opacity: 1 !important; }
+                .square.teacher-damas-from { outline: 3px solid rgba(34,197,94,.98); outline-offset: -4px; box-shadow: inset 0 0 20px rgba(34,197,94,.30); }
+                .square.teacher-damas-to { outline: 3px solid rgba(250,204,21,.98); outline-offset: -4px; box-shadow: inset 0 0 24px rgba(250,204,21,.32); }
+                .square.teacher-damas-danger { outline: 3px solid rgba(239,68,68,.96); outline-offset: -4px; box-shadow: inset 0 0 24px rgba(239,68,68,.32); }
+                @media (max-width: 620px) {
+                    #damas-teacher-private-panel { width: calc(100% - 8px); border-radius: 14px; margin-top: 8px; }
+                    #damas-teacher-private-panel .damas-teacher-head { padding: 10px; align-items: flex-start; }
+                    #damas-teacher-private-panel .damas-teacher-title { font-size: .87rem; }
+                    #damas-teacher-private-panel .damas-teacher-actions { gap: 5px; }
+                    #damas-teacher-private-panel .damas-teacher-btn { padding: 6px 8px; font-size: .70rem; }
+                    #damas-teacher-private-panel .damas-teacher-body { padding: 10px; font-size: .80rem; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function garantirPainelProfessorDamas21() {
+            let panel = document.getElementById('damas-teacher-private-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'damas-teacher-private-panel';
+                panel.innerHTML = `
+                    <div class="damas-teacher-head">
+                        <div class="damas-teacher-title">🎓 Professor inteligente de Damas <span class="damas-teacher-badge">privado</span></div>
+                        <div class="damas-teacher-actions">
+                            <button id="damas-teacher-analyze-btn" type="button" class="damas-teacher-btn">Analisar posição</button>
+                            <button id="damas-teacher-collapse-btn" type="button" class="damas-teacher-btn secondary">−</button>
+                        </div>
+                    </div>
+                    <div id="damas-teacher-private-content" class="damas-teacher-body"></div>
+                `;
+                const boardWrapper = document.getElementById('normal-board-wrapper');
+                if (boardWrapper && boardWrapper.parentNode) {
+                    boardWrapper.insertAdjacentElement('beforebegin', panel);
+                } else if (gameScreen) {
+                    gameScreen.appendChild(panel);
+                }
+                const collapse = panel.querySelector('#damas-teacher-collapse-btn');
+                const analyze = panel.querySelector('#damas-teacher-analyze-btn');
+                if (collapse) collapse.addEventListener('click', () => {
+                    damasProfessorRecolhido21 = !damasProfessorRecolhido21;
+                    panel.classList.toggle('teacher-collapsed', damasProfessorRecolhido21);
+                    collapse.textContent = damasProfessorRecolhido21 ? '+' : '−';
+                });
+                if (analyze) analyze.addEventListener('click', () => {
+                    atualizarProfessorDamas21(criarAnalisePosicaoDamas21());
+                    aplicarMarcacoesProfessorDamas21();
+                });
+            }
+            const podeVerAgora = professorDamasPodeAparecer21();
+            panel.classList.toggle('teacher-visible', podeVerAgora);
+            document.body.classList.toggle('damas-professor-ativo-21', podeVerAgora);
+            panel.classList.toggle('teacher-collapsed', damasProfessorRecolhido21);
+            const btn = panel.querySelector('#damas-teacher-collapse-btn');
+            if (btn) btn.textContent = damasProfessorRecolhido21 ? '+' : '−';
+            return panel;
+        }
+
+        function atualizarProfessorDamas21(texto = '') {
+            const panel = garantirPainelProfessorDamas21();
+            const body = document.getElementById('damas-teacher-private-content');
+            if (!body) return;
+            if (texto) damasProfessorTexto21 = texto;
+            if (!damasProfessorTexto21) {
+                damasProfessorTexto21 = currentGameState?.turn === ladoProfessorDamas21()
+                    ? 'Professor inteligente de Damas ligado. Toque numa peça ou clique em Analisar posição para receber dicas de aula neste aparelho.'
+                    : 'Professor inteligente de Damas ligado. Observe a jogada do aluno e use o painel para explicar ataque, defesa, captura obrigatória e coroação.';
+            }
+            body.innerHTML = damasProfessorTexto21;
+            const podeVerAgora = professorDamasPodeAparecer21();
+            panel.classList.toggle('teacher-visible', podeVerAgora);
+            document.body.classList.toggle('damas-professor-ativo-21', podeVerAgora);
+        }
+
+        function adversarioTemCapturaDamas21(board, lado) {
+            const adv = lado === 1 ? 2 : 1;
+            return computeAllValidMovesEngine(adv, board, null).filter(m => m.capture).length > 0;
+        }
+
+        function movimentoGeraCapturaObrigatoriaDamas21(applied, lado, move) {
+            if (!move.capture) return false;
+            const novas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+            return novas.length > 0;
+        }
+
+        function pontuarMovimentoProfessorDamas21(board, move, lado) {
+            const pecaAntes = board?.[move.fromR]?.[move.fromC] || 0;
+            const applied = aplicarMovimentoEngine(board, move);
+            let nextTurn = lado === 1 ? 2 : 1;
+            let nextForced = null;
+            if (move.capture) {
+                const novas = computeValidMovesForPieceEngine(applied.toR, applied.toC, applied.board, true);
+                if (novas.length > 0) {
+                    nextTurn = lado;
+                    nextForced = { r: applied.toR, c: applied.toC };
+                }
+            }
+
+            let score = lado === 2
+                ? minimaxRobo(applied.board, 3, nextTurn, -Infinity, Infinity, nextForced)
+                : -minimaxRobo(applied.board, 3, nextTurn, -Infinity, Infinity, nextForced);
+
+            const razoes = [];
+            if (move.capture) {
+                const capturada = board?.[move.capture.r]?.[move.capture.c] || 0;
+                score += 120 + valorPecaDamas21(capturada) * 0.25;
+                razoes.push(capturada === 2 || capturada === 4 ? 'captura uma dama adversária' : 'cumpre a captura obrigatória');
+            }
+            if ((pecaAntes === 1 && move.toR === 0) || (pecaAntes === 3 && move.toR === 7)) {
+                score += 240;
+                razoes.push('coroa e vira dama');
+            }
+            if (movimentoGeraCapturaObrigatoriaDamas21(applied, lado, move)) {
+                score += 160;
+                razoes.push('mantém sequência de captura');
+            }
+            if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) {
+                score += 28;
+                razoes.push('ganha controle central');
+            }
+            if (move.toC === 0 || move.toC === 7) {
+                score += 12;
+                razoes.push('usa a lateral para reduzir ataques por um lado');
+            }
+            if (!adversarioTemCapturaDamas21(applied.board, lado)) {
+                score += 45;
+                razoes.push('não entrega captura imediata fácil');
+            } else {
+                score -= 55;
+                razoes.push('atenção: pode permitir resposta com captura');
+            }
+
+            if (!razoes.length) razoes.push('melhora a posição e mantém opções');
+            return { move, score, razoes, applied };
+        }
+
+        function melhoresMovimentosProfessorDamas21(lado, board = currentGameState?.board, filtroPeca = null, limite = 3) {
+            if (!board) return [];
+            let forced = null;
+            if (lockPieceForMultiCapture && currentGameState?.turn === lado) forced = lockPieceForMultiCapture;
+            let movimentos = computeAllValidMovesEngine(lado, board, forced);
+            if (filtroPeca) movimentos = movimentos.filter(m => m.fromR === filtroPeca.r && m.fromC === filtroPeca.c);
+            if (!movimentos.length) return [];
+            return movimentos
+                .map(m => pontuarMovimentoProfessorDamas21(board, m, lado))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, limite);
+        }
+
+        function renderSugestoesProfessorDamas21(lista, titulo = 'Dicas fortes da posição') {
+            if (!lista || !lista.length) {
+                return '<span class="damas-teacher-section-title">Dicas da posição</span><span class="damas-teacher-muted">Não encontrei uma jogada forte agora. Use a posição para ensinar proteção, avanço seguro e captura obrigatória.</span>';
+            }
+            return `
+                <span class="damas-teacher-section-title">${titulo}</span>
+                ${lista.map((item, idx) => `
+                    <div class="damas-teacher-tip ${idx === 0 ? 'best' : ''}">
+                        <strong>${idx === 0 ? 'Melhor dica' : 'Outra ideia'}:</strong> ${movimentoCoordDamas21(item.move)}<br>
+                        <span class="damas-teacher-muted">Por quê: ${item.razoes.join('; ')}.</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function criarAnalisePosicaoDamas21() {
+            if (!currentGameState?.board) return 'Sem tabuleiro carregado para analisar.';
+            const lado = ladoProfessorDamas21();
+            const vez = currentGameState.turn === lado ? 'sua vez de jogar' : 'vez do aluno/oponente';
+            const lista = melhoresMovimentosProfessorDamas21(lado, currentGameState.board, null, 3);
+            damasProfessorUltimaDica21 = lista[0]?.move ? { move: lista[0].move, danger: null } : null;
+            return `
+                <strong>🎯 Análise das ${nomeLadoDamas21(lado)}:</strong> ${vez}.<br>
+                <span class="damas-teacher-muted">Use estas ideias para explicar por áudio: captura obrigatória, segurança, coroação e controle das diagonais.</span>
+                ${renderSugestoesProfessorDamas21(lista, 'Melhores dicas da posição')}
+            `;
+        }
+
+        function criarDicaPecaDamas21(r, c) {
+            if (!currentGameState?.board) return '';
+            const board = currentGameState.board;
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return '';
+            const dono = donoDaPecaEngine(peca);
+            const lado = ladoProfessorDamas21();
+            const movimentosDaPeca = computeValidMovesForPieceEngine(r, c, board, false);
+            const capturas = movimentosDaPeca.filter(m => m.capture);
+            const casas = movimentosDaPeca.slice(0, 8).map(movimentoCoordDamas21).join(', ') || 'sem movimento seguro agora';
+
+            if (dono !== lado) {
+                const ameacas = melhoresMovimentosProfessorDamas21(dono, board, { r, c }, 2);
+                damasProfessorUltimaDica21 = ameacas[0]?.move ? { move: ameacas[0].move, danger: { r, c } } : { move: null, danger: { r, c } };
+                return `
+                    <strong>👀 Peça do aluno/oponente em ${coordenadaDamas21(r, c)}.</strong><br>
+                    <span class="damas-teacher-muted">Ela tem ${movimentosDaPeca.length} movimento(s) e ${capturas.length} captura(s). Use isso para explicar ameaça e defesa.</span><br>
+                    ${renderSugestoesProfessorDamas21(ameacas, 'O que essa peça pode ameaçar')}
+                `;
+            }
+
+            let forced = null;
+            if (lockPieceForMultiCapture && currentGameState?.turn === lado) forced = lockPieceForMultiCapture;
+            let movimentos = forced ? computeValidMovesForPieceEngine(r, c, board, true) : movimentosDaPeca;
+            const existeCapturaObrigatoria = computeAllValidMovesEngine(dono, board, forced).some(m => m.capture);
+            if (existeCapturaObrigatoria) movimentos = movimentos.filter(m => m.capture);
+            const sugestoes = melhoresMovimentosProfessorDamas21(lado, board, { r, c }, 3);
+            damasProfessorUltimaDica21 = sugestoes[0]?.move ? { move: sugestoes[0].move, danger: null } : null;
+
+            return `
+                <strong>${nomePecaDamas21(peca)} das ${nomeLadoDamas21(lado)}</strong> em <strong>${coordenadaDamas21(r, c)}</strong>.<br>
+                <strong>Casas possíveis:</strong> ${movimentos.length} movimento(s), ${movimentos.filter(m => m.capture).length} captura(s).<br>
+                <span class="damas-teacher-muted">${casas}</span><br>
+                ${existeCapturaObrigatoria ? '<div class="damas-teacher-tip best"><strong>Regra importante:</strong> existe captura obrigatória. Ensine o aluno que, na Damas, quando dá para capturar, a tomada deve ser feita.</div>' : ''}
+                ${renderSugestoesProfessorDamas21(sugestoes, 'Melhores dicas dessa peça')}
+            `;
+        }
+
+        function mensagemAposJogadaDamas21(pecaAntes, move) {
+            if (!pecaAntes || !move) return criarAnalisePosicaoDamas21();
+            const partes = [];
+            partes.push(`<strong>✅ Jogada feita:</strong> ${movimentoCoordDamas21(move)}.`);
+            if (move.capture) partes.push('Explique que a captura era o caminho principal porque ganha material e, em muitos casos, é obrigatória.');
+            if ((pecaAntes === 1 && move.toR === 0) || (pecaAntes === 3 && move.toR === 7)) partes.push('Essa jogada coroou a peça. Agora ela virou dama e controla diagonais longas.');
+            if (currentGameState?.turn !== ladoProfessorDamas21()) partes.push('Agora observe a resposta do aluno e procure mostrar se ele deixou captura, defesa ou caminho para coroação.');
+            return `${partes.join('<br>')}<br>${renderSugestoesProfessorDamas21(melhoresMovimentosProfessorDamas21(ladoProfessorDamas21(), currentGameState?.board, null, 2), 'Próximas ideias para explicar')}`;
+        }
+
+        function aplicarMarcacoesProfessorDamas21() {
+            if (!professorDamasPodeAparecer21()) return;
+            const info = damasProfessorUltimaDica21;
+            if (!info) return;
+            const mark = (sel, cls) => {
+                const el = boardEl?.querySelector(sel);
+                if (el) el.classList.add(cls);
+            };
+            if (info.move) {
+                mark(`[data-row="${info.move.fromR}"][data-col="${info.move.fromC}"]`, 'teacher-damas-from');
+                mark(`[data-row="${info.move.toR}"][data-col="${info.move.toC}"]`, 'teacher-damas-to');
+                if (info.move.capture) mark(`[data-row="${info.move.capture.r}"][data-col="${info.move.capture.c}"]`, 'teacher-damas-danger');
+            }
+            if (info.danger) mark(`[data-row="${info.danger.r}"][data-col="${info.danger.c}"]`, 'teacher-damas-danger');
+        }
+
+
+        function prepararAtivacaoProfessorDamas21() {
+            const raw = String(nameInput?.value || '').trim();
+            const pedido = /^#/.test(raw) || /#$/.test(raw);
+            damasProfessorPedidoCapturado21 = pedido;
+            try { sessionStorage.setItem('damas_professor_privado_ativo_21', pedido ? '1' : '0'); } catch (_) {}
+            if (pedido && nameInput) {
+                const limpo = limparNomeProfessorDamas21(raw);
+                nameInput.value = limpo;
+                try { localStorage.setItem('damas_nome_jogador', limpo); } catch (_) {}
+            }
+            return pedido;
+        }
+
+        if (joinBtn) {
+            joinBtn.addEventListener('click', prepararAtivacaoProfessorDamas21, true);
+        }
+        [btnChooseEasy, btnChooseMedium, btnChooseHard, btnChooseLearn].filter(Boolean).forEach((btn) => {
+            btn.addEventListener('click', () => {
+                prepararAtivacaoProfessorDamas21();
+                damasProfessorAtivo21 = damasProfessorPedidoCapturado21;
+                setTimeout(() => {
+                    garantirPainelProfessorDamas21();
+                    atualizarProfessorDamas21(damasProfessorAtivo21 ? 'Professor inteligente de Damas ligado no treino. Toque numa peça ou clique em Analisar posição para receber dicas deste aparelho.' : '');
+                }, 350);
+            }, true);
+        });
+
+        const joinRoomOriginalDamas21 = joinRoom;
+        joinRoom = async function joinRoomProfessorDamas21(roomName, playerName, forceSpectator) {
+            const rawName = String(playerName || nameInput?.value || '').trim();
+            const solicitado = detectarProfessorDamas21(rawName);
+            damasProfessorAtivo21 = !!(solicitado && !forceSpectator);
+            damasProfessorTexto21 = '';
+            damasProfessorUltimaDica21 = null;
+            const nomeLimpo = solicitado ? limparNomeProfessorDamas21(rawName || nameInput?.value) : playerName;
+            if (solicitado && nameInput) nameInput.value = nomeLimpo;
+            const resp = await joinRoomOriginalDamas21.call(this, roomName, nomeLimpo, forceSpectator);
+            damasProfessorAtivo21 = !!(solicitado && !forceSpectator && (playerRole === 'p1' || playerRole === 'p2' || isPracticeMode));
+            garantirPainelProfessorDamas21();
+            atualizarProfessorDamas21(damasProfessorAtivo21
+                ? 'Professor inteligente de Damas ligado. Toque numa peça ou clique em Analisar posição para receber dicas neste aparelho.'
+                : '');
+            aplicarMarcacoesProfessorDamas21();
+            return resp;
+        };
+
+        if (leaveBtn) {
+            leaveBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    damasProfessorAtivo21 = false;
+                    damasProfessorPedidoCapturado21 = false;
+                    damasProfessorTexto21 = '';
+                    damasProfessorUltimaDica21 = null;
+                    try { sessionStorage.setItem('damas_professor_privado_ativo_21', '0'); } catch (_) {}
+                    document.body.classList.remove('damas-professor-ativo-21');
+                    garantirPainelProfessorDamas21();
+                }, 120);
+            });
+        }
+
+        const gerarOriginalDamas21 = generateBoardUI;
+        generateBoardUI = function generateBoardUIProfessorDamas21(board) {
+            const retorno = gerarOriginalDamas21.apply(this, arguments);
+            garantirPainelProfessorDamas21();
+            atualizarProfessorDamas21();
+            aplicarMarcacoesProfessorDamas21();
+            return retorno;
+        };
+
+        const clickOriginalDamas21 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionProfessorDamas21(r, c) {
+            if (damasProfessorAtivo21 && currentGameState?.board && professorDamasPodeAparecer21()) {
+                const peca = currentGameState.board?.[r]?.[c] || 0;
+                if (peca) {
+                    const texto = criarDicaPecaDamas21(r, c);
+                    if (texto) atualizarProfessorDamas21(texto);
+                }
+            }
+            const retorno = clickOriginalDamas21.apply(this, arguments);
+            setTimeout(() => {
+                garantirPainelProfessorDamas21();
+                aplicarMarcacoesProfessorDamas21();
+            }, 30);
+            return retorno;
+        };
+
+        const moverOriginalDamas21 = executeGameMove;
+        executeGameMove = function executeGameMoveProfessorDamas21(move) {
+            const boardAntes = cloneBoardDamas21(currentGameState?.board || []);
+            const pecaAntes = boardAntes?.[move?.fromR]?.[move?.fromC] || 0;
+            const retorno = moverOriginalDamas21.apply(this, arguments);
+            if (damasProfessorAtivo21 && professorDamasPodeAparecer21()) {
+                setTimeout(() => {
+                    atualizarProfessorDamas21(mensagemAposJogadaDamas21(pecaAntes, move));
+                    aplicarMarcacoesProfessorDamas21();
+                }, 80);
+            }
+            return retorno;
+        };
+
+        setInterval(() => {
+            if (!damasProfessorAtivo21 && !damasProfessorPedidoCapturado21) return;
+            if (damasProfessorPedidoCapturado21 && currentGameState?.board && (playerRole === 'p1' || playerRole === 'p2' || isPracticeMode)) {
+                damasProfessorAtivo21 = true;
+            }
+            garantirPainelProfessorDamas21();
+            atualizarProfessorDamas21();
+            if (professorDamasPodeAparecer21()) aplicarMarcacoesProfessorDamas21();
+        }, 700);
+    }
+
+    // PROFISSIONAL 22 — reforço de ativação do Professor de Damas.
+    // Corrige casos em que o # era limpo antes do painel reconhecer o professor.
+    instalarProfessorInteligenteDamas21();
+
+    /* =====================================================================
+       ✅ PROFISSIONAL 23 — CORREÇÃO DEFINITIVA DO PROFESSOR NA DAMAS
+       Reforço independente por cima da versão 21/22.
+       Motivo: em alguns celulares o # era limpo ou a tela mudava antes do painel
+       receber a classe de visível. Este reforço captura o pedido antes do clique,
+       guarda na sessão do aparelho do professor e força o painel acima do tabuleiro.
+       Não grava nada na sala, não aparece para o aluno e não altera a partida.
+    ===================================================================== */
+    function instalarReforcoDefinitivoProfessorDamas23() {
+        if (window.__professorDamas23Instalado) return;
+        window.__professorDamas23Instalado = true;
+
+        let professorDamas23Ativo = false;
+        let professorDamas23Texto = '';
+        let professorDamas23Ultima = null;
+
+        function temHashProfessor23(nome) {
+            const n = String(nome || '').trim();
+            return /^#/.test(n) || /#$/.test(n);
+        }
+
+        function limparNomeProfessor23(nome) {
+            const limpo = String(nome || '')
+                .replace(/^#+/, '')
+                .replace(/#+$/, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return nomeSeguro(limpo || 'Professor');
+        }
+
+        function salvarAtivo23(valor) {
+            professorDamas23Ativo = !!valor;
+            try { sessionStorage.setItem('damas_professor_privado_ativo_23', professorDamas23Ativo ? '1' : '0'); } catch (_) {}
+            try { sessionStorage.setItem('damas_professor_privado_ativo_21', professorDamas23Ativo ? '1' : '0'); } catch (_) {}
+        }
+
+        function lerAtivoSalvo23() {
+            try {
+                if (sessionStorage.getItem('damas_professor_privado_ativo_23') === '1') professorDamas23Ativo = true;
+                if (sessionStorage.getItem('damas_professor_privado_ativo_21') === '1') professorDamas23Ativo = true;
+            } catch (_) {}
+            return professorDamas23Ativo;
+        }
+
+        function capturarPedidoProfessor23(limparCampoAgora = false) {
+            const raw = String(nameInput?.value || '').trim();
+            if (temHashProfessor23(raw)) {
+                salvarAtivo23(true);
+                if (limparCampoAgora && nameInput) {
+                    const limpo = limparNomeProfessor23(raw);
+                    nameInput.value = limpo;
+                    try { localStorage.setItem('damas_nome_jogador', limpo); } catch (_) {}
+                }
+                return true;
+            }
+            return lerAtivoSalvo23();
+        }
+
+        function instalarCssProfessorDamas23() {
+            if (document.getElementById('professor-damas-23-style')) return;
+            const style = document.createElement('style');
+            style.id = 'professor-damas-23-style';
+            style.textContent = `
+                #damas-teacher-private-panel.damas-teacher-force-23 {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    width: min(780px, calc(100% - 14px)) !important;
+                    margin: 10px auto 12px auto !important;
+                    position: relative !important;
+                    z-index: 30 !important;
+                }
+                body.damas-professor-force-23 #damas-teacher-private-panel {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+                #damas-teacher-private-panel .damas-teacher-alerta-23 {
+                    display: block;
+                    margin-top: 8px;
+                    padding: 8px 10px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(34,197,94,.35);
+                    background: rgba(20,83,45,.24);
+                    color: #bbf7d0;
+                    font-size: .80rem;
+                    font-weight: 800;
+                }
+                #damas-teacher-private-panel .damas-teacher-lista-23 {
+                    margin: 8px 0 0 0;
+                    padding-left: 18px;
+                }
+                #damas-teacher-private-panel .damas-teacher-lista-23 li {
+                    margin: 4px 0;
+                }
+                .square.teacher-damas-from,
+                .square.teacher-damas23-from { outline: 3px solid rgba(34,197,94,.98) !important; outline-offset: -4px; box-shadow: inset 0 0 20px rgba(34,197,94,.30) !important; }
+                .square.teacher-damas-to,
+                .square.teacher-damas23-to { outline: 3px solid rgba(250,204,21,.98) !important; outline-offset: -4px; box-shadow: inset 0 0 24px rgba(250,204,21,.32) !important; }
+                .square.teacher-damas-danger,
+                .square.teacher-damas23-danger { outline: 3px solid rgba(239,68,68,.96) !important; outline-offset: -4px; box-shadow: inset 0 0 24px rgba(239,68,68,.32) !important; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function ladoProfessor23() {
+            if (playerRole === 'p2') return 2;
+            if (playerRole === 'p1') return 1;
+            return currentGameState?.turn === 2 ? 2 : 1;
+        }
+
+        function nomeLado23(lado) {
+            return lado === 2 ? 'pretas' : 'vermelhas';
+        }
+
+        function coord23(r, c) {
+            const letras = 'ABCDEFGH';
+            return `${letras[c] || '?'}${8 - r}`;
+        }
+
+        function tipoPeca23(peca) {
+            return (peca === 2 || peca === 4) ? 'dama' : 'peça comum';
+        }
+
+        function movimentoTexto23(m) {
+            if (!m) return '—';
+            return `${coord23(m.fromR, m.fromC)} → ${coord23(m.toR, m.toC)}`;
+        }
+
+        function podeMostrarProfessor23() {
+            lerAtivoSalvo23();
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            const estaNaTelaDamas = !!(
+                professorDamas23Ativo &&
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                boardWrapper &&
+                boardWrapper.style.display !== 'none' &&
+                adminPanel?.style.display !== 'block' &&
+                currentGameState &&
+                currentGameState.board
+            );
+            return estaNaTelaDamas;
+        }
+
+        function garantirPainel23() {
+            instalarCssProfessorDamas23();
+            let panel = document.getElementById('damas-teacher-private-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'damas-teacher-private-panel';
+                panel.innerHTML = `
+                    <div class="damas-teacher-head">
+                        <div class="damas-teacher-title">🎓 Professor inteligente de Damas <span class="damas-teacher-badge">privado</span></div>
+                        <div class="damas-teacher-actions">
+                            <button id="damas-teacher-analyze-btn" type="button" class="damas-teacher-btn">Analisar posição</button>
+                            <button id="damas-teacher-collapse-btn" type="button" class="damas-teacher-btn secondary">−</button>
+                        </div>
+                    </div>
+                    <div id="damas-teacher-private-content" class="damas-teacher-body"></div>
+                `;
+            }
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            if (boardWrapper && panel.parentNode !== boardWrapper.parentNode) {
+                boardWrapper.insertAdjacentElement('beforebegin', panel);
+            } else if (boardWrapper && panel.nextElementSibling !== boardWrapper) {
+                boardWrapper.insertAdjacentElement('beforebegin', panel);
+            } else if (!panel.parentNode && gameScreen) {
+                gameScreen.appendChild(panel);
+            }
+            return panel;
+        }
+
+        function pontuarMovimento23(board, move, lado) {
+            let pontos = 0;
+            const razoes = [];
+            const peca = board?.[move.fromR]?.[move.fromC] || 0;
+            if (move.capture) { pontos += 90; razoes.push('captura peça adversária'); }
+            if ((peca === 1 && move.toR === 0) || (peca === 3 && move.toR === 7)) { pontos += 80; razoes.push('coroa e vira dama'); }
+            if (peca === 2 || peca === 4) { pontos += 16; razoes.push('usa a força da dama nas diagonais'); }
+            if (move.toC >= 2 && move.toC <= 5 && move.toR >= 2 && move.toR <= 5) { pontos += 18; razoes.push('controla o centro'); }
+            if (lado === 1 && move.toR < move.fromR) { pontos += 8; razoes.push('avança com segurança'); }
+            if (lado === 2 && move.toR > move.fromR) { pontos += 8; razoes.push('avança com segurança'); }
+            if (move.toC === 0 || move.toC === 7) { pontos -= 6; razoes.push('vai para a lateral, explique o cuidado'); }
+            if (!razoes.length) razoes.push('melhora a posição e ajuda na explicação');
+            return { move, pontos, razoes };
+        }
+
+        function melhoresMovimentos23(lado, board, filtroCasa = null, limite = 4) {
+            let moves = [];
+            try { moves = computeAllValidMovesEngine(lado, board, null) || []; } catch (_) { moves = []; }
+            if (filtroCasa) moves = moves.filter(m => m.fromR === filtroCasa.r && m.fromC === filtroCasa.c);
+            return moves
+                .map(m => pontuarMovimento23(board, m, lado))
+                .sort((a, b) => b.pontos - a.pontos)
+                .slice(0, limite);
+        }
+
+        function renderSugestoes23(titulo, itens) {
+            if (!itens || !itens.length) {
+                return `<span class="damas-teacher-section-title">${titulo}</span><span class="damas-teacher-muted">Não encontrei movimento desta peça agora. Use a posição para ensinar proteção, captura obrigatória e avanço seguro.</span>`;
+            }
+            professorDamas23Ultima = itens[0];
+            return `
+                <span class="damas-teacher-section-title">${titulo}</span>
+                <ol class="damas-teacher-lista-23">
+                    ${itens.map((item, i) => `<li><strong>${i === 0 ? 'Melhor dica' : 'Opção'}:</strong> ${movimentoTexto23(item.move)}<br><span class="damas-teacher-muted">Por quê: ${item.razoes.join('; ')}.</span></li>`).join('')}
+                </ol>
+            `;
+        }
+
+        function criarAnalise23() {
+            const board = currentGameState?.board;
+            const lado = ladoProfessor23();
+            if (!board) return 'Aguardando o tabuleiro carregar...';
+            const todos = melhoresMovimentos23(lado, board, null, 4);
+            const capturas = todos.filter(i => i.move?.capture).length;
+            return `
+                <strong>Professor de Damas ligado neste aparelho.</strong><br>
+                <span class="damas-teacher-muted">Você está analisando as ${nomeLado23(lado)}. O aluno não vê este painel.</span>
+                ${capturas ? '<span class="damas-teacher-alerta-23">⚠️ Existe captura boa/obrigatória para explicar.</span>' : '<span class="damas-teacher-alerta-23">✅ Não vi captura principal agora. Trabalhe avanço, defesa e centro.</span>'}
+                ${renderSugestoes23('Melhores ideias da posição', todos)}
+            `;
+        }
+
+        function criarDicaPeca23(r, c) {
+            const board = currentGameState?.board;
+            if (!board) return '';
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return '';
+            const lado = (peca === 1 || peca === 2) ? 1 : 2;
+            const ladoProf = ladoProfessor23();
+            if (lado !== ladoProf) {
+                return `<strong>Peça do aluno em ${coord23(r, c)}.</strong><br><span class="damas-teacher-muted">Use esta peça para explicar ameaça, defesa e possíveis capturas que ele pode deixar.</span>${renderSugestoes23('Ideias para o seu lado', melhoresMovimentos23(ladoProf, board, null, 3))}`;
+            }
+            const sugestoes = melhoresMovimentos23(ladoProf, board, { r, c }, 4);
+            let movimentos = [];
+            try { movimentos = computeValidMovesForPieceEngine(r, c, board, true) || []; } catch (_) { movimentos = []; }
+            return `
+                <strong>${tipoPeca23(peca)} das ${nomeLado23(lado)}</strong> em <strong>${coord23(r, c)}</strong>.<br>
+                <span class="damas-teacher-muted">Movimentos legais desta peça: ${movimentos.length}. Capturas: ${movimentos.filter(m => m.capture).length}.</span>
+                ${renderSugestoes23('Melhores dicas dessa peça', sugestoes)}
+            `;
+        }
+
+        function atualizarPainel23(texto = '') {
+            const panel = garantirPainel23();
+            const pode = podeMostrarProfessor23();
+            if (texto) professorDamas23Texto = texto;
+            if (pode && !professorDamas23Texto) professorDamas23Texto = criarAnalise23();
+            const body = document.getElementById('damas-teacher-private-content');
+            if (body && pode) body.innerHTML = professorDamas23Texto || criarAnalise23();
+            panel.classList.toggle('teacher-visible', pode);
+            panel.classList.toggle('damas-teacher-force-23', pode);
+            document.body.classList.toggle('damas-professor-force-23', pode);
+            if (pode) panel.style.setProperty('display', 'block', 'important');
+            else panel.style.removeProperty('display');
+            aplicarMarcacoes23();
+        }
+
+        function aplicarMarcacoes23() {
+            const board = document.getElementById('board');
+            if (!board) return;
+            board.querySelectorAll('.teacher-damas23-from,.teacher-damas23-to,.teacher-damas23-danger').forEach(el => {
+                el.classList.remove('teacher-damas23-from','teacher-damas23-to','teacher-damas23-danger');
+            });
+            if (!podeMostrarProfessor23() || !professorDamas23Ultima?.move) return;
+            const m = professorDamas23Ultima.move;
+            const marcar = (r, c, cls) => {
+                const el = board.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                if (el) el.classList.add(cls);
+            };
+            marcar(m.fromR, m.fromC, 'teacher-damas23-from');
+            marcar(m.toR, m.toC, 'teacher-damas23-to');
+            if (m.capture) marcar(m.capture.r, m.capture.c, 'teacher-damas23-danger');
+        }
+
+        if (nameInput) {
+            ['input','change','keyup','blur'].forEach(evt => {
+                nameInput.addEventListener(evt, () => capturarPedidoProfessor23(false), true);
+            });
+        }
+        [joinBtn, practiceBtn, btnChooseEasy, btnChooseMedium, btnChooseHard, btnChooseLearn].filter(Boolean).forEach(btn => {
+            btn.addEventListener('click', () => capturarPedidoProfessor23(true), true);
+        });
+
+        const joinAnterior23 = joinRoom;
+        joinRoom = async function joinRoomReforcoProfessorDamas23(roomName, playerName, forceSpectator) {
+            const tinhaPedido = capturarPedidoProfessor23(true) || professorDamas23Ativo;
+            const nomeFinal = tinhaPedido ? limparNomeProfessor23(playerName || nameInput?.value) : playerName;
+            const resp = await joinAnterior23.call(this, roomName, nomeFinal, forceSpectator);
+            if (tinhaPedido && !forceSpectator && playerRole !== 'admin') salvarAtivo23(true);
+            setTimeout(() => atualizarPainel23(criarAnalise23()), 250);
+            return resp;
+        };
+
+        const gerarAnterior23 = generateBoardUI;
+        generateBoardUI = function generateBoardUIReforcoProfessorDamas23(board) {
+            const retorno = gerarAnterior23.apply(this, arguments);
+            setTimeout(() => atualizarPainel23(), 30);
+            return retorno;
+        };
+
+        const clicarAnterior23 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionReforcoProfessorDamas23(r, c) {
+            if (podeMostrarProfessor23()) {
+                const dica = criarDicaPeca23(r, c);
+                if (dica) atualizarPainel23(dica);
+            }
+            const retorno = clicarAnterior23.apply(this, arguments);
+            setTimeout(() => atualizarPainel23(), 80);
+            return retorno;
+        };
+
+        if (leaveBtn) {
+            leaveBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    salvarAtivo23(false);
+                    professorDamas23Texto = '';
+                    professorDamas23Ultima = null;
+                    atualizarPainel23('');
+                }, 160);
+            });
+        }
+
+        document.addEventListener('click', (ev) => {
+            if (ev.target && ev.target.closest && ev.target.closest('#damas-teacher-analyze-btn')) {
+                if (podeMostrarProfessor23()) atualizarPainel23(criarAnalise23());
+            }
+        }, true);
+
+        setInterval(() => {
+            capturarPedidoProfessor23(false);
+            if (professorDamas23Ativo) atualizarPainel23();
+        }, 500);
+    }
+
+    instalarReforcoDefinitivoProfessorDamas23();
 
 
 })();
