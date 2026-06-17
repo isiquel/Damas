@@ -14051,3 +14051,263 @@ setInterval(() => {
         garantirControlesOnlineNoTabuleiro3612(!chessIsSpectator);
     }
 }, 1000);
+
+/* =====================================================================
+   ✅ PROFISSIONAL 29 — DICA DO PROFESSOR SEM ATRAPALHAR A JOGADA
+   Mantém o guia colorido e o balão aprovado, mas o balão não abre mais
+   automaticamente em cima do tabuleiro. Ao selecionar a peça no Xadrez
+   online com # no nome, aparece apenas um botão pequeno “Dica”.
+   O professor abre o quadro só quando quiser. O aluno não vê nada.
+===================================================================== */
+(function instalarProfessorDicaSemAtrapalhar29() {
+    if (window.__professorDicaSemAtrapalhar29) return;
+    window.__professorDicaSemAtrapalhar29 = true;
+
+    let abrindoManual29 = false;
+    let ultimoOrigin29 = null;
+
+    function instalarCss29() {
+        if (document.getElementById('professor-dica-sem-atrapalhar-29-style')) return;
+        const style = document.createElement('style');
+        style.id = 'professor-dica-sem-atrapalhar-29-style';
+        style.textContent = `
+            #teacher-piece-tip-toggle-29 {
+                position: fixed;
+                z-index: 1000002;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                min-width: 74px;
+                height: 32px;
+                padding: 0 10px;
+                border-radius: 999px;
+                border: 1px solid rgba(125, 211, 252, .72);
+                background: linear-gradient(135deg, rgba(14,165,233,.98), rgba(37,99,235,.98));
+                color: #ffffff;
+                font-size: .74rem;
+                font-weight: 1000;
+                letter-spacing: .01em;
+                box-shadow: 0 10px 24px rgba(2, 6, 23, .42), 0 0 16px rgba(14,165,233,.36);
+                cursor: pointer;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+            }
+            #teacher-piece-tip-toggle-29.show {
+                display: inline-flex;
+            }
+            #teacher-piece-tip-toggle-29:active {
+                transform: scale(.98);
+            }
+            #teacher-piece-bubble-27.open:not(.manual-open-29) {
+                display: none !important;
+                pointer-events: none !important;
+                visibility: hidden !important;
+            }
+            #teacher-piece-bubble-27.manual-open-29.open {
+                display: block !important;
+                pointer-events: auto !important;
+                visibility: visible !important;
+            }
+            #teacher-piece-bubble-27.manual-open-29 {
+                max-height: min(70vh, 430px) !important;
+                overflow: auto !important;
+            }
+            #teacher-piece-bubble-27.manual-open-29::before {
+                content: 'Aberto pelo professor';
+                display: block;
+                margin: 0 0 6px 0;
+                font-size: .62rem;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: .07em;
+                color: #93c5fd;
+                text-align: center;
+            }
+            @media (max-width: 520px) {
+                #teacher-piece-tip-toggle-29 {
+                    min-width: 64px;
+                    height: 30px;
+                    padding: 0 8px;
+                    font-size: .68rem;
+                }
+                #teacher-piece-bubble-27.manual-open-29 {
+                    width: min(286px, calc(100vw - 14px)) !important;
+                    max-height: 62vh !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function garantirBotao29() {
+        instalarCss29();
+        let btn = document.getElementById('teacher-piece-tip-toggle-29');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'teacher-piece-tip-toggle-29';
+            btn.type = 'button';
+            btn.textContent = '📘 Dica';
+            btn.setAttribute('aria-label', 'Abrir dica do professor');
+            document.body.appendChild(btn);
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+                abrirQuadroManual29();
+            }, true);
+        }
+        return btn;
+    }
+
+    function professorXadrezAtivo29() {
+        try {
+            return !!(
+                window.chessProfessorPrivadoAtivo ||
+                (typeof chessProfessorPrivadoAtivo !== 'undefined' && chessProfessorPrivadoAtivo)
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function tabuleiroXadrezOnlineVisivel29() {
+        try {
+            return !!(
+                document.body.classList.contains('chess-board-visible') &&
+                typeof chessMode !== 'undefined' && chessMode === 'online' &&
+                typeof chessIsSpectator !== 'undefined' && !chessIsSpectator
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function encontrarOrigem29() {
+        return document.querySelector('#chess-board .chess-square.teacher-guide-origin-28[data-row][data-col], #chess-board .chess-square.teacher-selected-27[data-row][data-col]');
+    }
+
+    function posicionarBotao29() {
+        const btn = garantirBotao29();
+        const origem = encontrarOrigem29();
+        if (!professorXadrezAtivo29() || !tabuleiroXadrezOnlineVisivel29() || !origem) {
+            btn.classList.remove('show');
+            return false;
+        }
+        const rect = origem.getBoundingClientRect();
+        ultimoOrigin29 = rect;
+        const margem = 6;
+        const bw = btn.offsetWidth || 74;
+        const bh = btn.offsetHeight || 32;
+        let left = Math.round(rect.left + rect.width / 2 - bw / 2);
+        left = Math.max(margem, Math.min(left, window.innerWidth - bw - margem));
+        let top = Math.round(rect.top - bh - 5);
+        if (top < margem) top = Math.round(rect.bottom + 5);
+        if (top + bh > window.innerHeight - margem) top = Math.max(margem, Math.round(rect.top + 4));
+        btn.style.left = `${left}px`;
+        btn.style.top = `${top}px`;
+        btn.classList.add('show');
+        return true;
+    }
+
+    function posicionarQuadroManual29(bubble) {
+        const origem = encontrarOrigem29();
+        const rect = origem ? origem.getBoundingClientRect() : ultimoOrigin29;
+        const margem = 8;
+        const bw = Math.min(bubble.offsetWidth || 318, window.innerWidth - (margem * 2));
+        const bh = Math.min(bubble.offsetHeight || 360, window.innerHeight - (margem * 2));
+        const centro = rect ? (rect.left + rect.width / 2) : (window.innerWidth / 2);
+        let left = Math.round(centro - bw / 2);
+        left = Math.max(margem, Math.min(left, window.innerWidth - bw - margem));
+        let top = rect ? Math.round(rect.top - bh - 14) : 76;
+        if (top < margem) top = rect ? Math.round(rect.bottom + 42) : margem;
+        if (top + bh > window.innerHeight - margem) top = Math.max(margem, window.innerHeight - bh - margem);
+        bubble.style.left = `${left}px`;
+        bubble.style.top = `${top}px`;
+    }
+
+    function esconderAutoBubble29() {
+        const bubble = document.getElementById('teacher-piece-bubble-27');
+        if (!bubble) return;
+        if (abrindoManual29) return;
+        if (bubble.classList.contains('open') && !bubble.classList.contains('manual-open-29')) {
+            bubble.classList.remove('open');
+            bubble.classList.remove('manual-open-29');
+            posicionarBotao29();
+        }
+    }
+
+    function abrirQuadroManual29() {
+        const bubble = document.getElementById('teacher-piece-bubble-27');
+        if (!bubble) return;
+        abrindoManual29 = true;
+        bubble.classList.add('manual-open-29');
+        bubble.classList.add('open');
+        requestAnimationFrame(() => {
+            posicionarQuadroManual29(bubble);
+            setTimeout(() => { abrindoManual29 = false; }, 120);
+        });
+    }
+
+    function fecharQuadroManual29() {
+        const bubble = document.getElementById('teacher-piece-bubble-27');
+        if (bubble) {
+            bubble.classList.remove('open');
+            bubble.classList.remove('manual-open-29');
+        }
+        abrindoManual29 = false;
+        posicionarBotao29();
+    }
+
+    function instalarObservadores29() {
+        const bodyObserver = new MutationObserver(() => {
+            setTimeout(() => {
+                esconderAutoBubble29();
+                posicionarBotao29();
+            }, 30);
+        });
+        bodyObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-prof-guide-label-28'] });
+
+        document.addEventListener('click', (ev) => {
+            const target = ev.target;
+            if (!target || !target.closest) return;
+            if (target.closest('#teacher-piece-tip-toggle-29')) return;
+            if (target.closest('#teacher-piece-bubble-27 .bubble-close-27')) {
+                fecharQuadroManual29();
+                return;
+            }
+            if (target.closest('#teacher-piece-bubble-27')) return;
+            if (target.closest('#chess-board .chess-square')) {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble && bubble.classList.contains('manual-open-29')) {
+                    bubble.classList.remove('open');
+                    bubble.classList.remove('manual-open-29');
+                }
+                setTimeout(() => {
+                    esconderAutoBubble29();
+                    posicionarBotao29();
+                }, 80);
+                return;
+            }
+            const bubble = document.getElementById('teacher-piece-bubble-27');
+            if (bubble && bubble.classList.contains('manual-open-29')) fecharQuadroManual29();
+        }, true);
+
+        window.addEventListener('resize', () => {
+            posicionarBotao29();
+            const bubble = document.getElementById('teacher-piece-bubble-27');
+            if (bubble && bubble.classList.contains('manual-open-29')) posicionarQuadroManual29(bubble);
+        });
+
+        setInterval(() => {
+            esconderAutoBubble29();
+            posicionarBotao29();
+            const bubble = document.getElementById('teacher-piece-bubble-27');
+            if (bubble && bubble.classList.contains('manual-open-29')) posicionarQuadroManual29(bubble);
+        }, 650);
+    }
+
+    instalarCss29();
+    garantirBotao29();
+    instalarObservadores29();
+})();
