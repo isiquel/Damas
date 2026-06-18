@@ -7463,6 +7463,15 @@ Link: ${location.origin}${location.pathname}`;
             if (promotionType) msg = `Peão promovido para ${nomePeca[promotionType]}.`;
             lastMoveMessage = msg;
 
+            // ✅ PROFISSIONAL 39 — sincronização leve antes do robô pintar o tabuleiro.
+            // O professor por cores pode fazer muita coisa visual; primeiro avisamos o Firebase
+            // do novo tabuleiro e da nova vez para o outro aparelho não ficar preso em “aguardando”.
+            if (chessMode === 'online' && chessRoomRef && !chessOnlineSyncing) {
+                try {
+                    publicarEstadoXadrezOnline({ quickSync39: Date.now() });
+                } catch (_) {}
+            }
+
             renderChessBoard();
             const estado = avaliarEstadoDoJogo(msg);
             moveHistory.push(criarRegistroHistoricoXadrez(peca, fromRow, fromCol, move, capturedPiece, promotionType, estado) || notation);
@@ -10698,7 +10707,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (window.__popupPecaXadrez25Instalado) return;
             window.__popupPecaXadrez25Instalado = true;
 
-            // ✅ PROFISSIONAL 38 - ponte segura para as melhorias do professor.
+            // ✅ PROFISSIONAL 39 - ponte segura para as melhorias do professor.
             // As funções originais do Manual Privado ficam dentro de outro bloco.
             // Esta ponte evita erro de ReferenceError e deixa Xadrez/Damas abrirem normalmente.
             function professorPrivadoPodeAparecerXadrez19() {
@@ -10851,7 +10860,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (window.__popupProfessorXadrez26Instalado) return;
             window.__popupProfessorXadrez26Instalado = true;
 
-            // ✅ PROFISSIONAL 38 - ponte segura dentro do módulo correto do professor.
+            // ✅ PROFISSIONAL 39 - ponte segura dentro do módulo correto do professor.
             // Corrige o travamento da Profissional 37: o código tentava usar funções
             // que pertenciam ao manual privado, mas estavam fora do escopo deste módulo.
             function professorPrivadoPodeAparecerXadrez19() {
@@ -13011,24 +13020,31 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const modo = lerModoToqueGuiaDiretaXadrez33();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
                 if (!forcar && modo !== 'direct' && !autoLigado) return;
+
+                // ✅ PROFISSIONAL 39 — modo leve e sincronizado.
+                // No online, o robô do professor só calcula quando volta a vez do professor.
+                // Isso evita travar o jogo e evita a confusão “no meu aparelho é vez do outro”.
+                const cor = corProfessorGuiaDiretaXadrez33();
+                if (chessMode === 'online' && chessPlayerColor && chessTurn !== cor) {
+                    if (origem !== 'silencioso39') {
+                        limparGuiaDiretaProfessorXadrez33();
+                        atualizarStatusGuiaDiretaProfessorXadrez33('Aguardando o aluno jogar. Quando voltar sua vez, o robô por cores recalcula sozinho e mostra amarelo, verde e vermelho.');
+                    }
+                    atualizarPainelFlutuanteGuiaDiretaXadrez33(false);
+                    return;
+                }
+
                 if (chessGameOver) {
                     limparGuiaDiretaProfessorXadrez33();
                     atualizarStatusGuiaDiretaProfessorXadrez33('A partida terminou. Comece outra posição para o guia voltar a orientar.');
                     atualizarPainelFlutuanteGuiaDiretaXadrez33();
                     return;
                 }
-                const cor = corProfessorGuiaDiretaXadrez33();
-                // Profissional 35: o professor pediu para ver as cores de verdade no tabuleiro.
-                // Então o robô também estuda a posição e mostra a melhor resposta
-                // mesmo quando o jogo está esperando a outra tela sincronizar a vez.
-                const analisandoForaDaVez35 = !!(chessMode === 'online' && chessPlayerColor && chessTurn !== cor);
                 try {
                     const resultado = calcularGuiaDiretaProfessorXadrez33(cor, clicada || guiaDiretaXadrez33UltimoClique);
                     pintarGuiaDiretaProfessorXadrez33(resultado);
                     const textoBase35 = textoGuiaDiretaProfessorXadrez33(resultado, cor, origem);
-                    atualizarStatusGuiaDiretaProfessorXadrez33(analisandoForaDaVez35
-                        ? '<strong>Robô analisando sua próxima resposta.</strong><br>' + textoBase35
-                        : textoBase35);
+                    atualizarStatusGuiaDiretaProfessorXadrez33(textoBase35);
                     atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
                 } catch (_) {
                     atualizarStatusGuiaDiretaProfessorXadrez33('Não consegui calcular o guia direto agora. Toque em uma peça ou abra o balão para tentar novamente.');
@@ -13041,11 +13057,12 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const modo = lerModoToqueGuiaDiretaXadrez33();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
                 if (modo !== 'direct' && !autoLigado) return;
+                if (chessMode === 'online' && chessPlayerColor && chessTurn !== corProfessorGuiaDiretaXadrez33()) return;
                 const assinatura = assinaturaGuiaDiretaXadrez33();
                 if (!forcar && assinatura === guiaDiretaXadrez33UltimaAssinatura) return;
                 guiaDiretaXadrez33UltimaAssinatura = assinatura;
                 clearTimeout(guiaDiretaXadrez33Timer);
-                guiaDiretaXadrez33Timer = setTimeout(() => aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem }), 190);
+                guiaDiretaXadrez33Timer = setTimeout(() => aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem }), 520);
             }
 
             function fecharBalaoProfessorXadrez34() {
@@ -13222,11 +13239,11 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 panel.classList.toggle('visible-33', deveMostrar35);
                 panel.classList.toggle('teacher-guide-strong-35', deveMostrar35);
                 atualizarBotoesGuiaDiretaXadrez33();
-                if (deveMostrar35 && autoLigado) {
-                    clearTimeout(window.__teacherGuideProf35RefreshTimer);
-                    window.__teacherGuideProf35RefreshTimer = setTimeout(() => {
-                        try { agendarGuiaDiretaProfessorXadrez33(false, 'auto'); } catch (_) {}
-                    }, 60);
+                if (deveMostrar35 && autoLigado && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                    clearTimeout(window.__teacherGuideProf39RefreshTimer);
+                    window.__teacherGuideProf39RefreshTimer = setTimeout(() => {
+                        try { agendarGuiaDiretaProfessorXadrez33(false, 'auto39'); } catch (_) {}
+                    }, 420);
                 }
             }
 
@@ -13247,7 +13264,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 } catch (_) {}
                 garantirPainelFlutuanteGuiaDiretaXadrez33();
                 atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
-                if (autoGuiaDiretaAtivaXadrez33()) agendarGuiaDiretaProfessorXadrez33(false, 'auto');
+                // Profissional 39: não recalcular pesado em todo render; o cálculo fica por mudança real de vez/tabuleiro.
                 return true;
             }
 
@@ -13493,8 +13510,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 atualizarControlesProfessorXadrez36();
                 garantirPainelFlutuanteGuiaDiretaXadrez33();
                 atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
-                if (autoGuiaDiretaAtivaXadrez33()) {
-                    agendarGuiaDiretaProfessorXadrez33(true, 'auto36');
+                if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                    agendarGuiaDiretaProfessorXadrez33(false, 'auto36leve39');
                 }
             }
 
@@ -13626,9 +13643,11 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     setTimeout(() => {
                         try {
                             aplicarPadraoProfessorXadrez36();
-                            if (autoGuiaDiretaAtivaXadrez33()) aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'auto36' });
+                            if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                                agendarGuiaDiretaProfessorXadrez33(false, 'auto36leve39');
+                            }
                         } catch (_) {}
-                    }, 120);
+                    }, 260);
                     return retorno;
                 };
             }
@@ -13973,7 +13992,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 garantirControlesProfessorXadrez37();
                 atualizarControlesProfessorXadrez37();
                 atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
-                if (autoGuiaDiretaAtivaXadrez33()) agendarGuiaDiretaProfessorXadrez33(true, 'prof37');
+                if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) agendarGuiaDiretaProfessorXadrez33(false, 'prof37leve39');
             }
 
             if (!window.__teacherProf37ManualWrapper) {
@@ -14017,6 +14036,86 @@ Compartilhe com os amigos e entre no horário marcado.`;
             document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 700);
             });
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 39 — ROBÔ POR CORES LEVE E SINCRONIZADO
+               O robô do professor continua top, mas agora não pesa na jogada online.
+               Ele espera a vez do professor voltar, calcula uma vez, pinta o tabuleiro
+               e não fica recalculando sem necessidade enquanto o aluno pensa.
+            ===================================================================== */
+            if (!window.__teacherProf39LeveSync) {
+                window.__teacherProf39LeveSync = true;
+                let prof39Timer = null;
+                let prof39UltimaAssinatura = '';
+
+                function prof39AssinaturaLeve() {
+                    try {
+                        return JSON.stringify({
+                            turn: chessTurn,
+                            color: chessPlayerColor || '',
+                            over: !!chessGameOver,
+                            last: lastChessMove || null,
+                            hist: Array.isArray(moveHistory) ? moveHistory.length : 0,
+                            board: chessBoard || []
+                        });
+                    } catch (_) {
+                        return String(Date.now());
+                    }
+                }
+
+                function prof39PodeCalcular() {
+                    try {
+                        return !!(
+                            professorPrivadoPodeAparecerXadrez19 &&
+                            professorPrivadoPodeAparecerXadrez19() &&
+                            autoGuiaDiretaAtivaXadrez33() &&
+                            !chessGameOver &&
+                            (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())
+                        );
+                    } catch (_) {
+                        return false;
+                    }
+                }
+
+                function prof39AgendarCalculo(motivo = 'auto39', forcar = false) {
+                    clearTimeout(prof39Timer);
+                    if (!prof39PodeCalcular()) {
+                        try {
+                            if (chessMode === 'online' && chessPlayerColor && chessTurn !== corProfessorGuiaDiretaXadrez33()) {
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Aguardando o aluno jogar. Quando voltar sua vez, o robô por cores atualiza sozinho.');
+                            }
+                        } catch (_) {}
+                        return;
+                    }
+                    const assinatura = prof39AssinaturaLeve();
+                    if (!forcar && assinatura === prof39UltimaAssinatura) return;
+                    prof39UltimaAssinatura = assinatura;
+                    prof39Timer = setTimeout(() => {
+                        try { aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: motivo }); } catch (_) {}
+                    }, 620);
+                }
+
+                const aplicarRemotoAnterior39 = aplicarEstadoXadrezRemoto;
+                aplicarEstadoXadrezRemoto = function aplicarEstadoXadrezRemotoProf39(data) {
+                    const retorno = aplicarRemotoAnterior39.apply(this, arguments);
+                    setTimeout(() => prof39AgendarCalculo('apos-jogada-aluno39', false), 760);
+                    return retorno;
+                };
+
+                const publicarAnterior39 = publicarEstadoXadrezOnline;
+                publicarEstadoXadrezOnline = async function publicarEstadoXadrezOnlineProf39(extra = {}) {
+                    // mantém a publicação original, só evita que o robô tente calcular junto com a sincronização
+                    const retorno = await publicarAnterior39.apply(this, arguments);
+                    setTimeout(() => prof39AgendarCalculo('apos-minha-jogada39', false), 900);
+                    return retorno;
+                };
+
+                document.addEventListener('click', (ev) => {
+                    const btn = ev.target && ev.target.closest ? ev.target.closest('[data-prof36="refresh"], [data-prof37="refresh"], [data-direct33="refresh"], [data-direct33-mini="refresh"]') : null;
+                    if (!btn) return;
+                    setTimeout(() => prof39AgendarCalculo('manual39', true), 120);
+                }, true);
+            }
 
         }
 
