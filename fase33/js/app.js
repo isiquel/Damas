@@ -12405,7 +12405,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (profundidade <= 0 || !movimentosBase.length) return avaliarPosicaoProfessor40(board, corBase);
 
                 const maximizando = corDaVez === corBase;
-                const limite = profundidade >= 3 ? 12 : (profundidade === 2 ? 16 : 22);
+                // ✅ PROFISSIONAL 41: limite menor para não travar o online.
+                const limite = profundidade >= 3 ? 6 : (profundidade === 2 ? 8 : 12);
                 const movimentos = ordenarMovimentosProfessor40(movimentosBase, board, corDaVez).slice(0, limite);
 
                 if (maximizando) {
@@ -12437,7 +12438,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const aluno = corOposta(corBase);
                 let pior = 0;
                 try {
-                    const respostas = ordenarMovimentosProfessor40(todosMovimentosLegais(aluno, boardDepois) || [], boardDepois, aluno).slice(0, 10);
+                    const respostas = ordenarMovimentosProfessor40(todosMovimentosLegais(aluno, boardDepois) || [], boardDepois, aluno).slice(0, 5);
                     respostas.forEach(resp => {
                         const alvo = pecaCapturadaRoboProfessorXadrez30(boardDepois, resp);
                         if (alvo) pior = Math.max(pior, valorPecaProfessor40(alvo.type));
@@ -12459,7 +12460,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     const respostas = todosMovimentosLegais(adversario, temp) || [];
                     if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 9000000;
 
-                    let score = buscaProfessor40(temp, adversario, 3, -99999999, 99999999, cor);
+                    // ✅ PROFISSIONAL 41: profundidade reduzida para manter o jogo leve.
+                    // O robô continua forte por heurística, mas não trava durante a sincronização online.
+                    let score = buscaProfessor40(temp, adversario, 2, -99999999, 99999999, cor);
 
                     if (capturada) score += valorPecaProfessor40(capturada.type) * 2.15 - valorPecaProfessor40(peca.type) * 0.12;
                     if (reiEstaEmXeque(temp, adversario)) score += 700;
@@ -12491,7 +12494,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 try { movimentos = todosMovimentosLegais(cor, board) || []; } catch (_) { movimentos = []; }
                 if (!movimentos.length) return [];
 
-                const candidatos = ordenarMovimentosProfessor40(movimentos, board, cor).slice(0, 28);
+                // ✅ PROFISSIONAL 41: calcula menos candidatos por ciclo para não pesar no celular/notebook.
+                const candidatos = ordenarMovimentosProfessor40(movimentos, board, cor).slice(0, 12);
                 return candidatos.map(item => {
                     const peca = board?.[item.from.row]?.[item.from.col] || null;
                     const score = avaliarLanceProfundoRoboProfessorXadrez30(item, board, cor);
@@ -13088,9 +13092,54 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 return nomeCurtoPecaRoboProfessorXadrez30(peca?.type || 'piece');
             }
 
+            /* =====================================================================
+               ✅ PROFISSIONAL 41 — PERIGO RÁPIDO SEM TRAVAR
+               Antes o robô avaliava todas as peças ruins com busca profunda. Isso
+               ficava pesado durante o online. Agora a parte vermelha usa uma
+               análise rápida: captura, peça pendurada, casa atacada, defesa e centro.
+               A melhor jogada continua calculada pelo cérebro forte, mas com limite.
+            ===================================================================== */
+            function pontuarPerigoRapidoProfessor41(item, cor) {
+                try {
+                    const peca = chessBoard?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    if (!peca) return -999999;
+
+                    const adversario = corOposta(cor);
+                    const valor = valorPecaProfessor40(peca.type);
+                    const capturada = pecaCapturadaRoboProfessorXadrez30(chessBoard, item);
+                    let score = 0;
+
+                    try { score += pontuarMovimentoGuiaXadrez29(item, cor) * 0.35; } catch (_) {}
+                    if (capturada) score += valorPecaProfessor40(capturada.type) * 1.45 - valor * 0.10;
+                    if (item.to?.castle) score += 260;
+                    if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 1700;
+                    score += centro26(item.to.row, item.to.col) * 14;
+
+                    const origemAtacada = quadradoAtacado(chessBoard, item.from.row, item.from.col, adversario);
+                    const origemDefendida = quadradoAtacado(chessBoard, item.from.row, item.from.col, cor);
+                    if (origemAtacada && !origemDefendida) score += Math.min(260, valor * 0.45);
+
+                    const temp = aplicarMovimentoTreinoEmClone(chessBoard, item, 'queen');
+                    if (temp && peca.type !== 'king') {
+                        const destinoAtacado = quadradoAtacado(temp, item.to.row, item.to.col, adversario);
+                        const destinoDefendido = quadradoAtacado(temp, item.to.row, item.to.col, cor);
+                        if (destinoAtacado && !destinoDefendido) score -= valor * 1.65;
+                        else if (destinoAtacado && destinoDefendido) score -= valor * 0.22;
+
+                        // Penaliza jogada que deixa uma peça importante sem defesa direta.
+                        if (!destinoDefendido && valor >= 320 && !capturada) score -= 90;
+                    }
+
+                    return score;
+                } catch (_) {
+                    return -999999;
+                }
+            }
+
             function avaliarMovimentosParaNaoMexerXadrez33(cor, melhor) {
                 let movimentos = [];
                 try { movimentos = todosMovimentosLegais(cor, chessBoard) || []; } catch (_) { movimentos = []; }
+
                 const melhorKey = chaveCasaGuiaDiretaXadrez33(melhor?.from);
                 const melhorScore = Number.isFinite(melhor?.score) ? melhor.score : 0;
                 const porPeca = new Map();
@@ -13099,8 +13148,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     const peca = chessBoard?.[move.from.row]?.[move.from.col] || null;
                     if (!peca || peca.color !== cor) return;
                     const item = { ...move, peca };
-                    let score = -9999999;
-                    try { score = avaliarLanceProfundoRoboProfessorXadrez30(item, chessBoard, cor); } catch (_) {}
+                    const score = pontuarPerigoRapidoProfessor41(item, cor);
                     const key = chaveCasaGuiaDiretaXadrez33(item.from);
                     const atual = porPeca.get(key);
                     if (!atual || score > atual.score) porPeca.set(key, { item, score, key });
@@ -13113,16 +13161,22 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     const valor = valorPecaProfessor40(peca?.type);
                     let pecaEmRisco = false;
                     try {
-                        pecaEmRisco = !!(peca && peca.type !== 'king' && quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, adversario) && !quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, cor));
+                        pecaEmRisco = !!(
+                            peca &&
+                            peca.type !== 'king' &&
+                            quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, adversario) &&
+                            !quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, cor)
+                        );
                     } catch (_) {}
-                    const muitoPior = x.key !== melhorKey && (melhorScore - x.score > Math.max(240, valor * 0.55));
-                    const ruimMesmo = x.key !== melhorKey && x.score < -180;
+
+                    const muitoPior = x.key !== melhorKey && (melhorScore - x.score > Math.max(220, valor * 0.45));
+                    const ruimMesmo = x.key !== melhorKey && x.score < -150;
                     if (muitoPior || ruimMesmo || (pecaEmRisco && x.key !== melhorKey)) perigos.push(x);
                 });
 
                 return perigos
                     .sort((a, b) => a.score - b.score)
-                    .slice(0, 7)
+                    .slice(0, 5)
                     .map(x => x.item);
             }
 
@@ -13280,7 +13334,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (!forcar && assinatura === guiaDiretaXadrez33UltimaAssinatura) return;
                 guiaDiretaXadrez33UltimaAssinatura = assinatura;
                 clearTimeout(guiaDiretaXadrez33Timer);
-                guiaDiretaXadrez33Timer = setTimeout(() => aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem }), 520);
+                // ✅ PROFISSIONAL 41: espera um pouco mais a sincronização do Firebase/render terminar antes de pintar.
+                guiaDiretaXadrez33Timer = setTimeout(() => aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem }), 900);
             }
 
             function fecharBalaoProfessorXadrez34() {
@@ -14310,13 +14365,13 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     prof39UltimaAssinatura = assinatura;
                     prof39Timer = setTimeout(() => {
                         try { aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: motivo }); } catch (_) {}
-                    }, 620);
+                    }, 1050);
                 }
 
                 const aplicarRemotoAnterior39 = aplicarEstadoXadrezRemoto;
                 aplicarEstadoXadrezRemoto = function aplicarEstadoXadrezRemotoProf39(data) {
                     const retorno = aplicarRemotoAnterior39.apply(this, arguments);
-                    setTimeout(() => prof39AgendarCalculo('apos-jogada-aluno39', false), 760);
+                    setTimeout(() => prof39AgendarCalculo('apos-jogada-aluno41', false), 1200);
                     return retorno;
                 };
 
@@ -14324,7 +14379,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 publicarEstadoXadrezOnline = async function publicarEstadoXadrezOnlineProf39(extra = {}) {
                     // mantém a publicação original, só evita que o robô tente calcular junto com a sincronização
                     const retorno = await publicarAnterior39.apply(this, arguments);
-                    setTimeout(() => prof39AgendarCalculo('apos-minha-jogada39', false), 900);
+                    setTimeout(() => prof39AgendarCalculo('apos-minha-jogada41', false), 1400);
                     return retorno;
                 };
 
