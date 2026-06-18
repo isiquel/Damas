@@ -10294,6 +10294,23 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         <button id="chess-private-teacher-toggle" type="button" aria-label="Recolher manual">−</button>
                     </div>
                     <div id="chess-private-teacher-body">
+                        <div id="teacher-prof37-controls" class="teacher-prof37-controls">
+                            <div class="prof37-title">
+                                <span>🎯 Robô do professor</span>
+                                <span data-prof37-state>PRONTO</span>
+                            </div>
+                            <div class="prof37-grid">
+                                <button type="button" data-prof37="window">Janelinha ON</button>
+                                <button type="button" data-prof37="colors">Robô cores OFF</button>
+                                <button type="button" data-prof37="refresh">Atualizar cores</button>
+                                <button type="button" data-prof37="bubble">Abrir balão</button>
+                                <button type="button" data-prof37="clear">Limpar cores</button>
+                                <button type="button" data-prof37="legend">Legenda</button>
+                            </div>
+                            <div class="prof37-help" data-prof37-help>
+                                Janelinha ON: tocar na peça abre o balão. Robô cores ON: amarelo pisca na peça indicada, verde pisca na casa boa e vermelho marca perigo.
+                            </div>
+                        </div>
                         <div id="chess-private-teacher-text">
                             Toque em uma peça ou use a análise da posição para receber dicas de ensino neste aparelho.
                         </div>
@@ -10584,7 +10601,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     try {
                         const modoKey35 = 'tabuleiro_arena_professor_xadrez_33_modo_toque';
                         const autoKey35 = 'tabuleiro_arena_professor_xadrez_33_auto_direto';
-                        if (localStorage.getItem(modoKey35) === null) localStorage.setItem(modoKey35, 'direct');
+                        if (localStorage.getItem(modoKey35) === null) localStorage.setItem(modoKey35, 'bubble');
                         if (localStorage.getItem(autoKey35) === null) localStorage.setItem(autoKey35, '1');
                     } catch (_) {}
                     setTimeout(() => {
@@ -12992,16 +13009,15 @@ Compartilhe com os amigos e entre no horário marcado.`;
             function definirRoboCoresProfessorXadrez34(ligado) {
                 salvarAutoGuiaDiretaXadrez33(!!ligado);
                 if (ligado) {
-                    salvarModoToqueGuiaDiretaXadrez33('direct');
-                    fecharBalaoProfessorXadrez34();
                     aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
-                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores ON. Ele acompanha o jogo e recalcula quando o aluno jogar: amarelo = mexa, verde = vá, vermelho = evite.');
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores ON. A janelinha continua no estado escolhido: ON abre o balão ao tocar na peça; OFF guia somente pelo tabuleiro. Amarelo = peça boa, verde = casa boa, vermelho = evite.');
                 } else {
                     limparGuiaDiretaProfessorXadrez33();
-                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores OFF. As cores foram limpas. Ligue novamente quando quiser orientação no tabuleiro.');
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores OFF. As cores foram limpas. A janelinha continua funcionando se estiver ON.');
                 }
                 atualizarBotoesGuiaDiretaXadrez33();
                 atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                try { atualizarControlesProfessorXadrez37(); } catch (_) {}
             }
 
             function instalarGuiaDiretaRoboProfessorXadrez33(bubble) {
@@ -13161,7 +13177,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
                 try {
                     if (ativarSeVazio && localStorage.getItem(GUIA_DIRETA_XADREZ_33_MODO_KEY) === null) {
-                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'direct');
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
                     }
                     if (ativarSeVazio && localStorage.getItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY) === null) {
                         localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
@@ -13567,6 +13583,377 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 setTimeout(() => {
                     try { aplicarPadraoProfessorXadrez36(); } catch (_) {}
                 }, 500);
+            });
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 37 — CONTROLE CORRETO NA ABA DO PROFESSOR
+               Correção do teste mostrado pelo usuário:
+               - a janelinha ficou OFF salva no navegador e parou de abrir ao tocar nas peças;
+               - os botões precisavam ficar DENTRO da aba Professor Inteligente, perto do Analisar posição;
+               - Robô cores precisa ser independente da janelinha.
+
+               Agora:
+               Janelinha ON/OFF e Robô cores ON/OFF ficam dentro da aba do professor.
+               Janelinha ON = tocar na peça abre o balão.
+               Janelinha OFF + Robô cores ON = orienta só por cores no tabuleiro.
+            ===================================================================== */
+            const PROF37_MIGRATION_KEY = 'tabuleiro_arena_prof37_janelinha_controle_correto';
+
+            function instalarCssControlesProfessorXadrez37() {
+                if (document.getElementById('teacher-prof37-controls-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof37-controls-style';
+                style.textContent = `
+                    #teacher-prof37-controls,
+                    .teacher-prof37-controls {
+                        display: block !important;
+                        margin: 0 0 9px 0 !important;
+                        padding: 9px !important;
+                        border-radius: 13px !important;
+                        border: 1px solid rgba(250,204,21,.38) !important;
+                        background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.86)) !important;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 20px rgba(0,0,0,.18) !important;
+                    }
+                    #teacher-prof37-controls .prof37-title,
+                    .teacher-prof37-controls .prof37-title {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        gap: 8px !important;
+                        color: #fde68a !important;
+                        font-size: .70rem !important;
+                        font-weight: 1000 !important;
+                        letter-spacing: .05em !important;
+                        text-transform: uppercase !important;
+                        margin-bottom: 8px !important;
+                    }
+                    #teacher-prof37-controls [data-prof37-state],
+                    .teacher-prof37-controls [data-prof37-state] {
+                        padding: 2px 7px !important;
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(56,189,248,.30) !important;
+                        background: rgba(14,165,233,.12) !important;
+                        color: #bae6fd !important;
+                        white-space: nowrap !important;
+                    }
+                    #teacher-prof37-controls .prof37-grid,
+                    .teacher-prof37-controls .prof37-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 6px !important;
+                    }
+                    #teacher-prof37-controls button,
+                    .teacher-prof37-controls button {
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(148,163,184,.28) !important;
+                        background: rgba(15,23,42,.94) !important;
+                        color: #e5e7eb !important;
+                        padding: 8px 6px !important;
+                        font-size: .64rem !important;
+                        font-weight: 1000 !important;
+                        line-height: 1.05 !important;
+                        text-transform: none !important;
+                        box-shadow: none !important;
+                        min-height: 34px !important;
+                    }
+                    #teacher-prof37-controls button.prof37-on,
+                    .teacher-prof37-controls button.prof37-on {
+                        background: linear-gradient(90deg, rgba(22,101,52,.98), rgba(21,128,61,.94)) !important;
+                        color: #dcfce7 !important;
+                        border-color: rgba(34,197,94,.75) !important;
+                        box-shadow: 0 0 13px rgba(34,197,94,.20) !important;
+                    }
+                    #teacher-prof37-controls button.prof37-off,
+                    .teacher-prof37-controls button.prof37-off {
+                        background: linear-gradient(90deg, rgba(127,29,29,.96), rgba(185,28,28,.88)) !important;
+                        color: #fee2e2 !important;
+                        border-color: rgba(248,113,113,.55) !important;
+                    }
+                    #teacher-prof37-controls button.prof37-warn,
+                    .teacher-prof37-controls button.prof37-warn {
+                        background: linear-gradient(90deg, rgba(113,63,18,.96), rgba(180,83,9,.90)) !important;
+                        color: #fef3c7 !important;
+                        border-color: rgba(250,204,21,.62) !important;
+                    }
+                    #teacher-prof37-controls .prof37-help,
+                    .teacher-prof37-controls .prof37-help {
+                        margin-top: 7px !important;
+                        padding: 7px 8px !important;
+                        border-radius: 10px !important;
+                        background: rgba(2,6,23,.58) !important;
+                        border: 1px solid rgba(148,163,184,.16) !important;
+                        color: #bfdbfe !important;
+                        font-size: .62rem !important;
+                        line-height: 1.28 !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33,
+                    .chess-square.teacher-direct-from-33 {
+                        background: radial-gradient(circle at center, #fef08a 0%, #facc15 55%, #a16207 100%) !important;
+                        outline: 5px solid #fde047 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(113,63,18,.24), 0 0 38px rgba(250,204,21,1) !important;
+                        animation: teacherProf37PulseYellow .58s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33,
+                    .chess-square.teacher-direct-to-33 {
+                        background: radial-gradient(circle at center, #bbf7d0 0%, #22c55e 55%, #166534 100%) !important;
+                        outline: 5px solid #4ade80 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(20,83,45,.28), 0 0 40px rgba(34,197,94,1) !important;
+                        animation: teacherProf37PulseGreen .58s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33,
+                    .chess-square.teacher-direct-bad-33 {
+                        background: radial-gradient(circle at center, #fecaca 0%, #ef4444 58%, #7f1d1d 100%) !important;
+                        outline: 5px solid #f87171 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(127,29,29,.32), 0 0 34px rgba(239,68,68,.94) !important;
+                        animation: teacherProf37PulseRed .78s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    .chess-square.teacher-direct-from-33::before,
+                    .chess-square.teacher-direct-to-33::before,
+                    .chess-square.teacher-direct-bad-33::before {
+                        z-index: 70 !important;
+                        min-width: 28px !important;
+                        height: 22px !important;
+                        font-size: .62rem !important;
+                        border: 2px solid rgba(255,255,255,.94) !important;
+                        box-shadow: 0 4px 10px rgba(0,0,0,.42) !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-from-33 span,
+                    #chess-board .chess-square.teacher-direct-to-33 span,
+                    #chess-board .chess-square.teacher-direct-bad-33 span {
+                        position: relative !important;
+                        z-index: 55 !important;
+                        text-shadow: 0 3px 8px rgba(0,0,0,.55) !important;
+                    }
+                    @keyframes teacherProf37PulseYellow {
+                        0%,100% { filter: brightness(1) saturate(1.1); transform: scale(1); }
+                        50% { filter: brightness(1.45) saturate(1.7); transform: scale(.985); }
+                    }
+                    @keyframes teacherProf37PulseGreen {
+                        0%,100% { filter: brightness(1) saturate(1.12); transform: scale(1); }
+                        50% { filter: brightness(1.48) saturate(1.75); transform: scale(.985); }
+                    }
+                    @keyframes teacherProf37PulseRed {
+                        0%,100% { filter: brightness(1) saturate(1.1); }
+                        50% { filter: brightness(1.30) saturate(1.55); }
+                    }
+                    @media(max-width:560px){
+                        #teacher-prof37-controls,
+                        .teacher-prof37-controls { padding: 8px !important; }
+                        #teacher-prof37-controls button,
+                        .teacher-prof37-controls button { font-size:.59rem !important; padding:7px 5px !important; }
+                        #teacher-prof37-controls .prof37-help,
+                        .teacher-prof37-controls .prof37-help { font-size:.58rem !important; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function aplicarMigracaoProfessorXadrez37() {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                try {
+                    if (localStorage.getItem(PROF37_MIGRATION_KEY) !== '1') {
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '0');
+                        localStorage.setItem(PROF37_MIGRATION_KEY, '1');
+                    }
+                } catch (_) {}
+            }
+
+            function garantirControlesProfessorXadrez37() {
+                instalarCssControlesProfessorXadrez37();
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (!panel) return null;
+                const body = document.getElementById('chess-private-teacher-body') || panel;
+                let box = document.getElementById('teacher-prof37-controls');
+                if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'teacher-prof37-controls';
+                    box.className = 'teacher-prof37-controls';
+                    box.innerHTML = `
+                        <div class="prof37-title"><span>🎯 Robô do professor</span><span data-prof37-state>PRONTO</span></div>
+                        <div class="prof37-grid">
+                            <button type="button" data-prof37="window">Janelinha ON</button>
+                            <button type="button" data-prof37="colors">Robô cores OFF</button>
+                            <button type="button" data-prof37="refresh">Atualizar cores</button>
+                            <button type="button" data-prof37="bubble">Abrir balão</button>
+                            <button type="button" data-prof37="clear">Limpar cores</button>
+                            <button type="button" data-prof37="legend">Legenda</button>
+                        </div>
+                        <div class="prof37-help" data-prof37-help>Janelinha ON: tocar na peça abre o balão. Robô cores ON: amarelo pisca na peça indicada, verde pisca na casa boa e vermelho marca perigo.</div>
+                    `;
+                    body.insertBefore(box, body.firstChild || null);
+                }
+                if (box.dataset.prof37Bound !== '1') {
+                    box.dataset.prof37Bound = '1';
+                    box.querySelectorAll('[data-prof37]').forEach(btn => {
+                        btn.addEventListener('click', ev => {
+                            const acao = btn.getAttribute('data-prof37');
+                            if (acao === 'window') {
+                                const offAgora = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                                if (offAgora) {
+                                    salvarModoToqueGuiaDiretaXadrez33('bubble');
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha ON. Agora, ao tocar numa peça, o balão de dicas volta a abrir. O robô por cores pode ficar ligado junto.');
+                                } else {
+                                    salvarModoToqueGuiaDiretaXadrez33('direct');
+                                    fecharBalaoProfessorXadrez34();
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha OFF. O balão não abre ao tocar na peça; use Robô cores ON para orientar direto pelo tabuleiro.');
+                                }
+                            }
+                            if (acao === 'colors') {
+                                const ligar = !autoGuiaDiretaAtivaXadrez33();
+                                salvarAutoGuiaDiretaXadrez33(ligar);
+                                if (ligar) {
+                                    aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'prof37' });
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô cores ON. Ele vai acompanhar o jogo e marcar no tabuleiro: amarelo = peça boa, verde = casa boa, vermelho = perigo.');
+                                } else {
+                                    limparGuiaDiretaProfessorXadrez33();
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô cores OFF. As cores foram limpas. A janelinha continua no estado escolhido.');
+                                }
+                            }
+                            if (acao === 'refresh') {
+                                salvarAutoGuiaDiretaXadrez33(true);
+                                aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'prof37' });
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Cores atualizadas. Amarelo = peça indicada, verde = destino, vermelho = perigo.');
+                            }
+                            if (acao === 'bubble') {
+                                salvarModoToqueGuiaDiretaXadrez33('bubble');
+                                abrirBalaoPeloPainelGuiaDiretaXadrez33();
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Balão aberto. Se não houver peça selecionada, toque em uma peça no tabuleiro.');
+                            }
+                            if (acao === 'clear') {
+                                salvarAutoGuiaDiretaXadrez33(false);
+                                limparGuiaDiretaProfessorXadrez33();
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas. Ligue Robô cores ON quando quiser orientação no tabuleiro.');
+                            }
+                            if (acao === 'legend') {
+                                atualizarStatusGuiaDiretaProfessorXadrez33('<strong>Legenda:</strong><br><span class="yellow-33">Amarelo piscando</span> = peça recomendada para mexer.<br><span class="good-33">Verde piscando</span> = casa recomendada para ir.<br><span class="bad-33">Vermelho</span> = peça/casa perigosa para evitar.');
+                            }
+                            atualizarControlesProfessorXadrez37();
+                            atualizarBotoesGuiaDiretaXadrez33();
+                            atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                        });
+                    });
+                }
+                atualizarControlesProfessorXadrez37();
+                return box;
+            }
+
+            function atualizarControlesProfessorXadrez37() {
+                const box = document.getElementById('teacher-prof37-controls');
+                if (!box) return;
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const auto = autoGuiaDiretaAtivaXadrez33();
+                const off = modo === 'direct';
+                const btnWindow = box.querySelector('[data-prof37="window"]');
+                const btnColors = box.querySelector('[data-prof37="colors"]');
+                const state = box.querySelector('[data-prof37-state]');
+                const help = box.querySelector('[data-prof37-help]');
+                if (btnWindow) {
+                    btnWindow.textContent = off ? 'Janelinha OFF' : 'Janelinha ON';
+                    btnWindow.classList.toggle('prof37-on', !off);
+                    btnWindow.classList.toggle('prof37-off', off);
+                }
+                if (btnColors) {
+                    btnColors.textContent = auto ? 'Robô cores ON' : 'Robô cores OFF';
+                    btnColors.classList.toggle('prof37-on', auto);
+                    btnColors.classList.toggle('prof37-off', !auto);
+                }
+                if (state) {
+                    if (!off && auto) state.textContent = 'BALÃO + CORES';
+                    else if (!off) state.textContent = 'JANELA ON';
+                    else if (auto) state.textContent = 'SÓ CORES';
+                    else state.textContent = 'OFF';
+                    state.style.color = auto || !off ? '#86efac' : '#fca5a5';
+                }
+                if (help) {
+                    help.innerHTML = off
+                        ? 'Janelinha OFF: o balão não abre sozinho. Ligue <strong>Robô cores ON</strong> para o tabuleiro guiar por cores.'
+                        : 'Janelinha ON: tocar numa peça abre o balão. Você também pode ligar <strong>Robô cores ON</strong> para ver amarelo, verde e vermelho no tabuleiro.';
+                }
+            }
+
+            function abrirBubbleProfessorXadrez37SePossivel(row, col) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
+                if (lerModoToqueGuiaDiretaXadrez33() === 'direct') return false;
+                const peca = chessBoard?.[row]?.[col] || null;
+                if (!peca) return false;
+                try {
+                    let movimentos = [];
+                    try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                    const rect = rectQuadradoXadrez26(row, col);
+                    guiaDiretaXadrez33UltimoClique = { row, col };
+                    try { registrarUltimaPecaGuiaXadrez29({ row, col }); } catch (_) {}
+                    marcarPecaBubbleProfessorXadrez27(row, col);
+                    abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(peca, row, col, movimentos, rect));
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function iniciarProfessorXadrez37() {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                aplicarMigracaoProfessorXadrez37();
+                garantirControlesProfessorXadrez37();
+                atualizarControlesProfessorXadrez37();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33()) agendarGuiaDiretaProfessorXadrez33(true, 'prof37');
+            }
+
+            if (!window.__teacherProf37ManualWrapper) {
+                window.__teacherProf37ManualWrapper = true;
+                const atualizarManualAnterior37 = atualizarManualPrivadoProfessorXadrez19;
+                atualizarManualPrivadoProfessorXadrez19 = function atualizarManualPrivadoProfessorXadrez37(texto = '') {
+                    const retorno = atualizarManualAnterior37.apply(this, arguments);
+                    setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 0);
+                    return retorno;
+                };
+            }
+
+            if (!window.__teacherProf37ClickFix) {
+                window.__teacherProf37ClickFix = true;
+                document.addEventListener('click', (ev) => {
+                    const square = ev.target && ev.target.closest ? ev.target.closest('#chess-board .chess-square[data-row][data-col]') : null;
+                    if (!square) return;
+                    const row = Number(square.dataset.row);
+                    const col = Number(square.dataset.col);
+                    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+                    setTimeout(() => {
+                        try {
+                            iniciarProfessorXadrez37();
+                            if (lerModoToqueGuiaDiretaXadrez33() !== 'direct') abrirBubbleProfessorXadrez37SePossivel(row, col);
+                            if (autoGuiaDiretaAtivaXadrez33()) aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'toque37', clicada: { row, col } });
+                        } catch (_) {}
+                    }, 170);
+                }, true);
+            }
+
+            if (!window.__teacherProf37RenderHook) {
+                window.__teacherProf37RenderHook = true;
+                const renderAnteriorProf37 = renderChessBoard;
+                renderChessBoard = function renderChessBoardProfessor37() {
+                    const retorno = renderAnteriorProf37.apply(this, arguments);
+                    setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 160);
+                    return retorno;
+                };
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 700);
             });
 
         }
