@@ -12240,36 +12240,249 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 }
             }
 
-            function avaliarLanceProfundoRoboProfessorXadrez30(item, board = chessBoard, cor = 'white') {
+            /* =====================================================================
+               ✅ PROFISSIONAL 40 — CÉREBRO MAIS FORTE DO ROBÔ PROFESSOR
+               A Profissional 39 deixou o robô leve e sincronizado. Agora o cálculo
+               fica mais forte: ele olha a resposta do aluno, evita peças penduradas,
+               procura xeque-mate, captura segura, defesa do Rei e melhor continuação.
+               Continua local, privado e sem mexer na partida/Firebase.
+            ===================================================================== */
+            function valorPecaProfessor40(tipo) {
+                try { return valorProfessorXadrez20(tipo); } catch (_) {}
+                return ({ pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 })[tipo] || 0;
+            }
+
+            function bonusCasaProfessor40(peca, row, col, corBase) {
+                if (!peca) return 0;
+                const avancar = peca.color === 'white' ? (6 - row) : (row - 1);
+                const centro = centro26(row, col);
+                let bonus = 0;
+                if (peca.type === 'pawn') bonus += Math.max(-2, avancar) * 7 + centro * 3;
+                if (peca.type === 'knight') bonus += centro * 13 - ((row === 0 || row === 7 || col === 0 || col === 7) ? 26 : 0);
+                if (peca.type === 'bishop') bonus += centro * 9;
+                if (peca.type === 'queen') bonus += centro * 4;
+                if (peca.type === 'rook') bonus += (row === 0 || row === 7 ? 8 : 0);
+                if (peca.type === 'king') {
+                    const finalComPoucasPecas = contarMaterialProfessor40(chessBoard, null) <= 2600;
+                    bonus += finalComPoucasPecas ? centro * 8 : -centro * 5;
+                }
+                return peca.color === corBase ? bonus : -bonus;
+            }
+
+            function contarMaterialProfessor40(board, cor = null) {
+                let total = 0;
+                try {
+                    for (let r = 0; r < 8; r++) {
+                        for (let c = 0; c < 8; c++) {
+                            const p = board?.[r]?.[c];
+                            if (!p || p.type === 'king') continue;
+                            if (!cor || p.color === cor) total += valorPecaProfessor40(p.type);
+                        }
+                    }
+                } catch (_) {}
+                return total;
+            }
+
+            function reiProfessor40(board, cor) {
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const p = board?.[r]?.[c];
+                        if (p && p.color === cor && p.type === 'king') return { row: r, col: c };
+                    }
+                }
+                return null;
+            }
+
+            function segurancaReiProfessor40(board, corBase) {
+                const adversario = corOposta(corBase);
+                const meuRei = reiProfessor40(board, corBase);
+                const reiAdv = reiProfessor40(board, adversario);
+                let score = 0;
+                if (meuRei) {
+                    if (reiEstaEmXeque(board, corBase)) score -= 550;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (!dr && !dc) continue;
+                            const r = meuRei.row + dr, c = meuRei.col + dc;
+                            if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+                            if (quadradoAtacado(board, r, c, adversario)) score -= 26;
+                        }
+                    }
+                }
+                if (reiAdv) {
+                    if (reiEstaEmXeque(board, adversario)) score += 380;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (!dr && !dc) continue;
+                            const r = reiAdv.row + dr, c = reiAdv.col + dc;
+                            if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+                            if (quadradoAtacado(board, r, c, corBase)) score += 14;
+                        }
+                    }
+                }
+                return score;
+            }
+
+            function avaliarPosicaoProfessor40(board, corBase) {
+                const adversario = corOposta(corBase);
+                let meusMoves = [];
+                let movesAdv = [];
+                try { meusMoves = todosMovimentosLegais(corBase, board) || []; } catch (_) { meusMoves = []; }
+                try { movesAdv = todosMovimentosLegais(adversario, board) || []; } catch (_) { movesAdv = []; }
+
+                if (!movesAdv.length && reiEstaEmXeque(board, adversario)) return 10000000;
+                if (!meusMoves.length && reiEstaEmXeque(board, corBase)) return -10000000;
+                if (!movesAdv.length && !reiEstaEmXeque(board, adversario)) return -60;
+                if (!meusMoves.length && !reiEstaEmXeque(board, corBase)) return 0;
+
+                let score = 0;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const p = board?.[r]?.[c];
+                        if (!p) continue;
+                        const sinal = p.color === corBase ? 1 : -1;
+                        const valor = valorPecaProfessor40(p.type);
+                        score += sinal * valor;
+                        score += bonusCasaProfessor40(p, r, c, corBase);
+
+                        if (p.type !== 'king') {
+                            const atacada = quadradoAtacado(board, r, c, corOposta(p.color));
+                            const defendida = quadradoAtacado(board, r, c, p.color);
+                            if (atacada && !defendida) score += sinal * (-Math.min(420, valor * 0.55));
+                            else if (atacada && defendida) score += sinal * (-Math.min(120, valor * 0.16));
+                            else if (defendida) score += sinal * Math.min(34, valor * 0.035);
+                        }
+                    }
+                }
+
+                score += (meusMoves.length - movesAdv.length) * 5;
+                score += segurancaReiProfessor40(board, corBase);
+
+                try {
+                    const meuMate = detectarMateEmUmTreinoXadrez(corBase, board);
+                    const mateContra = detectarMateEmUmTreinoXadrez(adversario, board);
+                    if (meuMate) score += 280000;
+                    if (mateContra) score -= 360000;
+                } catch (_) {}
+
+                return score;
+            }
+
+            function movimentoDaXequeProfessor40(board, item, cor) {
                 try {
                     const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
-                    if (!temp) return -999999;
-                    const adversario = corOposta(cor);
+                    return !!(temp && reiEstaEmXeque(temp, corOposta(cor)));
+                } catch (_) { return false; }
+            }
+
+            function ordenarMovimentosProfessor40(movimentos, board, corBase) {
+                const adversario = corOposta(corBase);
+                return (movimentos || []).map(item => {
+                    const peca = board?.[item.from.row]?.[item.from.col] || null;
+                    const alvo = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    let ordem = 0;
+                    if (alvo) ordem += valorPecaProfessor40(alvo.type) * 16 - valorPecaProfessor40(peca?.type) * 0.55;
+                    if (item.to?.castle) ordem += 260;
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) ordem += 1500;
+                    if (movimentoDaXequeProfessor40(board, item, peca?.color || corBase)) ordem += 430;
+                    try {
+                        if (peca && quadradoAtacado(board, item.from.row, item.from.col, adversario)) ordem += Math.min(350, valorPecaProfessor40(peca.type) * 0.55);
+                        const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                        if (temp && peca && peca.type !== 'king') {
+                            const destinoAtacado = quadradoAtacado(temp, item.to.row, item.to.col, adversario);
+                            const destinoDefendido = quadradoAtacado(temp, item.to.row, item.to.col, peca.color);
+                            if (destinoAtacado && !destinoDefendido) ordem -= valorPecaProfessor40(peca.type) * 2.1;
+                            if (destinoAtacado && destinoDefendido) ordem -= valorPecaProfessor40(peca.type) * 0.25;
+                        }
+                    } catch (_) {}
+                    ordem += centro26(item.to.row, item.to.col) * 8;
+                    return { ...item, order40: ordem };
+                }).sort((a, b) => b.order40 - a.order40);
+            }
+
+            function buscaProfessor40(board, corDaVez, profundidade, alpha, beta, corBase) {
+                const movimentosBase = todosMovimentosLegais(corDaVez, board) || [];
+                if (profundidade <= 0 || !movimentosBase.length) return avaliarPosicaoProfessor40(board, corBase);
+
+                const maximizando = corDaVez === corBase;
+                const limite = profundidade >= 3 ? 12 : (profundidade === 2 ? 16 : 22);
+                const movimentos = ordenarMovimentosProfessor40(movimentosBase, board, corDaVez).slice(0, limite);
+
+                if (maximizando) {
+                    let melhor = -Infinity;
+                    for (const item of movimentos) {
+                        const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                        if (!temp) continue;
+                        const valor = buscaProfessor40(temp, corOposta(corDaVez), profundidade - 1, alpha, beta, corBase);
+                        if (valor > melhor) melhor = valor;
+                        if (valor > alpha) alpha = valor;
+                        if (beta <= alpha) break;
+                    }
+                    return melhor;
+                }
+
+                let pior = Infinity;
+                for (const item of movimentos) {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!temp) continue;
+                    const valor = buscaProfessor40(temp, corOposta(corDaVez), profundidade - 1, alpha, beta, corBase);
+                    if (valor < pior) pior = valor;
+                    if (valor < beta) beta = valor;
+                    if (beta <= alpha) break;
+                }
+                return pior;
+            }
+
+            function melhorGanhoRespostaAlunoProfessor40(boardDepois, corBase) {
+                const aluno = corOposta(corBase);
+                let pior = 0;
+                try {
+                    const respostas = ordenarMovimentosProfessor40(todosMovimentosLegais(aluno, boardDepois) || [], boardDepois, aluno).slice(0, 10);
+                    respostas.forEach(resp => {
+                        const alvo = pecaCapturadaRoboProfessorXadrez30(boardDepois, resp);
+                        if (alvo) pior = Math.max(pior, valorPecaProfessor40(alvo.type));
+                        const temp = aplicarMovimentoTreinoEmClone(boardDepois, resp, 'queen');
+                        if (temp && reiEstaEmXeque(temp, corBase)) pior = Math.max(pior, 420);
+                    });
+                } catch (_) {}
+                return pior;
+            }
+
+            function avaliarLanceProfundoRoboProfessorXadrez30(item, board = chessBoard, cor = 'white') {
+                try {
                     const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!temp || !peca) return -9999999;
+
+                    const adversario = corOposta(cor);
                     const capturada = pecaCapturadaRoboProfessorXadrez30(board, item);
                     const respostas = todosMovimentosLegais(adversario, temp) || [];
-                    if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 2000000;
+                    if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 9000000;
 
-                    let score = 0;
-                    try { score += minimaxTreinoXadrez(temp, 2, -9999999, 9999999, false, cor); }
-                    catch (_) { score += avaliarPosicaoTreinoXadrez(temp, cor); }
+                    let score = buscaProfessor40(temp, adversario, 3, -99999999, 99999999, cor);
 
-                    if (capturada) score += valorProfessorXadrez20(capturada.type) * 1.35;
-                    if (reiEstaEmXeque(temp, adversario)) score += 420;
-                    if (item.to?.castle) score += 180;
-                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 950;
-                    score += centro26(item.to.row, item.to.col) * 20;
+                    if (capturada) score += valorPecaProfessor40(capturada.type) * 2.15 - valorPecaProfessor40(peca.type) * 0.12;
+                    if (reiEstaEmXeque(temp, adversario)) score += 700;
+                    if (item.to?.castle) score += 360;
+                    if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 2200;
+                    score += centro26(item.to.row, item.to.col) * 24;
 
                     const mateContra = detectarMateEmUmTreinoXadrez(adversario, temp);
-                    if (mateContra) score -= 850000;
+                    if (mateContra) score -= 6500000;
 
-                    if (peca && peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
+                    const meuMateProximo = detectarMateEmUmTreinoXadrez(cor, temp);
+                    if (meuMateProximo) score += 520000;
+
+                    if (peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
                         const defendida = quadradoAtacado(temp, item.to.row, item.to.col, cor);
-                        score -= valorProfessorXadrez20(peca.type) * (defendida ? 0.22 : 0.72);
+                        score -= valorPecaProfessor40(peca.type) * (defendida ? 0.34 : 1.55);
                     }
+
+                    score -= melhorGanhoRespostaAlunoProfessor40(temp, cor) * 0.95;
+
                     return score;
                 } catch (_) {
-                    return -999999;
+                    return -9999999;
                 }
             }
 
@@ -12278,7 +12491,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 try { movimentos = todosMovimentosLegais(cor, board) || []; } catch (_) { movimentos = []; }
                 if (!movimentos.length) return [];
 
-                const candidatos = ordenarMovimentosTreinoXadrez(movimentos, board, cor).slice(0, 22);
+                const candidatos = ordenarMovimentosProfessor40(movimentos, board, cor).slice(0, 28);
                 return candidatos.map(item => {
                     const peca = board?.[item.from.row]?.[item.from.col] || null;
                     const score = avaliarLanceProfundoRoboProfessorXadrez30(item, board, cor);
@@ -12879,32 +13092,37 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 let movimentos = [];
                 try { movimentos = todosMovimentosLegais(cor, chessBoard) || []; } catch (_) { movimentos = []; }
                 const melhorKey = chaveCasaGuiaDiretaXadrez33(melhor?.from);
+                const melhorScore = Number.isFinite(melhor?.score) ? melhor.score : 0;
                 const porPeca = new Map();
+
                 movimentos.forEach(move => {
                     const peca = chessBoard?.[move.from.row]?.[move.from.col] || null;
                     if (!peca || peca.color !== cor) return;
                     const item = { ...move, peca };
-                    let score = 0;
-                    try { score = pontuarMovimentoGuiaXadrez29(item, cor); } catch (_) { score = 0; }
-                    try {
-                        const temp = aplicarMovimentoTreinoEmClone(chessBoard, item, 'queen');
-                        const adversario = corOposta(cor);
-                        if (temp && peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario) && !quadradoAtacado(temp, item.to.row, item.to.col, cor)) {
-                            score -= valorProfessorXadrez20(peca.type) * 0.85;
-                        }
-                        const mateContra = temp ? detectarMateEmUmTreinoXadrez(adversario, temp) : null;
-                        if (mateContra) score -= 6000;
-                    } catch (_) {}
+                    let score = -9999999;
+                    try { score = avaliarLanceProfundoRoboProfessorXadrez30(item, chessBoard, cor); } catch (_) {}
                     const key = chaveCasaGuiaDiretaXadrez33(item.from);
                     const atual = porPeca.get(key);
                     if (!atual || score > atual.score) porPeca.set(key, { item, score, key });
                 });
-                const melhorScore = Number.isFinite(melhor?.score) ? melhor.score : 0;
-                return Array.from(porPeca.values())
-                    .filter(x => x.key !== melhorKey)
-                    .filter(x => x.score < 80 || (melhorScore - x.score) > 300)
+
+                const adversario = corOposta(cor);
+                const perigos = [];
+                porPeca.forEach(x => {
+                    const peca = chessBoard?.[x.item.from.row]?.[x.item.from.col] || null;
+                    const valor = valorPecaProfessor40(peca?.type);
+                    let pecaEmRisco = false;
+                    try {
+                        pecaEmRisco = !!(peca && peca.type !== 'king' && quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, adversario) && !quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, cor));
+                    } catch (_) {}
+                    const muitoPior = x.key !== melhorKey && (melhorScore - x.score > Math.max(240, valor * 0.55));
+                    const ruimMesmo = x.key !== melhorKey && x.score < -180;
+                    if (muitoPior || ruimMesmo || (pecaEmRisco && x.key !== melhorKey)) perigos.push(x);
+                });
+
+                return perigos
                     .sort((a, b) => a.score - b.score)
-                    .slice(0, 6)
+                    .slice(0, 7)
                     .map(x => x.item);
             }
 
