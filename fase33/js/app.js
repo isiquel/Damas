@@ -14392,6 +14392,341 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
         }
 
+            /* =====================================================================
+               ✅ PROFISSIONAL 42 — PRONTA PARA RAIZ + ROBÔ EM 3 NÍVEIS
+               Base: Profissional 41 aprovada pelo usuário.
+               Objetivo:
+               - manter o jogo leve para publicar na raiz;
+               - deixar o Robô Cores desligado por padrão em aparelhos novos;
+               - permitir 3 níveis: Leve, Forte e Aula;
+               - o professor escolhe o nível dentro da aba Professor Inteligente;
+               - não mexe na Damas, Admin, Firebase, salas, ranking ou torneios.
+            ===================================================================== */
+            const PROF42_ROBO_NIVEL_KEY = 'tabuleiro_arena_professor_robo_nivel_42';
+            const PROF42_PADRAO_RAIZ_KEY = 'tabuleiro_arena_prof42_padrao_raiz_aplicado';
+
+            function nivelRoboProfessor42() {
+                try {
+                    const v = localStorage.getItem(PROF42_ROBO_NIVEL_KEY) || 'leve';
+                    return ['leve', 'forte', 'aula'].includes(v) ? v : 'leve';
+                } catch (_) {
+                    return 'leve';
+                }
+            }
+
+            function nomeNivelRoboProfessor42(nivel = nivelRoboProfessor42()) {
+                if (nivel === 'forte') return 'Forte';
+                if (nivel === 'aula') return 'Aula';
+                return 'Leve';
+            }
+
+            function descricaoNivelRoboProfessor42(nivel = nivelRoboProfessor42()) {
+                if (nivel === 'forte') return 'Forte: analisa mais candidatos e protege melhor contra resposta do aluno. Use quando quiser mais precisão.';
+                if (nivel === 'aula') return 'Aula: prioriza explicação simples, jogadas seguras, defesa do Rei e material. Bom para ensinar sem pesar.';
+                return 'Leve: melhor para celular e partida online. Guia por cores sem ficar travando o jogo.';
+            }
+
+            function salvarNivelRoboProfessor42(nivel) {
+                const final = ['leve', 'forte', 'aula'].includes(nivel) ? nivel : 'leve';
+                try { localStorage.setItem(PROF42_ROBO_NIVEL_KEY, final); } catch (_) {}
+                atualizarControlesProfessor42();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                    clearTimeout(guiaDiretaXadrez33Timer);
+                    guiaDiretaXadrez33UltimaAssinatura = '';
+                    guiaDiretaXadrez33Timer = setTimeout(() => {
+                        try { aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'nivel42' }); } catch (_) {}
+                    }, final === 'forte' ? 850 : 420);
+                }
+            }
+
+            function aplicarPadraoRaizProfessor42() {
+                try {
+                    if (localStorage.getItem(PROF42_PADRAO_RAIZ_KEY) !== '1') {
+                        // Em aparelhos novos, o robô fica desligado para o jogo abrir leve.
+                        // Quem já ligou antes mantém sua escolha, para não bagunçar o professor.
+                        if (localStorage.getItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY) === null) {
+                            localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '0');
+                        }
+                        if (localStorage.getItem(GUIA_DIRETA_XADREZ_33_MODO_KEY) === null) {
+                            localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                        }
+                        if (localStorage.getItem(PROF42_ROBO_NIVEL_KEY) === null) {
+                            localStorage.setItem(PROF42_ROBO_NIVEL_KEY, 'leve');
+                        }
+                        localStorage.setItem(PROF42_PADRAO_RAIZ_KEY, '1');
+                    }
+                } catch (_) {}
+            }
+
+            function instalarCssProfessor42() {
+                if (document.getElementById('teacher-prof42-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof42-style';
+                style.textContent = `
+                    #teacher-prof42-level {
+                        margin: 8px 0 0 0 !important;
+                        padding: 8px !important;
+                        border-radius: 12px !important;
+                        border: 1px solid rgba(96,165,250,.34) !important;
+                        background: linear-gradient(135deg, rgba(15,23,42,.94), rgba(30,41,59,.80)) !important;
+                    }
+                    #teacher-prof42-level .prof42-line {
+                        display: grid !important;
+                        grid-template-columns: 1fr auto !important;
+                        align-items: center !important;
+                        gap: 7px !important;
+                    }
+                    #teacher-prof42-level .prof42-title {
+                        color: #bfdbfe !important;
+                        font-size: .67rem !important;
+                        font-weight: 1000 !important;
+                        letter-spacing: .04em !important;
+                        text-transform: uppercase !important;
+                    }
+                    #teacher-prof42-level select {
+                        min-width: 92px !important;
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(147,197,253,.48) !important;
+                        background: rgba(2,6,23,.92) !important;
+                        color: #e0f2fe !important;
+                        padding: 6px 8px !important;
+                        font-size: .65rem !important;
+                        font-weight: 900 !important;
+                        outline: none !important;
+                    }
+                    #teacher-prof42-level .prof42-desc {
+                        margin-top: 6px !important;
+                        color: #cbd5e1 !important;
+                        font-size: .62rem !important;
+                        line-height: 1.25 !important;
+                    }
+                    #teacher-prof42-level .prof42-root {
+                        margin-top: 5px !important;
+                        color: #86efac !important;
+                        font-size: .58rem !important;
+                        font-weight: 900 !important;
+                        line-height: 1.2 !important;
+                    }
+                    #teacher-direct-guide-33 .prof42-mini {
+                        margin-top: 6px !important;
+                        padding-top: 6px !important;
+                        border-top: 1px solid rgba(148,163,184,.18) !important;
+                        display: grid !important;
+                        grid-template-columns: auto 1fr !important;
+                        gap: 5px !important;
+                        align-items: center !important;
+                        font-size: .60rem !important;
+                    }
+                    #teacher-direct-guide-33 .prof42-mini select {
+                        width: 100% !important;
+                        min-width: 0 !important;
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(147,197,253,.38) !important;
+                        background: rgba(2,6,23,.90) !important;
+                        color: #e0f2fe !important;
+                        padding: 5px 6px !important;
+                        font-size: .60rem !important;
+                        font-weight: 900 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function garantirControlesProfessor42() {
+                aplicarPadraoRaizProfessor42();
+                instalarCssProfessor42();
+
+                const box37 = document.getElementById('teacher-prof37-controls') || document.querySelector('.teacher-prof37-controls');
+                if (box37 && !document.getElementById('teacher-prof42-level')) {
+                    const bloco = document.createElement('div');
+                    bloco.id = 'teacher-prof42-level';
+                    bloco.innerHTML = `
+                        <div class="prof42-line">
+                            <span class="prof42-title">Força do robô</span>
+                            <select id="teacher-prof42-level-select" aria-label="Força do robô do professor">
+                                <option value="leve">Leve</option>
+                                <option value="forte">Forte</option>
+                                <option value="aula">Aula</option>
+                            </select>
+                        </div>
+                        <div class="prof42-desc" data-prof42-desc></div>
+                        <div class="prof42-root">✅ Versão segura para raiz: robô inicia OFF em aparelho novo.</div>
+                    `;
+                    box37.appendChild(bloco);
+                    const select = bloco.querySelector('#teacher-prof42-level-select');
+                    select?.addEventListener('change', () => salvarNivelRoboProfessor42(select.value));
+                }
+
+                const mini = document.getElementById('teacher-direct-guide-33');
+                if (mini && !mini.querySelector('.prof42-mini')) {
+                    const blocoMini = document.createElement('div');
+                    blocoMini.className = 'prof42-mini';
+                    blocoMini.innerHTML = `
+                        <span>Força</span>
+                        <select id="teacher-prof42-mini-select" aria-label="Força do robô do professor">
+                            <option value="leve">Leve</option>
+                            <option value="forte">Forte</option>
+                            <option value="aula">Aula</option>
+                        </select>
+                    `;
+                    mini.appendChild(blocoMini);
+                    const selectMini = blocoMini.querySelector('#teacher-prof42-mini-select');
+                    selectMini?.addEventListener('change', () => salvarNivelRoboProfessor42(selectMini.value));
+                }
+
+                atualizarControlesProfessor42();
+            }
+
+            function atualizarControlesProfessor42() {
+                const nivel = nivelRoboProfessor42();
+                document.querySelectorAll('#teacher-prof42-level-select, #teacher-prof42-mini-select').forEach(sel => {
+                    if (sel && sel.value !== nivel) sel.value = nivel;
+                });
+                document.querySelectorAll('[data-prof42-desc]').forEach(el => {
+                    el.textContent = descricaoNivelRoboProfessor42(nivel);
+                });
+                const p = document.getElementById('teacher-direct-guide-status-33');
+                if (p && autoGuiaDiretaAtivaXadrez33() && p.innerHTML && !p.innerHTML.includes('Modo do robô')) {
+                    p.innerHTML += `<br><strong>Modo do robô:</strong> ${nomeNivelRoboProfessor42(nivel)}.`;
+                }
+            }
+
+            function scoreRapidoProfessor42(item, board, cor, modo = 'leve') {
+                try {
+                    const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!peca || !temp) return -9999999;
+                    const adversario = corOposta(cor);
+                    const alvo = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    const respostas = todosMovimentosLegais(adversario, temp) || [];
+                    if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 9000000;
+
+                    let score = avaliarPosicaoProfessor40(temp, cor);
+                    if (alvo) score += valorPecaProfessor40(alvo.type) * (modo === 'aula' ? 2.2 : 2.55) - valorPecaProfessor40(peca.type) * 0.08;
+                    if (reiEstaEmXeque(temp, adversario)) score += modo === 'aula' ? 520 : 780;
+                    if (item.to?.castle) score += 430;
+                    if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 2600;
+                    score += centro26(item.to.row, item.to.col) * (modo === 'aula' ? 28 : 20);
+
+                    const mateContra = detectarMateEmUmTreinoXadrez(adversario, temp);
+                    if (mateContra) score -= 8000000;
+
+                    if (peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
+                        const defendida = quadradoAtacado(temp, item.to.row, item.to.col, cor);
+                        score -= valorPecaProfessor40(peca.type) * (defendida ? 0.46 : 2.15);
+                    }
+
+                    const respostasOrdenadas = ordenarMovimentosProfessor40(respostas, temp, adversario).slice(0, modo === 'forte' ? 7 : 4);
+                    let piorResposta = 0;
+                    respostasOrdenadas.forEach(resp => {
+                        const alvoResp = pecaCapturadaRoboProfessorXadrez30(temp, resp);
+                        const after = aplicarMovimentoTreinoEmClone(temp, resp, 'queen');
+                        let dano = alvoResp ? valorPecaProfessor40(alvoResp.type) * 2.25 : 0;
+                        if (after && reiEstaEmXeque(after, cor)) dano += 560;
+                        if (after && detectarMateEmUmTreinoXadrez(adversario, after)) dano += 2000000;
+                        piorResposta = Math.max(piorResposta, dano);
+                    });
+                    score -= piorResposta;
+
+                    if (modo === 'aula') {
+                        // No modo aula, favorece lance fácil de explicar: captura segura, roque, peça desenvolvida e centro.
+                        if ((peca.type === 'knight' || peca.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) score += 180;
+                        if (alvo && !quadradoAtacado(temp, item.to.row, item.to.col, adversario)) score += 260;
+                    }
+
+                    return score;
+                } catch (_) {
+                    return -9999999;
+                }
+            }
+
+            function melhoresLancesProfessor42(cor, board = chessBoard, limite = 5) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, board) || []; } catch (_) { movimentos = []; }
+                if (!movimentos.length) return [];
+
+                const nivel = nivelRoboProfessor42();
+                const maxCandidatos = nivel === 'forte' ? 14 : (nivel === 'aula' ? 9 : 7);
+                const candidatos = ordenarMovimentosProfessor40(movimentos, board, cor).slice(0, maxCandidatos);
+
+                return candidatos.map(item => {
+                    const peca = board?.[item.from.row]?.[item.from.col] || null;
+                    let score = scoreRapidoProfessor42(item, board, cor, nivel);
+
+                    if (nivel === 'forte') {
+                        // Forte sem travar: aprofunda só nos melhores candidatos e com limite.
+                        try {
+                            const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                            if (temp) score += buscaProfessor40(temp, corOposta(cor), 2, -99999999, 99999999, cor) * 0.34;
+                        } catch (_) {}
+                    }
+
+                    return {
+                        ...item,
+                        peca,
+                        score,
+                        motivo30: classificarLanceRoboProfessorXadrez30(item, board, cor),
+                        nivel42: nivel
+                    };
+                }).sort((a, b) => b.score - a.score).slice(0, limite);
+            }
+
+            const melhoresLancesProfundosOriginal42 = melhoresLancesProfundosRoboProfessorXadrez30;
+            melhoresLancesProfundosRoboProfessorXadrez30 = function melhoresLancesProfundosRoboProfessorXadrez42(cor, board = chessBoard, limite = 5) {
+                try {
+                    const nivel = nivelRoboProfessor42();
+                    if (nivel === 'leve' && limite <= 1) {
+                        // Para tarefas pequenas, usa cálculo mais leve ainda.
+                        return melhoresLancesProfessor42(cor, board, limite);
+                    }
+                    if (nivel === 'forte' || nivel === 'aula' || nivel === 'leve') {
+                        return melhoresLancesProfessor42(cor, board, limite);
+                    }
+                } catch (_) {}
+                return melhoresLancesProfundosOriginal42(cor, board, limite);
+            };
+
+            const textoGuiaDiretaOriginal42 = textoGuiaDiretaProfessorXadrez33;
+            textoGuiaDiretaProfessorXadrez33 = function textoGuiaDiretaProfessorXadrez42(resultado, cor, origem = 'manual') {
+                let html = textoGuiaDiretaOriginal42.apply(this, arguments);
+                const nivel = nivelRoboProfessor42();
+                const melhor = resultado?.melhor || null;
+                if (melhor) {
+                    html += `<br><strong>Modo do robô:</strong> ${nomeNivelRoboProfessor42(nivel)}.`;
+                    if (nivel === 'forte') html += ' O robô olhou mais respostas do aluno antes de indicar.';
+                    if (nivel === 'aula') html += ' Use a explicação como roteiro: segurança, material e plano simples.';
+                    if (nivel === 'leve') html += ' Indicação rápida para não travar a aula online.';
+                }
+                return html;
+            };
+
+            const atualizarPainelAnterior42 = atualizarPainelFlutuanteGuiaDiretaXadrez33;
+            atualizarPainelFlutuanteGuiaDiretaXadrez33 = function atualizarPainelFlutuanteGuiaDiretaXadrez42(mostrar = false) {
+                const retorno = atualizarPainelAnterior42.apply(this, arguments);
+                setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 0);
+                return retorno;
+            };
+
+            const controles37Anterior42 = atualizarControlesProfessorXadrez37;
+            atualizarControlesProfessorXadrez37 = function atualizarControlesProfessorXadrez37Prof42() {
+                const retorno = controles37Anterior42.apply(this, arguments);
+                try { garantirControlesProfessor42(); } catch (_) {}
+                return retorno;
+            };
+
+            const manualAnterior42 = atualizarManualPrivadoProfessorXadrez19;
+            atualizarManualPrivadoProfessorXadrez19 = function atualizarManualPrivadoProfessorXadrez42(texto = '') {
+                const retorno = manualAnterior42.apply(this, arguments);
+                setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 0);
+                return retorno;
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 900);
+            });
+
+
         instalarPopupProfessorXadrez26();
 
         window.abrirXadrezArena = abrirXadrezArena;
