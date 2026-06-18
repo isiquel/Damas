@@ -10698,6 +10698,37 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (window.__popupPecaXadrez25Instalado) return;
             window.__popupPecaXadrez25Instalado = true;
 
+            // ✅ PROFISSIONAL 38 - ponte segura para as melhorias do professor.
+            // As funções originais do Manual Privado ficam dentro de outro bloco.
+            // Esta ponte evita erro de ReferenceError e deixa Xadrez/Damas abrirem normalmente.
+            function professorPrivadoPodeAparecerXadrez19() {
+                try {
+                    return !!(chessProfessorPrivadoAtivo && chessMode === 'online' && document.body.classList.contains('chess-board-visible'));
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function atualizarManualPrivadoProfessorXadrez19(texto = '') {
+                try {
+                    const painel = document.getElementById('chess-private-teacher-panel');
+                    const corpo = document.getElementById('chess-private-teacher-body');
+                    const textoEl = document.getElementById('chess-private-teacher-text');
+                    if (!painel || !textoEl) return;
+                    if (!professorPrivadoPodeAparecerXadrez19()) {
+                        painel.style.display = 'none';
+                        return;
+                    }
+                    painel.style.display = 'block';
+                    if (corpo) corpo.style.display = painel.classList.contains('teacher-collapsed') ? 'none' : 'block';
+                    if (texto) chessProfessorPrivadoTexto = texto;
+                    if (!chessProfessorPrivadoTexto) {
+                        chessProfessorPrivadoTexto = 'Professor inteligente ligado. Use os botões abaixo: <strong>Janelinha ON/OFF</strong> e <strong>Robô cores ON/OFF</strong>.';
+                    }
+                    textoEl.innerHTML = chessProfessorPrivadoTexto;
+                } catch (_) {}
+            }
+
             const explicacoes = {
                 king: {
                     movimento: 'Anda uma casa por vez em qualquer direção, mas nunca pode entrar numa casa atacada. Também pode fazer o roque quando as regras permitem.',
@@ -10819,6 +10850,37 @@ Compartilhe com os amigos e entre no horário marcado.`;
         function instalarPopupProfessorXadrez26() {
             if (window.__popupProfessorXadrez26Instalado) return;
             window.__popupProfessorXadrez26Instalado = true;
+
+            // ✅ PROFISSIONAL 38 - ponte segura dentro do módulo correto do professor.
+            // Corrige o travamento da Profissional 37: o código tentava usar funções
+            // que pertenciam ao manual privado, mas estavam fora do escopo deste módulo.
+            function professorPrivadoPodeAparecerXadrez19() {
+                try {
+                    return !!(chessProfessorPrivadoAtivo && chessMode === 'online' && document.body.classList.contains('chess-board-visible'));
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function atualizarManualPrivadoProfessorXadrez19(texto = '') {
+                try {
+                    const painel = document.getElementById('chess-private-teacher-panel');
+                    const corpo = document.getElementById('chess-private-teacher-body');
+                    const textoEl = document.getElementById('chess-private-teacher-text');
+                    if (!painel || !textoEl) return;
+                    if (!professorPrivadoPodeAparecerXadrez19()) {
+                        painel.style.display = 'none';
+                        return;
+                    }
+                    painel.style.display = 'block';
+                    if (corpo) corpo.style.display = painel.classList.contains('teacher-collapsed') ? 'none' : 'block';
+                    if (texto) chessProfessorPrivadoTexto = texto;
+                    if (!chessProfessorPrivadoTexto) {
+                        chessProfessorPrivadoTexto = 'Professor inteligente ligado. Use <strong>Janelinha ON/OFF</strong> e <strong>Robô cores ON/OFF</strong> para ensinar pelo balão ou direto no tabuleiro.';
+                    }
+                    textoEl.innerHTML = chessProfessorPrivadoTexto;
+                } catch (_) {}
+            }
 
             const explicacoes26 = {
                 king: {
