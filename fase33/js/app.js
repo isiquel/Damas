@@ -14390,8 +14390,6 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 }, true);
             }
 
-        }
-
             /* =====================================================================
                ✅ PROFISSIONAL 42 — PRONTA PARA RAIZ + ROBÔ EM 3 NÍVEIS
                Base: Profissional 41 aprovada pelo usuário.
@@ -14725,7 +14723,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
             document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 900);
             });
-
+        }
 
         instalarPopupProfessorXadrez26();
 
