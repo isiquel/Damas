@@ -13255,6 +13255,320 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 }
                 return retorno;
             };
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 36 — CORREÇÃO VISÍVEL DO PROFESSOR
+               O usuário testou a Profissional 35 e mostrou que:
+               1) o balão da peça podia ficar sem abrir porque o modo estava salvo como Janelinha OFF;
+               2) o robô por cores não estava óbvio no tabuleiro.
+
+               Esta correção mantém tudo que ficou bom e acrescenta uma central clara dentro
+               da aba "Professor inteligente": Janelinha ON/OFF, Robô cores ON/OFF,
+               Atualizar cores e Abrir balão. Também reforça as cores diretamente nas casas.
+            ===================================================================== */
+            const PROF36_MIGRATION_KEY = 'tabuleiro_arena_prof36_professor_padrao_aplicado';
+
+            function instalarCssProfessorVisivelXadrez36() {
+                if (document.getElementById('teacher-prof36-visible-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof36-visible-style';
+                style.textContent = `
+                    #teacher-prof36-controls {
+                        margin: 8px 0 9px 0;
+                        padding: 8px;
+                        border-radius: 13px;
+                        border: 1px solid rgba(250,204,21,.32);
+                        background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(30,41,59,.76));
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+                    }
+                    #teacher-prof36-controls .prof36-title {
+                        color: #fde68a;
+                        font-size: .70rem;
+                        font-weight: 1000;
+                        text-transform: uppercase;
+                        letter-spacing: .05em;
+                        margin-bottom: 7px;
+                        display: flex;
+                        justify-content: space-between;
+                        gap: 8px;
+                        align-items: center;
+                    }
+                    #teacher-prof36-controls .prof36-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 6px;
+                    }
+                    #teacher-prof36-controls button {
+                        border-radius: 999px;
+                        border: 1px solid rgba(148,163,184,.24);
+                        background: rgba(15,23,42,.92);
+                        color: #e5e7eb;
+                        padding: 8px 6px;
+                        font-size: .64rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-prof36-controls button.on36 {
+                        background: linear-gradient(90deg, rgba(22,101,52,.96), rgba(21,128,61,.92));
+                        color: #dcfce7;
+                        border-color: rgba(34,197,94,.72);
+                        box-shadow: 0 0 14px rgba(34,197,94,.22);
+                    }
+                    #teacher-prof36-controls button.warn36 {
+                        background: linear-gradient(90deg, rgba(113,63,18,.96), rgba(180,83,9,.90));
+                        color: #fef3c7;
+                        border-color: rgba(250,204,21,.62);
+                    }
+                    #teacher-prof36-controls .prof36-help {
+                        margin-top: 7px;
+                        padding: 6px 7px;
+                        border-radius: 10px;
+                        background: rgba(2,6,23,.55);
+                        border: 1px solid rgba(148,163,184,.15);
+                        color: #bfdbfe;
+                        font-size: .62rem;
+                        line-height: 1.25;
+                    }
+
+                    /* Cores bem fortes no tabuleiro: não dependem só de outline. */
+                    #chess-board .chess-square.teacher-direct-from-33,
+                    .chess-square.teacher-direct-from-33 {
+                        background: linear-gradient(135deg, #facc15, #fef08a) !important;
+                        outline: 5px solid #facc15 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(133,77,14,.22), 0 0 34px rgba(250,204,21,.98) !important;
+                        animation: teacherProf36Yellow .68s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33,
+                    .chess-square.teacher-direct-to-33 {
+                        background: linear-gradient(135deg, #16a34a, #bbf7d0) !important;
+                        outline: 5px solid #22c55e !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(20,83,45,.24), 0 0 36px rgba(34,197,94,1) !important;
+                        animation: teacherProf36Green .68s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33,
+                    .chess-square.teacher-direct-bad-33 {
+                        background: linear-gradient(135deg, #dc2626, #fecaca) !important;
+                        outline: 5px solid #ef4444 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(127,29,29,.30), 0 0 30px rgba(239,68,68,.86) !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    .chess-square.teacher-direct-bad-33::before {
+                        z-index: 60 !important;
+                        min-width: 26px !important;
+                        height: 22px !important;
+                        font-size: .62rem !important;
+                        border: 2px solid rgba(255,255,255,.90) !important;
+                        box-shadow: 0 3px 8px rgba(0,0,0,.35) !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-from-33 span,
+                    #chess-board .chess-square.teacher-direct-to-33 span,
+                    #chess-board .chess-square.teacher-direct-bad-33 span {
+                        position: relative !important;
+                        z-index: 50 !important;
+                        text-shadow: 0 3px 8px rgba(0,0,0,.45) !important;
+                    }
+                    @keyframes teacherProf36Yellow {
+                        0%, 100% { filter: brightness(1.00) saturate(1.12); }
+                        50% { filter: brightness(1.35) saturate(1.55); }
+                    }
+                    @keyframes teacherProf36Green {
+                        0%, 100% { filter: brightness(1.00) saturate(1.12); }
+                        50% { filter: brightness(1.35) saturate(1.60); }
+                    }
+                    @media(max-width:560px){
+                        #teacher-prof36-controls { padding: 7px; }
+                        #teacher-prof36-controls button { font-size:.59rem; padding:7px 5px; }
+                        #teacher-prof36-controls .prof36-help { font-size:.58rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function aplicarPadraoProfessorXadrez36() {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                instalarCssProfessorVisivelXadrez36();
+                try {
+                    if (localStorage.getItem(PROF36_MIGRATION_KEY) !== '1') {
+                        // Restaura o balão por padrão, porque no teste ele ficou sem abrir.
+                        // Mantém o robô por cores ligado para o professor enxergar a orientação no tabuleiro.
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
+                        localStorage.setItem(PROF36_MIGRATION_KEY, '1');
+                    }
+                } catch (_) {}
+                garantirControlesProfessorXadrez36();
+                atualizarControlesProfessorXadrez36();
+                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33()) {
+                    agendarGuiaDiretaProfessorXadrez33(true, 'auto36');
+                }
+            }
+
+            function garantirControlesProfessorXadrez36() {
+                instalarCssProfessorVisivelXadrez36();
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (!panel) return null;
+                const body = document.getElementById('chess-private-teacher-body') || panel;
+                let box = document.getElementById('teacher-prof36-controls');
+                if (box) return box;
+                box = document.createElement('div');
+                box.id = 'teacher-prof36-controls';
+                box.innerHTML = `
+                    <div class="prof36-title"><span>🎯 Controle do robô do professor</span><span data-prof36-state>ATIVO</span></div>
+                    <div class="prof36-grid">
+                        <button type="button" data-prof36="window">Janelinha ON</button>
+                        <button type="button" data-prof36="colors">Robô cores ON</button>
+                        <button type="button" data-prof36="refresh">Atualizar cores</button>
+                        <button type="button" data-prof36="bubble">Abrir balão</button>
+                        <button type="button" data-prof36="clear">Limpar cores</button>
+                        <button type="button" data-prof36="help">Legenda</button>
+                    </div>
+                    <div class="prof36-help" data-prof36-help>
+                        Amarelo piscando = peça boa para mexer. Verde piscando = casa boa para ir. Vermelho = perigo/evitar. A janelinha pode ficar ON ou OFF.
+                    </div>
+                `;
+                body.insertBefore(box, body.firstChild || null);
+
+                box.querySelectorAll('[data-prof36]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-prof36');
+                        if (acao === 'window') {
+                            const estaOff = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                            definirJanelinhaProfessorXadrez34(estaOff);
+                        }
+                        if (acao === 'colors') {
+                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
+                        }
+                        if (acao === 'refresh') {
+                            aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual36' });
+                        }
+                        if (acao === 'bubble') {
+                            salvarModoToqueGuiaDiretaXadrez33('bubble');
+                            abrirBalaoPeloPainelGuiaDiretaXadrez33();
+                        }
+                        if (acao === 'clear') {
+                            salvarAutoGuiaDiretaXadrez33(false);
+                            limparGuiaDiretaProfessorXadrez33();
+                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas. Ligue Robô cores ON quando quiser o guia no tabuleiro.');
+                        }
+                        if (acao === 'help') {
+                            atualizarStatusGuiaDiretaProfessorXadrez33('<strong>Legenda do professor:</strong><br><span class="yellow-33">Amarelo</span> = peça recomendada. <span class="good-33">Verde</span> = casa recomendada. <span class="bad-33">Vermelho</span> = evite agora.');
+                        }
+                        atualizarControlesProfessorXadrez36();
+                        atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                return box;
+            }
+
+            function atualizarControlesProfessorXadrez36() {
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const auto = autoGuiaDiretaAtivaXadrez33();
+                const box = document.getElementById('teacher-prof36-controls');
+                if (!box) return;
+                const btnWindow = box.querySelector('[data-prof36="window"]');
+                const btnColors = box.querySelector('[data-prof36="colors"]');
+                const state = box.querySelector('[data-prof36-state]');
+                if (btnWindow) {
+                    const off = modo === 'direct';
+                    btnWindow.textContent = off ? 'Janelinha OFF' : 'Janelinha ON';
+                    btnWindow.classList.toggle('warn36', off);
+                    btnWindow.classList.toggle('on36', !off);
+                }
+                if (btnColors) {
+                    btnColors.textContent = auto ? 'Robô cores ON' : 'Robô cores OFF';
+                    btnColors.classList.toggle('on36', auto);
+                    btnColors.classList.toggle('warn36', !auto);
+                }
+                if (state) {
+                    state.textContent = auto ? 'CORES ON' : 'CORES OFF';
+                    state.style.color = auto ? '#86efac' : '#fca5a5';
+                }
+            }
+
+            function abrirBubbleProfessorXadrez36SePossivel(row, col) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
+                if (lerModoToqueGuiaDiretaXadrez33() === 'direct') return false;
+                const peca = chessBoard?.[row]?.[col] || null;
+                if (!peca) return false;
+                try {
+                    let movimentos = [];
+                    try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                    const rect = rectQuadradoXadrez26(row, col);
+                    registrarUltimaPecaGuiaXadrez29({ row, col });
+                    marcarPecaBubbleProfessorXadrez27(row, col);
+                    abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(peca, row, col, movimentos, rect));
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            if (!window.__teacherProf36SquareClick) {
+                window.__teacherProf36SquareClick = true;
+                document.addEventListener('click', (ev) => {
+                    const square = ev.target && ev.target.closest ? ev.target.closest('#chess-board .chess-square[data-row][data-col]') : null;
+                    if (!square) return;
+                    const row = Number(square.dataset.row);
+                    const col = Number(square.dataset.col);
+                    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+                    setTimeout(() => {
+                        try {
+                            aplicarPadraoProfessorXadrez36();
+                            if (lerModoToqueGuiaDiretaXadrez33() !== 'direct') abrirBubbleProfessorXadrez36SePossivel(row, col);
+                            if (autoGuiaDiretaAtivaXadrez33()) aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'toque36', clicada: { row, col } });
+                        } catch (_) {}
+                    }, 140);
+                }, true);
+            }
+
+            if (!window.__teacherProf36RenderHook) {
+                window.__teacherProf36RenderHook = true;
+                const renderAnteriorProf36 = renderChessBoard;
+                renderChessBoard = function renderChessBoardProfessor36() {
+                    const retorno = renderAnteriorProf36.apply(this, arguments);
+                    setTimeout(() => {
+                        try {
+                            aplicarPadraoProfessorXadrez36();
+                            if (autoGuiaDiretaAtivaXadrez33()) aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'auto36' });
+                        } catch (_) {}
+                    }, 120);
+                    return retorno;
+                };
+            }
+
+            const mostrarTabuleiroAnteriorProf36 = mostrarTabuleiroXadrezAposEscolha;
+            mostrarTabuleiroXadrezAposEscolha = function mostrarTabuleiroXadrezAposEscolhaProfessor36() {
+                mostrarTabuleiroAnteriorProf36.apply(this, arguments);
+                setTimeout(() => {
+                    try { aplicarPadraoProfessorXadrez36(); } catch (_) {}
+                }, 220);
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    try { aplicarPadraoProfessorXadrez36(); } catch (_) {}
+                }, 500);
+            });
+
         }
 
         instalarPopupProfessorXadrez26();
