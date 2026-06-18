@@ -10925,10 +10925,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 31 — BALÃO DO PROFESSOR + GUIA COLORIDO + ROBÔ CONSELHEIRO AUTOATUALIZÁVEL
-               Base da Profissional 28, 29 e 30 preservada: balão arrastável, cores e robô continuam iguais.
-               Agora o professor pode ligar o AUTO: quando o aluno mexe e volta a vez do professor,
-               o robô recalcula sozinho a melhor resposta para orientar a aula na hora. */
+            /* ✅ PROFISSIONAL 32 — BALÃO DO PROFESSOR COM TAMANHO AJUSTÁVEL
+               Base da Profissional 28, 29, 30 e 31 preservada: arraste, cores, robô e AUTO continuam iguais.
+               Agora o professor pode diminuir, aumentar ou resetar o tamanho do balão, especialmente no celular. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -11115,11 +11114,67 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         color: #ffffff;
                         transform: none;
                     }
+
+                    /* ✅ PROFISSIONAL 32 — tamanho do balão ajustável sem quebrar o arraste */
+                    #teacher-piece-bubble-27.size-small-32 {
+                        width: min(238px, calc(100vw - 12px)) !important;
+                        max-height: min(315px, calc(100vh - 12px)) !important;
+                        padding: 7px !important;
+                        border-radius: 14px !important;
+                    }
+                    #teacher-piece-bubble-27.size-normal-32 {
+                        width: min(318px, calc(100vw - 18px)) !important;
+                        max-height: min(430px, calc(100vh - 18px)) !important;
+                    }
+                    #teacher-piece-bubble-27.size-large-32 {
+                        width: min(378px, calc(100vw - 12px)) !important;
+                        max-height: min(520px, calc(100vh - 12px)) !important;
+                    }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-head-27 { gap: 6px; padding-bottom: 5px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-symbol-27 { width: 28px; height: 28px; min-width: 28px; font-size: 1.18rem; border-radius: 10px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-title-27 { font-size: .78rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-sub-27 { font-size: .58rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-drag-tip-28 { font-size: .50rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-move-tools-28 { gap: 3px; padding: 5px 0 1px 0; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-move-note-28 { font-size: .54rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-move-btn-28 { width: 24px; height: 24px; min-width: 24px; font-size: .68rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-body-27 { font-size: .64rem; line-height: 1.24; padding-top: 5px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-section-27 { padding: 5px 6px; margin-top: 4px; border-radius: 9px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-label-27 { font-size: .52rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-tools-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-tools-30 { gap: 4px; padding: 6px 0 4px 0; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-title-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-title-30 { font-size: .57rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-btn-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-btn-30 { font-size: .56rem; padding: 6px 5px; border-radius: 9px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-status-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-status-30 { font-size: .57rem; max-height: 96px; padding: 6px 7px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-auto-line-31 { font-size: .54rem; }
+
+                    #teacher-piece-bubble-27 .bubble-size-label-32 {
+                        min-width: 52px;
+                        height: 24px;
+                        padding: 0 7px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 999px;
+                        border: 1px solid rgba(147,197,253,.28);
+                        background: rgba(30,64,175,.30);
+                        color: #dbeafe;
+                        font-size: .55rem;
+                        font-weight: 1000;
+                        letter-spacing: .05em;
+                        text-transform: uppercase;
+                    }
+
                     @media (max-width: 520px) {
                         #teacher-piece-bubble-27 { width: min(292px, calc(100vw - 12px)); padding: 9px; border-radius: 14px; }
                         #teacher-piece-bubble-27 .bubble-body-27 { font-size: .72rem; }
                         #teacher-piece-bubble-27 .bubble-section-27 { padding: 6px 7px; }
                         #teacher-piece-bubble-27 .bubble-title-27 { font-size: .86rem; }
+                        #teacher-piece-bubble-27.size-small-32 { width: min(228px, calc(100vw - 10px)) !important; max-height: min(295px, calc(100vh - 10px)) !important; }
+                        #teacher-piece-bubble-27.size-large-32 { width: min(340px, calc(100vw - 10px)) !important; max-height: min(520px, calc(100vh - 10px)) !important; }
                     }
                 `;
                 document.head.appendChild(style);
@@ -11152,8 +11207,11 @@ Compartilhe com os amigos e entre no horário marcado.`;
                             </div>
                             <button class="bubble-close-27" type="button" aria-label="Fechar">×</button>
                         </div>
-                        <div class="bubble-move-tools-28" aria-label="Mover balão do professor">
+                        <div class="bubble-move-tools-28" aria-label="Mover e redimensionar balão do professor">
                             <span class="bubble-move-note-28">Toque nas setas ou arraste pelo topo</span>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-size-32="minus" aria-label="Diminuir balão">−</button>
+                            <span class="bubble-size-label-32" data-bubble-size-label-32>Normal</span>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-size-32="plus" aria-label="Aumentar balão">+</button>
                             <button class="bubble-move-btn-28" type="button" data-bubble-move-28="left" aria-label="Mover para esquerda">←</button>
                             <button class="bubble-move-btn-28" type="button" data-bubble-move-28="up" aria-label="Mover para cima">↑</button>
                             <button class="bubble-move-btn-28" type="button" data-bubble-move-28="down" aria-label="Mover para baixo">↓</button>
@@ -11166,17 +11224,74 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
                 }
                 instalarArrasteBubbleProfessorXadrez28(bubble);
+                instalarTamanhoBubbleProfessorXadrez32(bubble);
                 instalarGuiaMelhoresJogadasXadrez29(bubble);
                 instalarRoboConselheiroProfessorXadrez30(bubble);
                 return bubble;
             }
 
             const BUBBLE_PROFESSOR_XADREZ_28_POS_KEY = 'tabuleiro_arena_teacher_piece_bubble_28_pos';
+            const BUBBLE_PROFESSOR_XADREZ_32_SIZE_KEY = 'tabuleiro_arena_teacher_piece_bubble_32_size';
+            const BUBBLE_PROFESSOR_XADREZ_32_SIZES = ['small', 'normal', 'large'];
             let bubbleProfessorXadrez28Dragging = false;
             let bubbleProfessorXadrez28StartX = 0;
             let bubbleProfessorXadrez28StartY = 0;
             let bubbleProfessorXadrez28StartLeft = 0;
             let bubbleProfessorXadrez28StartTop = 0;
+
+            function lerTamanhoBubbleProfessorXadrez32() {
+                try {
+                    const salvo = localStorage.getItem(BUBBLE_PROFESSOR_XADREZ_32_SIZE_KEY) || 'normal';
+                    return BUBBLE_PROFESSOR_XADREZ_32_SIZES.includes(salvo) ? salvo : 'normal';
+                } catch (_) {
+                    return 'normal';
+                }
+            }
+
+            function nomeTamanhoBubbleProfessorXadrez32(tamanho) {
+                if (tamanho === 'small') return 'Pequeno';
+                if (tamanho === 'large') return 'Grande';
+                return 'Normal';
+            }
+
+            function aplicarTamanhoBubbleProfessorXadrez32(bubble, tamanho = 'normal', salvar = true) {
+                if (!bubble) return;
+                const finalSize = BUBBLE_PROFESSOR_XADREZ_32_SIZES.includes(tamanho) ? tamanho : 'normal';
+                bubble.classList.remove('size-small-32', 'size-normal-32', 'size-large-32');
+                bubble.classList.add(`size-${finalSize}-32`);
+                bubble.dataset.teacherBubbleSize32 = finalSize;
+                const label = bubble.querySelector('[data-bubble-size-label-32]');
+                if (label) label.textContent = nomeTamanhoBubbleProfessorXadrez32(finalSize);
+                if (salvar) {
+                    try { localStorage.setItem(BUBBLE_PROFESSOR_XADREZ_32_SIZE_KEY, finalSize); } catch (_) {}
+                }
+                requestAnimationFrame(() => manterBubbleProfessorXadrez28NaTela());
+            }
+
+            function alterarTamanhoBubbleProfessorXadrez32(delta) {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                const atual = bubble.dataset.teacherBubbleSize32 || lerTamanhoBubbleProfessorXadrez32();
+                const idx = Math.max(0, BUBBLE_PROFESSOR_XADREZ_32_SIZES.indexOf(atual));
+                const novoIdx = limitarBubbleProfessorXadrez28(idx + delta, 0, BUBBLE_PROFESSOR_XADREZ_32_SIZES.length - 1);
+                aplicarTamanhoBubbleProfessorXadrez32(bubble, BUBBLE_PROFESSOR_XADREZ_32_SIZES[novoIdx], true);
+            }
+
+            function instalarTamanhoBubbleProfessorXadrez32(bubble) {
+                if (!bubble) return;
+                aplicarTamanhoBubbleProfessorXadrez32(bubble, lerTamanhoBubbleProfessorXadrez32(), false);
+                if (bubble.dataset.sizeProfessor32 === '1') return;
+                bubble.dataset.sizeProfessor32 = '1';
+                bubble.querySelectorAll('[data-bubble-size-32]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-bubble-size-32');
+                        if (acao === 'minus') alterarTamanhoBubbleProfessorXadrez32(-1);
+                        if (acao === 'plus') alterarTamanhoBubbleProfessorXadrez32(1);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+            }
 
             function viewportBubbleProfessorXadrez28() {
                 return {
@@ -11402,6 +11517,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 bubble._teacherBubble27LastDados = dados || {};
                 registrarUltimaPecaGuiaXadrez29(dados || {});
                 bubble.classList.add('open');
+                aplicarTamanhoBubbleProfessorXadrez32(bubble, lerTamanhoBubbleProfessorXadrez32(), false);
                 bubble.style.left = '-9999px';
                 bubble.style.top = '8px';
                 requestAnimationFrame(() => {
