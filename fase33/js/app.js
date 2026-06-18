@@ -10580,9 +10580,24 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 // O entrar online chama sairXadrezOnline(false) para limpar escutas antigas.
                 // Por isso religamos o manual aqui somente se a conexão online realmente ficou ativa.
                 chessProfessorPrivadoAtivo = !!(professorSolicitado && chessMode === 'online');
+                if (chessProfessorPrivadoAtivo) {
+                    try {
+                        const modoKey35 = 'tabuleiro_arena_professor_xadrez_33_modo_toque';
+                        const autoKey35 = 'tabuleiro_arena_professor_xadrez_33_auto_direto';
+                        if (localStorage.getItem(modoKey35) === null) localStorage.setItem(modoKey35, 'direct');
+                        if (localStorage.getItem(autoKey35) === null) localStorage.setItem(autoKey35, '1');
+                    } catch (_) {}
+                    setTimeout(() => {
+                        try {
+                            if (typeof garantirPainelFlutuanteGuiaDiretaXadrez33 === 'function') garantirPainelFlutuanteGuiaDiretaXadrez33();
+                            if (typeof atualizarPainelFlutuanteGuiaDiretaXadrez33 === 'function') atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                            if (typeof agendarGuiaDiretaProfessorXadrez33 === 'function') agendarGuiaDiretaProfessorXadrez33(true, 'manual');
+                        } catch (_) {}
+                    }, 450);
+                }
                 garantirPainelManualPrivadoProfessorXadrez19();
                 atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoAtivo
-                    ? 'Professor inteligente ligado. Toque numa peça ou clique em Analisar posição para receber dicas de aula neste aparelho.'
+                    ? 'Professor inteligente ligado. Use a aba do professor para deixar a janelinha OFF e ligar o robô por cores no tabuleiro.'
                     : '');
                 return resp;
             };
@@ -10925,12 +10940,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 34 — PAINEL DO PROFESSOR COM JANELINHA OFF E ROBÔ POR CORES
+            /* ✅ PROFISSIONAL 35 — ROBÔ CORES VISÍVEL E AUTO NO TABULEIRO
                Base da Profissional 33 preservada: balão arrastável, tamanho ajustável,
                melhores jogadas, robô conselheiro, auto após jogada do aluno e guia direto continuam.
-               Agora a aba do professor tem opção clara para deixar a janelinha OFF
-               e usar apenas o robô por cores no tabuleiro: amarelo = peças boas para mexer,
-               verde = casas boas para ir e vermelho = peças/casas perigosas. */
+               Mantém Profissional 34 e corrige o ponto principal: quando o robô por cores estiver ON, ele fica visível, recalcula e pinta de verdade no tabuleiro. Amarelo = peça indicada, verde = destino, vermelho = perigo. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -12515,17 +12528,19 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     #teacher-direct-guide-33 {
                         position: fixed;
                         left: 8px;
-                        right: 8px;
-                        bottom: 10px;
+                        right: auto;
+                        top: 74px;
+                        bottom: auto;
                         z-index: 999998;
                         display: none;
+                        width: min(272px, calc(100vw - 16px));
                         max-width: 560px;
-                        margin: 0 auto;
+                        margin: 0;
                         border-radius: 15px;
-                        border: 1px solid rgba(250,204,21,.46);
-                        background: linear-gradient(180deg, rgba(8,13,28,.94), rgba(3,7,18,.96));
+                        border: 2px solid rgba(250,204,21,.72);
+                        background: linear-gradient(180deg, rgba(8,13,28,.96), rgba(3,7,18,.98));
                         color: #e5e7eb;
-                        box-shadow: 0 16px 38px rgba(0,0,0,.48), 0 0 22px rgba(250,204,21,.10);
+                        box-shadow: 0 16px 38px rgba(0,0,0,.52), 0 0 24px rgba(250,204,21,.18);
                         padding: 8px;
                         font-family: inherit;
                         text-align: left;
@@ -12635,11 +12650,58 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         0%, 100% { box-shadow: inset 0 0 0 4px rgba(34,197,94,.22), 0 0 12px rgba(34,197,94,.38); }
                         50% { box-shadow: inset 0 0 0 6px rgba(34,197,94,.42), 0 0 32px rgba(34,197,94,.90); }
                     }
+                    #chess-board .chess-square.teacher-direct-from-33::after,
+                    .chess-square.teacher-direct-from-33::after,
+                    #chess-board .chess-square.teacher-direct-to-33::after,
+                    .chess-square.teacher-direct-to-33::after,
+                    #chess-board .chess-square.teacher-direct-bad-33::after,
+                    .chess-square.teacher-direct-bad-33::after {
+                        content: '';
+                        position: absolute;
+                        inset: 5px;
+                        z-index: 4;
+                        border-radius: 10px;
+                        pointer-events: none;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::after,
+                    .chess-square.teacher-direct-from-33::after {
+                        background: rgba(250,204,21,.34);
+                        border: 3px solid rgba(250,204,21,1);
+                        box-shadow: 0 0 24px rgba(250,204,21,.95), inset 0 0 20px rgba(250,204,21,.45);
+                        animation: teacherDirectYellow33 0.72s ease-in-out infinite !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33::after,
+                    .chess-square.teacher-direct-to-33::after {
+                        background: rgba(34,197,94,.36);
+                        border: 3px solid rgba(34,197,94,1);
+                        box-shadow: 0 0 26px rgba(34,197,94,.98), inset 0 0 20px rgba(34,197,94,.50);
+                        animation: teacherDirectGreen33 0.72s ease-in-out infinite !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33::after,
+                    .chess-square.teacher-direct-bad-33::after {
+                        background: rgba(239,68,68,.30);
+                        border: 3px solid rgba(239,68,68,.96);
+                        box-shadow: 0 0 18px rgba(239,68,68,.70), inset 0 0 18px rgba(127,29,29,.42);
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-from-33 span,
+                    #chess-board .chess-square.teacher-direct-to-33 span,
+                    #chess-board .chess-square.teacher-direct-bad-33 span {
+                        position: relative;
+                        z-index: 9;
+                    }
+                    #teacher-direct-guide-33.teacher-guide-strong-35 {
+                        display: block !important;
+                    }
                     @media (max-width: 560px) {
                         #teacher-direct-guide-33 {
                             left: 6px;
-                            right: 6px;
-                            bottom: 8px;
+                            right: auto;
+                            top: 72px;
+                            bottom: auto;
+                            width: min(252px, calc(100vw - 12px));
                             padding: 7px;
                         }
                         #teacher-direct-guide-33 .direct-actions-33 { grid-template-columns: repeat(2, 1fr); }
@@ -12877,15 +12939,17 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     return;
                 }
                 const cor = corProfessorGuiaDiretaXadrez33();
-                if (chessMode === 'online' && chessPlayerColor && chessTurn !== cor) {
-                    atualizarStatusGuiaDiretaProfessorXadrez33(`Robô por cores ligado. Aguardando o aluno jogar. Quando voltar sua vez, ele marca <strong>amarelo</strong> nas peças boas, <strong>verde</strong> nas casas boas e <strong>vermelho</strong> nos perigos.`);
-                    atualizarPainelFlutuanteGuiaDiretaXadrez33();
-                    return;
-                }
+                // Profissional 35: o professor pediu para ver as cores de verdade no tabuleiro.
+                // Então o robô também estuda a posição e mostra a melhor resposta
+                // mesmo quando o jogo está esperando a outra tela sincronizar a vez.
+                const analisandoForaDaVez35 = !!(chessMode === 'online' && chessPlayerColor && chessTurn !== cor);
                 try {
                     const resultado = calcularGuiaDiretaProfessorXadrez33(cor, clicada || guiaDiretaXadrez33UltimoClique);
                     pintarGuiaDiretaProfessorXadrez33(resultado);
-                    atualizarStatusGuiaDiretaProfessorXadrez33(textoGuiaDiretaProfessorXadrez33(resultado, cor, origem));
+                    const textoBase35 = textoGuiaDiretaProfessorXadrez33(resultado, cor, origem);
+                    atualizarStatusGuiaDiretaProfessorXadrez33(analisandoForaDaVez35
+                        ? '<strong>Robô analisando sua próxima resposta.</strong><br>' + textoBase35
+                        : textoBase35);
                     atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
                 } catch (_) {
                     atualizarStatusGuiaDiretaProfessorXadrez33('Não consegui calcular o guia direto agora. Toque em uma peça ou abra o balão para tentar novamente.');
@@ -12990,15 +13054,15 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 panel = document.createElement('div');
                 panel.id = 'teacher-direct-guide-33';
                 panel.innerHTML = `
-                    <div class="direct-head-33"><span>🎓 Aba do professor</span><span data-direct33-mini-state>OFF</span></div>
+                    <div class="direct-head-33"><span>🎓 Robô professor</span><span data-direct33-mini-state>OFF</span></div>
                     <div class="direct-actions-33">
                         <button type="button" data-direct33-mini="window">Janelinha ON</button>
                         <button type="button" data-direct33-mini="colors">Robô cores OFF</button>
-                        <button type="button" data-direct33-mini="refresh">Atualizar</button>
+                        <button type="button" data-direct33-mini="refresh">Atualizar cores</button>
                         <button type="button" data-direct33-mini="bubble">Abrir balão</button>
                         <button type="button" data-direct33-mini="clear">Limpar</button>
                     </div>
-                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Escolha: deixe a janelinha OFF e ligue o robô por cores. Amarelo = peça boa, verde = casa boa, vermelho = perigo.</div>
+                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Para aparecer no tabuleiro: toque em Robô cores ON. Amarelo pisca na peça certa, verde pisca na casa boa e vermelho marca perigo.</div>
                 `;
                 document.body.appendChild(panel);
                 panel.querySelectorAll('[data-direct33-mini]').forEach(btn => {
@@ -13076,8 +13140,49 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const modo = lerModoToqueGuiaDiretaXadrez33();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
                 const pode = !!(professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19());
-                panel.classList.toggle('visible-33', pode && (mostrar || modo === 'direct' || autoLigado || chessProfessorPrivadoAtivo));
+                const deveMostrar35 = pode && (mostrar || modo === 'direct' || autoLigado || chessProfessorPrivadoAtivo);
+                panel.classList.toggle('visible-33', deveMostrar35);
+                panel.classList.toggle('teacher-guide-strong-35', deveMostrar35);
                 atualizarBotoesGuiaDiretaXadrez33();
+                if (deveMostrar35 && autoLigado) {
+                    clearTimeout(window.__teacherGuideProf35RefreshTimer);
+                    window.__teacherGuideProf35RefreshTimer = setTimeout(() => {
+                        try { agendarGuiaDiretaProfessorXadrez33(false, 'auto'); } catch (_) {}
+                    }, 60);
+                }
+            }
+
+            /* ✅ PROFISSIONAL 35 — ROBÔ CORES LIGA E PINTA COM MAIS FORÇA
+               Correção do ponto visto no teste: o professor não estava enxergando as cores
+               porque o modo podia ficar desligado/salvo como janelinha. Agora, quando o
+               professor está ativo, a aba aparece e o robô pode ligar direto, recalcular e
+               repintar o tabuleiro depois de cada renderização. */
+            function garantirRoboCoresProfessorXadrez35(ativarSeVazio = true) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
+                try {
+                    if (ativarSeVazio && localStorage.getItem(GUIA_DIRETA_XADREZ_33_MODO_KEY) === null) {
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'direct');
+                    }
+                    if (ativarSeVazio && localStorage.getItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY) === null) {
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
+                    }
+                } catch (_) {}
+                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33()) agendarGuiaDiretaProfessorXadrez33(false, 'auto');
+                return true;
+            }
+
+            if (!window.__teacherGuideXadrez35RenderHook) {
+                window.__teacherGuideXadrez35RenderHook = true;
+                const renderAnteriorGuia35 = renderChessBoard;
+                renderChessBoard = function renderChessBoardGuiaCoresProfessor35() {
+                    const retorno = renderAnteriorGuia35.apply(this, arguments);
+                    setTimeout(() => {
+                        try { garantirRoboCoresProfessorXadrez35(false); } catch (_) {}
+                    }, 30);
+                    return retorno;
+                };
             }
 
             let ultimoBubbleProfessorXadrez27 = 0;
