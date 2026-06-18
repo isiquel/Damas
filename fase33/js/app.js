@@ -10925,10 +10925,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 30 — BALÃO DO PROFESSOR + GUIA COLORIDO + ROBÔ CONSELHEIRO
-               Base da Profissional 28 e 29 preservada: balão arrastável e cores continuam iguais.
-               Agora o professor também tem um robô conselheiro que estuda a posição, monta
-               plano de 3 lances e mostra dicas didáticas para ensinar o aluno a jogar melhor. */
+            /* ✅ PROFISSIONAL 31 — BALÃO DO PROFESSOR + GUIA COLORIDO + ROBÔ CONSELHEIRO AUTOATUALIZÁVEL
+               Base da Profissional 28, 29 e 30 preservada: balão arrastável, cores e robô continuam iguais.
+               Agora o professor pode ligar o AUTO: quando o aluno mexe e volta a vez do professor,
+               o robô recalcula sozinho a melhor resposta para orientar a aula na hora. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -11608,6 +11608,28 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         background: rgba(15,23,42,.82);
                         color: #e5e7eb;
                     }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="auto"] {
+                        grid-column: 1 / -1;
+                        border-color: rgba(56,189,248,.36);
+                        background: linear-gradient(90deg, rgba(14,116,144,.84), rgba(37,99,235,.78));
+                        color: #dff6ff;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30.auto-on-31 {
+                        border-color: rgba(34,197,94,.70) !important;
+                        background: linear-gradient(90deg, rgba(22,101,52,.96), rgba(21,128,61,.90)) !important;
+                        color: #dcfce7 !important;
+                        box-shadow: 0 0 12px rgba(34,197,94,.26) !important;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-auto-line-31 {
+                        display:block;
+                        margin-top:5px;
+                        padding:5px 6px;
+                        border-radius:8px;
+                        background: rgba(14,116,144,.16);
+                        border: 1px solid rgba(56,189,248,.18);
+                        color:#bae6fd;
+                        font-weight:900;
+                    }
                     #teacher-piece-bubble-27 .bubble-robo-status-30 {
                         grid-column: 1 / -1;
                         min-height: 30px;
@@ -11892,6 +11914,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             let roboProfessorXadrez30Plano = [];
             let roboProfessorXadrez30Modo = '';
             let roboProfessorXadrez30Cor = 'white';
+            let roboProfessorXadrez31AutoAtivo = false;
+            let roboProfessorXadrez31AutoTimer = null;
+            let roboProfessorXadrez31UltimaAssinatura = '';
+            let roboProfessorXadrez31UltimaMensagem = '';
 
             function instalarRoboConselheiroProfessorXadrez30(bubble) {
                 if (!bubble || bubble.querySelector('.bubble-robo-tools-30')) return;
@@ -11903,7 +11929,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     <button class="bubble-robo-btn-30" type="button" data-robo30="plan">Plano vencedor</button>
                     <button class="bubble-robo-btn-30" type="button" data-robo30="threat">Ameaças aluno</button>
                     <button class="bubble-robo-btn-30" type="button" data-robo30="clear">Limpar robô</button>
-                    <div id="bubble-robo-status-30" class="bubble-robo-status-30">Toque em uma peça e aperte <strong>Estudar jogo</strong> para receber uma dica forte de ensino.</div>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="auto">Auto após jogada do aluno: OFF</button>
+                    <div id="bubble-robo-status-30" class="bubble-robo-status-30">Toque em uma peça e aperte <strong>Estudar jogo</strong> para receber uma dica forte de ensino. Ligue o <strong>Auto</strong> para atualizar sozinho quando o aluno jogar.</div>
                 `;
                 const body = bubble.querySelector('.bubble-body-27');
                 if (body) bubble.insertBefore(tools, body);
@@ -11916,10 +11943,12 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         if (acao === 'plan') estudarJogoRoboProfessorXadrez30('plano');
                         if (acao === 'threat') mostrarAmeacasDoAlunoRoboProfessorXadrez30();
                         if (acao === 'clear') limparRoboProfessorXadrez30(true);
+                        if (acao === 'auto') alternarAutoRoboProfessorXadrez31();
                         ev.preventDefault();
                         ev.stopPropagation();
                     });
                 });
+                atualizarBotaoAutoRoboProfessorXadrez31();
             }
 
             function atualizarStatusRoboProfessorXadrez30(html) {
@@ -12061,6 +12090,13 @@ Compartilhe com os amigos e entre no horário marcado.`;
             function limparRoboProfessorXadrez30(atualizarTexto = false) {
                 roboProfessorXadrez30Ativo = false;
                 roboProfessorXadrez30Plano = [];
+                if (atualizarTexto) {
+                    roboProfessorXadrez31AutoAtivo = false;
+                    clearTimeout(roboProfessorXadrez31AutoTimer);
+                    roboProfessorXadrez31AutoTimer = null;
+                    roboProfessorXadrez31UltimaAssinatura = '';
+                    atualizarBotaoAutoRoboProfessorXadrez31();
+                }
                 document.querySelectorAll('#chess-board .chess-square').forEach(square => {
                     square.classList.remove('teacher-robo-from-30', 'teacher-robo-to-30', 'teacher-robo-step1-30', 'teacher-robo-step2-30', 'teacher-robo-step3-30');
                     square.removeAttribute('data-teacher-robo-label');
@@ -12152,6 +12188,107 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 }
             }
 
+            function botaoAutoRoboProfessorXadrez31() {
+                return document.querySelector('#teacher-piece-bubble-27 [data-robo30="auto"]');
+            }
+
+            function atualizarBotaoAutoRoboProfessorXadrez31() {
+                const btn = botaoAutoRoboProfessorXadrez31();
+                if (!btn) return;
+                btn.classList.toggle('auto-on-31', !!roboProfessorXadrez31AutoAtivo);
+                btn.textContent = roboProfessorXadrez31AutoAtivo ? 'Auto após jogada do aluno: ON' : 'Auto após jogada do aluno: OFF';
+            }
+
+            function assinaturaAutoRoboProfessorXadrez31() {
+                try {
+                    return JSON.stringify({
+                        turn: chessTurn,
+                        color: chessPlayerColor || '',
+                        over: !!chessGameOver,
+                        moves: Array.isArray(moveHistory) ? moveHistory.length : 0,
+                        last: lastChessMove || null,
+                        board: chessBoard || []
+                    });
+                } catch (_) {
+                    return `${chessTurn || ''}|${chessPlayerColor || ''}|${Date.now()}`;
+                }
+            }
+
+            function corRespostaProfessorAutoXadrez31() {
+                if (chessPlayerColor === 'white' || chessPlayerColor === 'black') return chessPlayerColor;
+                return corFocoRoboProfessorXadrez30();
+            }
+
+            function textoUltimaJogadaAlunoAutoXadrez31() {
+                try {
+                    if (!lastChessMove || !lastChessMove.from || !lastChessMove.to) return 'O aluno mexeu. O robô recalculou sua resposta.';
+                    return `Depois da jogada do aluno (${alg(lastChessMove.from.row, lastChessMove.from.col)} → ${alg(lastChessMove.to.row, lastChessMove.to.col)}), esta é a melhor resposta para você ensinar.`;
+                } catch (_) {
+                    return 'O aluno mexeu. O robô recalculou sua resposta.';
+                }
+            }
+
+            function atualizarAutoRoboProfessorXadrez31(forcar = false, origem = 'auto') {
+                if (!roboProfessorXadrez31AutoAtivo) return;
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+
+                const assinatura = assinaturaAutoRoboProfessorXadrez31();
+                if (!forcar && assinatura === roboProfessorXadrez31UltimaAssinatura) return;
+                roboProfessorXadrez31UltimaAssinatura = assinatura;
+
+                if (chessGameOver) {
+                    limparRoboProfessorXadrez30(false);
+                    atualizarStatusRoboProfessorXadrez30('Auto ligado, mas a partida terminou. Comece outra posição para o robô voltar a orientar.');
+                    return;
+                }
+
+                const corProfessor = corRespostaProfessorAutoXadrez31();
+                if (chessMode === 'online' && chessPlayerColor && chessTurn !== corProfessor) {
+                    limparRoboProfessorXadrez30(false);
+                    atualizarStatusRoboProfessorXadrez30(
+                        `<span class="bubble-robo-auto-line-31">Auto ligado.</span>` +
+                        `Aguardando o aluno jogar. Assim que voltar a vez das ${nomeLadoRoboProfessorXadrez30(corProfessor)}, eu recalculo a melhor resposta para você ensinar.`
+                    );
+                    return;
+                }
+
+                try {
+                    const resultado = montarPlanoTresLancesRoboProfessorXadrez30(corProfessor, chessBoard);
+                    roboProfessorXadrez30Ativo = true;
+                    roboProfessorXadrez30Modo = 'auto31';
+                    roboProfessorXadrez30Cor = corProfessor;
+                    roboProfessorXadrez30Plano = resultado.plano || [];
+                    pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
+                    const cabecalho = origem === 'manual'
+                        ? '<span class="bubble-robo-auto-line-31">Auto ligado: análise inicial feita.</span>'
+                        : `<span class="bubble-robo-auto-line-31">Auto atualizou: ${escapeBubble27(textoUltimaJogadaAlunoAutoXadrez31())}</span>`;
+                    atualizarStatusRoboProfessorXadrez30(cabecalho + textoPlanoRoboProfessorXadrez30(resultado, corProfessor, 'plano'));
+                } catch (_) {
+                    atualizarStatusRoboProfessorXadrez30('Auto ligado, mas não consegui recalcular essa posição agora. Toque em uma peça ou aperte Plano vencedor.');
+                }
+            }
+
+            function agendarAutoRoboProfessorXadrez31(forcar = false, origem = 'auto') {
+                if (!roboProfessorXadrez31AutoAtivo) return;
+                clearTimeout(roboProfessorXadrez31AutoTimer);
+                roboProfessorXadrez31AutoTimer = setTimeout(() => atualizarAutoRoboProfessorXadrez31(forcar, origem), 160);
+            }
+
+            function alternarAutoRoboProfessorXadrez31() {
+                roboProfessorXadrez31AutoAtivo = !roboProfessorXadrez31AutoAtivo;
+                atualizarBotaoAutoRoboProfessorXadrez31();
+                if (roboProfessorXadrez31AutoAtivo) {
+                    roboProfessorXadrez31UltimaAssinatura = '';
+                    atualizarStatusRoboProfessorXadrez30('Auto ligado. Quando o aluno fizer uma jogada e voltar sua vez, o robô vai recalcular a melhor resposta automaticamente.');
+                    agendarAutoRoboProfessorXadrez31(true, 'manual');
+                } else {
+                    clearTimeout(roboProfessorXadrez31AutoTimer);
+                    roboProfessorXadrez31AutoTimer = null;
+                    roboProfessorXadrez31UltimaAssinatura = '';
+                    atualizarStatusRoboProfessorXadrez30('Auto desligado. Use Estudar jogo, Plano vencedor ou Ameaças aluno quando quiser.');
+                }
+            }
+
             function reaplicarRoboProfessorXadrez30() {
                 if (!roboProfessorXadrez30Ativo || !roboProfessorXadrez30Plano.length) return;
                 pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
@@ -12164,6 +12301,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     else pintarGuiaMelhoresJogadasXadrez29(guiaMelhoresJogadasXadrez29Lista);
                 }
                 reaplicarRoboProfessorXadrez30();
+                agendarAutoRoboProfessorXadrez31(false, 'auto');
             }
 
             if (!window.__teacherBestGuideXadrez29RenderHook) {
