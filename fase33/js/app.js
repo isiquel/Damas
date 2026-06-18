@@ -10925,10 +10925,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 29 — BALÃO DO PROFESSOR ARRASTÁVEL + GUIA COLORIDO
-               Base da Profissional 28 preservada: o balão do professor continua arrastável.
-               Agora o professor pode ligar cores no tabuleiro para mostrar as melhores jogadas
-               e instruir o aluno com origem, destino e ordem de prioridade. */
+            /* ✅ PROFISSIONAL 30 — BALÃO DO PROFESSOR + GUIA COLORIDO + ROBÔ CONSELHEIRO
+               Base da Profissional 28 e 29 preservada: balão arrastável e cores continuam iguais.
+               Agora o professor também tem um robô conselheiro que estuda a posição, monta
+               plano de 3 lances e mostra dicas didáticas para ensinar o aluno a jogar melhor. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -11167,6 +11167,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 }
                 instalarArrasteBubbleProfessorXadrez28(bubble);
                 instalarGuiaMelhoresJogadasXadrez29(bubble);
+                instalarRoboConselheiroProfessorXadrez30(bubble);
                 return bubble;
             }
 
@@ -11562,6 +11563,131 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         font-weight: 1000;
                         line-height: 1;
                     }
+                    /* ✅ PROFISSIONAL 30 — robô conselheiro do professor */
+                    #teacher-piece-bubble-27 .bubble-robo-tools-30 {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 5px;
+                        padding: 7px 0 3px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-title-30 {
+                        grid-column: 1 / -1;
+                        color: #fef3c7;
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        text-align: center;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30 {
+                        border: 1px solid rgba(250,204,21,.30);
+                        background: rgba(113,63,18,.68);
+                        color: #fef3c7;
+                        border-radius: 999px;
+                        padding: 7px 6px;
+                        font-size: .63rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="plan"] {
+                        border-color: rgba(34,197,94,.30);
+                        background: rgba(20,83,45,.72);
+                        color: #dcfce7;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="threat"] {
+                        border-color: rgba(248,113,113,.32);
+                        background: rgba(127,29,29,.68);
+                        color: #fee2e2;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="clear"] {
+                        border-color: rgba(148,163,184,.28);
+                        background: rgba(15,23,42,.82);
+                        color: #e5e7eb;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 {
+                        grid-column: 1 / -1;
+                        min-height: 30px;
+                        max-height: 150px;
+                        overflow: auto;
+                        border-radius: 10px;
+                        padding: 7px 8px;
+                        background: rgba(3,7,18,.78);
+                        border: 1px solid rgba(250,204,21,.16);
+                        color: #e5e7eb;
+                        font-size: .66rem;
+                        line-height: 1.27;
+                        text-align: left;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 strong { color: #fef08a; }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 .robo-good-30 { color: #86efac; font-weight: 1000; }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 .robo-warn-30 { color: #fca5a5; font-weight: 1000; }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 .robo-blue-30 { color: #93c5fd; font-weight: 1000; }
+                    #chess-board .chess-square.teacher-robo-from-30,
+                    .chess-square.teacher-robo-from-30 {
+                        position: relative !important;
+                        outline: 3px solid rgba(250,204,21,.98) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 20px rgba(250,204,21,.42) !important;
+                    }
+                    #chess-board .chess-square.teacher-robo-to-30,
+                    .chess-square.teacher-robo-to-30 {
+                        position: relative !important;
+                        outline: 3px solid rgba(255,255,255,.90) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 4px rgba(255,255,255,.16), 0 0 22px rgba(255,255,255,.30) !important;
+                    }
+                    #chess-board .chess-square.teacher-robo-step1-30,
+                    .chess-square.teacher-robo-step1-30 { background: linear-gradient(135deg, #15803d, #bbf7d0) !important; }
+                    #chess-board .chess-square.teacher-robo-step2-30,
+                    .chess-square.teacher-robo-step2-30 { background: linear-gradient(135deg, #b91c1c, #fecaca) !important; }
+                    #chess-board .chess-square.teacher-robo-step3-30,
+                    .chess-square.teacher-robo-step3-30 { background: linear-gradient(135deg, #1d4ed8, #bfdbfe) !important; }
+                    #chess-board .chess-square.teacher-robo-to-30::after,
+                    .chess-square.teacher-robo-to-30::after {
+                        content: attr(data-teacher-robo-label);
+                        position: absolute;
+                        right: 3px;
+                        bottom: 3px;
+                        z-index: 8;
+                        min-width: 20px;
+                        height: 20px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(2,6,23,.90);
+                        color: #ffffff;
+                        border: 1px solid rgba(255,255,255,.55);
+                        font-size: .63rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    #chess-board .chess-square.teacher-robo-from-30::before,
+                    .chess-square.teacher-robo-from-30::before {
+                        content: attr(data-teacher-robo-origin);
+                        position: absolute;
+                        left: 3px;
+                        top: 3px;
+                        z-index: 8;
+                        min-width: 20px;
+                        height: 20px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(250,204,21,.96);
+                        color: #111827;
+                        border: 1px solid rgba(17,24,39,.25);
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
                     @media (max-width: 520px) {
                         #teacher-piece-bubble-27 .bubble-guide-tools-29 { gap: 4px; }
                         #teacher-piece-bubble-27 .bubble-guide-btn-29 { font-size: .6rem; padding: 7px 5px; }
@@ -11614,10 +11740,14 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 document.querySelectorAll('#chess-board .chess-square').forEach(square => {
                     square.classList.remove(
                         'teacher-best-from-29', 'teacher-best-to-29',
-                        'teacher-best-1-29', 'teacher-best-2-29', 'teacher-best-3-29'
+                        'teacher-best-1-29', 'teacher-best-2-29', 'teacher-best-3-29',
+                        'teacher-robo-from-30', 'teacher-robo-to-30',
+                        'teacher-robo-step1-30', 'teacher-robo-step2-30', 'teacher-robo-step3-30'
                     );
                     square.removeAttribute('data-teacher-best-label');
                     square.removeAttribute('data-teacher-best-origin');
+                    square.removeAttribute('data-teacher-robo-label');
+                    square.removeAttribute('data-teacher-robo-origin');
                     square.removeAttribute('title');
                 });
             }
@@ -11626,6 +11756,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 guiaMelhoresJogadasXadrez29Ativo = false;
                 guiaMelhoresJogadasXadrez29Lista = [];
                 limparCoresGuiaMelhoresJogadasXadrez29();
+                try { limparRoboProfessorXadrez30(false); } catch (_) {}
                 if (atualizarTexto) atualizarStatusGuiaXadrez29('Cores apagadas. Toque em uma peça e ligue novamente quando quiser ensinar.');
             }
 
@@ -11752,11 +11883,287 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (atualizarTexto) atualizarStatusGuiaXadrez29(resumoGuiaMelhoresJogadasXadrez29(lista, `Melhores das ${lado}`));
             }
 
+            /* =====================================================================
+               ✅ PROFISSIONAL 30 — ROBÔ CONSELHEIRO DO PROFESSOR
+               O robô analisa localmente a posição do Xadrez no aparelho do professor.
+               Ele não executa lances, não altera a partida online e não grava nada no Firebase.
+            ===================================================================== */
+            let roboProfessorXadrez30Ativo = false;
+            let roboProfessorXadrez30Plano = [];
+            let roboProfessorXadrez30Modo = '';
+            let roboProfessorXadrez30Cor = 'white';
+
+            function instalarRoboConselheiroProfessorXadrez30(bubble) {
+                if (!bubble || bubble.querySelector('.bubble-robo-tools-30')) return;
+                const tools = document.createElement('div');
+                tools.className = 'bubble-robo-tools-30';
+                tools.innerHTML = `
+                    <div class="bubble-robo-title-30">🤖 robô conselheiro da aula</div>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="study">Estudar jogo</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="plan">Plano vencedor</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="threat">Ameaças aluno</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="clear">Limpar robô</button>
+                    <div id="bubble-robo-status-30" class="bubble-robo-status-30">Toque em uma peça e aperte <strong>Estudar jogo</strong> para receber uma dica forte de ensino.</div>
+                `;
+                const body = bubble.querySelector('.bubble-body-27');
+                if (body) bubble.insertBefore(tools, body);
+                else bubble.appendChild(tools);
+
+                tools.querySelectorAll('[data-robo30]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-robo30');
+                        if (acao === 'study') estudarJogoRoboProfessorXadrez30('estudo');
+                        if (acao === 'plan') estudarJogoRoboProfessorXadrez30('plano');
+                        if (acao === 'threat') mostrarAmeacasDoAlunoRoboProfessorXadrez30();
+                        if (acao === 'clear') limparRoboProfessorXadrez30(true);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+            }
+
+            function atualizarStatusRoboProfessorXadrez30(html) {
+                const el = document.getElementById('bubble-robo-status-30');
+                if (el) el.innerHTML = html;
+            }
+
+            function corFocoRoboProfessorXadrez30() {
+                const pos = guiaMelhoresJogadasXadrez29UltimaPeca;
+                if (pos && chessBoard?.[pos.row]?.[pos.col]?.color) return chessBoard[pos.row][pos.col].color;
+                return chessPlayerColor || chessTurn || 'white';
+            }
+
+            function nomeLadoRoboProfessorXadrez30(cor) {
+                return cor === 'white' ? 'brancas' : 'pretas';
+            }
+
+            function nomeCurtoPecaRoboProfessorXadrez30(tipo) {
+                return nomePeca[tipo] || 'Peça';
+            }
+
+            function movimentoIgualRoboProfessorXadrez30(a, b) {
+                return !!(a && b &&
+                    a.from?.row === b.from?.row && a.from?.col === b.from?.col &&
+                    a.to?.row === b.to?.row && a.to?.col === b.to?.col);
+            }
+
+            function textoMovimentoRoboProfessorXadrez30(item, board = chessBoard) {
+                if (!item) return 'sem lance';
+                const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                const nome = nomeCurtoPecaRoboProfessorXadrez30(peca?.type);
+                let extra = '';
+                const alvo = pecaCapturadaRoboProfessorXadrez30(board, item);
+                if (alvo) extra = ` captura ${nomeCurtoPecaRoboProfessorXadrez30(alvo.type)}`;
+                if (item.to?.castle) extra = item.to.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) extra = ' promoção';
+                return `${nome}: ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}${extra}`;
+            }
+
+            function pecaCapturadaRoboProfessorXadrez30(board, item) {
+                if (!board || !item) return null;
+                if (item.to?.enPassant && item.to?.enPassantCapture) {
+                    return board[item.to.enPassantCapture.row]?.[item.to.enPassantCapture.col] || null;
+                }
+                return board[item.to.row]?.[item.to.col] || null;
+            }
+
+            function classificarLanceRoboProfessorXadrez30(item, board = chessBoard, cor = 'white') {
+                try {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    const adversario = corOposta(cor);
+                    const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const capturada = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    if (temp) {
+                        const respostas = todosMovimentosLegais(adversario, temp) || [];
+                        if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 'vence por xeque-mate';
+                        if (reiEstaEmXeque(temp, adversario)) return 'dá xeque e obriga o aluno a responder';
+                    }
+                    if (capturada) return `ganha material capturando ${nomeCurtoPecaRoboProfessorXadrez30(capturada.type)}`;
+                    if (item.to?.castle) return 'protege o Rei e melhora a segurança';
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) return 'transforma o peão em peça forte';
+                    if ((peca?.type === 'knight' || peca?.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) return 'desenvolve peça e aumenta controle do centro';
+                    if (centro26(item.to.row, item.to.col) >= 5.5) return 'controla o centro e melhora a posição';
+                    if (peca && quadradoAtacado(board, item.from.row, item.from.col, adversario)) return 'tira uma peça de perigo sem perder tempo';
+                    return 'lance seguro para melhorar a posição e criar plano';
+                } catch (_) {
+                    return 'lance útil para estudar com calma';
+                }
+            }
+
+            function avaliarLanceProfundoRoboProfessorXadrez30(item, board = chessBoard, cor = 'white') {
+                try {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!temp) return -999999;
+                    const adversario = corOposta(cor);
+                    const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const capturada = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    const respostas = todosMovimentosLegais(adversario, temp) || [];
+                    if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 2000000;
+
+                    let score = 0;
+                    try { score += minimaxTreinoXadrez(temp, 2, -9999999, 9999999, false, cor); }
+                    catch (_) { score += avaliarPosicaoTreinoXadrez(temp, cor); }
+
+                    if (capturada) score += valorProfessorXadrez20(capturada.type) * 1.35;
+                    if (reiEstaEmXeque(temp, adversario)) score += 420;
+                    if (item.to?.castle) score += 180;
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 950;
+                    score += centro26(item.to.row, item.to.col) * 20;
+
+                    const mateContra = detectarMateEmUmTreinoXadrez(adversario, temp);
+                    if (mateContra) score -= 850000;
+
+                    if (peca && peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
+                        const defendida = quadradoAtacado(temp, item.to.row, item.to.col, cor);
+                        score -= valorProfessorXadrez20(peca.type) * (defendida ? 0.22 : 0.72);
+                    }
+                    return score;
+                } catch (_) {
+                    return -999999;
+                }
+            }
+
+            function melhoresLancesProfundosRoboProfessorXadrez30(cor, board = chessBoard, limite = 5) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, board) || []; } catch (_) { movimentos = []; }
+                if (!movimentos.length) return [];
+
+                const candidatos = ordenarMovimentosTreinoXadrez(movimentos, board, cor).slice(0, 22);
+                return candidatos.map(item => {
+                    const peca = board?.[item.from.row]?.[item.from.col] || null;
+                    const score = avaliarLanceProfundoRoboProfessorXadrez30(item, board, cor);
+                    return { ...item, peca, score, motivo30: classificarLanceRoboProfessorXadrez30(item, board, cor) };
+                }).sort((a, b) => b.score - a.score).slice(0, limite);
+            }
+
+            function melhorRespostaRoboProfessorXadrez30(cor, board = chessBoard) {
+                const lista = melhoresLancesProfundosRoboProfessorXadrez30(cor, board, 1);
+                return lista[0] || null;
+            }
+
+            function montarPlanoTresLancesRoboProfessorXadrez30(cor, board = chessBoard) {
+                const melhores = melhoresLancesProfundosRoboProfessorXadrez30(cor, board, 3);
+                const melhor = melhores[0] || null;
+                if (!melhor) return { melhores: [], plano: [] };
+                const adversario = corOposta(cor);
+                const depoisDoPrimeiro = aplicarMovimentoTreinoEmClone(board, melhor, 'queen');
+                const resposta = depoisDoPrimeiro ? melhorRespostaRoboProfessorXadrez30(adversario, depoisDoPrimeiro) : null;
+                const depoisDaResposta = resposta ? aplicarMovimentoTreinoEmClone(depoisDoPrimeiro, resposta, 'queen') : depoisDoPrimeiro;
+                const continuacao = depoisDaResposta ? melhorRespostaRoboProfessorXadrez30(cor, depoisDaResposta) : null;
+                const plano = [
+                    { tipo: 'melhor', item: melhor, board, cor, label: '1', titulo: 'Melhor lance' },
+                    resposta ? { tipo: 'resposta', item: resposta, board: depoisDoPrimeiro, cor: adversario, label: '2', titulo: 'Resposta provável do aluno' } : null,
+                    continuacao ? { tipo: 'continua', item: continuacao, board: depoisDaResposta, cor, label: '3', titulo: 'Continuação para manter vantagem' } : null
+                ].filter(Boolean);
+                return { melhores, plano };
+            }
+
+            function limparRoboProfessorXadrez30(atualizarTexto = false) {
+                roboProfessorXadrez30Ativo = false;
+                roboProfessorXadrez30Plano = [];
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove('teacher-robo-from-30', 'teacher-robo-to-30', 'teacher-robo-step1-30', 'teacher-robo-step2-30', 'teacher-robo-step3-30');
+                    square.removeAttribute('data-teacher-robo-label');
+                    square.removeAttribute('data-teacher-robo-origin');
+                    square.removeAttribute('title');
+                });
+                if (atualizarTexto) atualizarStatusRoboProfessorXadrez30('Robô limpo. Toque em uma peça e peça um novo estudo quando quiser.');
+            }
+
+            function pintarPlanoRoboProfessorXadrez30(plano = []) {
+                limparRoboProfessorXadrez30(false);
+                plano.slice(0, 3).forEach((passo, index) => {
+                    const item = passo.item;
+                    if (!item) return;
+                    const ordem = index + 1;
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    const titulo = `${passo.titulo}: ${textoMovimentoRoboProfessorXadrez30(item, passo.board)} — ${passo.item.motivo30 || classificarLanceRoboProfessorXadrez30(item, passo.board, passo.cor)}`;
+                    if (from) {
+                        from.classList.add('teacher-robo-from-30', `teacher-robo-step${ordem}-30`);
+                        from.setAttribute('data-teacher-robo-origin', passo.label || String(ordem));
+                        from.setAttribute('title', titulo);
+                    }
+                    if (to) {
+                        to.classList.add('teacher-robo-to-30', `teacher-robo-step${ordem}-30`);
+                        to.setAttribute('data-teacher-robo-label', passo.label || String(ordem));
+                        to.setAttribute('title', titulo);
+                    }
+                });
+            }
+
+            function textoPlanoRoboProfessorXadrez30(resultado, cor, modo = 'estudo') {
+                const melhores = resultado.melhores || [];
+                const plano = resultado.plano || [];
+                if (!melhores.length) return 'O robô não encontrou lance legal agora. Verifique se a partida terminou ou se o rei está sem saída.';
+                const melhor = melhores[0];
+                const vantagem = melhor.score > 900000 ? 'mate encontrado' : (melhor.score > 600 ? 'vantagem forte' : (melhor.score > 80 ? 'boa vantagem' : 'jogada segura'));
+                const linhas = [];
+                linhas.push(`<strong>Robô estudou as ${nomeLadoRoboProfessorXadrez30(cor)}:</strong> <span class="robo-good-30">${escapeBubble27(vantagem)}</span>.`);
+                linhas.push(`<span class="robo-good-30">1)</span> ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(melhor, chessBoard))} — ${escapeBubble27(melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, cor))}.`);
+                const resposta = plano.find(p => p.tipo === 'resposta');
+                const continuacao = plano.find(p => p.tipo === 'continua');
+                if (resposta) linhas.push(`<span class="robo-warn-30">2)</span> Se o aluno responder forte: ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(resposta.item, resposta.board))}.`);
+                if (continuacao) linhas.push(`<span class="robo-blue-30">3)</span> Continue com: ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(continuacao.item, continuacao.board))}.`);
+                linhas.push(`<strong>Como ensinar:</strong> peça para o aluno explicar 3 perguntas: o que eu ganho, o que eu protejo e qual ameaça eu crio?`);
+                if (modo === 'plano') linhas.push(`Cores: <span class="robo-good-30">verde = lance vencedor</span>, <span class="robo-warn-30">vermelho = resposta provável</span>, <span class="robo-blue-30">azul = continuação</span>.`);
+                return linhas.join('<br>');
+            }
+
+            function estudarJogoRoboProfessorXadrez30(modo = 'estudo') {
+                const cor = corFocoRoboProfessorXadrez30();
+                roboProfessorXadrez30Cor = cor;
+                roboProfessorXadrez30Modo = modo;
+                atualizarStatusRoboProfessorXadrez30('🤖 Estudando a posição...');
+                try {
+                    const resultado = montarPlanoTresLancesRoboProfessorXadrez30(cor, chessBoard);
+                    roboProfessorXadrez30Ativo = true;
+                    roboProfessorXadrez30Plano = resultado.plano || [];
+                    pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
+                    atualizarStatusRoboProfessorXadrez30(textoPlanoRoboProfessorXadrez30(resultado, cor, modo));
+                } catch (err) {
+                    atualizarStatusRoboProfessorXadrez30('Não consegui estudar essa posição agora. Tente tocar em uma peça e apertar de novo.');
+                }
+            }
+
+            function mostrarAmeacasDoAlunoRoboProfessorXadrez30() {
+                const cor = corFocoRoboProfessorXadrez30();
+                const aluno = corOposta(cor);
+                atualizarStatusRoboProfessorXadrez30('⚠️ Procurando ameaças do aluno...');
+                try {
+                    const ameaças = melhoresLancesProfundosRoboProfessorXadrez30(aluno, chessBoard, 3);
+                    if (!ameaças.length) {
+                        limparRoboProfessorXadrez30(false);
+                        atualizarStatusRoboProfessorXadrez30('Não encontrei ameaça legal do aluno agora. Aproveite para desenvolver e melhorar suas peças.');
+                        return;
+                    }
+                    const plano = ameaças.map((item, index) => ({ tipo: 'resposta', item, board: chessBoard, cor: aluno, label: `A${index + 1}`, titulo: 'Ameaça do aluno' }));
+                    roboProfessorXadrez30Ativo = true;
+                    roboProfessorXadrez30Modo = 'ameacas';
+                    roboProfessorXadrez30Cor = aluno;
+                    roboProfessorXadrez30Plano = plano;
+                    pintarPlanoRoboProfessorXadrez30(plano);
+                    const html = `<strong>Ameaças do aluno (${nomeLadoRoboProfessorXadrez30(aluno)}):</strong><br>` + ameaças.map((item, i) => {
+                        return `<span class="robo-warn-30">A${i + 1})</span> ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(item, chessBoard))} — ${escapeBubble27(item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, aluno))}.`;
+                    }).join('<br>') + '<br><strong>Como ensinar:</strong> mostre para o aluno que antes de atacar ele precisa enxergar a ameaça do adversário.';
+                    atualizarStatusRoboProfessorXadrez30(html);
+                } catch (_) {
+                    atualizarStatusRoboProfessorXadrez30('Não consegui calcular as ameaças agora. Tente novamente depois de tocar em uma peça.');
+                }
+            }
+
+            function reaplicarRoboProfessorXadrez30() {
+                if (!roboProfessorXadrez30Ativo || !roboProfessorXadrez30Plano.length) return;
+                pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
+            }
+
             function reaplicarGuiaMelhoresJogadasXadrez29() {
-                if (!guiaMelhoresJogadasXadrez29Ativo) return;
-                if (guiaMelhoresJogadasXadrez29Modo === 'peca') mostrarGuiaPecaAtualXadrez29(false);
-                else if (guiaMelhoresJogadasXadrez29Modo === 'lado') mostrarGuiaLadoAtualXadrez29(false);
-                else pintarGuiaMelhoresJogadasXadrez29(guiaMelhoresJogadasXadrez29Lista);
+                if (guiaMelhoresJogadasXadrez29Ativo) {
+                    if (guiaMelhoresJogadasXadrez29Modo === 'peca') mostrarGuiaPecaAtualXadrez29(false);
+                    else if (guiaMelhoresJogadasXadrez29Modo === 'lado') mostrarGuiaLadoAtualXadrez29(false);
+                    else pintarGuiaMelhoresJogadasXadrez29(guiaMelhoresJogadasXadrez29Lista);
+                }
+                reaplicarRoboProfessorXadrez30();
             }
 
             if (!window.__teacherBestGuideXadrez29RenderHook) {

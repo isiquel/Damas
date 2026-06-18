@@ -1,14 +1,6 @@
-Tabuleiro Arena — Profissional 29
+Tabuleiro Arena — Profissional 30
 
-Base: Profissional 28, mantendo o balão do professor arrastável.
-
-Novidade desta versão:
-- O balão do professor continua arrastável, com setas e posição salva.
-- Dentro do balão há a opção 🎨 melhores jogadas no tabuleiro.
-- Botão “Melhores da peça”: colore até 3 melhores destinos da peça tocada.
-- Botão “Melhores do lado”: colore até 3 melhores jogadas do lado da peça/professor.
-- Verde = 1ª melhor jogada; azul = 2ª; roxo = 3ª.
-- A origem da jogada fica destacada para facilitar a explicação.
-- Tudo é privado/local no aparelho do professor; não aparece para o aluno e não altera a sala online.
+Versão completa com a Profissional 29 preservada e nova melhoria:
+Robô Conselheiro do Professor para estudar a posição do Xadrez, indicar plano de 3 lances, ameaças do aluno e dicas didáticas com cores no tabuleiro.
 
 Teste primeiro na /fase33/.
