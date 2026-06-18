@@ -10925,10 +10925,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 28 — BALÃO DO PROFESSOR ARRASTÁVEL
-               Base da Profissional 27 preservada: no Xadrez online com # no nome,
-               ao tocar numa peça abre um balão pequeno privado. Agora o professor
-               pode arrastar o balão para qualquer lugar da tela, usar setas e salvar posição. */
+            /* ✅ PROFISSIONAL 29 — BALÃO DO PROFESSOR ARRASTÁVEL + GUIA COLORIDO
+               Base da Profissional 28 preservada: o balão do professor continua arrastável.
+               Agora o professor pode ligar cores no tabuleiro para mostrar as melhores jogadas
+               e instruir o aluno com origem, destino e ordem de prioridade. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -11166,6 +11166,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
                 }
                 instalarArrasteBubbleProfessorXadrez28(bubble);
+                instalarGuiaMelhoresJogadasXadrez29(bubble);
                 return bubble;
             }
 
@@ -11397,6 +11398,8 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     </div>
                 `;
                 bubble._teacherBubble27LastAnchorRect = dados.anchorRect || null;
+                bubble._teacherBubble27LastDados = dados || {};
+                registrarUltimaPecaGuiaXadrez29(dados || {});
                 bubble.classList.add('open');
                 bubble.style.left = '-9999px';
                 bubble.style.top = '8px';
@@ -11404,6 +11407,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     const posSalva = lerPosicaoBubbleProfessorXadrez28();
                     if (posSalva) aplicarPosicaoBubbleProfessorXadrez28(bubble, posSalva.left, posSalva.top, false);
                     else posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect);
+                    if (guiaMelhoresJogadasXadrez29Ativo && guiaMelhoresJogadasXadrez29Modo === 'peca') {
+                        mostrarGuiaPecaAtualXadrez29(false);
+                    }
                 });
             }
 
@@ -11417,7 +11423,351 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (el) el.classList.add('teacher-selected-27');
             }
 
+
             window.abrirBubbleProfessorXadrez27 = abrirBubbleProfessorXadrez27;
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 29 — MELHORES JOGADAS COM CORES NO TABULEIRO
+               Recurso privado do professor: não joga, não envia nada para o Firebase,
+               não muda a sala online e não aparece para o aluno. Apenas colore o
+               tabuleiro local do professor para guiar a explicação em aula.
+            ===================================================================== */
+            let guiaMelhoresJogadasXadrez29Ativo = false;
+            let guiaMelhoresJogadasXadrez29Modo = 'peca';
+            let guiaMelhoresJogadasXadrez29Lista = [];
+            let guiaMelhoresJogadasXadrez29UltimaPeca = null;
+
+            function instalarCssGuiaMelhoresJogadasXadrez29() {
+                if (document.getElementById('teacher-best-guide-29-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-best-guide-29-style';
+                style.textContent = `
+                    #teacher-piece-bubble-27 .bubble-guide-tools-29 {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 5px;
+                        padding: 7px 0 2px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-title-29 {
+                        grid-column: 1 / -1;
+                        color: #bbf7d0;
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        text-align: center;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-btn-29 {
+                        border: 1px solid rgba(34,197,94,.28);
+                        background: rgba(20,83,45,.62);
+                        color: #dcfce7;
+                        border-radius: 999px;
+                        padding: 7px 6px;
+                        font-size: .64rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-btn-29[data-guide29="all"] {
+                        border-color: rgba(56,189,248,.28);
+                        background: rgba(12,74,110,.70);
+                        color: #e0f2fe;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-btn-29[data-guide29="clear"] {
+                        grid-column: 1 / -1;
+                        border-color: rgba(248,113,113,.28);
+                        background: rgba(127,29,29,.62);
+                        color: #fee2e2;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-status-29 {
+                        grid-column: 1 / -1;
+                        min-height: 18px;
+                        border-radius: 9px;
+                        padding: 5px 7px;
+                        background: rgba(15,23,42,.62);
+                        border: 1px solid rgba(148,163,184,.12);
+                        color: #cbd5e1;
+                        font-size: .65rem;
+                        line-height: 1.22;
+                        text-align: center;
+                    }
+                    #chess-board .chess-square.teacher-best-from-29,
+                    .chess-square.teacher-best-from-29 {
+                        position: relative !important;
+                        outline: 3px solid rgba(250,204,21,.96) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 3px rgba(250,204,21,.25), 0 0 18px rgba(250,204,21,.42) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-to-29,
+                    .chess-square.teacher-best-to-29 {
+                        position: relative !important;
+                        outline: 3px solid rgba(255,255,255,.88) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 4px rgba(255,255,255,.18), 0 0 20px rgba(255,255,255,.36) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-1-29,
+                    .chess-square.teacher-best-1-29 {
+                        background: linear-gradient(135deg, #16a34a, #bbf7d0) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-2-29,
+                    .chess-square.teacher-best-2-29 {
+                        background: linear-gradient(135deg, #0284c7, #bae6fd) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-3-29,
+                    .chess-square.teacher-best-3-29 {
+                        background: linear-gradient(135deg, #7c3aed, #ddd6fe) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-to-29::after,
+                    .chess-square.teacher-best-to-29::after {
+                        content: attr(data-teacher-best-label);
+                        position: absolute;
+                        right: 3px;
+                        bottom: 3px;
+                        z-index: 6;
+                        min-width: 19px;
+                        height: 19px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(2,6,23,.88);
+                        color: #ffffff;
+                        border: 1px solid rgba(255,255,255,.55);
+                        font-size: .66rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    #chess-board .chess-square.teacher-best-from-29::before,
+                    .chess-square.teacher-best-from-29::before {
+                        content: attr(data-teacher-best-origin);
+                        position: absolute;
+                        left: 3px;
+                        top: 3px;
+                        z-index: 6;
+                        min-width: 18px;
+                        height: 18px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(250,204,21,.95);
+                        color: #111827;
+                        border: 1px solid rgba(17,24,39,.24);
+                        font-size: .62rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    @media (max-width: 520px) {
+                        #teacher-piece-bubble-27 .bubble-guide-tools-29 { gap: 4px; }
+                        #teacher-piece-bubble-27 .bubble-guide-btn-29 { font-size: .6rem; padding: 7px 5px; }
+                        #teacher-piece-bubble-27 .bubble-guide-status-29 { font-size: .62rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function instalarGuiaMelhoresJogadasXadrez29(bubble) {
+                instalarCssGuiaMelhoresJogadasXadrez29();
+                if (!bubble || bubble.querySelector('.bubble-guide-tools-29')) return;
+                const tools = document.createElement('div');
+                tools.className = 'bubble-guide-tools-29';
+                tools.innerHTML = `
+                    <div class="bubble-guide-title-29">🎨 melhores jogadas no tabuleiro</div>
+                    <button class="bubble-guide-btn-29" type="button" data-guide29="piece">Melhores da peça</button>
+                    <button class="bubble-guide-btn-29" type="button" data-guide29="all">Melhores do lado</button>
+                    <button class="bubble-guide-btn-29" type="button" data-guide29="clear">Apagar cores</button>
+                    <div id="bubble-guide-status-29" class="bubble-guide-status-29">Verde = 1ª melhor, azul = 2ª, roxo = 3ª.</div>
+                `;
+                const body = bubble.querySelector('.bubble-body-27');
+                if (body) bubble.insertBefore(tools, body);
+                else bubble.appendChild(tools);
+
+                tools.querySelectorAll('[data-guide29]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-guide29');
+                        if (acao === 'piece') mostrarGuiaPecaAtualXadrez29(true);
+                        if (acao === 'all') mostrarGuiaLadoAtualXadrez29(true);
+                        if (acao === 'clear') desligarGuiaMelhoresJogadasXadrez29(true);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+            }
+
+            function atualizarStatusGuiaXadrez29(texto) {
+                const el = document.getElementById('bubble-guide-status-29');
+                if (el) el.innerHTML = texto;
+            }
+
+            function registrarUltimaPecaGuiaXadrez29(dados = {}) {
+                if (Number.isFinite(Number(dados.row)) && Number.isFinite(Number(dados.col))) {
+                    guiaMelhoresJogadasXadrez29UltimaPeca = { row: Number(dados.row), col: Number(dados.col) };
+                }
+            }
+
+            function limparCoresGuiaMelhoresJogadasXadrez29() {
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove(
+                        'teacher-best-from-29', 'teacher-best-to-29',
+                        'teacher-best-1-29', 'teacher-best-2-29', 'teacher-best-3-29'
+                    );
+                    square.removeAttribute('data-teacher-best-label');
+                    square.removeAttribute('data-teacher-best-origin');
+                    square.removeAttribute('title');
+                });
+            }
+
+            function desligarGuiaMelhoresJogadasXadrez29(atualizarTexto = false) {
+                guiaMelhoresJogadasXadrez29Ativo = false;
+                guiaMelhoresJogadasXadrez29Lista = [];
+                limparCoresGuiaMelhoresJogadasXadrez29();
+                if (atualizarTexto) atualizarStatusGuiaXadrez29('Cores apagadas. Toque em uma peça e ligue novamente quando quiser ensinar.');
+            }
+
+            function squareGuiaXadrez29(row, col) {
+                return document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+            }
+
+            function textoMovimentoGuiaXadrez29(item) {
+                const peca = chessBoard?.[item.from.row]?.[item.from.col] || item.peca || null;
+                const nome = nomePeca[peca?.type] || 'Peça';
+                let extra = '';
+                if (item.to?.capture) extra = ' captura';
+                if (item.to?.castle) extra = item.to.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) extra = ' promoção';
+                return `${nome}: ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}${extra}`;
+            }
+
+            function motivoGuiaXadrez29(item) {
+                const peca = chessBoard?.[item.from.row]?.[item.from.col] || item.peca || null;
+                const destino = chessBoard?.[item.to.row]?.[item.to.col] || null;
+                if (destino) return `ganha material capturando ${nomePeca[destino.type] || 'peça'}`;
+                if (item.to?.castle) return 'protege o Rei com roque';
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) return 'aproxima o peão da promoção';
+                if ((peca?.type === 'knight' || peca?.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) return 'desenvolve peça que estava parada';
+                const centro = centro26(item.to.row, item.to.col);
+                if (centro >= 5.5) return 'melhora o controle do centro';
+                return 'melhora a posição com segurança';
+            }
+
+            function pontuarMovimentoGuiaXadrez29(item, cor) {
+                try {
+                    let score = pontuarJogadaTreinoXadrez(item, cor, chessBoard);
+                    const peca = chessBoard?.[item.from.row]?.[item.from.col] || null;
+                    const destino = chessBoard?.[item.to.row]?.[item.to.col] || null;
+                    if (destino) score += valorPeca26(destino.type) * 0.7;
+                    if (item.to?.castle) score += 220;
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 900;
+                    if ((peca?.type === 'knight' || peca?.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) score += 120;
+                    score += centro26(item.to.row, item.to.col) * 12;
+                    return score;
+                } catch (_) {
+                    return 0;
+                }
+            }
+
+            function melhoresDaPecaGuiaXadrez29(row, col, limite = 3) {
+                const peca = chessBoard?.[row]?.[col] || null;
+                if (!peca) return [];
+                let movimentos = [];
+                try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                return movimentos
+                    .map(move => {
+                        const item = { from: { row, col }, to: move, peca };
+                        return { ...item, score: pontuarMovimentoGuiaXadrez29(item, peca.color) };
+                    })
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limite);
+            }
+
+            function melhoresDoLadoGuiaXadrez29(cor, limite = 3) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, chessBoard) || []; } catch (_) { movimentos = []; }
+                return movimentos
+                    .map(item => ({ ...item, peca: chessBoard?.[item.from.row]?.[item.from.col] || null, score: pontuarMovimentoGuiaXadrez29(item, cor) }))
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limite);
+            }
+
+            function pintarGuiaMelhoresJogadasXadrez29(lista = []) {
+                limparCoresGuiaMelhoresJogadasXadrez29();
+                lista.slice(0, 3).forEach((item, index) => {
+                    const ordem = index + 1;
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    const titulo = `${ordem}ª opção: ${textoMovimentoGuiaXadrez29(item)} — ${motivoGuiaXadrez29(item)}`;
+                    if (from) {
+                        from.classList.add('teacher-best-from-29');
+                        from.classList.add(`teacher-best-${ordem}-29`);
+                        const antigo = from.getAttribute('data-teacher-best-origin');
+                        from.setAttribute('data-teacher-best-origin', antigo ? `${antigo},${ordem}` : String(ordem));
+                        from.setAttribute('title', titulo);
+                    }
+                    if (to) {
+                        to.classList.add('teacher-best-to-29');
+                        to.classList.add(`teacher-best-${ordem}-29`);
+                        to.setAttribute('data-teacher-best-label', `${ordem}ª`);
+                        to.setAttribute('title', titulo);
+                    }
+                });
+            }
+
+            function resumoGuiaMelhoresJogadasXadrez29(lista = [], titulo = 'Guia ligado') {
+                if (!lista.length) return 'Não encontrei jogada legal para colorir agora.';
+                return `<strong>${titulo}:</strong><br>` + lista.map((item, i) => {
+                    const cor = i === 0 ? 'verde' : (i === 1 ? 'azul' : 'roxo');
+                    return `${i + 1}. ${escapeBubble27(textoMovimentoGuiaXadrez29(item))} <span style="color:#94a3b8;">(${cor})</span>`;
+                }).join('<br>');
+            }
+
+            function mostrarGuiaPecaAtualXadrez29(atualizarTexto = true) {
+                const pos = guiaMelhoresJogadasXadrez29UltimaPeca;
+                if (!pos || !chessBoard?.[pos.row]?.[pos.col]) {
+                    if (atualizarTexto) atualizarStatusGuiaXadrez29('Toque primeiro em uma peça no tabuleiro para eu mostrar as melhores casas dela.');
+                    return;
+                }
+                const lista = melhoresDaPecaGuiaXadrez29(pos.row, pos.col, 3);
+                guiaMelhoresJogadasXadrez29Ativo = true;
+                guiaMelhoresJogadasXadrez29Modo = 'peca';
+                guiaMelhoresJogadasXadrez29Lista = lista;
+                pintarGuiaMelhoresJogadasXadrez29(lista);
+                if (atualizarTexto) atualizarStatusGuiaXadrez29(resumoGuiaMelhoresJogadasXadrez29(lista, 'Melhores da peça'));
+            }
+
+            function mostrarGuiaLadoAtualXadrez29(atualizarTexto = true) {
+                let cor = chessPlayerColor || chessTurn || 'white';
+                const pos = guiaMelhoresJogadasXadrez29UltimaPeca;
+                if (pos && chessBoard?.[pos.row]?.[pos.col]?.color) cor = chessBoard[pos.row][pos.col].color;
+                const lista = melhoresDoLadoGuiaXadrez29(cor, 3);
+                guiaMelhoresJogadasXadrez29Ativo = true;
+                guiaMelhoresJogadasXadrez29Modo = 'lado';
+                guiaMelhoresJogadasXadrez29Lista = lista;
+                pintarGuiaMelhoresJogadasXadrez29(lista);
+                const lado = cor === 'white' ? 'brancas' : 'pretas';
+                if (atualizarTexto) atualizarStatusGuiaXadrez29(resumoGuiaMelhoresJogadasXadrez29(lista, `Melhores das ${lado}`));
+            }
+
+            function reaplicarGuiaMelhoresJogadasXadrez29() {
+                if (!guiaMelhoresJogadasXadrez29Ativo) return;
+                if (guiaMelhoresJogadasXadrez29Modo === 'peca') mostrarGuiaPecaAtualXadrez29(false);
+                else if (guiaMelhoresJogadasXadrez29Modo === 'lado') mostrarGuiaLadoAtualXadrez29(false);
+                else pintarGuiaMelhoresJogadasXadrez29(guiaMelhoresJogadasXadrez29Lista);
+            }
+
+            if (!window.__teacherBestGuideXadrez29RenderHook) {
+                window.__teacherBestGuideXadrez29RenderHook = true;
+                const renderAnteriorGuia29 = renderChessBoard;
+                renderChessBoard = function renderChessBoardGuiaMelhores29() {
+                    const retorno = renderAnteriorGuia29.apply(this, arguments);
+                    setTimeout(reaplicarGuiaMelhoresJogadasXadrez29, 0);
+                    return retorno;
+                };
+            }
 
             let ultimoBubbleProfessorXadrez27 = 0;
             function tentarAbrirBubbleProfessorXadrez27(row, col) {

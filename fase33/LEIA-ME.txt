@@ -1,20 +1,14 @@
-TABULEIRO ARENA
-Base estável com Separação 02 CSS e Separação 03 JS Config.
+Tabuleiro Arena — Profissional 29
 
-Estado atual:
-- Damas preservada.
-- Xadrez online funcionando.
-- Botão Sair da sala funcionando.
-- Controles recolhidos no +.
-- Chat recolhível.
-- Câmera do Xadrez pausada/removida.
-- CSS organizado em arquivos menores.
-- JavaScript começou a ser organizado com js/config.js, sem mexer na lógica do jogo.
+Base: Profissional 28, mantendo o balão do professor arrastável.
 
-Regra de segurança:
-Toda melhoria deve ser testada primeiro em /fase33/ antes de ir para o site principal.
+Novidade desta versão:
+- O balão do professor continua arrastável, com setas e posição salva.
+- Dentro do balão há a opção 🎨 melhores jogadas no tabuleiro.
+- Botão “Melhores da peça”: colore até 3 melhores destinos da peça tocada.
+- Botão “Melhores do lado”: colore até 3 melhores jogadas do lado da peça/professor.
+- Verde = 1ª melhor jogada; azul = 2ª; roxo = 3ª.
+- A origem da jogada fica destacada para facilitar a explicação.
+- Tudo é privado/local no aparelho do professor; não aparece para o aluno e não altera a sala online.
 
-
-ATUALIZAÇÃO PROFISSIONAL 28
-- Balão privado do professor agora é arrastável, tem setas de movimento e salva posição.
-- Testar primeiro na /fase33/.
+Teste primeiro na /fase33/.
