@@ -10925,12 +10925,12 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 33 — GUIA DIRETO DO ROBÔ NO TABULEIRO
-               Base da Profissional 32 preservada: balão arrastável, tamanho ajustável,
-               melhores jogadas, robô conselheiro e auto após jogada do aluno continuam iguais.
-               Agora o professor pode escolher entre abrir o balão ao tocar na peça ou
-               usar o modo direto: amarelo pisca na peça certa, verde no destino e
-               vermelho nas peças que não convém mexer. */
+            /* ✅ PROFISSIONAL 34 — PAINEL DO PROFESSOR COM JANELINHA OFF E ROBÔ POR CORES
+               Base da Profissional 33 preservada: balão arrastável, tamanho ajustável,
+               melhores jogadas, robô conselheiro, auto após jogada do aluno e guia direto continuam.
+               Agora a aba do professor tem opção clara para deixar a janelinha OFF
+               e usar apenas o robô por cores no tabuleiro: amarelo = peças boas para mexer,
+               verde = casas boas para ir e vermelho = peças/casas perigosas. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -12545,7 +12545,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     }
                     #teacher-direct-guide-33 .direct-actions-33 {
                         display: grid;
-                        grid-template-columns: repeat(4, 1fr);
+                        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
                         gap: 5px;
                         margin-bottom: 6px;
                     }
@@ -12778,31 +12778,56 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 limparCoresGuiaMelhoresJogadasXadrez29();
                 limparRoboProfessorXadrez30(false);
                 limparGuiaDiretaProfessorXadrez33();
-                const melhor = resultado?.melhor || null;
-                if (melhor) {
-                    const from = squareGuiaXadrez29(melhor.from.row, melhor.from.col);
-                    const to = squareGuiaXadrez29(melhor.to.row, melhor.to.col);
-                    const titulo = `Mexa esta peça: ${textoMovimentoRoboProfessorXadrez30(melhor, chessBoard)} — ${melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
+
+                const melhores = Array.isArray(resultado?.melhores)
+                    ? resultado.melhores.filter(Boolean).slice(0, 3)
+                    : (resultado?.melhor ? [resultado.melhor] : []);
+
+                const casasProtegidas = new Set();
+
+                melhores.forEach((item, index) => {
+                    const ordem = index + 1;
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    const titulo = `${ordem}ª opção do robô: ${textoMovimentoRoboProfessorXadrez30(item, chessBoard)} — ${item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
+                    const labelPeca = ordem === 1 ? 'PEÇA' : `P${ordem}`;
+                    const labelCasa = ordem === 1 ? 'IR' : `IR${ordem}`;
+
                     if (from) {
                         from.classList.add('teacher-direct-from-33');
-                        from.setAttribute('data-teacher-direct-label', 'PEÇA');
-                        from.setAttribute('data-teacher-direct-title', '1');
+                        from.setAttribute('data-teacher-direct-label', labelPeca);
+                        from.setAttribute('data-teacher-direct-title', String(ordem));
                         from.setAttribute('title', titulo);
+                        casasProtegidas.add(`${item.from.row},${item.from.col}`);
                     }
                     if (to) {
                         to.classList.add('teacher-direct-to-33');
-                        to.setAttribute('data-teacher-direct-label', 'IR');
-                        to.setAttribute('data-teacher-direct-title', '1');
+                        to.setAttribute('data-teacher-direct-label', labelCasa);
+                        to.setAttribute('data-teacher-direct-title', String(ordem));
                         to.setAttribute('title', titulo);
+                        casasProtegidas.add(`${item.to.row},${item.to.col}`);
                     }
-                }
-                (resultado?.ruins || []).slice(0, 6).forEach(item => {
-                    const sq = squareGuiaXadrez29(item.from.row, item.from.col);
-                    if (!sq || sq.classList.contains('teacher-direct-from-33')) return;
-                    sq.classList.add('teacher-direct-bad-33');
-                    sq.setAttribute('data-teacher-direct-label', 'NÃO');
-                    sq.setAttribute('data-teacher-direct-title', '1');
-                    sq.setAttribute('title', `Evite mexer agora: ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} em ${alg(item.from.row, item.from.col)} pode perder tempo, peça ou defesa.`);
+                });
+
+                (resultado?.ruins || []).slice(0, 8).forEach(item => {
+                    const fromKey = `${item.from.row},${item.from.col}`;
+                    const toKey = `${item.to.row},${item.to.col}`;
+
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    if (from && !casasProtegidas.has(fromKey)) {
+                        from.classList.add('teacher-direct-bad-33');
+                        from.setAttribute('data-teacher-direct-label', 'NÃO');
+                        from.setAttribute('data-teacher-direct-title', '1');
+                        from.setAttribute('title', `Evite mexer agora: ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} em ${alg(item.from.row, item.from.col)} pode perder tempo, peça ou defesa.`);
+                    }
+
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    if (to && !casasProtegidas.has(toKey) && !to.classList.contains('teacher-direct-from-33')) {
+                        to.classList.add('teacher-direct-bad-33');
+                        to.setAttribute('data-teacher-direct-label', 'NÃO');
+                        to.setAttribute('data-teacher-direct-title', '1');
+                        to.setAttribute('title', `Evite esta casa agora: ${alg(item.to.row, item.to.col)} pode deixar peça solta, perder material ou enfraquecer a defesa.`);
+                    }
                 });
             }
 
@@ -12811,18 +12836,25 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (!melhor) return 'Não encontrei lance legal agora. Verifique se a partida terminou ou se o rei está sem saída.';
                 const peca = chessBoard?.[melhor.from.row]?.[melhor.from.col] || melhor.peca || null;
                 const ruins = resultado?.ruins || [];
+                const melhores = Array.isArray(resultado?.melhores) ? resultado.melhores.slice(0, 3) : [melhor];
                 const cabecalho = origem === 'auto'
-                    ? 'Auto atualizou depois da jogada do aluno.'
-                    : (origem === 'toque' ? 'Guia direto pelo toque no tabuleiro.' : 'Guia direto atualizado.');
+                    ? 'Robô por cores atualizou depois da jogada do aluno.'
+                    : (origem === 'toque' ? 'Robô por cores atualizado pelo toque.' : 'Robô por cores atualizado.');
                 let html = `<strong>${escapeBubble27(cabecalho)}</strong><br>`;
-                html += `<span class="yellow-33">Amarelo:</span> mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em ${escapeBubble27(alg(melhor.from.row, melhor.from.col))}. `;
-                html += `<span class="good-33">Verde:</span> vá para ${escapeBubble27(alg(melhor.to.row, melhor.to.col))}.<br>`;
+                html += `<span class="yellow-33">Amarelo:</span> peça(s) recomendada(s) para mexer. `;
+                html += `<span class="good-33">Verde:</span> casa(s) boas para ir. `;
+                html += `<span class="bad-33">Vermelho:</span> evite peça/casa perigosa.<br>`;
+                html += `Melhor agora: mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em ${escapeBubble27(alg(melhor.from.row, melhor.from.col))} e vá para ${escapeBubble27(alg(melhor.to.row, melhor.to.col))}.<br>`;
                 html += `Motivo: ${escapeBubble27(melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, cor))}.`;
+                if (melhores.length > 1) {
+                    const extras = melhores.slice(1, 3).map((item, idx) => `${idx + 2}) ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}`);
+                    html += `<br>Outras boas: ${escapeBubble27(extras.join(' | '))}.`;
+                }
                 if (ruins.length) {
                     const nomes = ruins.slice(0, 4).map(item => `${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)}`);
-                    html += `<br><span class="bad-33">Vermelho:</span> evite mexer agora: ${escapeBubble27(nomes.join(', '))}.`;
+                    html += `<br><span class="bad-33">Não mexer agora:</span> ${escapeBubble27(nomes.join(', '))}.`;
                 }
-                html += '<br>Frase para aula: “olhe primeiro a ameaça do aluno, depois escolha a peça que ganha tempo sem entregar material.”';
+                html += '<br>Frase para aula: “veja a cor do tabuleiro: amarelo prepara, verde executa e vermelho alerta o perigo.”';
                 return html;
             }
 
@@ -12846,7 +12878,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 }
                 const cor = corProfessorGuiaDiretaXadrez33();
                 if (chessMode === 'online' && chessPlayerColor && chessTurn !== cor) {
-                    atualizarStatusGuiaDiretaProfessorXadrez33(`Guia direto ligado. Aguardando o aluno jogar. Quando voltar sua vez, o robô mostra <strong>peça amarela</strong>, <strong>casa verde</strong> e <strong>peças vermelhas</strong>.`);
+                    atualizarStatusGuiaDiretaProfessorXadrez33(`Robô por cores ligado. Aguardando o aluno jogar. Quando voltar sua vez, ele marca <strong>amarelo</strong> nas peças boas, <strong>verde</strong> nas casas boas e <strong>vermelho</strong> nos perigos.`);
                     atualizarPainelFlutuanteGuiaDiretaXadrez33();
                     return;
                 }
@@ -12873,6 +12905,41 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 guiaDiretaXadrez33Timer = setTimeout(() => aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem }), 190);
             }
 
+            function fecharBalaoProfessorXadrez34() {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble) bubble.classList.remove('open');
+            }
+
+            function definirJanelinhaProfessorXadrez34(ligada) {
+                if (ligada) {
+                    salvarModoToqueGuiaDiretaXadrez33('bubble');
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha ligada. Ao tocar na peça, o quadro de dicas pode abrir. Você ainda pode usar o robô por cores quando quiser.');
+                } else {
+                    salvarModoToqueGuiaDiretaXadrez33('direct');
+                    salvarAutoGuiaDiretaXadrez33(true);
+                    fecharBalaoProfessorXadrez34();
+                    aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha OFF. O robô vai guiar direto no tabuleiro por cores: amarelo = peça boa, verde = casa boa, vermelho = perigo.');
+                }
+                atualizarBotoesGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+            }
+
+            function definirRoboCoresProfessorXadrez34(ligado) {
+                salvarAutoGuiaDiretaXadrez33(!!ligado);
+                if (ligado) {
+                    salvarModoToqueGuiaDiretaXadrez33('direct');
+                    fecharBalaoProfessorXadrez34();
+                    aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores ON. Ele acompanha o jogo e recalcula quando o aluno jogar: amarelo = mexa, verde = vá, vermelho = evite.');
+                } else {
+                    limparGuiaDiretaProfessorXadrez33();
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores OFF. As cores foram limpas. Ligue novamente quando quiser orientação no tabuleiro.');
+                }
+                atualizarBotoesGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+            }
+
             function instalarGuiaDiretaRoboProfessorXadrez33(bubble) {
                 instalarCssGuiaDiretaRoboProfessorXadrez33();
                 garantirPainelFlutuanteGuiaDiretaXadrez33();
@@ -12883,12 +12950,12 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const tools = document.createElement('div');
                 tools.className = 'bubble-direct-tools-33';
                 tools.innerHTML = `
-                    <div class="bubble-direct-title-33">🎯 modo guia direto no tabuleiro</div>
-                    <button class="bubble-direct-btn-33" type="button" data-direct33="mode">Toque abre balão</button>
-                    <button class="bubble-direct-btn-33" type="button" data-direct33="auto">Auto direto: OFF</button>
-                    <button class="bubble-direct-btn-33" type="button" data-direct33="refresh">Atualizar guia</button>
-                    <button class="bubble-direct-btn-33" type="button" data-direct33="clear">Limpar guia</button>
-                    <div id="bubble-direct-status-33" class="bubble-direct-status-33">Escolha se tocar na peça abre o balão ou se o robô guia direto no tabuleiro. No modo direto: amarelo = peça, verde = destino, vermelho = evite mexer.</div>
+                    <div class="bubble-direct-title-33">🎯 professor: janelinha ou robô por cores</div>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="window">Janelinha: ON</button>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="colors">Robô cores: OFF</button>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="refresh">Atualizar cores</button>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="clear">Limpar cores</button>
+                    <div id="bubble-direct-status-33" class="bubble-direct-status-33">Use Janelinha OFF para não abrir este quadro. Use Robô cores ON para ele guiar direto no tabuleiro: amarelo = peça boa, verde = casa boa, vermelho = perigo.</div>
                 `;
                 const body = bubble.querySelector('.bubble-body-27');
                 if (body) bubble.insertBefore(tools, body);
@@ -12896,23 +12963,17 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 tools.querySelectorAll('[data-direct33]').forEach(btn => {
                     btn.addEventListener('click', ev => {
                         const acao = btn.getAttribute('data-direct33');
-                        if (acao === 'mode') {
-                            const novo = lerModoToqueGuiaDiretaXadrez33() === 'direct' ? 'bubble' : 'direct';
-                            salvarModoToqueGuiaDiretaXadrez33(novo);
-                            if (novo === 'direct') {
-                                salvarAutoGuiaDiretaXadrez33(true);
-                                aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
-                                const b = document.getElementById('teacher-piece-bubble-27');
-                                if (b) b.classList.remove('open');
-                            } else {
-                                limparGuiaDiretaProfessorXadrez33();
-                            }
+                        if (acao === 'window' || acao === 'mode') {
+                            const janelinhaLigada = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                            definirJanelinhaProfessorXadrez34(janelinhaLigada);
                         }
-                        if (acao === 'auto') salvarAutoGuiaDiretaXadrez33(!autoGuiaDiretaAtivaXadrez33());
+                        if (acao === 'colors' || acao === 'auto') {
+                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
+                        }
                         if (acao === 'refresh') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
                         if (acao === 'clear') {
                             limparGuiaDiretaProfessorXadrez33();
-                            atualizarStatusGuiaDiretaProfessorXadrez33('Guia direto limpo. Você pode atualizar quando quiser.');
+                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas. Ligue Robô cores ON para voltar a guiar pelo tabuleiro.');
                             atualizarPainelFlutuanteGuiaDiretaXadrez33();
                         }
                         ev.preventDefault();
@@ -12929,30 +12990,32 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 panel = document.createElement('div');
                 panel.id = 'teacher-direct-guide-33';
                 panel.innerHTML = `
-                    <div class="direct-head-33"><span>🎯 Guia direto do professor</span><span data-direct33-mini-state>OFF</span></div>
+                    <div class="direct-head-33"><span>🎓 Aba do professor</span><span data-direct33-mini-state>OFF</span></div>
                     <div class="direct-actions-33">
+                        <button type="button" data-direct33-mini="window">Janelinha ON</button>
+                        <button type="button" data-direct33-mini="colors">Robô cores OFF</button>
+                        <button type="button" data-direct33-mini="refresh">Atualizar</button>
                         <button type="button" data-direct33-mini="bubble">Abrir balão</button>
-                        <button type="button" data-direct33-mini="mode">Modo direto</button>
-                        <button type="button" data-direct33-mini="auto">Auto</button>
                         <button type="button" data-direct33-mini="clear">Limpar</button>
                     </div>
-                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Ligue o modo direto pelo balão para o robô marcar a jogada no tabuleiro.</div>
+                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Escolha: deixe a janelinha OFF e ligue o robô por cores. Amarelo = peça boa, verde = casa boa, vermelho = perigo.</div>
                 `;
                 document.body.appendChild(panel);
                 panel.querySelectorAll('[data-direct33-mini]').forEach(btn => {
                     btn.addEventListener('click', ev => {
                         const acao = btn.getAttribute('data-direct33-mini');
                         if (acao === 'bubble') abrirBalaoPeloPainelGuiaDiretaXadrez33();
-                        if (acao === 'mode') {
-                            const novo = lerModoToqueGuiaDiretaXadrez33() === 'direct' ? 'bubble' : 'direct';
-                            salvarModoToqueGuiaDiretaXadrez33(novo);
-                            if (novo === 'direct') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
-                            else limparGuiaDiretaProfessorXadrez33();
+                        if (acao === 'window' || acao === 'mode') {
+                            const janelinhaLigada = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                            definirJanelinhaProfessorXadrez34(janelinhaLigada);
                         }
-                        if (acao === 'auto') salvarAutoGuiaDiretaXadrez33(!autoGuiaDiretaAtivaXadrez33());
+                        if (acao === 'colors' || acao === 'auto') {
+                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
+                        }
+                        if (acao === 'refresh') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
                         if (acao === 'clear') {
                             limparGuiaDiretaProfessorXadrez33();
-                            atualizarStatusGuiaDiretaProfessorXadrez33('Guia direto limpo.');
+                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas.');
                         }
                         ev.preventDefault();
                         ev.stopPropagation();
@@ -12980,24 +13043,32 @@ Compartilhe com os amigos e entre no horário marcado.`;
             function atualizarBotoesGuiaDiretaXadrez33() {
                 const modo = lerModoToqueGuiaDiretaXadrez33();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
-                document.querySelectorAll('[data-direct33="mode"]').forEach(btn => {
-                    btn.classList.toggle('direct-on-33', modo === 'direct');
-                    btn.textContent = modo === 'direct' ? 'Toque: guia direto ON' : 'Toque abre balão';
+                const janelinhaOff = modo === 'direct';
+
+                document.querySelectorAll('[data-direct33="window"], [data-direct33="mode"]').forEach(btn => {
+                    btn.classList.toggle('direct-on-33', janelinhaOff);
+                    btn.textContent = janelinhaOff ? 'Janelinha: OFF' : 'Janelinha: ON';
                 });
-                document.querySelectorAll('[data-direct33="auto"]').forEach(btn => {
+                document.querySelectorAll('[data-direct33="colors"], [data-direct33="auto"]').forEach(btn => {
                     btn.classList.toggle('auto-on-33', autoLigado);
-                    btn.textContent = autoLigado ? 'Auto direto: ON' : 'Auto direto: OFF';
+                    btn.textContent = autoLigado ? 'Robô cores: ON' : 'Robô cores: OFF';
                 });
-                document.querySelectorAll('[data-direct33-mini="mode"]').forEach(btn => {
-                    btn.classList.toggle('active-33', modo === 'direct');
-                    btn.textContent = modo === 'direct' ? 'Usar balão' : 'Modo direto';
+
+                document.querySelectorAll('[data-direct33-mini="window"], [data-direct33-mini="mode"]').forEach(btn => {
+                    btn.classList.toggle('active-33', janelinhaOff);
+                    btn.textContent = janelinhaOff ? 'Janelinha OFF' : 'Janelinha ON';
                 });
-                document.querySelectorAll('[data-direct33-mini="auto"]').forEach(btn => {
+                document.querySelectorAll('[data-direct33-mini="colors"], [data-direct33-mini="auto"]').forEach(btn => {
                     btn.classList.toggle('active-33', autoLigado);
-                    btn.textContent = autoLigado ? 'Auto ON' : 'Auto OFF';
+                    btn.textContent = autoLigado ? 'Robô cores ON' : 'Robô cores OFF';
                 });
                 const state = document.querySelector('[data-direct33-mini-state]');
-                if (state) state.textContent = modo === 'direct' ? 'DIRETO' : (autoLigado ? 'AUTO' : 'BALÃO');
+                if (state) {
+                    if (janelinhaOff && autoLigado) state.textContent = 'CORES';
+                    else if (janelinhaOff) state.textContent = 'SEM JANELA';
+                    else if (autoLigado) state.textContent = 'AUTO';
+                    else state.textContent = 'JANELA';
+                }
             }
 
             function atualizarPainelFlutuanteGuiaDiretaXadrez33(mostrar = false) {
@@ -13005,7 +13076,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 const modo = lerModoToqueGuiaDiretaXadrez33();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
                 const pode = !!(professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19());
-                panel.classList.toggle('visible-33', pode && (mostrar || modo === 'direct' || autoLigado));
+                panel.classList.toggle('visible-33', pode && (mostrar || modo === 'direct' || autoLigado || chessProfessorPrivadoAtivo));
                 atualizarBotoesGuiaDiretaXadrez33();
             }
 
