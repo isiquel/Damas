@@ -10925,10 +10925,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
 
-            /* ✅ PROFISSIONAL 27 — BALÃO PEQUENO EM CIMA DA PEÇA
-               Correção real: não usa popup grande no meio da tela. Ao tocar numa peça
-               no Xadrez online com # no nome, abre um balão pequeno perto da peça,
-               com explicação objetiva e melhor dica didática para aula. */
+            /* ✅ PROFISSIONAL 28 — BALÃO DO PROFESSOR ARRASTÁVEL
+               Base da Profissional 27 preservada: no Xadrez online com # no nome,
+               ao tocar numa peça abre um balão pequeno privado. Agora o professor
+               pode arrastar o balão para qualquer lugar da tela, usar setas e salvar posição. */
             function instalarCssBubbleProfessorXadrez27() {
                 if (document.getElementById('teacher-piece-bubble-27-style')) return;
                 const style = document.createElement('style');
@@ -11054,6 +11054,67 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         outline-offset: -4px !important;
                         box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 18px rgba(250,204,21,.38) !important;
                     }
+
+                    /* ✅ PROFISSIONAL 28 — balão do professor arrastável, sem observar a página inteira */
+                    #teacher-piece-bubble-27.manual-position-28::after { display: none !important; }
+                    #teacher-piece-bubble-27 .bubble-head-27 {
+                        cursor: grab;
+                        touch-action: none;
+                        user-select: none;
+                        -webkit-user-select: none;
+                        -webkit-touch-callout: none;
+                    }
+                    #teacher-piece-bubble-27.dragging-28 .bubble-head-27 { cursor: grabbing; }
+                    #teacher-piece-bubble-27 .bubble-drag-tip-28 {
+                        display: block;
+                        margin-top: 3px;
+                        color: #fde68a;
+                        font-size: .58rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        line-height: 1.12;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-tools-28 {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-wrap: wrap;
+                        gap: 4px;
+                        padding: 7px 0 2px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-note-28 {
+                        width: 100%;
+                        text-align: center;
+                        color: #93c5fd;
+                        font-size: .61rem;
+                        font-weight: 900;
+                        letter-spacing: .04em;
+                        text-transform: uppercase;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-btn-28 {
+                        width: 27px;
+                        height: 27px;
+                        min-width: 27px;
+                        padding: 0;
+                        border-radius: 999px;
+                        border: 1px solid rgba(250,204,21,.24);
+                        background: rgba(15,23,42,.92);
+                        color: #fef3c7;
+                        font-size: .78rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                        box-shadow: none;
+                        text-transform: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-btn-28:hover,
+                    #teacher-piece-bubble-27 .bubble-move-btn-28:focus {
+                        background: rgba(37,99,235,.92);
+                        color: #ffffff;
+                        transform: none;
+                    }
                     @media (max-width: 520px) {
                         #teacher-piece-bubble-27 { width: min(292px, calc(100vw - 12px)); padding: 9px; border-radius: 14px; }
                         #teacher-piece-bubble-27 .bubble-body-27 { font-size: .72rem; }
@@ -11086,19 +11147,201 @@ Compartilhe com os amigos e entre no horário marcado.`;
                                 <div>
                                     <div class="bubble-title-27">Peça selecionada</div>
                                     <div class="bubble-sub-27">Manual do professor</div>
+                                    <div class="bubble-drag-tip-28">↕ segure no topo para arrastar</div>
                                 </div>
                             </div>
                             <button class="bubble-close-27" type="button" aria-label="Fechar">×</button>
+                        </div>
+                        <div class="bubble-move-tools-28" aria-label="Mover balão do professor">
+                            <span class="bubble-move-note-28">Toque nas setas ou arraste pelo topo</span>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="left" aria-label="Mover para esquerda">←</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="up" aria-label="Mover para cima">↑</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="down" aria-label="Mover para baixo">↓</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="right" aria-label="Mover para direita">→</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="reset" aria-label="Voltar perto da peça">⟳</button>
                         </div>
                         <div class="bubble-body-27"></div>
                     `;
                     document.body.appendChild(bubble);
                     bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
                 }
+                instalarArrasteBubbleProfessorXadrez28(bubble);
                 return bubble;
             }
 
+            const BUBBLE_PROFESSOR_XADREZ_28_POS_KEY = 'tabuleiro_arena_teacher_piece_bubble_28_pos';
+            let bubbleProfessorXadrez28Dragging = false;
+            let bubbleProfessorXadrez28StartX = 0;
+            let bubbleProfessorXadrez28StartY = 0;
+            let bubbleProfessorXadrez28StartLeft = 0;
+            let bubbleProfessorXadrez28StartTop = 0;
+
+            function viewportBubbleProfessorXadrez28() {
+                return {
+                    width: window.innerWidth || document.documentElement.clientWidth || 360,
+                    height: window.innerHeight || document.documentElement.clientHeight || 640
+                };
+            }
+
+            function limitarBubbleProfessorXadrez28(valor, min, max) {
+                if (!Number.isFinite(valor)) return min;
+                if (max < min) return min;
+                return Math.max(min, Math.min(max, valor));
+            }
+
+            function lerPosicaoBubbleProfessorXadrez28() {
+                try {
+                    const data = JSON.parse(localStorage.getItem(BUBBLE_PROFESSOR_XADREZ_28_POS_KEY) || 'null');
+                    if (data && Number.isFinite(data.left) && Number.isFinite(data.top)) return data;
+                } catch (_) {}
+                return null;
+            }
+
+            function salvarPosicaoBubbleProfessorXadrez28(left, top) {
+                try {
+                    localStorage.setItem(BUBBLE_PROFESSOR_XADREZ_28_POS_KEY, JSON.stringify({
+                        left: Math.round(left),
+                        top: Math.round(top)
+                    }));
+                } catch (_) {}
+            }
+
+            function aplicarPosicaoBubbleProfessorXadrez28(bubble, left, top, salvar = true) {
+                if (!bubble) return;
+                const vp = viewportBubbleProfessorXadrez28();
+                const margem = 7;
+                const rect = bubble.getBoundingClientRect();
+                const bw = Math.max(180, Math.min(rect.width || bubble.offsetWidth || 318, vp.width - margem * 2));
+                const bh = Math.max(120, Math.min(rect.height || bubble.offsetHeight || 280, vp.height - margem * 2));
+                const safeLeft = limitarBubbleProfessorXadrez28(left, margem, Math.max(margem, vp.width - bw - margem));
+                const safeTop = limitarBubbleProfessorXadrez28(top, margem, Math.max(margem, vp.height - bh - margem));
+
+                bubble.classList.add('manual-position-28');
+                bubble.style.left = `${Math.round(safeLeft)}px`;
+                bubble.style.top = `${Math.round(safeTop)}px`;
+                bubble.style.right = 'auto';
+                bubble.style.bottom = 'auto';
+                bubble.style.transform = 'none';
+                if (salvar) salvarPosicaoBubbleProfessorXadrez28(safeLeft, safeTop);
+            }
+
+            function manterBubbleProfessorXadrez28NaTela() {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble || !bubble.classList.contains('open') || !bubble.classList.contains('manual-position-28')) return;
+                const rect = bubble.getBoundingClientRect();
+                aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left, rect.top, true);
+            }
+
+            function pontoBubbleProfessorXadrez28(ev) {
+                if (ev.touches && ev.touches[0]) return ev.touches[0];
+                if (ev.changedTouches && ev.changedTouches[0]) return ev.changedTouches[0];
+                return ev;
+            }
+
+            function alvoInterativoBubbleProfessorXadrez28(target) {
+                return !!(target && target.closest && target.closest('button,input,textarea,select,a,video,audio'));
+            }
+
+            function iniciarArrasteBubbleProfessorXadrez28(ev) {
+                if (alvoInterativoBubbleProfessorXadrez28(ev.target)) return;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble || !bubble.classList.contains('open')) return;
+                const ponto = pontoBubbleProfessorXadrez28(ev);
+                const rect = bubble.getBoundingClientRect();
+                bubbleProfessorXadrez28Dragging = true;
+                bubbleProfessorXadrez28StartX = ponto.clientX;
+                bubbleProfessorXadrez28StartY = ponto.clientY;
+                bubbleProfessorXadrez28StartLeft = rect.left;
+                bubbleProfessorXadrez28StartTop = rect.top;
+                bubble.classList.add('dragging-28');
+                aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left, rect.top, false);
+                try { ev.currentTarget?.setPointerCapture?.(ev.pointerId); } catch (_) {}
+                ev.preventDefault?.();
+                ev.stopPropagation?.();
+            }
+
+            function moverArrasteBubbleProfessorXadrez28(ev) {
+                if (!bubbleProfessorXadrez28Dragging) return;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                const ponto = pontoBubbleProfessorXadrez28(ev);
+                aplicarPosicaoBubbleProfessorXadrez28(
+                    bubble,
+                    bubbleProfessorXadrez28StartLeft + (ponto.clientX - bubbleProfessorXadrez28StartX),
+                    bubbleProfessorXadrez28StartTop + (ponto.clientY - bubbleProfessorXadrez28StartY),
+                    false
+                );
+                ev.preventDefault?.();
+            }
+
+            function pararArrasteBubbleProfessorXadrez28(ev) {
+                if (!bubbleProfessorXadrez28Dragging) return;
+                bubbleProfessorXadrez28Dragging = false;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble) {
+                    bubble.classList.remove('dragging-28');
+                    const rect = bubble.getBoundingClientRect();
+                    aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left, rect.top, true);
+                }
+                ev?.preventDefault?.();
+            }
+
+            function moverPorBotaoBubbleProfessorXadrez28(dx, dy) {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                const rect = bubble.getBoundingClientRect();
+                aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left + dx, rect.top + dy, true);
+            }
+
+            function resetarPosicaoBubbleProfessorXadrez28() {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                try { localStorage.removeItem(BUBBLE_PROFESSOR_XADREZ_28_POS_KEY); } catch (_) {}
+                bubble.classList.remove('manual-position-28');
+                posicionarBubbleProfessorXadrez27(bubble, bubble._teacherBubble27LastAnchorRect || null);
+            }
+
+            function instalarArrasteBubbleProfessorXadrez28(bubble) {
+                if (!bubble || bubble.dataset.dragProfessor28 === '1') return;
+                bubble.dataset.dragProfessor28 = '1';
+                const head = bubble.querySelector('.bubble-head-27');
+                if (head) {
+                    if ('PointerEvent' in window) {
+                        head.addEventListener('pointerdown', iniciarArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('pointermove', moverArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('pointerup', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('pointercancel', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                    } else {
+                        head.addEventListener('touchstart', iniciarArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('touchmove', moverArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('touchend', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                        head.addEventListener('mousedown', iniciarArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('mousemove', moverArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('mouseup', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                    }
+                }
+                bubble.querySelectorAll('[data-bubble-move-28]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const dir = btn.getAttribute('data-bubble-move-28');
+                        const passo = 48;
+                        if (dir === 'left') moverPorBotaoBubbleProfessorXadrez28(-passo, 0);
+                        if (dir === 'right') moverPorBotaoBubbleProfessorXadrez28(passo, 0);
+                        if (dir === 'up') moverPorBotaoBubbleProfessorXadrez28(0, -passo);
+                        if (dir === 'down') moverPorBotaoBubbleProfessorXadrez28(0, passo);
+                        if (dir === 'reset') resetarPosicaoBubbleProfessorXadrez28();
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                if (!window.__bubbleProfessorXadrez28ResizeBound) {
+                    window.__bubbleProfessorXadrez28ResizeBound = true;
+                    window.addEventListener('resize', manterBubbleProfessorXadrez28NaTela);
+                }
+            }
+
             function posicionarBubbleProfessorXadrez27(bubble, rect) {
+                if (!bubble) return;
+                bubble.classList.remove('manual-position-28', 'dragging-28');
                 const margem = 8;
                 const bw = bubble.offsetWidth || Math.min(318, window.innerWidth - 18);
                 const bh = bubble.offsetHeight || 280;
@@ -11153,10 +11396,15 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         “${escapeBubble27(dados.fraseAula || 'Antes de jogar, observe o que a peça ataca, o que ela protege e qual fraqueza ela pode deixar.') }”
                     </div>
                 `;
+                bubble._teacherBubble27LastAnchorRect = dados.anchorRect || null;
                 bubble.classList.add('open');
                 bubble.style.left = '-9999px';
                 bubble.style.top = '8px';
-                requestAnimationFrame(() => posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect));
+                requestAnimationFrame(() => {
+                    const posSalva = lerPosicaoBubbleProfessorXadrez28();
+                    if (posSalva) aplicarPosicaoBubbleProfessorXadrez28(bubble, posSalva.left, posSalva.top, false);
+                    else posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect);
+                });
             }
 
             function limparMarcacaoBubbleProfessorXadrez27() {
@@ -13836,994 +14084,3 @@ setInterval(() => {
         garantirControlesOnlineNoTabuleiro3612(!chessIsSpectator);
     }
 }, 1000);
-
-/* =====================================================================
-   ✅ PROFISSIONAL 28 — BALÃO DO PROFESSOR ARRASTÁVEL / SEM ATRAPALHAR
-   Mantém o balão aprovado da peça, mas ele não fica preso em cima da peça.
-   Quando abrir, vai para um canto seguro. O professor pode arrastar o
-   quadrinho para onde quiser, e a posição fica salva no aparelho dele.
-   Não aparece para o aluno e não altera Firebase, jogada ou regras.
-===================================================================== */
-(function instalarBalaoProfessorArrastavel28() {
-    if (window.__balaoProfessorArrastavel28Instalado) return;
-    window.__balaoProfessorArrastavel28Instalado = true;
-
-    const STORAGE_KEY = 'tabuleiro_arena_teacher_bubble_pos_28';
-    let arrastando = false;
-    let reposicionando = false;
-    let observerBubble = null;
-    let ultimoAuto = 0;
-
-    function instalarCss28() {
-        if (document.getElementById('teacher-bubble-drag-28-style')) return;
-        const style = document.createElement('style');
-        style.id = 'teacher-bubble-drag-28-style';
-        style.textContent = `
-            #teacher-piece-bubble-27.professor-floating-28 {
-                z-index: 1000005 !important;
-                touch-action: none;
-                max-height: min(72vh, 430px) !important;
-            }
-            #teacher-piece-bubble-27.professor-floating-28::after {
-                display: none !important;
-            }
-            #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27 {
-                cursor: grab;
-                user-select: none;
-                -webkit-user-select: none;
-                position: sticky;
-                top: 0;
-                z-index: 2;
-                background: linear-gradient(180deg, rgba(8,13,28,.99), rgba(8,13,28,.94));
-                border-radius: 12px 12px 0 0;
-                margin: -2px -2px 0 -2px;
-                padding: 8px 8px 7px 8px;
-            }
-            #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27:active {
-                cursor: grabbing;
-            }
-            #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27::after {
-                content: '↔ arraste';
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                height: 22px;
-                padding: 0 7px;
-                border-radius: 999px;
-                border: 1px solid rgba(125,211,252,.25);
-                background: rgba(14,116,144,.18);
-                color: #bae6fd;
-                font-size: .58rem;
-                font-weight: 1000;
-                letter-spacing: .04em;
-                text-transform: uppercase;
-                white-space: nowrap;
-                margin-left: auto;
-            }
-            #teacher-piece-bubble-27.professor-floating-28.bubble-dragging-28 {
-                opacity: .96;
-                box-shadow: 0 20px 58px rgba(0,0,0,.66), 0 0 0 1px rgba(125,211,252,.16), 0 0 26px rgba(56,189,248,.24) !important;
-            }
-            #teacher-piece-bubble-27.professor-floating-28 .bubble-close-27 {
-                cursor: pointer !important;
-            }
-            #teacher-piece-bubble-27.professor-floating-28 .bubble-reset-28 {
-                width: auto;
-                min-width: 30px;
-                height: 28px;
-                border-radius: 10px;
-                border: 1px solid rgba(148,163,184,.25);
-                background: rgba(15,23,42,.86);
-                color: #e5e7eb;
-                font-weight: 1000;
-                cursor: pointer;
-                line-height: 1;
-                padding: 0 7px;
-                margin-right: 4px;
-                font-size: .68rem;
-            }
-            @media (max-width: 520px) {
-                #teacher-piece-bubble-27.professor-floating-28 {
-                    width: min(286px, calc(100vw - 14px)) !important;
-                    max-height: min(64vh, 390px) !important;
-                }
-                #teacher-piece-bubble-27.professor-floating-28 .bubble-head-27::after {
-                    content: '↔';
-                    padding: 0 6px;
-                    font-size: .64rem;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    function parsePos28(raw) {
-        try {
-            const obj = JSON.parse(raw || '{}');
-            const left = Number(obj.left);
-            const top = Number(obj.top);
-            if (Number.isFinite(left) && Number.isFinite(top)) return { left, top };
-        } catch (_) {}
-        return null;
-    }
-
-    function carregarPos28() {
-        try { return parsePos28(localStorage.getItem(STORAGE_KEY)); } catch (_) { return null; }
-    }
-
-    function salvarPos28(left, top) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
-    }
-
-    function apagarPos28() {
-        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-    }
-
-    function clamp28(left, top, el) {
-        const margem = 7;
-        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 14);
-        const h = Math.min(el?.offsetHeight || 320, window.innerHeight - 14);
-        return {
-            left: Math.max(margem, Math.min(Math.round(left), window.innerWidth - w - margem)),
-            top: Math.max(margem, Math.min(Math.round(top), window.innerHeight - h - margem))
-        };
-    }
-
-    function posicaoSegura28(el) {
-        const margem = 8;
-        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 16);
-        const h = Math.min(el?.offsetHeight || 330, window.innerHeight - 16);
-        const board = document.getElementById('chess-board');
-        const rect = board ? board.getBoundingClientRect() : null;
-
-        let left;
-        let top;
-
-        if (rect && rect.width > 40 && rect.height > 40) {
-            const espacoDireita = window.innerWidth - rect.right;
-            const espacoEsquerda = rect.left;
-
-            if (espacoDireita >= w + 12) {
-                left = rect.right + 10;
-                top = rect.top;
-            } else if (espacoEsquerda >= w + 12) {
-                left = rect.left - w - 10;
-                top = rect.top;
-            } else {
-                // Celular ou tela estreita: coloca no canto superior direito.
-                // Se atrapalhar, o professor arrasta para baixo/lado.
-                left = window.innerWidth - w - margem;
-                top = Math.max(margem, Math.min(rect.top - 4, window.innerHeight - h - margem));
-            }
-        } else {
-            left = window.innerWidth - w - margem;
-            top = 76;
-        }
-
-        return clamp28(left, top, el);
-    }
-
-    function aplicarPosicao28(el, usarSalva) {
-        if (!el || !el.classList.contains('open') || arrastando) return;
-        const salva = usarSalva ? carregarPos28() : null;
-        const pos = salva ? clamp28(salva.left, salva.top, el) : posicaoSegura28(el);
-        reposicionando = true;
-        el.classList.add('professor-floating-28');
-        el.style.left = `${pos.left}px`;
-        el.style.top = `${pos.top}px`;
-        el.style.setProperty('--arrow-left', '-9999px');
-        el.style.setProperty('--arrow-top', '-9999px');
-        setTimeout(() => { reposicionando = false; }, 40);
-    }
-
-    function colocarBotaoReset28(el) {
-        const head = el.querySelector('.bubble-head-27');
-        const close = el.querySelector('.bubble-close-27');
-        if (!head || !close || head.querySelector('.bubble-reset-28')) return;
-        const reset = document.createElement('button');
-        reset.type = 'button';
-        reset.className = 'bubble-reset-28';
-        reset.title = 'Voltar o quadro para o canto';
-        reset.textContent = 'Canto';
-        reset.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            apagarPos28();
-            el.dataset.teacherBubbleMoved28 = '0';
-            aplicarPosicao28(el, false);
-        }, true);
-        close.insertAdjacentElement('beforebegin', reset);
-    }
-
-    function ligarArraste28(el) {
-        if (!el || el.dataset.dragProfessor28 === '1') return;
-        el.dataset.dragProfessor28 = '1';
-        el.classList.add('professor-floating-28');
-        colocarBotaoReset28(el);
-
-        const head = el.querySelector('.bubble-head-27');
-        if (!head) return;
-
-        let startX = 0;
-        let startY = 0;
-        let baseLeft = 0;
-        let baseTop = 0;
-        let pointerId = null;
-
-        const iniciar = (ev) => {
-            const alvo = ev.target;
-            if (alvo && alvo.closest && (alvo.closest('.bubble-close-27') || alvo.closest('.bubble-reset-28'))) return;
-            if (ev.button !== undefined && ev.button !== 0) return;
-            const p = ev.touches ? ev.touches[0] : ev;
-            if (!p) return;
-            arrastando = true;
-            pointerId = ev.pointerId ?? null;
-            startX = p.clientX;
-            startY = p.clientY;
-            const rect = el.getBoundingClientRect();
-            baseLeft = rect.left;
-            baseTop = rect.top;
-            el.classList.add('bubble-dragging-28');
-            try { if (ev.pointerId !== undefined && head.setPointerCapture) head.setPointerCapture(ev.pointerId); } catch (_) {}
-            ev.preventDefault();
-            ev.stopPropagation();
-        };
-
-        const mover = (ev) => {
-            if (!arrastando) return;
-            if (pointerId !== null && ev.pointerId !== undefined && ev.pointerId !== pointerId) return;
-            const p = ev.touches ? ev.touches[0] : ev;
-            if (!p) return;
-            const pos = clamp28(baseLeft + (p.clientX - startX), baseTop + (p.clientY - startY), el);
-            el.style.left = `${pos.left}px`;
-            el.style.top = `${pos.top}px`;
-            ev.preventDefault();
-        };
-
-        const terminar = (ev) => {
-            if (!arrastando) return;
-            arrastando = false;
-            pointerId = null;
-            el.classList.remove('bubble-dragging-28');
-            const rect = el.getBoundingClientRect();
-            const pos = clamp28(rect.left, rect.top, el);
-            el.style.left = `${pos.left}px`;
-            el.style.top = `${pos.top}px`;
-            el.dataset.teacherBubbleMoved28 = '1';
-            salvarPos28(pos.left, pos.top);
-            try { if (ev?.pointerId !== undefined && head.releasePointerCapture) head.releasePointerCapture(ev.pointerId); } catch (_) {}
-        };
-
-        head.addEventListener('pointerdown', iniciar, true);
-        window.addEventListener('pointermove', mover, { capture: true, passive: false });
-        window.addEventListener('pointerup', terminar, true);
-        window.addEventListener('pointercancel', terminar, true);
-
-        head.addEventListener('touchstart', iniciar, { capture: true, passive: false });
-        window.addEventListener('touchmove', mover, { capture: true, passive: false });
-        window.addEventListener('touchend', terminar, true);
-        window.addEventListener('touchcancel', terminar, true);
-    }
-
-    function observarBubble28(el) {
-        if (!el || el.dataset.observerProfessor28 === '1') return;
-        el.dataset.observerProfessor28 = '1';
-        ligarArraste28(el);
-        observerBubble = new MutationObserver(() => {
-            if (reposicionando || arrastando) return;
-            if (!el.classList.contains('open')) return;
-            const agora = Date.now();
-            if (agora - ultimoAuto < 45) return;
-            ultimoAuto = agora;
-            setTimeout(() => {
-                if (!el.classList.contains('open') || arrastando) return;
-                aplicarPosicao28(el, !!carregarPos28());
-            }, 30);
-        });
-        observerBubble.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
-    }
-
-    function procurarBubble28() {
-        instalarCss28();
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (!el) return;
-        el.classList.add('professor-floating-28');
-        ligarArraste28(el);
-        observarBubble28(el);
-        if (el.classList.contains('open')) aplicarPosicao28(el, !!carregarPos28());
-    }
-
-    const bodyObserver = new MutationObserver(() => procurarBubble28());
-    if (document.body) bodyObserver.observe(document.body, { childList: true, subtree: true });
-
-    document.addEventListener('DOMContentLoaded', () => setTimeout(procurarBubble28, 300));
-    setTimeout(procurarBubble28, 600);
-    setInterval(procurarBubble28, 1200);
-    window.addEventListener('resize', () => {
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (el && el.classList.contains('open')) aplicarPosicao28(el, !!carregarPos28());
-    });
-})();
-
-/* =====================================================================
-   ✅ PROFISSIONAL 29 — BALÃO DO PROFESSOR FORA DO TABULEIRO + ARRASTE REAL
-   Correção: o balão não fica mais preso em cima da peça. Ele é forçado para
-   um canto seguro e pode ser arrastado pela barra de cima ou pelo botão Mover.
-   Não altera jogada, Firebase, torneios, admin, Damas ou Xadrez.
-===================================================================== */
-(function instalarBalaoProfessorSeguro29() {
-    if (window.__balaoProfessorSeguro29Instalado) return;
-    window.__balaoProfessorSeguro29Instalado = true;
-
-    const STORAGE_KEY = 'tabuleiro_arena_teacher_bubble_pos_29';
-    let dragging = false;
-    let lastApply = 0;
-    let forceTimer = null;
-
-    function css29() {
-        if (document.getElementById('teacher-bubble-safe-29-style')) return;
-        const style = document.createElement('style');
-        style.id = 'teacher-bubble-safe-29-style';
-        style.textContent = `
-            #teacher-piece-bubble-27.teacher-safe-29 {
-                position: fixed !important;
-                z-index: 2147483000 !important;
-                transform: none !important;
-                right: auto !important;
-                bottom: auto !important;
-                margin: 0 !important;
-                width: min(318px, calc(100vw - 14px)) !important;
-                max-height: min(70vh, 430px) !important;
-                overflow: auto !important;
-                touch-action: none !important;
-                will-change: left, top !important;
-            }
-            #teacher-piece-bubble-27.teacher-safe-29::after {
-                display: none !important;
-                opacity: 0 !important;
-            }
-            #teacher-piece-bubble-27.teacher-safe-29 .bubble-head-27 {
-                cursor: move !important;
-                touch-action: none !important;
-                user-select: none !important;
-                -webkit-user-select: none !important;
-                position: sticky !important;
-                top: 0 !important;
-                z-index: 5 !important;
-                background: linear-gradient(180deg, rgba(8,13,28,.99), rgba(8,13,28,.95)) !important;
-                border-radius: 12px 12px 0 0 !important;
-            }
-            #teacher-piece-bubble-27.teacher-safe-29 .teacher-drag-handle-29,
-            #teacher-piece-bubble-27.teacher-safe-29 .teacher-corner-29 {
-                height: 27px !important;
-                border-radius: 10px !important;
-                border: 1px solid rgba(125,211,252,.28) !important;
-                background: rgba(14,116,144,.22) !important;
-                color: #bae6fd !important;
-                font-size: .64rem !important;
-                font-weight: 1000 !important;
-                padding: 0 7px !important;
-                line-height: 1 !important;
-                cursor: move !important;
-                white-space: nowrap !important;
-                margin-left: 4px !important;
-            }
-            #teacher-piece-bubble-27.teacher-safe-29 .teacher-corner-29 {
-                cursor: pointer !important;
-                background: rgba(15,23,42,.86) !important;
-                color: #e5e7eb !important;
-                border-color: rgba(148,163,184,.28) !important;
-            }
-            #teacher-piece-bubble-27.teacher-safe-29.teacher-dragging-29 {
-                opacity: .96 !important;
-                box-shadow: 0 22px 64px rgba(0,0,0,.70), 0 0 0 1px rgba(125,211,252,.20), 0 0 28px rgba(56,189,248,.25) !important;
-            }
-            @media (max-width: 520px) {
-                #teacher-piece-bubble-27.teacher-safe-29 {
-                    width: min(292px, calc(100vw - 12px)) !important;
-                    max-height: min(62vh, 390px) !important;
-                    font-size: .92rem !important;
-                }
-                #teacher-piece-bubble-27.teacher-safe-29 .teacher-drag-handle-29 { font-size: .58rem !important; padding: 0 5px !important; }
-                #teacher-piece-bubble-27.teacher-safe-29 .teacher-corner-29 { font-size: .58rem !important; padding: 0 5px !important; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    function readPos29() {
-        try {
-            const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            const left = Number(raw.left);
-            const top = Number(raw.top);
-            if (Number.isFinite(left) && Number.isFinite(top)) return { left, top };
-        } catch (_) {}
-        return null;
-    }
-
-    function savePos29(left, top) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
-    }
-
-    function clearPos29() {
-        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-    }
-
-    function clamp29(left, top, el) {
-        const m = 6;
-        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 12);
-        const h = Math.min(el?.offsetHeight || 330, window.innerHeight - 12);
-        return {
-            left: Math.max(m, Math.min(Math.round(left), window.innerWidth - w - m)),
-            top: Math.max(m, Math.min(Math.round(top), window.innerHeight - h - m))
-        };
-    }
-
-    function safeCorner29(el) {
-        const m = 8;
-        const w = el?.offsetWidth || Math.min(318, window.innerWidth - 16);
-        const h = Math.min(el?.offsetHeight || 340, window.innerHeight - 16);
-        const board = document.getElementById('chess-board') || document.querySelector('.chess-board, .board, #board');
-        const rect = board ? board.getBoundingClientRect() : null;
-        let left = window.innerWidth - w - m;
-        let top = 76;
-
-        if (rect && rect.width > 80 && rect.height > 80) {
-            const rightSpace = window.innerWidth - rect.right;
-            const leftSpace = rect.left;
-            const belowSpace = window.innerHeight - rect.bottom;
-            const aboveSpace = rect.top;
-
-            if (rightSpace >= w + 12) {
-                left = rect.right + 10;
-                top = rect.top;
-            } else if (leftSpace >= w + 12) {
-                left = rect.left - w - 10;
-                top = rect.top;
-            } else if (belowSpace >= Math.min(h, 210) + 12) {
-                left = Math.min(window.innerWidth - w - m, Math.max(m, rect.left));
-                top = rect.bottom + 10;
-            } else if (aboveSpace >= Math.min(h, 210) + 12) {
-                left = Math.min(window.innerWidth - w - m, Math.max(m, rect.left));
-                top = Math.max(m, rect.top - Math.min(h, 330) - 10);
-            } else {
-                // Tela apertada: abre no canto superior direito para não cobrir a peça tocada.
-                left = window.innerWidth - w - m;
-                top = m + 54;
-            }
-        }
-        return clamp29(left, top, el);
-    }
-
-    function ensureButtons29(el) {
-        const head = el.querySelector('.bubble-head-27');
-        const close = el.querySelector('.bubble-close-27');
-        if (!head || !close) return;
-
-        if (!head.querySelector('.teacher-drag-handle-29')) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'teacher-drag-handle-29';
-            btn.title = 'Segure aqui para mover o quadro';
-            btn.textContent = 'Mover';
-            close.insertAdjacentElement('beforebegin', btn);
-        }
-
-        if (!head.querySelector('.teacher-corner-29')) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'teacher-corner-29';
-            btn.title = 'Voltar para um canto seguro';
-            btn.textContent = 'Canto';
-            btn.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                clearPos29();
-                applyPos29(el, false, true);
-            }, true);
-            close.insertAdjacentElement('beforebegin', btn);
-        }
-    }
-
-    function applyPos29(el, useSaved = true, forceSafe = false) {
-        if (!el || dragging || !el.classList.contains('open')) return;
-        css29();
-        el.classList.add('teacher-safe-29');
-        el.classList.add('professor-floating-28');
-        ensureButtons29(el);
-        const saved = (!forceSafe && useSaved) ? readPos29() : null;
-        const pos = saved ? clamp29(saved.left, saved.top, el) : safeCorner29(el);
-        el.style.setProperty('position', 'fixed', 'important');
-        el.style.setProperty('left', `${pos.left}px`, 'important');
-        el.style.setProperty('top', `${pos.top}px`, 'important');
-        el.style.setProperty('right', 'auto', 'important');
-        el.style.setProperty('bottom', 'auto', 'important');
-        el.style.setProperty('transform', 'none', 'important');
-        el.style.setProperty('--arrow-left', '-9999px');
-        el.style.setProperty('--arrow-top', '-9999px');
-        lastApply = Date.now();
-    }
-
-    function scheduleApply29(useSaved = true) {
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (!el || !el.classList.contains('open')) return;
-        [0, 20, 60, 120, 220, 420].forEach(delay => {
-            setTimeout(() => applyPos29(el, useSaved, false), delay);
-        });
-    }
-
-    function enableDrag29(el) {
-        if (!el || el.dataset.teacherDrag29 === '1') return;
-        el.dataset.teacherDrag29 = '1';
-        css29();
-        el.classList.add('teacher-safe-29');
-        ensureButtons29(el);
-
-        let startX = 0;
-        let startY = 0;
-        let baseLeft = 0;
-        let baseTop = 0;
-        let activePointer = null;
-
-        const isHandle = (target) => {
-            if (!target || !target.closest) return false;
-            if (target.closest('.bubble-close-27') || target.closest('.teacher-corner-29')) return false;
-            return !!(target.closest('.teacher-drag-handle-29') || target.closest('.bubble-head-27'));
-        };
-
-        const begin = (ev) => {
-            if (!isHandle(ev.target)) return;
-            if (ev.button !== undefined && ev.button !== 0) return;
-            const p = ev.touches ? ev.touches[0] : ev;
-            if (!p) return;
-            dragging = true;
-            activePointer = ev.pointerId ?? null;
-            const rect = el.getBoundingClientRect();
-            baseLeft = rect.left;
-            baseTop = rect.top;
-            startX = p.clientX;
-            startY = p.clientY;
-            el.classList.add('teacher-dragging-29');
-            el.classList.add('teacher-safe-29');
-            try { if (ev.pointerId !== undefined && ev.target.setPointerCapture) ev.target.setPointerCapture(ev.pointerId); } catch (_) {}
-            ev.preventDefault();
-            ev.stopPropagation();
-        };
-
-        const move = (ev) => {
-            if (!dragging) return;
-            if (activePointer !== null && ev.pointerId !== undefined && ev.pointerId !== activePointer) return;
-            const p = ev.touches ? ev.touches[0] : ev;
-            if (!p) return;
-            const pos = clamp29(baseLeft + (p.clientX - startX), baseTop + (p.clientY - startY), el);
-            el.style.setProperty('left', `${pos.left}px`, 'important');
-            el.style.setProperty('top', `${pos.top}px`, 'important');
-            el.style.setProperty('right', 'auto', 'important');
-            el.style.setProperty('bottom', 'auto', 'important');
-            el.style.setProperty('transform', 'none', 'important');
-            ev.preventDefault();
-            ev.stopPropagation();
-        };
-
-        const end = (ev) => {
-            if (!dragging) return;
-            dragging = false;
-            activePointer = null;
-            el.classList.remove('teacher-dragging-29');
-            const r = el.getBoundingClientRect();
-            const pos = clamp29(r.left, r.top, el);
-            el.style.setProperty('left', `${pos.left}px`, 'important');
-            el.style.setProperty('top', `${pos.top}px`, 'important');
-            savePos29(pos.left, pos.top);
-            ev?.preventDefault?.();
-            ev?.stopPropagation?.();
-        };
-
-        document.addEventListener('pointerdown', begin, true);
-        document.addEventListener('pointermove', move, { capture: true, passive: false });
-        document.addEventListener('pointerup', end, true);
-        document.addEventListener('pointercancel', end, true);
-        document.addEventListener('touchstart', begin, { capture: true, passive: false });
-        document.addEventListener('touchmove', move, { capture: true, passive: false });
-        document.addEventListener('touchend', end, true);
-        document.addEventListener('touchcancel', end, true);
-    }
-
-    function scan29() {
-        css29();
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (!el) return;
-        enableDrag29(el);
-        if (el.classList.contains('open')) {
-            const now = Date.now();
-            if (!dragging && now - lastApply > 35) applyPos29(el, true, false);
-        }
-    }
-
-    const obs = new MutationObserver(() => {
-        scan29();
-        clearTimeout(forceTimer);
-        forceTimer = setTimeout(() => scheduleApply29(true), 8);
-    });
-    if (document.body) obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
-
-    document.addEventListener('DOMContentLoaded', () => setTimeout(scan29, 200));
-    setTimeout(scan29, 300);
-    setInterval(scan29, 700);
-    window.addEventListener('resize', () => {
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (el && el.classList.contains('open')) applyPos29(el, true, false);
-    });
-})();
-
-
-/* =====================================================================
-   ✅ PROFISSIONAL 30 — BALÃO DO PROFESSOR COM BOTÃO MOVER REAL
-   Correção: o balão não fica preso na frente do tabuleiro. Agora ele
-   abre em canto seguro, tem botão grande "MOVER" e pode ser arrastado
-   pelo mouse ou pelo dedo. A posição fica salva no aparelho do professor.
-   Não altera jogo, Firebase, regras, torneios ou admin.
-===================================================================== */
-(function instalarBalaoProfessorMoverReal30() {
-    if (window.__balaoProfessorMoverReal30Instalado) return;
-    window.__balaoProfessorMoverReal30Instalado = true;
-
-    const STORAGE_30 = 'tabuleiro_arena_teacher_bubble_pos_30';
-    const STORAGE_29 = 'tabuleiro_arena_teacher_bubble_pos_29';
-    let dragging30 = false;
-    let currentEl30 = null;
-    let startX30 = 0;
-    let startY30 = 0;
-    let baseLeft30 = 0;
-    let baseTop30 = 0;
-    let lastOpenApply30 = 0;
-
-    function instalarCss30() {
-        if (document.getElementById('teacher-bubble-mover-real-30-style')) return;
-        const style = document.createElement('style');
-        style.id = 'teacher-bubble-mover-real-30-style';
-        style.textContent = `
-            #teacher-piece-bubble-27.teacher-mover-real-30 {
-                position: fixed !important;
-                z-index: 2147483600 !important;
-                transform: none !important;
-                right: auto !important;
-                bottom: auto !important;
-                margin: 0 !important;
-                width: min(330px, calc(100vw - 12px)) !important;
-                max-height: min(68vh, 440px) !important;
-                overflow: auto !important;
-                pointer-events: auto !important;
-                touch-action: none !important;
-                will-change: left, top !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30::after {
-                display: none !important;
-                opacity: 0 !important;
-                visibility: hidden !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30 .bubble-head-27 {
-                cursor: grab !important;
-                touch-action: none !important;
-                user-select: none !important;
-                -webkit-user-select: none !important;
-                position: sticky !important;
-                top: 0 !important;
-                z-index: 20 !important;
-                background: linear-gradient(180deg, rgba(5, 12, 28, .99), rgba(5, 12, 28, .96)) !important;
-                border-radius: 12px 12px 0 0 !important;
-                gap: 6px !important;
-                align-items: center !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30.teacher-dragging-30 .bubble-head-27 {
-                cursor: grabbing !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30 .teacher-move-30 {
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                min-width: 76px !important;
-                height: 31px !important;
-                padding: 0 9px !important;
-                border-radius: 11px !important;
-                border: 1px solid rgba(34, 211, 238, .55) !important;
-                background: linear-gradient(135deg, rgba(14, 165, 233, .90), rgba(6, 182, 212, .90)) !important;
-                color: #ecfeff !important;
-                font-size: .68rem !important;
-                font-weight: 1000 !important;
-                cursor: grab !important;
-                box-shadow: 0 0 12px rgba(34, 211, 238, .18) !important;
-                white-space: nowrap !important;
-                margin-left: auto !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30 .teacher-corner-30 {
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                height: 31px !important;
-                padding: 0 8px !important;
-                border-radius: 11px !important;
-                border: 1px solid rgba(148, 163, 184, .32) !important;
-                background: rgba(15, 23, 42, .92) !important;
-                color: #e2e8f0 !important;
-                font-size: .66rem !important;
-                font-weight: 1000 !important;
-                cursor: pointer !important;
-                white-space: nowrap !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30 .bubble-close-27 {
-                height: 31px !important;
-                width: 31px !important;
-                min-width: 31px !important;
-                border-radius: 11px !important;
-            }
-            #teacher-piece-bubble-27.teacher-mover-real-30.teacher-dragging-30 {
-                opacity: .96 !important;
-                box-shadow: 0 22px 68px rgba(0,0,0,.72), 0 0 0 2px rgba(34,211,238,.34), 0 0 26px rgba(34,211,238,.22) !important;
-            }
-            @media (max-width: 520px) {
-                #teacher-piece-bubble-27.teacher-mover-real-30 {
-                    width: min(302px, calc(100vw - 10px)) !important;
-                    max-height: min(62vh, 395px) !important;
-                }
-                #teacher-piece-bubble-27.teacher-mover-real-30 .teacher-move-30 {
-                    min-width: 66px !important;
-                    height: 29px !important;
-                    font-size: .61rem !important;
-                    padding: 0 7px !important;
-                }
-                #teacher-piece-bubble-27.teacher-mover-real-30 .teacher-corner-30 {
-                    height: 29px !important;
-                    font-size: .60rem !important;
-                    padding: 0 6px !important;
-                }
-                #teacher-piece-bubble-27.teacher-mover-real-30 .bubble-symbol-27 {
-                    width: 30px !important;
-                    height: 30px !important;
-                    min-width: 30px !important;
-                    font-size: 1.25rem !important;
-                }
-                #teacher-piece-bubble-27.teacher-mover-real-30 .bubble-title-27 { font-size: .82rem !important; }
-                #teacher-piece-bubble-27.teacher-mover-real-30 .bubble-sub-27 { font-size: .61rem !important; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    function lerPos30() {
-        try {
-            const raw = JSON.parse(localStorage.getItem(STORAGE_30) || localStorage.getItem(STORAGE_29) || '{}');
-            const left = Number(raw.left);
-            const top = Number(raw.top);
-            if (Number.isFinite(left) && Number.isFinite(top)) return { left, top };
-        } catch (_) {}
-        return null;
-    }
-
-    function salvarPos30(left, top) {
-        const pos = { left: Math.round(left), top: Math.round(top) };
-        try { localStorage.setItem(STORAGE_30, JSON.stringify(pos)); } catch (_) {}
-        try { localStorage.setItem(STORAGE_29, JSON.stringify(pos)); } catch (_) {}
-    }
-
-    function limparPos30() {
-        try { localStorage.removeItem(STORAGE_30); } catch (_) {}
-        try { localStorage.removeItem(STORAGE_29); } catch (_) {}
-    }
-
-    function clamp30(left, top, el) {
-        const m = 6;
-        const w = el?.offsetWidth || Math.min(330, window.innerWidth - 12);
-        const h = Math.min(el?.offsetHeight || 360, window.innerHeight - 12);
-        return {
-            left: Math.max(m, Math.min(Math.round(left), window.innerWidth - w - m)),
-            top: Math.max(m, Math.min(Math.round(top), window.innerHeight - h - m))
-        };
-    }
-
-    function acharTabuleiro30() {
-        return document.getElementById('chess-board')
-            || document.querySelector('.chess-board')
-            || document.querySelector('#board')
-            || document.querySelector('.board')
-            || document.querySelector('.damas-board')
-            || document.querySelector('#checkers-board');
-    }
-
-    function posicaoSegura30(el) {
-        const m = 8;
-        const w = el?.offsetWidth || Math.min(330, window.innerWidth - 16);
-        const h = Math.min(el?.offsetHeight || 360, window.innerHeight - 16);
-        const board = acharTabuleiro30();
-        const rect = board ? board.getBoundingClientRect() : null;
-        let left = window.innerWidth - w - m;
-        let top = 72;
-
-        if (rect && rect.width > 100 && rect.height > 100) {
-            const rightSpace = window.innerWidth - rect.right;
-            const leftSpace = rect.left;
-            const belowSpace = window.innerHeight - rect.bottom;
-            const aboveSpace = rect.top;
-
-            if (rightSpace >= w + 14) {
-                left = rect.right + 10;
-                top = rect.top;
-            } else if (leftSpace >= w + 14) {
-                left = rect.left - w - 10;
-                top = rect.top;
-            } else if (belowSpace >= Math.min(h, 230) + 14) {
-                left = Math.min(window.innerWidth - w - m, Math.max(m, rect.left));
-                top = rect.bottom + 10;
-            } else if (aboveSpace >= Math.min(h, 230) + 14) {
-                left = Math.min(window.innerWidth - w - m, Math.max(m, rect.left));
-                top = Math.max(m, rect.top - Math.min(h, 360) - 10);
-            } else {
-                // Tela apertada: abre no canto direito superior, e o professor pode arrastar.
-                left = window.innerWidth - w - m;
-                top = m + 56;
-            }
-        }
-        return clamp30(left, top, el);
-    }
-
-    function inserirBotoes30(el) {
-        const head = el?.querySelector?.('.bubble-head-27');
-        const close = el?.querySelector?.('.bubble-close-27');
-        if (!head || !close) return;
-
-        if (!head.querySelector('.teacher-move-30')) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'teacher-move-30';
-            btn.title = 'Segure aqui e arraste o balão para liberar o tabuleiro';
-            btn.textContent = '☰ MOVER';
-            close.insertAdjacentElement('beforebegin', btn);
-        }
-        if (!head.querySelector('.teacher-corner-30')) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'teacher-corner-30';
-            btn.title = 'Voltar para um canto seguro';
-            btn.textContent = 'CANTO';
-            btn.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                limparPos30();
-                aplicarPos30(el, false, true);
-            }, true);
-            close.insertAdjacentElement('beforebegin', btn);
-        }
-    }
-
-    function aplicarPos30(el, usarSalva = true, forcarCanto = false) {
-        if (!el || !el.classList.contains('open') || dragging30) return;
-        instalarCss30();
-        el.classList.add('teacher-mover-real-30', 'teacher-safe-29', 'professor-floating-28');
-        inserirBotoes30(el);
-        const salva = (!forcarCanto && usarSalva) ? lerPos30() : null;
-        const pos = salva ? clamp30(salva.left, salva.top, el) : posicaoSegura30(el);
-        el.style.setProperty('position', 'fixed', 'important');
-        el.style.setProperty('left', `${pos.left}px`, 'important');
-        el.style.setProperty('top', `${pos.top}px`, 'important');
-        el.style.setProperty('right', 'auto', 'important');
-        el.style.setProperty('bottom', 'auto', 'important');
-        el.style.setProperty('transform', 'none', 'important');
-        el.style.setProperty('--arrow-left', '-9999px');
-        el.style.setProperty('--arrow-top', '-9999px');
-        salvarPos30(pos.left, pos.top);
-        lastOpenApply30 = Date.now();
-    }
-
-    function prepararBalao30(el) {
-        if (!el) return;
-        instalarCss30();
-        el.classList.add('teacher-mover-real-30', 'teacher-safe-29', 'professor-floating-28');
-        inserirBotoes30(el);
-        ativarArraste30(el);
-    }
-
-    function alvoArraste30(target) {
-        if (!target || !target.closest) return false;
-        if (target.closest('.bubble-close-27') || target.closest('.teacher-corner-30') || target.closest('.teacher-corner-29')) return false;
-        return !!(target.closest('.teacher-move-30') || target.closest('.bubble-head-27'));
-    }
-
-    function comecarArraste30(ev, el) {
-        if (!alvoArraste30(ev.target)) return;
-        if (ev.button !== undefined && ev.button !== 0) return;
-        const p = ev.touches ? ev.touches[0] : ev;
-        if (!p) return;
-        currentEl30 = el;
-        dragging30 = true;
-        const rect = el.getBoundingClientRect();
-        baseLeft30 = rect.left;
-        baseTop30 = rect.top;
-        startX30 = p.clientX;
-        startY30 = p.clientY;
-        el.classList.add('teacher-dragging-30', 'teacher-mover-real-30');
-        try { if (ev.pointerId !== undefined && ev.target.setPointerCapture) ev.target.setPointerCapture(ev.pointerId); } catch (_) {}
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-
-    function moverArraste30(ev) {
-        if (!dragging30 || !currentEl30) return;
-        const p = ev.touches ? ev.touches[0] : ev;
-        if (!p) return;
-        const pos = clamp30(baseLeft30 + (p.clientX - startX30), baseTop30 + (p.clientY - startY30), currentEl30);
-        currentEl30.style.setProperty('position', 'fixed', 'important');
-        currentEl30.style.setProperty('left', `${pos.left}px`, 'important');
-        currentEl30.style.setProperty('top', `${pos.top}px`, 'important');
-        currentEl30.style.setProperty('right', 'auto', 'important');
-        currentEl30.style.setProperty('bottom', 'auto', 'important');
-        currentEl30.style.setProperty('transform', 'none', 'important');
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-
-    function terminarArraste30(ev) {
-        if (!dragging30 || !currentEl30) return;
-        const el = currentEl30;
-        dragging30 = false;
-        currentEl30 = null;
-        el.classList.remove('teacher-dragging-30');
-        const rect = el.getBoundingClientRect();
-        const pos = clamp30(rect.left, rect.top, el);
-        el.style.setProperty('left', `${pos.left}px`, 'important');
-        el.style.setProperty('top', `${pos.top}px`, 'important');
-        salvarPos30(pos.left, pos.top);
-        ev?.preventDefault?.();
-        ev?.stopPropagation?.();
-    }
-
-    function ativarArraste30(el) {
-        if (!el || el.dataset.teacherDrag30 === '1') return;
-        el.dataset.teacherDrag30 = '1';
-        ['pointerdown', 'mousedown', 'touchstart'].forEach(evt => {
-            el.addEventListener(evt, (ev) => comecarArraste30(ev, el), { capture: true, passive: false });
-        });
-    }
-
-    document.addEventListener('pointermove', moverArraste30, { capture: true, passive: false });
-    document.addEventListener('mousemove', moverArraste30, { capture: true, passive: false });
-    document.addEventListener('touchmove', moverArraste30, { capture: true, passive: false });
-    document.addEventListener('pointerup', terminarArraste30, true);
-    document.addEventListener('mouseup', terminarArraste30, true);
-    document.addEventListener('touchend', terminarArraste30, true);
-    document.addEventListener('pointercancel', terminarArraste30, true);
-    document.addEventListener('touchcancel', terminarArraste30, true);
-
-    function reforcar30(forcarCanto = false) {
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (!el) return;
-        prepararBalao30(el);
-        if (el.classList.contains('open')) aplicarPos30(el, true, forcarCanto);
-    }
-
-    // Quando o balão abrir, reposiciona de verdade e injeta os botões.
-    const originalAbrir27 = window.abrirBubbleProfessorXadrez27;
-    if (typeof originalAbrir27 === 'function') {
-        window.abrirBubbleProfessorXadrez27 = function abrirBubbleProfessorXadrez27MoverReal30(dados) {
-            const retorno = originalAbrir27.apply(this, arguments);
-            [0, 16, 60, 140, 280, 520].forEach(delay => {
-                setTimeout(() => reforcar30(false), delay);
-            });
-            return retorno;
-        };
-    }
-
-    const obs = new MutationObserver(() => {
-        const el = document.getElementById('teacher-piece-bubble-27');
-        if (!el) return;
-        prepararBalao30(el);
-        if (el.classList.contains('open') && !dragging30 && Date.now() - lastOpenApply30 > 60) {
-            setTimeout(() => reforcar30(false), 20);
-        }
-    });
-    if (document.body) obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
-
-    document.addEventListener('DOMContentLoaded', () => setTimeout(() => reforcar30(false), 300));
-    setTimeout(() => reforcar30(false), 300);
-    setInterval(() => reforcar30(false), 900);
-    window.addEventListener('resize', () => reforcar30(false));
-})();

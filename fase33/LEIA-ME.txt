@@ -13,3 +13,8 @@ Estado atual:
 
 Regra de segurança:
 Toda melhoria deve ser testada primeiro em /fase33/ antes de ir para o site principal.
+
+
+ATUALIZAÇÃO PROFISSIONAL 28
+- Balão privado do professor agora é arrastável, tem setas de movimento e salva posição.
+- Testar primeiro na /fase33/.
