@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
-    <link rel="stylesheet" href="css/style.css?v=prof53">
-    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof53">
+    <link rel="stylesheet" href="css/style.css?v=prof54">
+    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof54">
+    <link rel="manifest" href="manifest.json?v=prof54">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
 </head>
 <body class="platform-start-active mode-selecting">
 
@@ -47,6 +51,10 @@
                 <div class="game-mode-name">Painel Admin</div>
                 <div class="game-mode-copy">Entre como administrador para controlar Damas e Xadrez.</div>
             </div>
+        </div>
+        <div id="browser-install-panel" class="browser-install-panel">
+            <div class="browser-install-copy">📲 Instale o Tabuleiro Arena pelo navegador, sem APK e sem loja.</div>
+            <button id="browser-install-main-btn" class="btn-browser-install" type="button">Baixar jogo pelo navegador</button>
         </div>
         <div id="admin-login-panel" class="admin-login-panel central-hidden">
             <div class="admin-login-title">🛡️ Entrada do Administrador</div>
@@ -187,7 +195,7 @@
 
             <button id="rules-btn-lobby" class="btn-info" disabled>Regras Oficiais Detalhadas</button>
             <button id="rank-btn-lobby" class="btn-ranking" disabled>Ver Rankings</button>
-            <button id="download-btn-lobby" class="btn-download">Baixar Aplicativo (Android)</button>
+            <button id="download-btn-lobby" class="btn-download btn-browser-install" type="button">📲 Baixar jogo pelo navegador</button>
         </div>
 
         <div class="tournament-lobby-panel">
@@ -483,12 +491,12 @@
     </div>
 </div>
 
-<script src="js/config.js?v=prof53"></script>
-<script src="js/utils.js?v=prof53"></script>
-<script src="js/ui.js?v=prof53"></script>
-<script src="js/chat-ui.js?v=prof53"></script>
-<script type="module" src="js/app.js?v=prof53"></script>
-<script src="js/fase40-controles-recolhidos.js?v=prof53"></script>
+<script src="js/config.js?v=prof54"></script>
+<script src="js/utils.js?v=prof54"></script>
+<script src="js/ui.js?v=prof54"></script>
+<script src="js/chat-ui.js?v=prof54"></script>
+<script type="module" src="js/app.js?v=prof54"></script>
+<script src="js/fase40-controles-recolhidos.js?v=prof54"></script>
 
 
 <!--

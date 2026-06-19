@@ -934,7 +934,100 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
     async function networkPracticeLeaderboard() { rankModal.style.display = 'flex'; await Promise.all([loadLeaderboard(), loadPracticeLeaderboard()]); }
     closePracticeRankBtn.addEventListener('click', () => practiceRankModal.style.display = 'none');
 
-    downloadBtnLobby.addEventListener('click', () => { window.location.href = 'jogo.apk'; });
+    
+    // ✅ PROFISSIONAL 54 — BAIXAR JOGO PELO NAVEGADOR (PWA)
+    // Não usa APK. Usa o botão de instalação do próprio navegador quando disponível.
+    let tabuleiroArenaInstallPrompt = null;
+
+    function appEstaInstaladoNoNavegador() {
+        try {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function atualizarBotoesInstalarNavegador() {
+        try {
+            document.querySelectorAll('.btn-browser-install, #download-btn-lobby, #browser-install-main-btn, #chess-browser-install-btn').forEach(btn => {
+                if (!btn) return;
+                if (appEstaInstaladoNoNavegador()) {
+                    btn.textContent = '✅ Jogo instalado';
+                    btn.title = 'O Tabuleiro Arena já está instalado neste aparelho.';
+                } else {
+                    btn.textContent = '📲 Baixar jogo pelo navegador';
+                    btn.title = 'Instalar o jogo na tela inicial pelo navegador.';
+                }
+            });
+        } catch (_) {}
+    }
+
+    window.addEventListener('beforeinstallprompt', (ev) => {
+        try {
+            ev.preventDefault();
+            tabuleiroArenaInstallPrompt = ev;
+            atualizarBotoesInstalarNavegador();
+        } catch (_) {}
+    });
+
+    window.addEventListener('appinstalled', () => {
+        tabuleiroArenaInstallPrompt = null;
+        atualizarBotoesInstalarNavegador();
+        try { localStorage.setItem('tabuleiro_arena_app_instalado', 'sim'); } catch (_) {}
+        exibirAlertaDoSistema('Jogo instalado ✅', 'O Tabuleiro Arena foi instalado pelo navegador. Agora você pode abrir pela tela inicial do aparelho.');
+    });
+
+    async function baixarJogoPeloNavegador() {
+        if (appEstaInstaladoNoNavegador()) {
+            exibirAlertaDoSistema('Jogo já instalado ✅', 'O Tabuleiro Arena já está rodando em modo aplicativo neste aparelho.');
+            return;
+        }
+
+        if (tabuleiroArenaInstallPrompt) {
+            try {
+                tabuleiroArenaInstallPrompt.prompt();
+                const escolha = await tabuleiroArenaInstallPrompt.userChoice;
+                tabuleiroArenaInstallPrompt = null;
+                atualizarBotoesInstalarNavegador();
+                if (escolha && escolha.outcome === 'accepted') {
+                    exibirAlertaDoSistema('Instalação iniciada ✅', 'O navegador aceitou instalar o Tabuleiro Arena. Procure o ícone na tela inicial do aparelho.');
+                } else {
+                    exibirAlertaDoSistema('Instalação cancelada', 'Você pode tentar novamente pelo botão <strong>Baixar jogo pelo navegador</strong>.');
+                }
+                return;
+            } catch (e) {
+                console.warn('Prompt de instalação indisponível:', e);
+            }
+        }
+
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+        const isAndroid = /android/i.test(navigator.userAgent || '');
+        const mensagem = isIOS
+            ? 'No iPhone/iPad: abra no Safari, toque no botão <strong>Compartilhar</strong> e escolha <strong>Adicionar à Tela de Início</strong>.'
+            : isAndroid
+                ? 'No Android/Chrome: toque nos <strong>três pontinhos</strong> do navegador e escolha <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.'
+                : 'No computador: procure o ícone de instalação na barra de endereço do navegador ou abra o menu do navegador e escolha <strong>Instalar Tabuleiro Arena</strong>.';
+        exibirAlertaDoSistema('Baixar pelo navegador 📲', mensagem + '<br><br>Isso não baixa APK: instala o jogo pelo próprio navegador, como aplicativo.');
+    }
+
+    if (downloadBtnLobby) downloadBtnLobby.addEventListener('click', baixarJogoPeloNavegador);
+    document.addEventListener('click', (ev) => {
+        const btn = ev.target && ev.target.closest && ev.target.closest('#browser-install-main-btn, #chess-browser-install-btn, .btn-browser-install');
+        if (!btn) return;
+        ev.preventDefault();
+        baixarJogoPeloNavegador();
+    });
+
+    try {
+        if ('serviceWorker' in navigator && window.isSecureContext) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js?v=prof54').catch(err => console.warn('Service Worker não registrado:', err));
+            });
+        }
+    } catch (_) {}
+
+    atualizarBotoesInstalarNavegador();
+
 
     async function carregarPodiumLobby() {
         try {
