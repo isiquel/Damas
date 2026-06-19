@@ -13382,7 +13382,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
             function instalarGuiaDiretaRoboProfessorXadrez33(bubble) {
                 instalarCssGuiaDiretaRoboProfessorXadrez33();
-                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                removerPainelFlutuanteGuiaDiretaXadrez50?.();
                 if (!bubble || bubble.querySelector('.bubble-direct-tools-33')) {
                     atualizarBotoesGuiaDiretaXadrez33();
                     return;
@@ -13423,46 +13423,19 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 atualizarBotoesGuiaDiretaXadrez33();
             }
 
-            function garantirPainelFlutuanteGuiaDiretaXadrez33() {
-                instalarCssGuiaDiretaRoboProfessorXadrez33();
-                let panel = document.getElementById('teacher-direct-guide-33');
-                if (panel) return panel;
-                panel = document.createElement('div');
-                panel.id = 'teacher-direct-guide-33';
-                panel.innerHTML = `
-                    <div class="direct-head-33"><span>🎓 Robô professor</span><span data-direct33-mini-state>OFF</span></div>
-                    <div class="direct-actions-33">
-                        <button type="button" data-direct33-mini="window">Janelinha ON</button>
-                        <button type="button" data-direct33-mini="colors">Robô cores OFF</button>
-                        <button type="button" data-direct33-mini="refresh">Atualizar cores</button>
-                        <button type="button" data-direct33-mini="bubble">Abrir balão</button>
-                        <button type="button" data-direct33-mini="clear">Limpar</button>
-                    </div>
-                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Para aparecer no tabuleiro: toque em Robô cores ON. Amarelo pisca na peça certa, verde pisca na casa boa e vermelho marca perigo.</div>
-                `;
-                document.body.appendChild(panel);
-                panel.querySelectorAll('[data-direct33-mini]').forEach(btn => {
-                    btn.addEventListener('click', ev => {
-                        const acao = btn.getAttribute('data-direct33-mini');
-                        if (acao === 'bubble') abrirBalaoPeloPainelGuiaDiretaXadrez33();
-                        if (acao === 'window' || acao === 'mode') {
-                            const janelinhaLigada = lerModoToqueGuiaDiretaXadrez33() === 'direct';
-                            definirJanelinhaProfessorXadrez34(janelinhaLigada);
-                        }
-                        if (acao === 'colors' || acao === 'auto') {
-                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
-                        }
-                        if (acao === 'refresh') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
-                        if (acao === 'clear') {
-                            limparGuiaDiretaProfessorXadrez33();
-                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas.');
-                        }
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                    });
+            function removerPainelFlutuanteGuiaDiretaXadrez50() {
+                // Profissional 50: o painel flutuante lateral foi removido de verdade.
+                // Os controles ficam somente dentro da aba Professor Inteligente.
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+                document.querySelectorAll('#teacher-direct-guide-33, .teacher-direct-guide-33').forEach(el => {
+                    try { el.remove(); } catch (_) {}
                 });
-                atualizarPainelFlutuanteGuiaDiretaXadrez33();
-                return panel;
+            }
+
+            function garantirPainelFlutuanteGuiaDiretaXadrez33() {
+                removerPainelFlutuanteGuiaDiretaXadrez50();
+                return null;
             }
 
             function abrirBalaoPeloPainelGuiaDiretaXadrez33() {
@@ -13512,15 +13485,14 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
             function atualizarPainelFlutuanteGuiaDiretaXadrez33(mostrar = false) {
-                const panel = garantirPainelFlutuanteGuiaDiretaXadrez33();
-                const modo = lerModoToqueGuiaDiretaXadrez33();
+                // Profissional 50: não existe mais painel flutuante lateral.
+                // A função continua existindo para não quebrar código antigo, mas só atualiza
+                // os botões do menu inferior e o robô por cores.
+                removerPainelFlutuanteGuiaDiretaXadrez50();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
                 const pode = !!(professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19());
-                const deveMostrar35 = pode && (mostrar || modo === 'direct' || autoLigado || chessProfessorPrivadoAtivo);
-                panel.classList.toggle('visible-33', deveMostrar35);
-                panel.classList.toggle('teacher-guide-strong-35', deveMostrar35);
                 atualizarBotoesGuiaDiretaXadrez33();
-                if (deveMostrar35 && autoLigado && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                if (pode && autoLigado && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
                     clearTimeout(window.__teacherGuideProf39RefreshTimer);
                     window.__teacherGuideProf39RefreshTimer = setTimeout(() => {
                         try { agendarGuiaDiretaProfessorXadrez33(false, 'auto39'); } catch (_) {}
@@ -13543,7 +13515,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
                     }
                 } catch (_) {}
-                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                removerPainelFlutuanteGuiaDiretaXadrez50?.();
                 atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
                 // Profissional 39: não recalcular pesado em todo render; o cálculo fica por mudança real de vez/tabuleiro.
                 return true;
@@ -19018,4 +18990,85 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(fecharEEsconderPainel49, 0);
         setTimeout(fecharEEsconderPainel49, 120);
     }, false);
+})();
+
+
+/*
+============================================================
+✅ PROFISSIONAL 50 — REMOVE DE VERDADE O QUADRINHO FLUTUANTE
+============================================================
+- O quadrinho lateral #teacher-direct-guide-33 foi removido da lógica principal.
+- O robô continua controlado apenas pela aba Professor Inteligente embaixo.
+- Este bloco é uma trava final contra cache/código antigo tentando recriar o painel.
+============================================================
+*/
+(function removerQuadrinhoFlutuanteProfessor50Final() {
+    if (window.__prof50SemQuadrinhoFlutuanteFinal) return;
+    window.__prof50SemQuadrinhoFlutuanteFinal = true;
+
+    function css50() {
+        if (document.getElementById('prof50-sem-quadrinho-flutuante-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof50-sem-quadrinho-flutuante-css';
+        style.textContent = `
+            #teacher-direct-guide-33,
+            #teacher-direct-guide-33.visible-33,
+            #teacher-direct-guide-33.teacher-guide-strong-35,
+            #teacher-direct-guide-33.prof48-open,
+            #teacher-direct-guide-33.prof47-panel,
+            #teacher-direct-guide-33.prof46-panel,
+            .teacher-direct-guide-33 {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                left: -999999px !important;
+                top: -999999px !important;
+                width: 0 !important;
+                height: 0 !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
+                max-width: 0 !important;
+                max-height: 0 !important;
+                overflow: hidden !important;
+                z-index: -999999 !important;
+            }
+            [data-prof48-panel-toggle],
+            [data-prof47-panel-toggle],
+            [data-prof46-panel-open] {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function remover50() {
+        css50();
+        document.querySelectorAll('#teacher-direct-guide-33, .teacher-direct-guide-33').forEach(el => {
+            try { el.remove(); } catch (_) {
+                try {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                    el.style.setProperty('pointer-events', 'none', 'important');
+                } catch (__){ }
+            }
+        });
+    }
+
+    window.removerQuadrinhoFlutuanteProfessor50 = remover50;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', remover50);
+    } else {
+        remover50();
+    }
+
+    // Rodadas curtas e leves só para vencer scripts antigos durante a abertura da página.
+    [0, 50, 120, 300, 700, 1200, 2200].forEach(ms => setTimeout(remover50, ms));
+
+    document.addEventListener('click', function () {
+        setTimeout(remover50, 0);
+        setTimeout(remover50, 80);
+    }, true);
 })();
