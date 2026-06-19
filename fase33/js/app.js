@@ -17494,11 +17494,423 @@ Compartilhe com os amigos e entre no horário marcado.`;
             prof44CssSeguro();
         }
 
+
         instalarRoboCoresSomenteVisualProfessor44();
 
+        /* =====================================================================
+           ✅ PROFISSIONAL 46 — PAINEL DO ROBÔ MINIMIZAR / MAXIMIZAR / FECHAR
+           Correção do teste mostrado pelo professor:
+           - o painel flutuante do Robô Professor ficava aberto e atrapalhava o tabuleiro;
+           - agora ele pode ser arrastado, minimizado, maximizado e fechado;
+           - o menu fixo "Professor Inteligente" continua funcionando embaixo;
+           - fechar o painel flutuante não desliga o robô de cores nem a janelinha.
+        ===================================================================== */
+        function instalarPainelRoboProfessorXadrez46() {
+            if (window.__prof46PainelRoboProfessorInstalado) return;
+            window.__prof46PainelRoboProfessorInstalado = true;
 
+            const PROF46_CLOSED_KEY = 'tabuleiro_arena_prof46_painel_robo_fechado';
+            const PROF46_MODE_KEY = 'tabuleiro_arena_prof46_painel_robo_modo';
+            const PROF46_POS_KEY = 'tabuleiro_arena_prof46_painel_robo_pos';
+            let dragging46 = false;
+            let startX46 = 0;
+            let startY46 = 0;
+            let startLeft46 = 0;
+            let startTop46 = 0;
+
+            function prof46Css() {
+                if (document.getElementById('teacher-prof46-panel-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof46-panel-style';
+                style.textContent = `
+                    #teacher-direct-guide-33.prof46-panel {
+                        touch-action: auto !important;
+                        user-select: none !important;
+                        -webkit-user-select: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-panel .direct-head-33 {
+                        cursor: grab !important;
+                        touch-action: none !important;
+                        user-select: none !important;
+                        -webkit-user-select: none !important;
+                        gap: 6px !important;
+                    }
+                    #teacher-direct-guide-33.prof46-dragging .direct-head-33 {
+                        cursor: grabbing !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-title {
+                        min-width: 0 !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        white-space: nowrap !important;
+                        flex: 1 1 auto !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-tools {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 4px !important;
+                        flex: 0 0 auto !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-tools button {
+                        width: 25px !important;
+                        height: 25px !important;
+                        min-width: 25px !important;
+                        padding: 0 !important;
+                        border-radius: 9px !important;
+                        background: rgba(15,23,42,.94) !important;
+                        border: 1px solid rgba(250,204,21,.42) !important;
+                        color: #fef3c7 !important;
+                        font-size: .75rem !important;
+                        line-height: 1 !important;
+                        box-shadow: none !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-tools button:hover,
+                    #teacher-direct-guide-33 .prof46-head-tools button:focus {
+                        background: rgba(37,99,235,.92) !important;
+                        color: #fff !important;
+                        transform: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-minimized {
+                        width: min(220px, calc(100vw - 14px)) !important;
+                        padding: 7px !important;
+                        border-radius: 13px !important;
+                        opacity: .97 !important;
+                    }
+                    #teacher-direct-guide-33.prof46-minimized .direct-actions-33,
+                    #teacher-direct-guide-33.prof46-minimized .direct-status-33,
+                    #teacher-direct-guide-33.prof46-minimized .prof42-mini,
+                    #teacher-direct-guide-33.prof46-minimized .prof44-safe-note {
+                        display: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-maximized {
+                        width: min(420px, calc(100vw - 14px)) !important;
+                        max-height: calc(100vh - 14px) !important;
+                        overflow: auto !important;
+                    }
+                    #teacher-direct-guide-33.prof46-closed {
+                        display: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-manual-pos {
+                        right: auto !important;
+                        bottom: auto !important;
+                    }
+                    #teacher-prof37-controls button[data-prof46-panel-open],
+                    #teacher-prof36-controls button[data-prof46-panel-open] {
+                        background: linear-gradient(90deg, rgba(14,116,144,.96), rgba(37,99,235,.90)) !important;
+                        color: #e0f2fe !important;
+                        border-color: rgba(56,189,248,.52) !important;
+                    }
+                    @media(max-width:560px){
+                        #teacher-direct-guide-33.prof46-panel {
+                            width: min(252px, calc(100vw - 10px)) !important;
+                            max-height: calc(100vh - 10px) !important;
+                            overflow: auto !important;
+                        }
+                        #teacher-direct-guide-33.prof46-minimized {
+                            width: min(190px, calc(100vw - 10px)) !important;
+                        }
+                        #teacher-direct-guide-33.prof46-maximized {
+                            width: min(330px, calc(100vw - 10px)) !important;
+                        }
+                        #teacher-direct-guide-33 .prof46-head-tools button {
+                            width: 24px !important;
+                            height: 24px !important;
+                            min-width: 24px !important;
+                            font-size: .70rem !important;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function prof46Viewport() {
+                const vv = window.visualViewport;
+                return {
+                    width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360),
+                    height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640)
+                };
+            }
+
+            function prof46Clamp(v, min, max) {
+                if (!Number.isFinite(v)) return min;
+                if (max < min) return min;
+                return Math.max(min, Math.min(max, v));
+            }
+
+            function prof46IsClosed() {
+                try { return localStorage.getItem(PROF46_CLOSED_KEY) === '1'; } catch (_) { return false; }
+            }
+
+            function prof46SetClosed(value) {
+                try { localStorage.setItem(PROF46_CLOSED_KEY, value ? '1' : '0'); } catch (_) {}
+            }
+
+            function prof46Mode() {
+                try { return localStorage.getItem(PROF46_MODE_KEY) || 'normal'; } catch (_) { return 'normal'; }
+            }
+
+            function prof46SetMode(mode) {
+                try { localStorage.setItem(PROF46_MODE_KEY, mode || 'normal'); } catch (_) {}
+            }
+
+            function prof46SavePos(left, top) {
+                try { localStorage.setItem(PROF46_POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+            }
+
+            function prof46ReadPos() {
+                try { return JSON.parse(localStorage.getItem(PROF46_POS_KEY) || 'null'); } catch (_) { return null; }
+            }
+
+            function prof46ApplyPos(panel, left, top, save) {
+                if (!panel) return;
+                const vp = prof46Viewport();
+                const rect = panel.getBoundingClientRect();
+                const w = Math.max(140, Math.min(rect.width || 250, vp.width - 8));
+                const h = Math.max(42, Math.min(rect.height || 120, vp.height - 8));
+                const margin = 5;
+                const safeLeft = prof46Clamp(left, margin, Math.max(margin, vp.width - w - margin));
+                const safeTop = prof46Clamp(top, margin, Math.max(margin, vp.height - h - margin));
+                panel.classList.add('prof46-manual-pos');
+                panel.style.setProperty('position', 'fixed', 'important');
+                panel.style.setProperty('left', Math.round(safeLeft) + 'px', 'important');
+                panel.style.setProperty('top', Math.round(safeTop) + 'px', 'important');
+                panel.style.setProperty('right', 'auto', 'important');
+                panel.style.setProperty('bottom', 'auto', 'important');
+                if (save) prof46SavePos(safeLeft, safeTop);
+            }
+
+            function prof46KeepInside() {
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel || prof46IsClosed()) return;
+                const rect = panel.getBoundingClientRect();
+                prof46ApplyPos(panel, rect.left, rect.top, true);
+            }
+
+            function prof46ApplyState() {
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel) return;
+                panel.classList.add('prof46-panel');
+                panel.classList.toggle('prof46-closed', prof46IsClosed());
+                const mode = prof46Mode();
+                panel.classList.toggle('prof46-minimized', mode === 'min');
+                panel.classList.toggle('prof46-maximized', mode === 'max');
+                const minBtn = panel.querySelector('[data-prof46-panel="min"]');
+                const maxBtn = panel.querySelector('[data-prof46-panel="max"]');
+                if (minBtn) minBtn.textContent = mode === 'min' ? '▣' : '−';
+                if (maxBtn) maxBtn.textContent = mode === 'max' ? '▢' : '□';
+                atualizarBotaoAbrirPainel46();
+            }
+
+            function prof46EnsureHeaderTools() {
+                prof46Css();
+                let panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel) {
+                    try { panel = garantirPainelFlutuanteGuiaDiretaXadrez33(); } catch (_) { panel = null; }
+                }
+                if (!panel) return null;
+                panel.classList.add('prof46-panel');
+                const head = panel.querySelector('.direct-head-33');
+                if (!head) return panel;
+
+                const firstSpan = head.querySelector('span:first-child');
+                if (firstSpan && !firstSpan.classList.contains('prof46-head-title')) firstSpan.classList.add('prof46-head-title');
+
+                if (!head.querySelector('.prof46-head-tools')) {
+                    const tools = document.createElement('span');
+                    tools.className = 'prof46-head-tools';
+                    tools.innerHTML = `
+                        <button type="button" data-prof46-panel="min" title="Minimizar">−</button>
+                        <button type="button" data-prof46-panel="max" title="Maximizar">□</button>
+                        <button type="button" data-prof46-panel="close" title="Fechar">×</button>
+                    `;
+                    head.appendChild(tools);
+                    tools.querySelectorAll('[data-prof46-panel]').forEach(btn => {
+                        btn.addEventListener('click', ev => {
+                            const action = btn.getAttribute('data-prof46-panel');
+                            if (action === 'min') {
+                                prof46SetClosed(false);
+                                prof46SetMode(prof46Mode() === 'min' ? 'normal' : 'min');
+                                prof46ApplyState();
+                                prof46KeepInside();
+                            }
+                            if (action === 'max') {
+                                prof46SetClosed(false);
+                                prof46SetMode(prof46Mode() === 'max' ? 'normal' : 'max');
+                                prof46ApplyState();
+                                prof46KeepInside();
+                            }
+                            if (action === 'close') {
+                                prof46SetClosed(true);
+                                panel.classList.add('prof46-closed');
+                                panel.classList.remove('visible-33');
+                                atualizarBotaoAbrirPainel46();
+                                try { atualizarStatusGuiaDiretaProfessorXadrez33('Painel flutuante fechado. Use a aba Professor Inteligente embaixo para abrir de novo quando quiser.'); } catch (_) {}
+                            }
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                        });
+                    });
+                }
+
+                if (head.dataset.prof46DragBound !== '1') {
+                    head.dataset.prof46DragBound = '1';
+                    const start = ev => {
+                        if (ev.target && ev.target.closest && ev.target.closest('button,select,input,textarea,a')) return;
+                        const p = document.getElementById('teacher-direct-guide-33');
+                        if (!p || prof46IsClosed()) return;
+                        const point = ev.touches?.[0] || ev;
+                        const rect = p.getBoundingClientRect();
+                        dragging46 = true;
+                        startX46 = point.clientX;
+                        startY46 = point.clientY;
+                        startLeft46 = rect.left;
+                        startTop46 = rect.top;
+                        p.classList.add('prof46-dragging');
+                        prof46ApplyPos(p, rect.left, rect.top, false);
+                        try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (_) {}
+                        ev.preventDefault?.();
+                        ev.stopPropagation?.();
+                    };
+                    if ('PointerEvent' in window) {
+                        head.addEventListener('pointerdown', start, { passive: false });
+                    } else {
+                        head.addEventListener('touchstart', start, { passive: false });
+                        head.addEventListener('mousedown', start, { passive: false });
+                    }
+                }
+
+                const saved = prof46ReadPos();
+                if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+                    prof46ApplyPos(panel, saved.left, saved.top, false);
+                }
+                prof46ApplyState();
+                return panel;
+            }
+
+            function prof46Move(ev) {
+                if (!dragging46) return;
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel) return;
+                const point = ev.touches?.[0] || ev;
+                prof46ApplyPos(panel, startLeft46 + (point.clientX - startX46), startTop46 + (point.clientY - startY46), false);
+                ev.preventDefault?.();
+            }
+
+            function prof46Stop(ev) {
+                if (!dragging46) return;
+                dragging46 = false;
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (panel) {
+                    panel.classList.remove('prof46-dragging');
+                    const rect = panel.getBoundingClientRect();
+                    prof46ApplyPos(panel, rect.left, rect.top, true);
+                }
+                ev?.preventDefault?.();
+            }
+
+            function atualizarBotaoAbrirPainel46() {
+                const texto = prof46IsClosed() ? 'Abrir painel' : 'Fechar painel';
+                document.querySelectorAll('[data-prof46-panel-open]').forEach(btn => {
+                    btn.textContent = texto;
+                    btn.classList.toggle('prof37-off', prof46IsClosed());
+                    btn.classList.toggle('prof37-on', !prof46IsClosed());
+                });
+            }
+
+            function prof46EnsureBotaoNoMenuProfessor() {
+                const grids = [
+                    document.querySelector('#teacher-prof37-controls .prof37-grid'),
+                    document.querySelector('#teacher-prof36-controls .prof36-grid')
+                ].filter(Boolean);
+                grids.forEach(grid => {
+                    if (grid.querySelector('[data-prof46-panel-open]')) return;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.setAttribute('data-prof46-panel-open', '1');
+                    btn.textContent = prof46IsClosed() ? 'Abrir painel' : 'Fechar painel';
+                    btn.addEventListener('click', ev => {
+                        const fechar = !prof46IsClosed();
+                        prof46SetClosed(fechar);
+                        if (!fechar) {
+                            prof46SetMode('normal');
+                            const panel = prof46EnsureHeaderTools();
+                            if (panel) {
+                                panel.classList.add('visible-33');
+                                panel.classList.remove('prof46-closed');
+                                prof46KeepInside();
+                            }
+                        } else {
+                            const panel = document.getElementById('teacher-direct-guide-33');
+                            if (panel) {
+                                panel.classList.add('prof46-closed');
+                                panel.classList.remove('visible-33');
+                            }
+                        }
+                        atualizarBotaoAbrirPainel46();
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                    grid.appendChild(btn);
+                });
+                atualizarBotaoAbrirPainel46();
+            }
+
+            if ('PointerEvent' in window) {
+                document.addEventListener('pointermove', prof46Move, { passive: false });
+                document.addEventListener('pointerup', prof46Stop, { passive: false });
+                document.addEventListener('pointercancel', prof46Stop, { passive: false });
+            } else {
+                document.addEventListener('touchmove', prof46Move, { passive: false });
+                document.addEventListener('touchend', prof46Stop, { passive: false });
+                document.addEventListener('mousemove', prof46Move, { passive: false });
+                document.addEventListener('mouseup', prof46Stop, { passive: false });
+            }
+
+            const atualizarPainelAnterior46 = atualizarPainelFlutuanteGuiaDiretaXadrez33;
+            atualizarPainelFlutuanteGuiaDiretaXadrez33 = function atualizarPainelFlutuanteGuiaDiretaXadrez46() {
+                const retorno = atualizarPainelAnterior46.apply(this, arguments);
+                setTimeout(() => {
+                    try {
+                        prof46EnsureHeaderTools();
+                        prof46EnsureBotaoNoMenuProfessor();
+                        const panel = document.getElementById('teacher-direct-guide-33');
+                        if (panel && prof46IsClosed()) {
+                            panel.classList.add('prof46-closed');
+                            panel.classList.remove('visible-33');
+                        }
+                        if (panel && !prof46IsClosed()) prof46KeepInside();
+                    } catch (_) {}
+                }, 0);
+                return retorno;
+            };
+
+            try {
+                if (typeof garantirControlesProfessorXadrez37 === 'function') {
+                    const garantirControlesAnterior46 = garantirControlesProfessorXadrez37;
+                    garantirControlesProfessorXadrez37 = function garantirControlesProfessorXadrez46() {
+                        const retorno = garantirControlesAnterior46.apply(this, arguments);
+                        setTimeout(() => { try { prof46EnsureBotaoNoMenuProfessor(); } catch (_) {} }, 0);
+                        return retorno;
+                    };
+                }
+            } catch (_) {}
+
+            window.addEventListener('resize', prof46KeepInside);
+            window.visualViewport?.addEventListener?.('resize', prof46KeepInside);
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    try {
+                        prof46EnsureHeaderTools();
+                        prof46EnsureBotaoNoMenuProfessor();
+                    } catch (_) {}
+                }, 800);
+            });
+        }
+
+        instalarPainelRoboProfessorXadrez46();
 
 })();
+
 
 
 
