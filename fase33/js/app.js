@@ -18424,3 +18424,500 @@ setInterval(() => {
 
     [80, 300, 800, 1500, 3000, 6000].forEach(ms => setTimeout(ensureAll, ms));
 })();
+
+
+/* =====================================================================
+   ✅ PROFISSIONAL 48 — PAINEL ROBÔ PROFESSOR FECHA DE VERDADE
+   Correção direta do teste no celular:
+   - O painel flutuante #teacher-direct-guide-33 estava abrindo e ficando por cima.
+   - Agora ele começa FECHADO por padrão nesta versão.
+   - O botão dentro da aba Professor Inteligente abre/fecha o painel.
+   - Mesmo com Robô cores ON, o painel pode ficar fechado e o robô continua pintando.
+   - Inclui toolbar visível quando abrir: arrastar, minimizar, maximizar e fechar.
+   - Não interfere nas jogadas, Firebase, Damas, Admin ou capturas legais.
+===================================================================== */
+(function () {
+    if (window.__prof48PainelRoboProfessorFechaDeVerdade) return;
+    window.__prof48PainelRoboProfessorFechaDeVerdade = true;
+
+    const PANEL_ID = 'teacher-direct-guide-33';
+    const VISIBLE_KEY = 'tabuleiro_arena_prof48_painel_visivel';
+    const MODE_KEY = 'tabuleiro_arena_prof48_painel_modo';
+    const POS_KEY = 'tabuleiro_arena_prof48_painel_pos';
+    const MIGRATION_KEY = 'tabuleiro_arena_prof48_migracao_fechado_ok';
+
+    try {
+        // Nesta versão o painel começa fechado mesmo se versões antigas deixaram aberto.
+        if (localStorage.getItem(MIGRATION_KEY) !== '1') {
+            localStorage.setItem(VISIBLE_KEY, '0');
+            localStorage.setItem(MODE_KEY, 'normal');
+            localStorage.setItem(MIGRATION_KEY, '1');
+            // Também neutraliza chaves antigas que podiam manter o painel aberto.
+            localStorage.setItem('tabuleiro_arena_prof47_painel_fechado', '1');
+            localStorage.setItem('tabuleiro_arena_prof46_panel_closed', '1');
+        }
+    } catch (_) {}
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    let syncTimer = null;
+
+    function storageGet(key, fallback) {
+        try {
+            const v = localStorage.getItem(key);
+            return v === null ? fallback : v;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    function storageSet(key, value) {
+        try { localStorage.setItem(key, String(value)); } catch (_) {}
+    }
+
+    function painel() {
+        return document.getElementById(PANEL_ID);
+    }
+
+    function painelAberto() {
+        return storageGet(VISIBLE_KEY, '0') === '1';
+    }
+
+    function modoPainel() {
+        return storageGet(MODE_KEY, 'normal') || 'normal';
+    }
+
+    function setAberto(value) {
+        storageSet(VISIBLE_KEY, value ? '1' : '0');
+        // Sincroniza com a chave antiga para o código anterior não reabrir sozinho.
+        storageSet('tabuleiro_arena_prof47_painel_fechado', value ? '0' : '1');
+        storageSet('tabuleiro_arena_prof46_panel_closed', value ? '0' : '1');
+    }
+
+    function setModo(value) {
+        storageSet(MODE_KEY, value || 'normal');
+    }
+
+    function viewport() {
+        const vv = window.visualViewport;
+        return {
+            width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360),
+            height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640)
+        };
+    }
+
+    function clamp(value, min, max) {
+        if (!Number.isFinite(value)) return min;
+        if (max < min) return min;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function css48() {
+        if (document.getElementById('prof48-painel-robo-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof48-painel-robo-css';
+        style.textContent = `
+            #teacher-direct-guide-33.prof48-hidden,
+            #teacher-direct-guide-33.prof47-closed.prof48-hidden,
+            #teacher-direct-guide-33.prof46-closed.prof48-hidden {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
+            #teacher-direct-guide-33.prof48-open {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                z-index: 1000008 !important;
+            }
+
+            #teacher-direct-guide-33.prof48-floating {
+                position: fixed !important;
+                right: auto !important;
+                bottom: auto !important;
+                margin: 0 !important;
+                width: min(285px, calc(100vw - 12px)) !important;
+                max-height: calc(100vh - 12px) !important;
+                overflow: auto !important;
+                touch-action: auto !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-toolbar {
+                display: grid !important;
+                grid-template-columns: 1.25fr .75fr .75fr .9fr !important;
+                gap: 5px !important;
+                margin: 6px 0 7px 0 !important;
+                padding: 6px !important;
+                border-radius: 12px !important;
+                border: 1px solid rgba(250,204,21,.48) !important;
+                background: rgba(2,6,23,.78) !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-toolbar button {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 31px !important;
+                padding: 6px 4px !important;
+                border-radius: 10px !important;
+                border: 1px solid rgba(148,163,184,.38) !important;
+                background: rgba(15,23,42,.96) !important;
+                color: #f8fafc !important;
+                font-size: .58rem !important;
+                font-weight: 1000 !important;
+                line-height: 1.05 !important;
+                box-shadow: none !important;
+                text-transform: none !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-toolbar button:hover,
+            #teacher-direct-guide-33 .prof48-toolbar button:focus {
+                transform: none !important;
+                background: rgba(37,99,235,.96) !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-drag-btn,
+            #teacher-direct-guide-33 .direct-head-33 {
+                cursor: grab !important;
+                touch-action: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+            }
+
+            #teacher-direct-guide-33.prof48-dragging .prof48-drag-btn,
+            #teacher-direct-guide-33.prof48-dragging .direct-head-33 {
+                cursor: grabbing !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-drag-btn {
+                background: linear-gradient(90deg, rgba(250,204,21,.92), rgba(34,211,238,.78)) !important;
+                color: #04111f !important;
+                border-color: rgba(250,204,21,.72) !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-close-btn {
+                background: rgba(127,29,29,.98) !important;
+                color: #fee2e2 !important;
+                border-color: rgba(248,113,113,.65) !important;
+            }
+
+            #teacher-direct-guide-33.prof48-minimized {
+                width: min(220px, calc(100vw - 12px)) !important;
+                max-height: none !important;
+                overflow: hidden !important;
+                padding: 8px !important;
+            }
+
+            #teacher-direct-guide-33.prof48-minimized .direct-actions-33,
+            #teacher-direct-guide-33.prof48-minimized .direct-status-33,
+            #teacher-direct-guide-33.prof48-minimized .prof42-mini,
+            #teacher-direct-guide-33.prof48-minimized .prof44-safe-note {
+                display: none !important;
+            }
+
+            #teacher-direct-guide-33.prof48-maximized {
+                width: min(340px, calc(100vw - 12px)) !important;
+                max-height: calc(100vh - 12px) !important;
+                overflow: auto !important;
+            }
+
+            #teacher-prof37-controls button[data-prof48-panel-toggle],
+            .teacher-prof37-controls button[data-prof48-panel-toggle],
+            #teacher-prof36-controls button[data-prof48-panel-toggle] {
+                background: linear-gradient(90deg, rgba(113,63,18,.98), rgba(37,99,235,.90)) !important;
+                color: #fff7ed !important;
+                border-color: rgba(250,204,21,.55) !important;
+            }
+
+            #teacher-prof37-controls button[data-prof48-panel-toggle].prof48-menu-off,
+            .teacher-prof37-controls button[data-prof48-panel-toggle].prof48-menu-off,
+            #teacher-prof36-controls button[data-prof48-panel-toggle].prof48-menu-off {
+                background: rgba(15,23,42,.96) !important;
+                color: #fde68a !important;
+                border-color: rgba(250,204,21,.45) !important;
+            }
+
+            @media (max-width: 560px) {
+                #teacher-direct-guide-33.prof48-floating {
+                    width: min(262px, calc(100vw - 12px)) !important;
+                }
+                #teacher-direct-guide-33.prof48-maximized {
+                    width: min(336px, calc(100vw - 12px)) !important;
+                }
+                #teacher-direct-guide-33 .prof48-toolbar {
+                    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+                    gap: 4px !important;
+                    padding: 5px !important;
+                }
+                #teacher-direct-guide-33 .prof48-toolbar button {
+                    min-height: 30px !important;
+                    font-size: .54rem !important;
+                    padding: 5px 3px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function salvarPos(left, top) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+    }
+
+    function lerPos() {
+        try { return JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (_) { return null; }
+    }
+
+    function aplicarPos(p, left, top, salvar) {
+        if (!p) return;
+        const vp = viewport();
+        const rect = p.getBoundingClientRect();
+        const w = Math.max(130, Math.min(rect.width || 270, vp.width - 10));
+        const h = Math.max(42, Math.min(rect.height || 180, vp.height - 10));
+        const margin = 6;
+        const safeLeft = clamp(left, margin, Math.max(margin, vp.width - w - margin));
+        const safeTop = clamp(top, margin, Math.max(margin, vp.height - h - margin));
+
+        p.classList.add('prof48-floating');
+        p.style.setProperty('position', 'fixed', 'important');
+        p.style.setProperty('left', Math.round(safeLeft) + 'px', 'important');
+        p.style.setProperty('top', Math.round(safeTop) + 'px', 'important');
+        p.style.setProperty('right', 'auto', 'important');
+        p.style.setProperty('bottom', 'auto', 'important');
+        p.style.setProperty('z-index', '1000008', 'important');
+
+        if (salvar) salvarPos(safeLeft, safeTop);
+    }
+
+    function atualizarBotoesMenu48() {
+        const aberto = painelAberto();
+        document.querySelectorAll('[data-prof48-panel-toggle]').forEach(btn => {
+            btn.textContent = aberto ? 'Painel robô ON' : 'Painel robô OFF';
+            btn.classList.toggle('prof48-menu-off', !aberto);
+            btn.title = aberto ? 'Fechar o painel flutuante do Robô Professor' : 'Abrir o painel flutuante do Robô Professor';
+        });
+    }
+
+    function aplicarEstado() {
+        const p = painel();
+        if (!p) {
+            atualizarBotoesMenu48();
+            return;
+        }
+
+        css48();
+        p.classList.add('prof48-floating');
+        const aberto = painelAberto();
+        const modo = modoPainel();
+
+        if (!aberto) {
+            p.classList.add('prof48-hidden', 'prof47-closed', 'prof46-closed');
+            p.classList.remove('prof48-open', 'visible-33', 'teacher-guide-strong-35', 'prof48-minimized', 'prof48-maximized');
+            p.style.setProperty('display', 'none', 'important');
+        } else {
+            p.classList.remove('prof48-hidden', 'prof47-closed', 'prof46-closed');
+            p.classList.add('prof48-open', 'visible-33');
+            p.style.removeProperty('display');
+            p.classList.toggle('prof48-minimized', modo === 'min');
+            p.classList.toggle('prof48-maximized', modo === 'max');
+            const pos = lerPos();
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) aplicarPos(p, pos.left, pos.top, false);
+            else aplicarPos(p, 8, 74, true);
+        }
+
+        const minBtn = p.querySelector('[data-prof48-action="min"]');
+        const maxBtn = p.querySelector('[data-prof48-action="max"]');
+        if (minBtn) minBtn.textContent = modo === 'min' ? 'Abrir' : '− Min';
+        if (maxBtn) maxBtn.textContent = modo === 'max' ? 'Normal' : '□ Max';
+        atualizarBotoesMenu48();
+    }
+
+    function fecharPainel() {
+        setAberto(false);
+        aplicarEstado();
+    }
+
+    function abrirPainel() {
+        setAberto(true);
+        if (modoPainel() === 'closed') setModo('normal');
+        garantirToolbar48();
+        aplicarEstado();
+    }
+
+    function getPoint(ev) {
+        return ev.touches?.[0] || ev.changedTouches?.[0] || ev;
+    }
+
+    function iniciarArraste(ev) {
+        const target = ev.target;
+        if (target && target.closest && target.closest('button:not(.prof48-drag-btn),select,input,textarea,a')) return;
+        const p = painel();
+        if (!p || !painelAberto()) return;
+        const point = getPoint(ev);
+        const rect = p.getBoundingClientRect();
+        dragging = true;
+        startX = point.clientX;
+        startY = point.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        p.classList.add('prof48-dragging');
+        aplicarPos(p, rect.left, rect.top, false);
+        try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (_) {}
+        ev.preventDefault?.();
+        ev.stopPropagation?.();
+        ev.stopImmediatePropagation?.();
+    }
+
+    function moverArraste(ev) {
+        if (!dragging) return;
+        const p = painel();
+        if (!p) return;
+        const point = getPoint(ev);
+        aplicarPos(p, startLeft + (point.clientX - startX), startTop + (point.clientY - startY), false);
+        ev.preventDefault?.();
+    }
+
+    function pararArraste(ev) {
+        if (!dragging) return;
+        dragging = false;
+        const p = painel();
+        if (p) {
+            p.classList.remove('prof48-dragging');
+            const rect = p.getBoundingClientRect();
+            aplicarPos(p, rect.left, rect.top, true);
+        }
+        ev?.preventDefault?.();
+    }
+
+    function garantirToolbar48() {
+        css48();
+        const p = painel();
+        if (!p) return false;
+
+        p.classList.add('prof48-floating');
+
+        const head = p.querySelector('.direct-head-33') || p.firstElementChild;
+        if (head && head.dataset.prof48Drag !== '1') {
+            head.dataset.prof48Drag = '1';
+            head.addEventListener('pointerdown', iniciarArraste, { passive: false });
+            head.addEventListener('touchstart', iniciarArraste, { passive: false });
+            head.addEventListener('mousedown', iniciarArraste, { passive: false });
+        }
+
+        let toolbar = p.querySelector('.prof48-toolbar');
+        if (!toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.className = 'prof48-toolbar';
+            toolbar.innerHTML = `
+                <button type="button" class="prof48-drag-btn" data-prof48-action="drag">↔ Arrastar</button>
+                <button type="button" data-prof48-action="min">− Min</button>
+                <button type="button" data-prof48-action="max">□ Max</button>
+                <button type="button" class="prof48-close-btn" data-prof48-action="close">× Fechar</button>
+            `;
+            if (head && head.parentNode) head.insertAdjacentElement('afterend', toolbar);
+            else p.insertBefore(toolbar, p.firstChild);
+        }
+
+        if (toolbar.dataset.prof48Bound !== '1') {
+            toolbar.dataset.prof48Bound = '1';
+            toolbar.querySelectorAll('[data-prof48-action]').forEach(btn => {
+                const action = btn.getAttribute('data-prof48-action');
+                if (action === 'drag') {
+                    btn.addEventListener('pointerdown', iniciarArraste, { passive: false });
+                    btn.addEventListener('touchstart', iniciarArraste, { passive: false });
+                    btn.addEventListener('mousedown', iniciarArraste, { passive: false });
+                }
+                btn.addEventListener('click', ev => {
+                    const acao = btn.getAttribute('data-prof48-action');
+                    if (acao === 'min') {
+                        setAberto(true);
+                        setModo(modoPainel() === 'min' ? 'normal' : 'min');
+                        aplicarEstado();
+                    }
+                    if (acao === 'max') {
+                        setAberto(true);
+                        setModo(modoPainel() === 'max' ? 'normal' : 'max');
+                        aplicarEstado();
+                    }
+                    if (acao === 'close') fecharPainel();
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    ev.stopImmediatePropagation?.();
+                }, true);
+            });
+        }
+
+        return true;
+    }
+
+    function garantirBotaoMenu48() {
+        const grids = [
+            document.querySelector('#teacher-prof37-controls .prof37-grid'),
+            document.querySelector('.teacher-prof37-controls .prof37-grid'),
+            document.querySelector('#teacher-prof36-controls .prof36-grid')
+        ].filter(Boolean);
+
+        grids.forEach(grid => {
+            if (grid.querySelector('[data-prof48-panel-toggle]')) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('data-prof48-panel-toggle', '1');
+            btn.textContent = 'Painel robô OFF';
+            btn.addEventListener('click', ev => {
+                if (painelAberto()) fecharPainel();
+                else abrirPainel();
+                ev.preventDefault();
+                ev.stopPropagation();
+                ev.stopImmediatePropagation?.();
+            }, true);
+            grid.appendChild(btn);
+        });
+
+        atualizarBotoesMenu48();
+    }
+
+    function sincronizar48() {
+        syncTimer = null;
+        css48();
+        garantirToolbar48();
+        garantirBotaoMenu48();
+        aplicarEstado();
+    }
+
+    function agendarSync48() {
+        if (syncTimer) return;
+        syncTimer = setTimeout(sincronizar48, 0);
+    }
+
+    if ('PointerEvent' in window) {
+        document.addEventListener('pointermove', moverArraste, { passive: false });
+        document.addEventListener('pointerup', pararArraste, { passive: false });
+        document.addEventListener('pointercancel', pararArraste, { passive: false });
+    } else {
+        document.addEventListener('touchmove', moverArraste, { passive: false });
+        document.addEventListener('touchend', pararArraste, { passive: false });
+        document.addEventListener('mousemove', moverArraste, { passive: false });
+        document.addEventListener('mouseup', pararArraste, { passive: false });
+    }
+
+    document.addEventListener('click', function () {
+        // Roda depois dos handlers antigos para fechar de verdade se o painel estiver OFF.
+        setTimeout(sincronizar48, 0);
+        setTimeout(sincronizar48, 180);
+    }, false);
+
+    window.addEventListener('resize', agendarSync48);
+    window.visualViewport?.addEventListener?.('resize', agendarSync48);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', sincronizar48);
+    } else {
+        sincronizar48();
+    }
+
+    [80, 250, 700, 1500, 3500, 7000].forEach(ms => setTimeout(sincronizar48, ms));
+})();
