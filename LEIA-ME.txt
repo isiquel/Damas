@@ -1,15 +1,6 @@
-TABULEIRO ARENA
-Base estável com Separação 02 CSS e Separação 03 JS Config.
+Tabuleiro Arena — Profissional 30
 
-Estado atual:
-- Damas preservada.
-- Xadrez online funcionando.
-- Botão Sair da sala funcionando.
-- Controles recolhidos no +.
-- Chat recolhível.
-- Câmera do Xadrez pausada/removida.
-- CSS organizado em arquivos menores.
-- JavaScript começou a ser organizado com js/config.js, sem mexer na lógica do jogo.
+Versão completa com a Profissional 29 preservada e nova melhoria:
+Robô Conselheiro do Professor para estudar a posição do Xadrez, indicar plano de 3 lances, ameaças do aluno e dicas didáticas com cores no tabuleiro.
 
-Regra de segurança:
-Toda melhoria deve ser testada primeiro em /fase33/ antes de ir para o site principal.
+Teste primeiro na /fase33/.

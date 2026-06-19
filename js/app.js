@@ -7463,6 +7463,15 @@ Link: ${location.origin}${location.pathname}`;
             if (promotionType) msg = `Peão promovido para ${nomePeca[promotionType]}.`;
             lastMoveMessage = msg;
 
+            // ✅ PROFISSIONAL 39 — sincronização leve antes do robô pintar o tabuleiro.
+            // O professor por cores pode fazer muita coisa visual; primeiro avisamos o Firebase
+            // do novo tabuleiro e da nova vez para o outro aparelho não ficar preso em “aguardando”.
+            if (chessMode === 'online' && chessRoomRef && !chessOnlineSyncing) {
+                try {
+                    publicarEstadoXadrezOnline({ quickSync39: Date.now() });
+                } catch (_) {}
+            }
+
             renderChessBoard();
             const estado = avaliarEstadoDoJogo(msg);
             moveHistory.push(criarRegistroHistoricoXadrez(peca, fromRow, fromCol, move, capturedPiece, promotionType, estado) || notation);
@@ -10294,6 +10303,23 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         <button id="chess-private-teacher-toggle" type="button" aria-label="Recolher manual">−</button>
                     </div>
                     <div id="chess-private-teacher-body">
+                        <div id="teacher-prof37-controls" class="teacher-prof37-controls">
+                            <div class="prof37-title">
+                                <span>🎯 Robô do professor</span>
+                                <span data-prof37-state>PRONTO</span>
+                            </div>
+                            <div class="prof37-grid">
+                                <button type="button" data-prof37="window">Janelinha ON</button>
+                                <button type="button" data-prof37="colors">Robô cores OFF</button>
+                                <button type="button" data-prof37="refresh">Atualizar cores</button>
+                                <button type="button" data-prof37="bubble">Abrir balão</button>
+                                <button type="button" data-prof37="clear">Limpar cores</button>
+                                <button type="button" data-prof37="legend">Legenda</button>
+                            </div>
+                            <div class="prof37-help" data-prof37-help>
+                                Janelinha ON: tocar na peça abre o balão. Robô cores ON: amarelo pisca na peça indicada, verde pisca na casa boa e vermelho marca perigo.
+                            </div>
+                        </div>
                         <div id="chess-private-teacher-text">
                             Toque em uma peça ou use a análise da posição para receber dicas de ensino neste aparelho.
                         </div>
@@ -10580,9 +10606,24 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 // O entrar online chama sairXadrezOnline(false) para limpar escutas antigas.
                 // Por isso religamos o manual aqui somente se a conexão online realmente ficou ativa.
                 chessProfessorPrivadoAtivo = !!(professorSolicitado && chessMode === 'online');
+                if (chessProfessorPrivadoAtivo) {
+                    try {
+                        const modoKey35 = 'tabuleiro_arena_professor_xadrez_33_modo_toque';
+                        const autoKey35 = 'tabuleiro_arena_professor_xadrez_33_auto_direto';
+                        if (localStorage.getItem(modoKey35) === null) localStorage.setItem(modoKey35, 'bubble');
+                        if (localStorage.getItem(autoKey35) === null) localStorage.setItem(autoKey35, '1');
+                    } catch (_) {}
+                    setTimeout(() => {
+                        try {
+                            if (typeof garantirPainelFlutuanteGuiaDiretaXadrez33 === 'function') garantirPainelFlutuanteGuiaDiretaXadrez33();
+                            if (typeof atualizarPainelFlutuanteGuiaDiretaXadrez33 === 'function') atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                            if (typeof agendarGuiaDiretaProfessorXadrez33 === 'function') agendarGuiaDiretaProfessorXadrez33(true, 'manual');
+                        } catch (_) {}
+                    }, 450);
+                }
                 garantirPainelManualPrivadoProfessorXadrez19();
                 atualizarManualPrivadoProfessorXadrez19(chessProfessorPrivadoAtivo
-                    ? 'Professor inteligente ligado. Toque numa peça ou clique em Analisar posição para receber dicas de aula neste aparelho.'
+                    ? 'Professor inteligente ligado. Use a aba do professor para deixar a janelinha OFF e ligar o robô por cores no tabuleiro.'
                     : '');
                 return resp;
             };
@@ -10654,6 +10695,4037 @@ Compartilhe com os amigos e entre no horário marcado.`;
         }
 
         instalarManualPrivadoProfessorXadrez19();
+
+        /* =====================================================================
+           ✅ PROFISSIONAL 25 — POPUP DIDÁTICO DA PEÇA NO XADREZ ONLINE
+           Quando o professor entra com # no nome e toca numa peça no online,
+           abre um popup privado explicando o que é a peça, como anda, onde pode
+           ir naquele momento e como usar isso na explicação por áudio/vídeo.
+           Não aparece para o aluno e não altera Firebase, jogada ou tabuleiro.
+        ===================================================================== */
+        function instalarPopupDidaticoPecaXadrez25() {
+            if (window.__popupPecaXadrez25Instalado) return;
+            window.__popupPecaXadrez25Instalado = true;
+
+            // ✅ PROFISSIONAL 39 - ponte segura para as melhorias do professor.
+            // As funções originais do Manual Privado ficam dentro de outro bloco.
+            // Esta ponte evita erro de ReferenceError e deixa Xadrez/Damas abrirem normalmente.
+            function professorPrivadoPodeAparecerXadrez19() {
+                try {
+                    return !!(chessProfessorPrivadoAtivo && chessMode === 'online' && document.body.classList.contains('chess-board-visible'));
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function atualizarManualPrivadoProfessorXadrez19(texto = '') {
+                try {
+                    const painel = document.getElementById('chess-private-teacher-panel');
+                    const corpo = document.getElementById('chess-private-teacher-body');
+                    const textoEl = document.getElementById('chess-private-teacher-text');
+                    if (!painel || !textoEl) return;
+                    if (!professorPrivadoPodeAparecerXadrez19()) {
+                        painel.style.display = 'none';
+                        return;
+                    }
+                    painel.style.display = 'block';
+                    if (corpo) corpo.style.display = painel.classList.contains('teacher-collapsed') ? 'none' : 'block';
+                    if (texto) chessProfessorPrivadoTexto = texto;
+                    if (!chessProfessorPrivadoTexto) {
+                        chessProfessorPrivadoTexto = 'Professor inteligente ligado. Use os botões abaixo: <strong>Janelinha ON/OFF</strong> e <strong>Robô cores ON/OFF</strong>.';
+                    }
+                    textoEl.innerHTML = chessProfessorPrivadoTexto;
+                } catch (_) {}
+            }
+
+            const explicacoes = {
+                king: {
+                    movimento: 'Anda uma casa por vez em qualquer direção, mas nunca pode entrar numa casa atacada. Também pode fazer o roque quando as regras permitem.',
+                    funcao: 'O Rei é a peça mais importante. A partida inteira gira em torno de proteger o Rei e atacar o Rei adversário.',
+                    fala: 'Explique ao aluno: antes de atacar, olhe se o Rei está seguro. Um ataque bonito não vale nada se o Rei ficar exposto.'
+                },
+                queen: {
+                    movimento: 'Anda quantas casas livres quiser na vertical, horizontal e diagonal.',
+                    funcao: 'A Dama é a peça mais forte do xadrez. Ela ataca muito, defende muito e cria ameaças rápidas.',
+                    fala: 'Explique ao aluno: a Dama é poderosa, mas não deve sair sozinha sem apoio, porque pode virar alvo.'
+                },
+                rook: {
+                    movimento: 'Anda quantas casas livres quiser na vertical e na horizontal.',
+                    funcao: 'A Torre domina colunas e linhas. Fica muito forte quando entra em coluna aberta ou no final da partida.',
+                    fala: 'Explique ao aluno: Torre gosta de caminho livre. Peão parado na frente da Torre diminui a força dela.'
+                },
+                bishop: {
+                    movimento: 'Anda quantas casas livres quiser pelas diagonais. Um Bispo de casa clara fica sempre nas casas claras; o de casa escura fica nas casas escuras.',
+                    funcao: 'O Bispo trabalha em diagonal, cria pressão de longe e pode prender peças importantes.',
+                    fala: 'Explique ao aluno: o Bispo parece quieto, mas ataca de longe. Antes de mover, olhe a diagonal inteira.'
+                },
+                knight: {
+                    movimento: 'Anda em formato de L: duas casas para um lado e uma para o outro. É a única peça que pula por cima das outras.',
+                    funcao: 'O Cavalo é ótimo para garfos, ataques surpresa e casas centrais. Ele confunde iniciantes porque pula peças.',
+                    fala: 'Explique ao aluno: Cavalo no centro ataca mais casas. Cavalo no canto fica fraco.'
+                },
+                pawn: {
+                    movimento: 'Anda uma casa para frente. No primeiro movimento pode andar duas. Captura uma casa na diagonal. Quando chega ao fim do tabuleiro pode virar outra peça.',
+                    funcao: 'O Peão parece simples, mas controla casas, protege peças e pode virar Dama no final.',
+                    fala: 'Explique ao aluno: Peão não anda para trás. Cada avanço precisa ter propósito, porque depois não dá para voltar.'
+                }
+            };
+
+            function professorPodeUsarPopup25() {
+                return !!(
+                    chessProfessorPrivadoAtivo &&
+                    chessMode === 'online' &&
+                    !chessIsSpectator &&
+                    document.body.classList.contains('chess-board-visible') &&
+                    Array.isArray(chessBoard)
+                );
+            }
+
+            function movimentosTexto25(movimentos) {
+                if (!movimentos || !movimentos.length) return ['Sem casa legal agora'];
+                return movimentos.slice(0, 14).map(m => {
+                    let txt = alg(m.row, m.col);
+                    if (m.capture) txt += ' captura';
+                    if (m.castle) txt += m.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                    if (m.enPassant) txt += ' en passant';
+                    return txt;
+                });
+            }
+
+            function corTexto25(cor) {
+                return cor === 'white' ? 'branca' : 'preta';
+            }
+
+            function criarDadosPopup25(peca, row, col, movimentos) {
+                const info = explicacoes[peca.type] || explicacoes.pawn;
+                const capturas = (movimentos || []).filter(m => m.capture).length;
+                const casas = movimentosTexto25(movimentos);
+                const ladoDoProfessor = peca.color === chessPlayerColor;
+                let porQueAgora = '';
+                if (!movimentos || !movimentos.length) {
+                    porQueAgora = 'Nesta posição ela não tem movimento legal. Use isso para ensinar bloqueio, proteção do Rei ou peça presa.';
+                } else if (capturas > 0) {
+                    porQueAgora = 'Nesta posição existem capturas. É uma boa hora para ensinar ganho de material, troca de peças e cálculo antes de jogar.';
+                } else if (peca.type === 'king') {
+                    porQueAgora = 'Use esta posição para ensinar segurança do Rei: o Rei só pode ir para casas que não estejam atacadas.';
+                } else if (peca.type === 'pawn') {
+                    porQueAgora = 'Use esta posição para ensinar controle de casas e avanço com objetivo. Peão avançado demais pode ficar fraco.';
+                } else {
+                    porQueAgora = 'Use esta peça para mostrar plano de jogo: melhorar posição, atacar com apoio e defender antes de avançar.';
+                }
+                if (!ladoDoProfessor) {
+                    porQueAgora = 'Esta é uma peça do aluno/adversário. Use o popup para explicar o que ela ameaça, como ela se movimenta e como você pode responder com calma.';
+                }
+                return {
+                    jogo: 'Xadrez online',
+                    simbolo: pecasUnicode[peca.color]?.[peca.type] || '♟',
+                    titulo: `${nomePeca[peca.type] || 'Peça'} ${corTexto25(peca.color)}`,
+                    posicao: alg(row, col),
+                    oQueE: info.funcao,
+                    comoAnda: info.movimento,
+                    ondePodeIr: casas,
+                    porque: porQueAgora,
+                    fraseAula: info.fala
+                };
+            }
+
+            const clickAnterior25 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickPopupProfessor25(row, col) {
+                const pecaAntes = chessBoard?.[row]?.[col] || null;
+                const clicouDestinoDeJogada = !!(selectedSquare && Array.isArray(legalMoves) && legalMoves.some(m => m.row === row && m.col === col));
+                const deveAbrir = !!(professorPodeUsarPopup25() && pecaAntes && !clicouDestinoDeJogada);
+                let movimentosAntes = [];
+                if (deveAbrir) {
+                    try { movimentosAntes = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentosAntes = []; }
+                }
+                const retorno = await clickAnterior25.apply(this, arguments);
+                if (deveAbrir && window.abrirPopupProfessorPeca25) {
+                    setTimeout(() => {
+                        window.abrirPopupProfessorPeca25(criarDadosPopup25(pecaAntes, row, col, movimentosAntes));
+                    }, 60);
+                }
+                return retorno;
+            };
+        }
+
+        instalarPopupDidaticoPecaXadrez25();
+
+        /* =====================================================================
+           ✅ PROFISSIONAL 26 — POPUP PEQUENO ACIMA DA PEÇA + DICA DIDÁTICA
+           Reforça o modo professor: quando tocar na peça, abre um quadro pequeno
+           perto da peça com explicação, movimentos e melhor dica didática da posição.
+           Não altera Firebase, não joga sozinho e não aparece para o aluno.
+        ===================================================================== */
+        function instalarPopupProfessorXadrez26() {
+            if (window.__popupProfessorXadrez26Instalado) return;
+            window.__popupProfessorXadrez26Instalado = true;
+
+            // ✅ PROFISSIONAL 39 - ponte segura dentro do módulo correto do professor.
+            // Corrige o travamento da Profissional 37: o código tentava usar funções
+            // que pertenciam ao manual privado, mas estavam fora do escopo deste módulo.
+            function professorPrivadoPodeAparecerXadrez19() {
+                try {
+                    return !!(chessProfessorPrivadoAtivo && chessMode === 'online' && document.body.classList.contains('chess-board-visible'));
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function atualizarManualPrivadoProfessorXadrez19(texto = '') {
+                try {
+                    const painel = document.getElementById('chess-private-teacher-panel');
+                    const corpo = document.getElementById('chess-private-teacher-body');
+                    const textoEl = document.getElementById('chess-private-teacher-text');
+                    if (!painel || !textoEl) return;
+                    if (!professorPrivadoPodeAparecerXadrez19()) {
+                        painel.style.display = 'none';
+                        return;
+                    }
+                    painel.style.display = 'block';
+                    if (corpo) corpo.style.display = painel.classList.contains('teacher-collapsed') ? 'none' : 'block';
+                    if (texto) chessProfessorPrivadoTexto = texto;
+                    if (!chessProfessorPrivadoTexto) {
+                        chessProfessorPrivadoTexto = 'Professor inteligente ligado. Use <strong>Janelinha ON/OFF</strong> e <strong>Robô cores ON/OFF</strong> para ensinar pelo balão ou direto no tabuleiro.';
+                    }
+                    textoEl.innerHTML = chessProfessorPrivadoTexto;
+                } catch (_) {}
+            }
+
+            const explicacoes26 = {
+                king: {
+                    nome: 'Rei',
+                    faz: 'O Rei é a peça principal. Ele precisa ficar protegido; se estiver em xeque, a prioridade é resolver o perigo.',
+                    anda: 'Anda uma casa em qualquer direção, mas não pode ir para uma casa atacada. Também pode fazer roque quando a regra permite.',
+                    aula: 'Ensine que toda jogada precisa respeitar a segurança do Rei. Primeiro segurança, depois ataque.'
+                },
+                queen: {
+                    nome: 'Dama',
+                    faz: 'A Dama é a peça mais forte. Ela combina força de Torre e Bispo, atacando linhas, colunas e diagonais.',
+                    anda: 'Anda quantas casas livres quiser na vertical, horizontal e diagonal.',
+                    aula: 'Ensine que a Dama é forte, mas não deve sair sozinha sem apoio, porque pode virar alvo.'
+                },
+                rook: {
+                    nome: 'Torre',
+                    faz: 'A Torre domina colunas e linhas. Ela fica muito forte em coluna aberta e no final da partida.',
+                    anda: 'Anda quantas casas livres quiser na horizontal e na vertical.',
+                    aula: 'Ensine que Torre precisa de caminho livre. Abrir coluna para a Torre aumenta muito a força dela.'
+                },
+                bishop: {
+                    nome: 'Bispo',
+                    faz: 'O Bispo trabalha nas diagonais e cria pressão de longe, principalmente quando a diagonal está aberta.',
+                    anda: 'Anda quantas casas livres quiser pelas diagonais.',
+                    aula: 'Ensine o aluno a olhar a diagonal inteira antes de jogar; muitas ameaças aparecem de longe.'
+                },
+                knight: {
+                    nome: 'Cavalo',
+                    faz: 'O Cavalo cria ataques surpresa, garfos e fica muito forte no centro.',
+                    anda: 'Anda em L: duas casas para um lado e uma para o outro. É a única peça que pula por cima das outras.',
+                    aula: 'Ensine que Cavalo no centro ataca mais casas. Cavalo no canto costuma ficar fraco.'
+                },
+                pawn: {
+                    nome: 'Peão',
+                    faz: 'O Peão controla casas, protege peças e pode virar Dama quando chega ao final.',
+                    anda: 'Anda uma casa para frente, pode andar duas no primeiro lance, captura na diagonal e não volta para trás.',
+                    aula: 'Ensine que Peão avançado sem proteção vira fraqueza. Cada avanço precisa ter objetivo.'
+                }
+            };
+
+            function valorPeca26(tipo) {
+                return ({ pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 })[tipo] || 0;
+            }
+
+            function adversario26(cor) { return cor === 'white' ? 'black' : 'white'; }
+
+            function centro26(row, col) {
+                return 7 - (Math.abs(3.5 - row) + Math.abs(3.5 - col));
+            }
+
+            function rectQuadradoXadrez26(row, col) {
+                try {
+                    const el = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+                    if (el) {
+                        const r = el.getBoundingClientRect();
+                        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+                    }
+                } catch (_) {}
+                return null;
+            }
+
+            function analisarMelhorDicaXadrez26(peca, row, col, movimentos) {
+                const lista = Array.isArray(movimentos) ? movimentos : [];
+                if (!peca || !lista.length) {
+                    return 'Melhor orientação: esta peça não tem movimento legal agora. Use isso para explicar peça presa, bloqueio ou necessidade de proteger o Rei antes de atacar.';
+                }
+                const adv = adversario26(peca.color);
+                const avaliadas = lista.map(m => {
+                    let score = 0;
+                    const razoes = [];
+                    const destino = chessBoard?.[m.row]?.[m.col] || null;
+                    if (destino) {
+                        score += valorPeca26(destino.type) + 120;
+                        razoes.push(`ganha material capturando ${nomePeca[destino.type] || 'peça'}`);
+                    }
+                    if (m.castle) { score += 260; razoes.push('protege o Rei com roque'); }
+                    if (m.enPassant) { score += 170; razoes.push('captura especial en passant'); }
+                    const centro = centro26(m.row, m.col);
+                    if (centro >= 5.5) { score += 75; razoes.push('melhora o controle do centro'); }
+                    if ((peca.type === 'knight' || peca.type === 'bishop') && (peca.color === 'white' ? row === 7 : row === 0)) {
+                        score += 115; razoes.push('desenvolve peça que estava parada');
+                    }
+                    if (peca.type === 'pawn' && (m.row === 0 || m.row === 7)) { score += 850; razoes.push('chega perto da promoção'); }
+                    let atacado = false, defendido = false;
+                    try { atacado = quadradoAtacado(chessBoard, m.row, m.col, adv); } catch (_) {}
+                    try { defendido = quadradoAtacado(chessBoard, m.row, m.col, peca.color); } catch (_) {}
+                    if (atacado && !defendido && peca.type !== 'king') { score -= Math.min(240, Math.max(80, valorPeca26(peca.type) / 4)); razoes.push('cuidado: destino pode ficar sem defesa'); }
+                    if (atacado && defendido && peca.type !== 'king') { score -= 35; razoes.push('destino atacado, mas com defesa'); }
+                    if (!atacado) { score += 35; razoes.push('casa mais segura'); }
+                    return { move: m, score, razoes };
+                }).sort((a, b) => b.score - a.score);
+
+                const best = avaliadas[0];
+                if (!best) return 'Melhor orientação: observe ameaças, Rei e peças soltas antes de mover.';
+                const destinoAlg = alg(best.move.row, best.move.col);
+                const origemAlg = alg(row, col);
+                const razoes = best.razoes.length ? best.razoes.slice(0, 3).join(', ') : 'melhora a posição sem criar risco grande';
+                const tipo = peca.color === chessPlayerColor ? 'Boa jogada didática para você mostrar' : 'Boa ameaça do aluno para você explicar';
+                return `${tipo}: ${origemAlg} → ${destinoAlg}. Motivo: ${razoes}. Frase para aula: “Antes de jogar, veja o que a jogada ganha, o que ela protege e se deixa alguma peça sem defesa.”`;
+            }
+
+            function criarDadosPopupXadrez26(peca, row, col, movimentos, anchorRect) {
+                const info = explicacoes26[peca.type] || explicacoes26.pawn;
+                const capturas = (movimentos || []).filter(m => m.capture).length;
+                const casas = (movimentos || []).length
+                    ? movimentos.slice(0, 14).map(m => {
+                        let txt = alg(m.row, m.col);
+                        if (m.capture) txt += ' captura';
+                        if (m.castle) txt += m.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                        if (m.enPassant) txt += ' en passant';
+                        return txt;
+                    })
+                    : ['Sem casa legal agora'];
+                const ladoDoProfessor = peca.color === chessPlayerColor;
+                let porque = '';
+                if (capturas > 0) porque = 'Esta peça tem captura disponível. Use para ensinar cálculo: capturar só é bom quando não entrega uma peça maior depois.';
+                else if (peca.type === 'king') porque = 'Aqui o foco é segurança. O Rei nunca deve entrar em casa atacada.';
+                else if (peca.type === 'pawn') porque = 'Aqui o foco é estrutura: peões controlam casas, protegem peças e criam caminhos para promoção.';
+                else porque = 'Aqui o foco é melhorar a posição: desenvolver, controlar centro, atacar com apoio e defender peças importantes.';
+                if (!ladoDoProfessor) porque = 'Esta é uma peça do aluno. Use para explicar o que ela ameaça e qual resposta mantém sua posição segura.';
+                return {
+                    jogo: 'Xadrez online',
+                    simbolo: pecasUnicode[peca.color]?.[peca.type] || '♟',
+                    titulo: `${info.nome} ${peca.color === 'white' ? 'branca' : 'preta'}`,
+                    posicao: alg(row, col),
+                    oQueE: info.faz,
+                    comoAnda: info.anda,
+                    ondePodeIr: casas,
+                    porque,
+                    melhorJogada: analisarMelhorDicaXadrez26(peca, row, col, movimentos),
+                    fraseAula: info.aula,
+                    anchorRect,
+                    row,
+                    col
+                };
+            }
+
+
+            /* ✅ PROFISSIONAL 35 — ROBÔ CORES VISÍVEL E AUTO NO TABULEIRO
+               Base da Profissional 33 preservada: balão arrastável, tamanho ajustável,
+               melhores jogadas, robô conselheiro, auto após jogada do aluno e guia direto continuam.
+               Mantém Profissional 34 e corrige o ponto principal: quando o robô por cores estiver ON, ele fica visível, recalcula e pinta de verdade no tabuleiro. Amarelo = peça indicada, verde = destino, vermelho = perigo. */
+            function instalarCssBubbleProfessorXadrez27() {
+                if (document.getElementById('teacher-piece-bubble-27-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-piece-bubble-27-style';
+                style.textContent = `
+                    #teacher-piece-bubble-27 {
+                        position: fixed !important;
+                        z-index: 999999 !important;
+                        width: min(318px, calc(100vw - 18px));
+                        max-height: min(430px, calc(100vh - 18px));
+                        overflow: auto;
+                        display: none;
+                        border-radius: 16px;
+                        border: 1px solid rgba(250, 204, 21, .58);
+                        background: linear-gradient(180deg, rgba(8,13,28,.98), rgba(3,8,20,.99));
+                        color: #eaf6ff;
+                        box-shadow: 0 18px 48px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04), 0 0 26px rgba(250,204,21,.18);
+                        padding: 10px;
+                        font-family: inherit;
+                        text-align: left;
+                    }
+                    #teacher-piece-bubble-27.open { display: block !important; animation: teacherBubble27In .12s ease-out; }
+                    @keyframes teacherBubble27In { from { transform: translateY(5px) scale(.98); opacity:.65; } to { transform: translateY(0) scale(1); opacity:1; } }
+                    #teacher-piece-bubble-27::after {
+                        content: '';
+                        position: fixed;
+                        left: var(--arrow-left, 24px);
+                        top: var(--arrow-top, 24px);
+                        width: 13px;
+                        height: 13px;
+                        transform: rotate(45deg);
+                        background: rgba(8,13,28,.98);
+                        border-left: 1px solid rgba(250,204,21,.50);
+                        border-top: 1px solid rgba(250,204,21,.50);
+                        pointer-events: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-head-27 {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 8px;
+                        padding-bottom: 7px;
+                        border-bottom: 1px solid rgba(148,163,184,.18);
+                    }
+                    #teacher-piece-bubble-27 .bubble-titlewrap-27 { display:flex; gap:8px; align-items:center; min-width:0; }
+                    #teacher-piece-bubble-27 .bubble-symbol-27 {
+                        width: 34px; height: 34px; min-width:34px;
+                        border-radius: 12px;
+                        display:flex; align-items:center; justify-content:center;
+                        font-size: 1.45rem;
+                        background: rgba(250,204,21,.16);
+                        border: 1px solid rgba(250,204,21,.34);
+                        color: #fef3c7;
+                    }
+                    #teacher-piece-bubble-27 .bubble-title-27 {
+                        font-size: .93rem;
+                        line-height: 1.12;
+                        font-weight: 1000;
+                        color: #f8fafc;
+                    }
+                    #teacher-piece-bubble-27 .bubble-sub-27 {
+                        margin-top: 2px;
+                        color: #93c5fd;
+                        font-size: .68rem;
+                        font-weight: 850;
+                    }
+                    #teacher-piece-bubble-27 .bubble-close-27 {
+                        width: 28px; height: 28px; min-width: 28px;
+                        border-radius: 10px;
+                        border: 1px solid rgba(148,163,184,.25);
+                        background: rgba(15,23,42,.86);
+                        color: #e5e7eb;
+                        font-weight: 1000;
+                        cursor: pointer;
+                        line-height: 1;
+                    }
+                    #teacher-piece-bubble-27 .bubble-body-27 { padding-top: 8px; font-size: .76rem; line-height: 1.33; }
+                    #teacher-piece-bubble-27 .bubble-section-27 {
+                        border: 1px solid rgba(148,163,184,.14);
+                        background: rgba(15,23,42,.58);
+                        border-radius: 11px;
+                        padding: 7px 8px;
+                        margin-top: 6px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-label-27 {
+                        display:block;
+                        color:#86efac;
+                        font-size:.61rem;
+                        letter-spacing:.08em;
+                        text-transform:uppercase;
+                        font-weight:1000;
+                        margin-bottom:3px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-best-27 {
+                        border-color: rgba(250,204,21,.30);
+                        background: rgba(113,63,18,.22);
+                        color:#fef3c7;
+                        font-weight: 750;
+                    }
+                    #teacher-piece-bubble-27 .bubble-audio-27 {
+                        border-color: rgba(56,189,248,.27);
+                        background: rgba(14,116,144,.16);
+                        color:#dff6ff;
+                    }
+                    #teacher-piece-bubble-27 .bubble-moves-27 {
+                        display:flex;
+                        flex-wrap:wrap;
+                        gap:4px;
+                        margin-top:4px;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-27 {
+                        border-radius:999px;
+                        padding:3px 6px;
+                        background: rgba(37,99,235,.20);
+                        border: 1px solid rgba(96,165,250,.26);
+                        color:#bfdbfe;
+                        font-size:.66rem;
+                        font-weight:900;
+                    }
+                    #chess-board .chess-square.teacher-selected-27,
+                    .chess-square.teacher-selected-27 {
+                        outline: 3px solid rgba(250,204,21,.92) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 18px rgba(250,204,21,.38) !important;
+                    }
+
+                    /* ✅ PROFISSIONAL 28 — balão do professor arrastável, sem observar a página inteira */
+                    #teacher-piece-bubble-27.manual-position-28::after { display: none !important; }
+                    #teacher-piece-bubble-27 .bubble-head-27 {
+                        cursor: grab;
+                        touch-action: none;
+                        user-select: none;
+                        -webkit-user-select: none;
+                        -webkit-touch-callout: none;
+                    }
+                    #teacher-piece-bubble-27.dragging-28 .bubble-head-27 { cursor: grabbing; }
+                    #teacher-piece-bubble-27 .bubble-drag-tip-28 {
+                        display: block;
+                        margin-top: 3px;
+                        color: #fde68a;
+                        font-size: .58rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        line-height: 1.12;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-tools-28 {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-wrap: wrap;
+                        gap: 4px;
+                        padding: 7px 0 2px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-note-28 {
+                        width: 100%;
+                        text-align: center;
+                        color: #93c5fd;
+                        font-size: .61rem;
+                        font-weight: 900;
+                        letter-spacing: .04em;
+                        text-transform: uppercase;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-btn-28 {
+                        width: 27px;
+                        height: 27px;
+                        min-width: 27px;
+                        padding: 0;
+                        border-radius: 999px;
+                        border: 1px solid rgba(250,204,21,.24);
+                        background: rgba(15,23,42,.92);
+                        color: #fef3c7;
+                        font-size: .78rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                        box-shadow: none;
+                        text-transform: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-move-btn-28:hover,
+                    #teacher-piece-bubble-27 .bubble-move-btn-28:focus {
+                        background: rgba(37,99,235,.92);
+                        color: #ffffff;
+                        transform: none;
+                    }
+
+                    /* ✅ PROFISSIONAL 32 — tamanho do balão ajustável sem quebrar o arraste */
+                    #teacher-piece-bubble-27.size-small-32 {
+                        width: min(238px, calc(100vw - 12px)) !important;
+                        max-height: min(315px, calc(100vh - 12px)) !important;
+                        padding: 7px !important;
+                        border-radius: 14px !important;
+                    }
+                    #teacher-piece-bubble-27.size-normal-32 {
+                        width: min(318px, calc(100vw - 18px)) !important;
+                        max-height: min(430px, calc(100vh - 18px)) !important;
+                    }
+                    #teacher-piece-bubble-27.size-large-32 {
+                        width: min(378px, calc(100vw - 12px)) !important;
+                        max-height: min(520px, calc(100vh - 12px)) !important;
+                    }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-head-27 { gap: 6px; padding-bottom: 5px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-symbol-27 { width: 28px; height: 28px; min-width: 28px; font-size: 1.18rem; border-radius: 10px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-title-27 { font-size: .78rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-sub-27 { font-size: .58rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-drag-tip-28 { font-size: .50rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-move-tools-28 { gap: 3px; padding: 5px 0 1px 0; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-move-note-28 { font-size: .54rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-move-btn-28 { width: 24px; height: 24px; min-width: 24px; font-size: .68rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-body-27 { font-size: .64rem; line-height: 1.24; padding-top: 5px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-section-27 { padding: 5px 6px; margin-top: 4px; border-radius: 9px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-label-27 { font-size: .52rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-tools-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-tools-30 { gap: 4px; padding: 6px 0 4px 0; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-title-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-title-30 { font-size: .57rem; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-btn-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-btn-30 { font-size: .56rem; padding: 6px 5px; border-radius: 9px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-guide-status-29,
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-status-30 { font-size: .57rem; max-height: 96px; padding: 6px 7px; }
+                    #teacher-piece-bubble-27.size-small-32 .bubble-robo-auto-line-31 { font-size: .54rem; }
+
+                    #teacher-piece-bubble-27 .bubble-size-label-32 {
+                        min-width: 52px;
+                        height: 24px;
+                        padding: 0 7px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 999px;
+                        border: 1px solid rgba(147,197,253,.28);
+                        background: rgba(30,64,175,.30);
+                        color: #dbeafe;
+                        font-size: .55rem;
+                        font-weight: 1000;
+                        letter-spacing: .05em;
+                        text-transform: uppercase;
+                    }
+
+                    @media (max-width: 520px) {
+                        #teacher-piece-bubble-27 { width: min(292px, calc(100vw - 12px)); padding: 9px; border-radius: 14px; }
+                        #teacher-piece-bubble-27 .bubble-body-27 { font-size: .72rem; }
+                        #teacher-piece-bubble-27 .bubble-section-27 { padding: 6px 7px; }
+                        #teacher-piece-bubble-27 .bubble-title-27 { font-size: .86rem; }
+                        #teacher-piece-bubble-27.size-small-32 { width: min(228px, calc(100vw - 10px)) !important; max-height: min(295px, calc(100vh - 10px)) !important; }
+                        #teacher-piece-bubble-27.size-large-32 { width: min(340px, calc(100vw - 10px)) !important; max-height: min(520px, calc(100vh - 10px)) !important; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function escapeBubble27(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function garantirBubbleProfessorXadrez27() {
+                instalarCssBubbleProfessorXadrez27();
+                let bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) {
+                    bubble = document.createElement('div');
+                    bubble.id = 'teacher-piece-bubble-27';
+                    bubble.innerHTML = `
+                        <div class="bubble-head-27">
+                            <div class="bubble-titlewrap-27">
+                                <div class="bubble-symbol-27">♟</div>
+                                <div>
+                                    <div class="bubble-title-27">Peça selecionada</div>
+                                    <div class="bubble-sub-27">Manual do professor</div>
+                                    <div class="bubble-drag-tip-28">↕ segure no topo para arrastar</div>
+                                </div>
+                            </div>
+                            <button class="bubble-close-27" type="button" aria-label="Fechar">×</button>
+                        </div>
+                        <div class="bubble-move-tools-28" aria-label="Mover e redimensionar balão do professor">
+                            <span class="bubble-move-note-28">Toque nas setas ou arraste pelo topo</span>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-size-32="minus" aria-label="Diminuir balão">−</button>
+                            <span class="bubble-size-label-32" data-bubble-size-label-32>Normal</span>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-size-32="plus" aria-label="Aumentar balão">+</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="left" aria-label="Mover para esquerda">←</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="up" aria-label="Mover para cima">↑</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="down" aria-label="Mover para baixo">↓</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="right" aria-label="Mover para direita">→</button>
+                            <button class="bubble-move-btn-28" type="button" data-bubble-move-28="reset" aria-label="Voltar perto da peça">⟳</button>
+                        </div>
+                        <div class="bubble-body-27"></div>
+                    `;
+                    document.body.appendChild(bubble);
+                    bubble.querySelector('.bubble-close-27')?.addEventListener('click', () => bubble.classList.remove('open'));
+                }
+                instalarArrasteBubbleProfessorXadrez28(bubble);
+                instalarTamanhoBubbleProfessorXadrez32(bubble);
+                instalarGuiaMelhoresJogadasXadrez29(bubble);
+                instalarRoboConselheiroProfessorXadrez30(bubble);
+                instalarGuiaDiretaRoboProfessorXadrez33(bubble);
+                return bubble;
+            }
+
+            const BUBBLE_PROFESSOR_XADREZ_28_POS_KEY = 'tabuleiro_arena_teacher_piece_bubble_28_pos';
+            const BUBBLE_PROFESSOR_XADREZ_32_SIZE_KEY = 'tabuleiro_arena_teacher_piece_bubble_32_size';
+            const BUBBLE_PROFESSOR_XADREZ_32_SIZES = ['small', 'normal', 'large'];
+            let bubbleProfessorXadrez28Dragging = false;
+            let bubbleProfessorXadrez28StartX = 0;
+            let bubbleProfessorXadrez28StartY = 0;
+            let bubbleProfessorXadrez28StartLeft = 0;
+            let bubbleProfessorXadrez28StartTop = 0;
+
+            function lerTamanhoBubbleProfessorXadrez32() {
+                try {
+                    const salvo = localStorage.getItem(BUBBLE_PROFESSOR_XADREZ_32_SIZE_KEY) || 'normal';
+                    return BUBBLE_PROFESSOR_XADREZ_32_SIZES.includes(salvo) ? salvo : 'normal';
+                } catch (_) {
+                    return 'normal';
+                }
+            }
+
+            function nomeTamanhoBubbleProfessorXadrez32(tamanho) {
+                if (tamanho === 'small') return 'Pequeno';
+                if (tamanho === 'large') return 'Grande';
+                return 'Normal';
+            }
+
+            function aplicarTamanhoBubbleProfessorXadrez32(bubble, tamanho = 'normal', salvar = true) {
+                if (!bubble) return;
+                const finalSize = BUBBLE_PROFESSOR_XADREZ_32_SIZES.includes(tamanho) ? tamanho : 'normal';
+                bubble.classList.remove('size-small-32', 'size-normal-32', 'size-large-32');
+                bubble.classList.add(`size-${finalSize}-32`);
+                bubble.dataset.teacherBubbleSize32 = finalSize;
+                const label = bubble.querySelector('[data-bubble-size-label-32]');
+                if (label) label.textContent = nomeTamanhoBubbleProfessorXadrez32(finalSize);
+                if (salvar) {
+                    try { localStorage.setItem(BUBBLE_PROFESSOR_XADREZ_32_SIZE_KEY, finalSize); } catch (_) {}
+                }
+                requestAnimationFrame(() => manterBubbleProfessorXadrez28NaTela());
+            }
+
+            function alterarTamanhoBubbleProfessorXadrez32(delta) {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                const atual = bubble.dataset.teacherBubbleSize32 || lerTamanhoBubbleProfessorXadrez32();
+                const idx = Math.max(0, BUBBLE_PROFESSOR_XADREZ_32_SIZES.indexOf(atual));
+                const novoIdx = limitarBubbleProfessorXadrez28(idx + delta, 0, BUBBLE_PROFESSOR_XADREZ_32_SIZES.length - 1);
+                aplicarTamanhoBubbleProfessorXadrez32(bubble, BUBBLE_PROFESSOR_XADREZ_32_SIZES[novoIdx], true);
+            }
+
+            function instalarTamanhoBubbleProfessorXadrez32(bubble) {
+                if (!bubble) return;
+                aplicarTamanhoBubbleProfessorXadrez32(bubble, lerTamanhoBubbleProfessorXadrez32(), false);
+                if (bubble.dataset.sizeProfessor32 === '1') return;
+                bubble.dataset.sizeProfessor32 = '1';
+                bubble.querySelectorAll('[data-bubble-size-32]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-bubble-size-32');
+                        if (acao === 'minus') alterarTamanhoBubbleProfessorXadrez32(-1);
+                        if (acao === 'plus') alterarTamanhoBubbleProfessorXadrez32(1);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+            }
+
+            function viewportBubbleProfessorXadrez28() {
+                return {
+                    width: window.innerWidth || document.documentElement.clientWidth || 360,
+                    height: window.innerHeight || document.documentElement.clientHeight || 640
+                };
+            }
+
+            function limitarBubbleProfessorXadrez28(valor, min, max) {
+                if (!Number.isFinite(valor)) return min;
+                if (max < min) return min;
+                return Math.max(min, Math.min(max, valor));
+            }
+
+            function lerPosicaoBubbleProfessorXadrez28() {
+                try {
+                    const data = JSON.parse(localStorage.getItem(BUBBLE_PROFESSOR_XADREZ_28_POS_KEY) || 'null');
+                    if (data && Number.isFinite(data.left) && Number.isFinite(data.top)) return data;
+                } catch (_) {}
+                return null;
+            }
+
+            function salvarPosicaoBubbleProfessorXadrez28(left, top) {
+                try {
+                    localStorage.setItem(BUBBLE_PROFESSOR_XADREZ_28_POS_KEY, JSON.stringify({
+                        left: Math.round(left),
+                        top: Math.round(top)
+                    }));
+                } catch (_) {}
+            }
+
+            function aplicarPosicaoBubbleProfessorXadrez28(bubble, left, top, salvar = true) {
+                if (!bubble) return;
+                const vp = viewportBubbleProfessorXadrez28();
+                const margem = 7;
+                const rect = bubble.getBoundingClientRect();
+                const bw = Math.max(180, Math.min(rect.width || bubble.offsetWidth || 318, vp.width - margem * 2));
+                const bh = Math.max(120, Math.min(rect.height || bubble.offsetHeight || 280, vp.height - margem * 2));
+                const safeLeft = limitarBubbleProfessorXadrez28(left, margem, Math.max(margem, vp.width - bw - margem));
+                const safeTop = limitarBubbleProfessorXadrez28(top, margem, Math.max(margem, vp.height - bh - margem));
+
+                bubble.classList.add('manual-position-28');
+                bubble.style.left = `${Math.round(safeLeft)}px`;
+                bubble.style.top = `${Math.round(safeTop)}px`;
+                bubble.style.right = 'auto';
+                bubble.style.bottom = 'auto';
+                bubble.style.transform = 'none';
+                if (salvar) salvarPosicaoBubbleProfessorXadrez28(safeLeft, safeTop);
+            }
+
+            function manterBubbleProfessorXadrez28NaTela() {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble || !bubble.classList.contains('open') || !bubble.classList.contains('manual-position-28')) return;
+                const rect = bubble.getBoundingClientRect();
+                aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left, rect.top, true);
+            }
+
+            function pontoBubbleProfessorXadrez28(ev) {
+                if (ev.touches && ev.touches[0]) return ev.touches[0];
+                if (ev.changedTouches && ev.changedTouches[0]) return ev.changedTouches[0];
+                return ev;
+            }
+
+            function alvoInterativoBubbleProfessorXadrez28(target) {
+                return !!(target && target.closest && target.closest('button,input,textarea,select,a,video,audio'));
+            }
+
+            function iniciarArrasteBubbleProfessorXadrez28(ev) {
+                if (alvoInterativoBubbleProfessorXadrez28(ev.target)) return;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble || !bubble.classList.contains('open')) return;
+                const ponto = pontoBubbleProfessorXadrez28(ev);
+                const rect = bubble.getBoundingClientRect();
+                bubbleProfessorXadrez28Dragging = true;
+                bubbleProfessorXadrez28StartX = ponto.clientX;
+                bubbleProfessorXadrez28StartY = ponto.clientY;
+                bubbleProfessorXadrez28StartLeft = rect.left;
+                bubbleProfessorXadrez28StartTop = rect.top;
+                bubble.classList.add('dragging-28');
+                aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left, rect.top, false);
+                try { ev.currentTarget?.setPointerCapture?.(ev.pointerId); } catch (_) {}
+                ev.preventDefault?.();
+                ev.stopPropagation?.();
+            }
+
+            function moverArrasteBubbleProfessorXadrez28(ev) {
+                if (!bubbleProfessorXadrez28Dragging) return;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                const ponto = pontoBubbleProfessorXadrez28(ev);
+                aplicarPosicaoBubbleProfessorXadrez28(
+                    bubble,
+                    bubbleProfessorXadrez28StartLeft + (ponto.clientX - bubbleProfessorXadrez28StartX),
+                    bubbleProfessorXadrez28StartTop + (ponto.clientY - bubbleProfessorXadrez28StartY),
+                    false
+                );
+                ev.preventDefault?.();
+            }
+
+            function pararArrasteBubbleProfessorXadrez28(ev) {
+                if (!bubbleProfessorXadrez28Dragging) return;
+                bubbleProfessorXadrez28Dragging = false;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble) {
+                    bubble.classList.remove('dragging-28');
+                    const rect = bubble.getBoundingClientRect();
+                    aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left, rect.top, true);
+                }
+                ev?.preventDefault?.();
+            }
+
+            function moverPorBotaoBubbleProfessorXadrez28(dx, dy) {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                const rect = bubble.getBoundingClientRect();
+                aplicarPosicaoBubbleProfessorXadrez28(bubble, rect.left + dx, rect.top + dy, true);
+            }
+
+            function resetarPosicaoBubbleProfessorXadrez28() {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (!bubble) return;
+                try { localStorage.removeItem(BUBBLE_PROFESSOR_XADREZ_28_POS_KEY); } catch (_) {}
+                bubble.classList.remove('manual-position-28');
+                posicionarBubbleProfessorXadrez27(bubble, bubble._teacherBubble27LastAnchorRect || null);
+            }
+
+            function instalarArrasteBubbleProfessorXadrez28(bubble) {
+                if (!bubble || bubble.dataset.dragProfessor28 === '1') return;
+                bubble.dataset.dragProfessor28 = '1';
+                const head = bubble.querySelector('.bubble-head-27');
+                if (head) {
+                    if ('PointerEvent' in window) {
+                        head.addEventListener('pointerdown', iniciarArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('pointermove', moverArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('pointerup', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('pointercancel', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                    } else {
+                        head.addEventListener('touchstart', iniciarArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('touchmove', moverArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('touchend', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                        head.addEventListener('mousedown', iniciarArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('mousemove', moverArrasteBubbleProfessorXadrez28, { passive: false });
+                        document.addEventListener('mouseup', pararArrasteBubbleProfessorXadrez28, { passive: false });
+                    }
+                }
+                bubble.querySelectorAll('[data-bubble-move-28]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const dir = btn.getAttribute('data-bubble-move-28');
+                        const passo = 48;
+                        if (dir === 'left') moverPorBotaoBubbleProfessorXadrez28(-passo, 0);
+                        if (dir === 'right') moverPorBotaoBubbleProfessorXadrez28(passo, 0);
+                        if (dir === 'up') moverPorBotaoBubbleProfessorXadrez28(0, -passo);
+                        if (dir === 'down') moverPorBotaoBubbleProfessorXadrez28(0, passo);
+                        if (dir === 'reset') resetarPosicaoBubbleProfessorXadrez28();
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                if (!window.__bubbleProfessorXadrez28ResizeBound) {
+                    window.__bubbleProfessorXadrez28ResizeBound = true;
+                    window.addEventListener('resize', manterBubbleProfessorXadrez28NaTela);
+                }
+            }
+
+            function posicionarBubbleProfessorXadrez27(bubble, rect) {
+                if (!bubble) return;
+                bubble.classList.remove('manual-position-28', 'dragging-28');
+                const margem = 8;
+                const bw = bubble.offsetWidth || Math.min(318, window.innerWidth - 18);
+                const bh = bubble.offsetHeight || 280;
+                const centro = rect ? (rect.left + rect.width / 2) : (window.innerWidth / 2);
+                let left = Math.round(centro - bw / 2);
+                left = Math.max(margem, Math.min(left, window.innerWidth - bw - margem));
+                let top = rect ? Math.round(rect.top - bh - 12) : 80;
+                let arrowTop = rect ? Math.round(rect.top - 7) : top;
+                if (top < margem) {
+                    top = rect ? Math.round(rect.bottom + 12) : margem;
+                    arrowTop = rect ? Math.round(rect.bottom + 1) : top;
+                }
+                if (top + bh > window.innerHeight - margem) top = Math.max(margem, window.innerHeight - bh - margem);
+                const arrowLeft = Math.max(18, Math.min(centro, window.innerWidth - 18));
+                bubble.style.left = `${left}px`;
+                bubble.style.top = `${top}px`;
+                bubble.style.setProperty('--arrow-left', `${arrowLeft}px`);
+                bubble.style.setProperty('--arrow-top', `${arrowTop}px`);
+            }
+
+            function abrirBubbleProfessorXadrez27(dados = {}) {
+                const bubble = garantirBubbleProfessorXadrez27();
+                const movimentos = Array.isArray(dados.ondePodeIr) && dados.ondePodeIr.length
+                    ? dados.ondePodeIr.slice(0, 10).map(m => `<span class="bubble-move-27">${escapeBubble27(m)}</span>`).join('')
+                    : '<span class="bubble-move-27">Sem casa legal agora</span>';
+                const simbolo = bubble.querySelector('.bubble-symbol-27');
+                const titulo = bubble.querySelector('.bubble-title-27');
+                const sub = bubble.querySelector('.bubble-sub-27');
+                const body = bubble.querySelector('.bubble-body-27');
+                if (simbolo) simbolo.textContent = dados.simbolo || '♟';
+                if (titulo) titulo.textContent = dados.titulo || 'Peça selecionada';
+                if (sub) sub.textContent = `${dados.jogo || 'Xadrez online'} • ${dados.posicao || '—'}`;
+                if (body) body.innerHTML = `
+                    <div class="bubble-section-27">
+                        <span class="bubble-label-27">O que é</span>
+                        ${escapeBubble27(dados.oQueE || 'Esta peça faz parte da posição e precisa ser analisada antes da jogada.')}
+                    </div>
+                    <div class="bubble-section-27">
+                        <span class="bubble-label-27">O que faz</span>
+                        ${escapeBubble27(dados.comoAnda || 'Ela se move conforme a regra da peça e pode atacar ou defender casas importantes.')}
+                    </div>
+                    <div class="bubble-section-27">
+                        <span class="bubble-label-27">Onde pode ir agora</span>
+                        <div class="bubble-moves-27">${movimentos}</div>
+                    </div>
+                    <div class="bubble-section-27 bubble-best-27">
+                        <span class="bubble-label-27">Melhor dica na posição</span>
+                        ${escapeBubble27(dados.melhorJogada || dados.porque || 'A melhor orientação é olhar o que a peça ganha, o que protege e se fica segura depois do lance.')}
+                    </div>
+                    <div class="bubble-section-27 bubble-audio-27">
+                        <span class="bubble-label-27">Como instruir o aluno</span>
+                        “${escapeBubble27(dados.fraseAula || 'Antes de jogar, observe o que a peça ataca, o que ela protege e qual fraqueza ela pode deixar.') }”
+                    </div>
+                `;
+                bubble._teacherBubble27LastAnchorRect = dados.anchorRect || null;
+                bubble._teacherBubble27LastDados = dados || {};
+                registrarUltimaPecaGuiaXadrez29(dados || {});
+                bubble.classList.add('open');
+                aplicarTamanhoBubbleProfessorXadrez32(bubble, lerTamanhoBubbleProfessorXadrez32(), false);
+                bubble.style.left = '-9999px';
+                bubble.style.top = '8px';
+                requestAnimationFrame(() => {
+                    const posSalva = lerPosicaoBubbleProfessorXadrez28();
+                    if (posSalva) aplicarPosicaoBubbleProfessorXadrez28(bubble, posSalva.left, posSalva.top, false);
+                    else posicionarBubbleProfessorXadrez27(bubble, dados.anchorRect);
+                    if (guiaMelhoresJogadasXadrez29Ativo && guiaMelhoresJogadasXadrez29Modo === 'peca') {
+                        mostrarGuiaPecaAtualXadrez29(false);
+                    }
+                });
+            }
+
+            function limparMarcacaoBubbleProfessorXadrez27() {
+                document.querySelectorAll('.teacher-selected-27').forEach(el => el.classList.remove('teacher-selected-27'));
+            }
+
+            function marcarPecaBubbleProfessorXadrez27(row, col) {
+                limparMarcacaoBubbleProfessorXadrez27();
+                const el = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+                if (el) el.classList.add('teacher-selected-27');
+            }
+
+
+            window.abrirBubbleProfessorXadrez27 = abrirBubbleProfessorXadrez27;
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 29 — MELHORES JOGADAS COM CORES NO TABULEIRO
+               Recurso privado do professor: não joga, não envia nada para o Firebase,
+               não muda a sala online e não aparece para o aluno. Apenas colore o
+               tabuleiro local do professor para guiar a explicação em aula.
+            ===================================================================== */
+            let guiaMelhoresJogadasXadrez29Ativo = false;
+            let guiaMelhoresJogadasXadrez29Modo = 'peca';
+            let guiaMelhoresJogadasXadrez29Lista = [];
+            let guiaMelhoresJogadasXadrez29UltimaPeca = null;
+
+            function instalarCssGuiaMelhoresJogadasXadrez29() {
+                if (document.getElementById('teacher-best-guide-29-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-best-guide-29-style';
+                style.textContent = `
+                    #teacher-piece-bubble-27 .bubble-guide-tools-29 {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 5px;
+                        padding: 7px 0 2px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-title-29 {
+                        grid-column: 1 / -1;
+                        color: #bbf7d0;
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        text-align: center;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-btn-29 {
+                        border: 1px solid rgba(34,197,94,.28);
+                        background: rgba(20,83,45,.62);
+                        color: #dcfce7;
+                        border-radius: 999px;
+                        padding: 7px 6px;
+                        font-size: .64rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-btn-29[data-guide29="all"] {
+                        border-color: rgba(56,189,248,.28);
+                        background: rgba(12,74,110,.70);
+                        color: #e0f2fe;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-btn-29[data-guide29="clear"] {
+                        grid-column: 1 / -1;
+                        border-color: rgba(248,113,113,.28);
+                        background: rgba(127,29,29,.62);
+                        color: #fee2e2;
+                    }
+                    #teacher-piece-bubble-27 .bubble-guide-status-29 {
+                        grid-column: 1 / -1;
+                        min-height: 18px;
+                        border-radius: 9px;
+                        padding: 5px 7px;
+                        background: rgba(15,23,42,.62);
+                        border: 1px solid rgba(148,163,184,.12);
+                        color: #cbd5e1;
+                        font-size: .65rem;
+                        line-height: 1.22;
+                        text-align: center;
+                    }
+                    #chess-board .chess-square.teacher-best-from-29,
+                    .chess-square.teacher-best-from-29 {
+                        position: relative !important;
+                        outline: 3px solid rgba(250,204,21,.96) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 3px rgba(250,204,21,.25), 0 0 18px rgba(250,204,21,.42) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-to-29,
+                    .chess-square.teacher-best-to-29 {
+                        position: relative !important;
+                        outline: 3px solid rgba(255,255,255,.88) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 4px rgba(255,255,255,.18), 0 0 20px rgba(255,255,255,.36) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-1-29,
+                    .chess-square.teacher-best-1-29 {
+                        background: linear-gradient(135deg, #16a34a, #bbf7d0) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-2-29,
+                    .chess-square.teacher-best-2-29 {
+                        background: linear-gradient(135deg, #0284c7, #bae6fd) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-3-29,
+                    .chess-square.teacher-best-3-29 {
+                        background: linear-gradient(135deg, #7c3aed, #ddd6fe) !important;
+                    }
+                    #chess-board .chess-square.teacher-best-to-29::after,
+                    .chess-square.teacher-best-to-29::after {
+                        content: attr(data-teacher-best-label);
+                        position: absolute;
+                        right: 3px;
+                        bottom: 3px;
+                        z-index: 6;
+                        min-width: 19px;
+                        height: 19px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(2,6,23,.88);
+                        color: #ffffff;
+                        border: 1px solid rgba(255,255,255,.55);
+                        font-size: .66rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    #chess-board .chess-square.teacher-best-from-29::before,
+                    .chess-square.teacher-best-from-29::before {
+                        content: attr(data-teacher-best-origin);
+                        position: absolute;
+                        left: 3px;
+                        top: 3px;
+                        z-index: 6;
+                        min-width: 18px;
+                        height: 18px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(250,204,21,.95);
+                        color: #111827;
+                        border: 1px solid rgba(17,24,39,.24);
+                        font-size: .62rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    /* ✅ PROFISSIONAL 30 — robô conselheiro do professor */
+                    #teacher-piece-bubble-27 .bubble-robo-tools-30 {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 5px;
+                        padding: 7px 0 3px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-title-30 {
+                        grid-column: 1 / -1;
+                        color: #fef3c7;
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        text-align: center;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30 {
+                        border: 1px solid rgba(250,204,21,.30);
+                        background: rgba(113,63,18,.68);
+                        color: #fef3c7;
+                        border-radius: 999px;
+                        padding: 7px 6px;
+                        font-size: .63rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="plan"] {
+                        border-color: rgba(34,197,94,.30);
+                        background: rgba(20,83,45,.72);
+                        color: #dcfce7;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="threat"] {
+                        border-color: rgba(248,113,113,.32);
+                        background: rgba(127,29,29,.68);
+                        color: #fee2e2;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="clear"] {
+                        border-color: rgba(148,163,184,.28);
+                        background: rgba(15,23,42,.82);
+                        color: #e5e7eb;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30[data-robo30="auto"] {
+                        grid-column: 1 / -1;
+                        border-color: rgba(56,189,248,.36);
+                        background: linear-gradient(90deg, rgba(14,116,144,.84), rgba(37,99,235,.78));
+                        color: #dff6ff;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-btn-30.auto-on-31 {
+                        border-color: rgba(34,197,94,.70) !important;
+                        background: linear-gradient(90deg, rgba(22,101,52,.96), rgba(21,128,61,.90)) !important;
+                        color: #dcfce7 !important;
+                        box-shadow: 0 0 12px rgba(34,197,94,.26) !important;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-auto-line-31 {
+                        display:block;
+                        margin-top:5px;
+                        padding:5px 6px;
+                        border-radius:8px;
+                        background: rgba(14,116,144,.16);
+                        border: 1px solid rgba(56,189,248,.18);
+                        color:#bae6fd;
+                        font-weight:900;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 {
+                        grid-column: 1 / -1;
+                        min-height: 30px;
+                        max-height: 150px;
+                        overflow: auto;
+                        border-radius: 10px;
+                        padding: 7px 8px;
+                        background: rgba(3,7,18,.78);
+                        border: 1px solid rgba(250,204,21,.16);
+                        color: #e5e7eb;
+                        font-size: .66rem;
+                        line-height: 1.27;
+                        text-align: left;
+                    }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 strong { color: #fef08a; }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 .robo-good-30 { color: #86efac; font-weight: 1000; }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 .robo-warn-30 { color: #fca5a5; font-weight: 1000; }
+                    #teacher-piece-bubble-27 .bubble-robo-status-30 .robo-blue-30 { color: #93c5fd; font-weight: 1000; }
+                    #chess-board .chess-square.teacher-robo-from-30,
+                    .chess-square.teacher-robo-from-30 {
+                        position: relative !important;
+                        outline: 3px solid rgba(250,204,21,.98) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 3px rgba(250,204,21,.30), 0 0 20px rgba(250,204,21,.42) !important;
+                    }
+                    #chess-board .chess-square.teacher-robo-to-30,
+                    .chess-square.teacher-robo-to-30 {
+                        position: relative !important;
+                        outline: 3px solid rgba(255,255,255,.90) !important;
+                        outline-offset: -4px !important;
+                        box-shadow: inset 0 0 0 4px rgba(255,255,255,.16), 0 0 22px rgba(255,255,255,.30) !important;
+                    }
+                    #chess-board .chess-square.teacher-robo-step1-30,
+                    .chess-square.teacher-robo-step1-30 { background: linear-gradient(135deg, #15803d, #bbf7d0) !important; }
+                    #chess-board .chess-square.teacher-robo-step2-30,
+                    .chess-square.teacher-robo-step2-30 { background: linear-gradient(135deg, #b91c1c, #fecaca) !important; }
+                    #chess-board .chess-square.teacher-robo-step3-30,
+                    .chess-square.teacher-robo-step3-30 { background: linear-gradient(135deg, #1d4ed8, #bfdbfe) !important; }
+                    #chess-board .chess-square.teacher-robo-to-30::after,
+                    .chess-square.teacher-robo-to-30::after {
+                        content: attr(data-teacher-robo-label);
+                        position: absolute;
+                        right: 3px;
+                        bottom: 3px;
+                        z-index: 8;
+                        min-width: 20px;
+                        height: 20px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(2,6,23,.90);
+                        color: #ffffff;
+                        border: 1px solid rgba(255,255,255,.55);
+                        font-size: .63rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    #chess-board .chess-square.teacher-robo-from-30::before,
+                    .chess-square.teacher-robo-from-30::before {
+                        content: attr(data-teacher-robo-origin);
+                        position: absolute;
+                        left: 3px;
+                        top: 3px;
+                        z-index: 8;
+                        min-width: 20px;
+                        height: 20px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(250,204,21,.96);
+                        color: #111827;
+                        border: 1px solid rgba(17,24,39,.25);
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                    }
+                    @media (max-width: 520px) {
+                        #teacher-piece-bubble-27 .bubble-guide-tools-29 { gap: 4px; }
+                        #teacher-piece-bubble-27 .bubble-guide-btn-29 { font-size: .6rem; padding: 7px 5px; }
+                        #teacher-piece-bubble-27 .bubble-guide-status-29 { font-size: .62rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function instalarGuiaMelhoresJogadasXadrez29(bubble) {
+                instalarCssGuiaMelhoresJogadasXadrez29();
+                if (!bubble || bubble.querySelector('.bubble-guide-tools-29')) return;
+                const tools = document.createElement('div');
+                tools.className = 'bubble-guide-tools-29';
+                tools.innerHTML = `
+                    <div class="bubble-guide-title-29">🎨 melhores jogadas no tabuleiro</div>
+                    <button class="bubble-guide-btn-29" type="button" data-guide29="piece">Melhores da peça</button>
+                    <button class="bubble-guide-btn-29" type="button" data-guide29="all">Melhores do lado</button>
+                    <button class="bubble-guide-btn-29" type="button" data-guide29="clear">Apagar cores</button>
+                    <div id="bubble-guide-status-29" class="bubble-guide-status-29">Verde = 1ª melhor, azul = 2ª, roxo = 3ª.</div>
+                `;
+                const body = bubble.querySelector('.bubble-body-27');
+                if (body) bubble.insertBefore(tools, body);
+                else bubble.appendChild(tools);
+
+                tools.querySelectorAll('[data-guide29]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-guide29');
+                        if (acao === 'piece') mostrarGuiaPecaAtualXadrez29(true);
+                        if (acao === 'all') mostrarGuiaLadoAtualXadrez29(true);
+                        if (acao === 'clear') desligarGuiaMelhoresJogadasXadrez29(true);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+            }
+
+            function atualizarStatusGuiaXadrez29(texto) {
+                const el = document.getElementById('bubble-guide-status-29');
+                if (el) el.innerHTML = texto;
+            }
+
+            function registrarUltimaPecaGuiaXadrez29(dados = {}) {
+                if (Number.isFinite(Number(dados.row)) && Number.isFinite(Number(dados.col))) {
+                    guiaMelhoresJogadasXadrez29UltimaPeca = { row: Number(dados.row), col: Number(dados.col) };
+                }
+            }
+
+            function limparCoresGuiaMelhoresJogadasXadrez29() {
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove(
+                        'teacher-best-from-29', 'teacher-best-to-29',
+                        'teacher-best-1-29', 'teacher-best-2-29', 'teacher-best-3-29',
+                        'teacher-robo-from-30', 'teacher-robo-to-30',
+                        'teacher-robo-step1-30', 'teacher-robo-step2-30', 'teacher-robo-step3-30'
+                    );
+                    square.removeAttribute('data-teacher-best-label');
+                    square.removeAttribute('data-teacher-best-origin');
+                    square.removeAttribute('data-teacher-robo-label');
+                    square.removeAttribute('data-teacher-robo-origin');
+                    square.removeAttribute('title');
+                });
+            }
+
+            function desligarGuiaMelhoresJogadasXadrez29(atualizarTexto = false) {
+                guiaMelhoresJogadasXadrez29Ativo = false;
+                guiaMelhoresJogadasXadrez29Lista = [];
+                limparCoresGuiaMelhoresJogadasXadrez29();
+                try { limparRoboProfessorXadrez30(false); } catch (_) {}
+                if (atualizarTexto) atualizarStatusGuiaXadrez29('Cores apagadas. Toque em uma peça e ligue novamente quando quiser ensinar.');
+            }
+
+            function squareGuiaXadrez29(row, col) {
+                return document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+            }
+
+            function textoMovimentoGuiaXadrez29(item) {
+                const peca = chessBoard?.[item.from.row]?.[item.from.col] || item.peca || null;
+                const nome = nomePeca[peca?.type] || 'Peça';
+                let extra = '';
+                if (item.to?.capture) extra = ' captura';
+                if (item.to?.castle) extra = item.to.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) extra = ' promoção';
+                return `${nome}: ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}${extra}`;
+            }
+
+            function motivoGuiaXadrez29(item) {
+                const peca = chessBoard?.[item.from.row]?.[item.from.col] || item.peca || null;
+                const destino = chessBoard?.[item.to.row]?.[item.to.col] || null;
+                if (destino) return `ganha material capturando ${nomePeca[destino.type] || 'peça'}`;
+                if (item.to?.castle) return 'protege o Rei com roque';
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) return 'aproxima o peão da promoção';
+                if ((peca?.type === 'knight' || peca?.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) return 'desenvolve peça que estava parada';
+                const centro = centro26(item.to.row, item.to.col);
+                if (centro >= 5.5) return 'melhora o controle do centro';
+                return 'melhora a posição com segurança';
+            }
+
+            function pontuarMovimentoGuiaXadrez29(item, cor) {
+                try {
+                    let score = pontuarJogadaTreinoXadrez(item, cor, chessBoard);
+                    const peca = chessBoard?.[item.from.row]?.[item.from.col] || null;
+                    const destino = chessBoard?.[item.to.row]?.[item.to.col] || null;
+                    if (destino) score += valorPeca26(destino.type) * 0.7;
+                    if (item.to?.castle) score += 220;
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 900;
+                    if ((peca?.type === 'knight' || peca?.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) score += 120;
+                    score += centro26(item.to.row, item.to.col) * 12;
+                    return score;
+                } catch (_) {
+                    return 0;
+                }
+            }
+
+            function melhoresDaPecaGuiaXadrez29(row, col, limite = 3) {
+                const peca = chessBoard?.[row]?.[col] || null;
+                if (!peca) return [];
+                let movimentos = [];
+                try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                return movimentos
+                    .map(move => {
+                        const item = { from: { row, col }, to: move, peca };
+                        return { ...item, score: pontuarMovimentoGuiaXadrez29(item, peca.color) };
+                    })
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limite);
+            }
+
+            function melhoresDoLadoGuiaXadrez29(cor, limite = 3) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, chessBoard) || []; } catch (_) { movimentos = []; }
+                return movimentos
+                    .map(item => ({ ...item, peca: chessBoard?.[item.from.row]?.[item.from.col] || null, score: pontuarMovimentoGuiaXadrez29(item, cor) }))
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limite);
+            }
+
+            function pintarGuiaMelhoresJogadasXadrez29(lista = []) {
+                limparCoresGuiaMelhoresJogadasXadrez29();
+                lista.slice(0, 3).forEach((item, index) => {
+                    const ordem = index + 1;
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    const titulo = `${ordem}ª opção: ${textoMovimentoGuiaXadrez29(item)} — ${motivoGuiaXadrez29(item)}`;
+                    if (from) {
+                        from.classList.add('teacher-best-from-29');
+                        from.classList.add(`teacher-best-${ordem}-29`);
+                        const antigo = from.getAttribute('data-teacher-best-origin');
+                        from.setAttribute('data-teacher-best-origin', antigo ? `${antigo},${ordem}` : String(ordem));
+                        from.setAttribute('title', titulo);
+                    }
+                    if (to) {
+                        to.classList.add('teacher-best-to-29');
+                        to.classList.add(`teacher-best-${ordem}-29`);
+                        to.setAttribute('data-teacher-best-label', `${ordem}ª`);
+                        to.setAttribute('title', titulo);
+                    }
+                });
+            }
+
+            function resumoGuiaMelhoresJogadasXadrez29(lista = [], titulo = 'Guia ligado') {
+                if (!lista.length) return 'Não encontrei jogada legal para colorir agora.';
+                return `<strong>${titulo}:</strong><br>` + lista.map((item, i) => {
+                    const cor = i === 0 ? 'verde' : (i === 1 ? 'azul' : 'roxo');
+                    return `${i + 1}. ${escapeBubble27(textoMovimentoGuiaXadrez29(item))} <span style="color:#94a3b8;">(${cor})</span>`;
+                }).join('<br>');
+            }
+
+            function mostrarGuiaPecaAtualXadrez29(atualizarTexto = true) {
+                const pos = guiaMelhoresJogadasXadrez29UltimaPeca;
+                if (!pos || !chessBoard?.[pos.row]?.[pos.col]) {
+                    if (atualizarTexto) atualizarStatusGuiaXadrez29('Toque primeiro em uma peça no tabuleiro para eu mostrar as melhores casas dela.');
+                    return;
+                }
+                const lista = melhoresDaPecaGuiaXadrez29(pos.row, pos.col, 3);
+                guiaMelhoresJogadasXadrez29Ativo = true;
+                guiaMelhoresJogadasXadrez29Modo = 'peca';
+                guiaMelhoresJogadasXadrez29Lista = lista;
+                pintarGuiaMelhoresJogadasXadrez29(lista);
+                if (atualizarTexto) atualizarStatusGuiaXadrez29(resumoGuiaMelhoresJogadasXadrez29(lista, 'Melhores da peça'));
+            }
+
+            function mostrarGuiaLadoAtualXadrez29(atualizarTexto = true) {
+                let cor = chessPlayerColor || chessTurn || 'white';
+                const pos = guiaMelhoresJogadasXadrez29UltimaPeca;
+                if (pos && chessBoard?.[pos.row]?.[pos.col]?.color) cor = chessBoard[pos.row][pos.col].color;
+                const lista = melhoresDoLadoGuiaXadrez29(cor, 3);
+                guiaMelhoresJogadasXadrez29Ativo = true;
+                guiaMelhoresJogadasXadrez29Modo = 'lado';
+                guiaMelhoresJogadasXadrez29Lista = lista;
+                pintarGuiaMelhoresJogadasXadrez29(lista);
+                const lado = cor === 'white' ? 'brancas' : 'pretas';
+                if (atualizarTexto) atualizarStatusGuiaXadrez29(resumoGuiaMelhoresJogadasXadrez29(lista, `Melhores das ${lado}`));
+            }
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 30 — ROBÔ CONSELHEIRO DO PROFESSOR
+               O robô analisa localmente a posição do Xadrez no aparelho do professor.
+               Ele não executa lances, não altera a partida online e não grava nada no Firebase.
+            ===================================================================== */
+            let roboProfessorXadrez30Ativo = false;
+            let roboProfessorXadrez30Plano = [];
+            let roboProfessorXadrez30Modo = '';
+            let roboProfessorXadrez30Cor = 'white';
+            let roboProfessorXadrez31AutoAtivo = false;
+            let roboProfessorXadrez31AutoTimer = null;
+            let roboProfessorXadrez31UltimaAssinatura = '';
+            let roboProfessorXadrez31UltimaMensagem = '';
+
+            function instalarRoboConselheiroProfessorXadrez30(bubble) {
+                if (!bubble || bubble.querySelector('.bubble-robo-tools-30')) return;
+                const tools = document.createElement('div');
+                tools.className = 'bubble-robo-tools-30';
+                tools.innerHTML = `
+                    <div class="bubble-robo-title-30">🤖 robô conselheiro da aula</div>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="study">Estudar jogo</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="plan">Plano vencedor</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="threat">Ameaças aluno</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="clear">Limpar robô</button>
+                    <button class="bubble-robo-btn-30" type="button" data-robo30="auto">Auto após jogada do aluno: OFF</button>
+                    <div id="bubble-robo-status-30" class="bubble-robo-status-30">Toque em uma peça e aperte <strong>Estudar jogo</strong> para receber uma dica forte de ensino. Ligue o <strong>Auto</strong> para atualizar sozinho quando o aluno jogar.</div>
+                `;
+                const body = bubble.querySelector('.bubble-body-27');
+                if (body) bubble.insertBefore(tools, body);
+                else bubble.appendChild(tools);
+
+                tools.querySelectorAll('[data-robo30]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-robo30');
+                        if (acao === 'study') estudarJogoRoboProfessorXadrez30('estudo');
+                        if (acao === 'plan') estudarJogoRoboProfessorXadrez30('plano');
+                        if (acao === 'threat') mostrarAmeacasDoAlunoRoboProfessorXadrez30();
+                        if (acao === 'clear') limparRoboProfessorXadrez30(true);
+                        if (acao === 'auto') alternarAutoRoboProfessorXadrez31();
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                atualizarBotaoAutoRoboProfessorXadrez31();
+            }
+
+            function atualizarStatusRoboProfessorXadrez30(html) {
+                const el = document.getElementById('bubble-robo-status-30');
+                if (el) el.innerHTML = html;
+            }
+
+            function corFocoRoboProfessorXadrez30() {
+                const pos = guiaMelhoresJogadasXadrez29UltimaPeca;
+                if (pos && chessBoard?.[pos.row]?.[pos.col]?.color) return chessBoard[pos.row][pos.col].color;
+                return chessPlayerColor || chessTurn || 'white';
+            }
+
+            function nomeLadoRoboProfessorXadrez30(cor) {
+                return cor === 'white' ? 'brancas' : 'pretas';
+            }
+
+            function nomeCurtoPecaRoboProfessorXadrez30(tipo) {
+                return nomePeca[tipo] || 'Peça';
+            }
+
+            function movimentoIgualRoboProfessorXadrez30(a, b) {
+                return !!(a && b &&
+                    a.from?.row === b.from?.row && a.from?.col === b.from?.col &&
+                    a.to?.row === b.to?.row && a.to?.col === b.to?.col);
+            }
+
+            function textoMovimentoRoboProfessorXadrez30(item, board = chessBoard) {
+                if (!item) return 'sem lance';
+                const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                const nome = nomeCurtoPecaRoboProfessorXadrez30(peca?.type);
+                let extra = '';
+                const alvo = pecaCapturadaRoboProfessorXadrez30(board, item);
+                if (alvo) extra = ` captura ${nomeCurtoPecaRoboProfessorXadrez30(alvo.type)}`;
+                if (item.to?.castle) extra = item.to.castle === 'king' ? ' roque pequeno' : ' roque grande';
+                if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) extra = ' promoção';
+                return `${nome}: ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}${extra}`;
+            }
+
+            function pecaCapturadaRoboProfessorXadrez30(board, item) {
+                if (!board || !item) return null;
+                if (item.to?.enPassant && item.to?.enPassantCapture) {
+                    return board[item.to.enPassantCapture.row]?.[item.to.enPassantCapture.col] || null;
+                }
+                return board[item.to.row]?.[item.to.col] || null;
+            }
+
+            function classificarLanceRoboProfessorXadrez30(item, board = chessBoard, cor = 'white') {
+                try {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    const adversario = corOposta(cor);
+                    const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const capturada = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    if (temp) {
+                        const respostas = todosMovimentosLegais(adversario, temp) || [];
+                        if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 'vence por xeque-mate';
+                        if (reiEstaEmXeque(temp, adversario)) return 'dá xeque e obriga o aluno a responder';
+                    }
+                    if (capturada) return `ganha material capturando ${nomeCurtoPecaRoboProfessorXadrez30(capturada.type)}`;
+                    if (item.to?.castle) return 'protege o Rei e melhora a segurança';
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) return 'transforma o peão em peça forte';
+                    if ((peca?.type === 'knight' || peca?.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) return 'desenvolve peça e aumenta controle do centro';
+                    if (centro26(item.to.row, item.to.col) >= 5.5) return 'controla o centro e melhora a posição';
+                    if (peca && quadradoAtacado(board, item.from.row, item.from.col, adversario)) return 'tira uma peça de perigo sem perder tempo';
+                    return 'lance seguro para melhorar a posição e criar plano';
+                } catch (_) {
+                    return 'lance útil para estudar com calma';
+                }
+            }
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 40 — CÉREBRO MAIS FORTE DO ROBÔ PROFESSOR
+               A Profissional 39 deixou o robô leve e sincronizado. Agora o cálculo
+               fica mais forte: ele olha a resposta do aluno, evita peças penduradas,
+               procura xeque-mate, captura segura, defesa do Rei e melhor continuação.
+               Continua local, privado e sem mexer na partida/Firebase.
+            ===================================================================== */
+            function valorPecaProfessor40(tipo) {
+                try { return valorProfessorXadrez20(tipo); } catch (_) {}
+                return ({ pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 20000 })[tipo] || 0;
+            }
+
+            function bonusCasaProfessor40(peca, row, col, corBase) {
+                if (!peca) return 0;
+                const avancar = peca.color === 'white' ? (6 - row) : (row - 1);
+                const centro = centro26(row, col);
+                let bonus = 0;
+                if (peca.type === 'pawn') bonus += Math.max(-2, avancar) * 7 + centro * 3;
+                if (peca.type === 'knight') bonus += centro * 13 - ((row === 0 || row === 7 || col === 0 || col === 7) ? 26 : 0);
+                if (peca.type === 'bishop') bonus += centro * 9;
+                if (peca.type === 'queen') bonus += centro * 4;
+                if (peca.type === 'rook') bonus += (row === 0 || row === 7 ? 8 : 0);
+                if (peca.type === 'king') {
+                    const finalComPoucasPecas = contarMaterialProfessor40(chessBoard, null) <= 2600;
+                    bonus += finalComPoucasPecas ? centro * 8 : -centro * 5;
+                }
+                return peca.color === corBase ? bonus : -bonus;
+            }
+
+            function contarMaterialProfessor40(board, cor = null) {
+                let total = 0;
+                try {
+                    for (let r = 0; r < 8; r++) {
+                        for (let c = 0; c < 8; c++) {
+                            const p = board?.[r]?.[c];
+                            if (!p || p.type === 'king') continue;
+                            if (!cor || p.color === cor) total += valorPecaProfessor40(p.type);
+                        }
+                    }
+                } catch (_) {}
+                return total;
+            }
+
+            function reiProfessor40(board, cor) {
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const p = board?.[r]?.[c];
+                        if (p && p.color === cor && p.type === 'king') return { row: r, col: c };
+                    }
+                }
+                return null;
+            }
+
+            function segurancaReiProfessor40(board, corBase) {
+                const adversario = corOposta(corBase);
+                const meuRei = reiProfessor40(board, corBase);
+                const reiAdv = reiProfessor40(board, adversario);
+                let score = 0;
+                if (meuRei) {
+                    if (reiEstaEmXeque(board, corBase)) score -= 550;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (!dr && !dc) continue;
+                            const r = meuRei.row + dr, c = meuRei.col + dc;
+                            if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+                            if (quadradoAtacado(board, r, c, adversario)) score -= 26;
+                        }
+                    }
+                }
+                if (reiAdv) {
+                    if (reiEstaEmXeque(board, adversario)) score += 380;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (!dr && !dc) continue;
+                            const r = reiAdv.row + dr, c = reiAdv.col + dc;
+                            if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+                            if (quadradoAtacado(board, r, c, corBase)) score += 14;
+                        }
+                    }
+                }
+                return score;
+            }
+
+            function avaliarPosicaoProfessor40(board, corBase) {
+                const adversario = corOposta(corBase);
+                let meusMoves = [];
+                let movesAdv = [];
+                try { meusMoves = todosMovimentosLegais(corBase, board) || []; } catch (_) { meusMoves = []; }
+                try { movesAdv = todosMovimentosLegais(adversario, board) || []; } catch (_) { movesAdv = []; }
+
+                if (!movesAdv.length && reiEstaEmXeque(board, adversario)) return 10000000;
+                if (!meusMoves.length && reiEstaEmXeque(board, corBase)) return -10000000;
+                if (!movesAdv.length && !reiEstaEmXeque(board, adversario)) return -60;
+                if (!meusMoves.length && !reiEstaEmXeque(board, corBase)) return 0;
+
+                let score = 0;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const p = board?.[r]?.[c];
+                        if (!p) continue;
+                        const sinal = p.color === corBase ? 1 : -1;
+                        const valor = valorPecaProfessor40(p.type);
+                        score += sinal * valor;
+                        score += bonusCasaProfessor40(p, r, c, corBase);
+
+                        if (p.type !== 'king') {
+                            const atacada = quadradoAtacado(board, r, c, corOposta(p.color));
+                            const defendida = quadradoAtacado(board, r, c, p.color);
+                            if (atacada && !defendida) score += sinal * (-Math.min(420, valor * 0.55));
+                            else if (atacada && defendida) score += sinal * (-Math.min(120, valor * 0.16));
+                            else if (defendida) score += sinal * Math.min(34, valor * 0.035);
+                        }
+                    }
+                }
+
+                score += (meusMoves.length - movesAdv.length) * 5;
+                score += segurancaReiProfessor40(board, corBase);
+
+                try {
+                    const meuMate = detectarMateEmUmTreinoXadrez(corBase, board);
+                    const mateContra = detectarMateEmUmTreinoXadrez(adversario, board);
+                    if (meuMate) score += 280000;
+                    if (mateContra) score -= 360000;
+                } catch (_) {}
+
+                return score;
+            }
+
+            function movimentoDaXequeProfessor40(board, item, cor) {
+                try {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    return !!(temp && reiEstaEmXeque(temp, corOposta(cor)));
+                } catch (_) { return false; }
+            }
+
+            function ordenarMovimentosProfessor40(movimentos, board, corBase) {
+                const adversario = corOposta(corBase);
+                return (movimentos || []).map(item => {
+                    const peca = board?.[item.from.row]?.[item.from.col] || null;
+                    const alvo = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    let ordem = 0;
+                    if (alvo) ordem += valorPecaProfessor40(alvo.type) * 16 - valorPecaProfessor40(peca?.type) * 0.55;
+                    if (item.to?.castle) ordem += 260;
+                    if (peca?.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) ordem += 1500;
+                    if (movimentoDaXequeProfessor40(board, item, peca?.color || corBase)) ordem += 430;
+                    try {
+                        if (peca && quadradoAtacado(board, item.from.row, item.from.col, adversario)) ordem += Math.min(350, valorPecaProfessor40(peca.type) * 0.55);
+                        const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                        if (temp && peca && peca.type !== 'king') {
+                            const destinoAtacado = quadradoAtacado(temp, item.to.row, item.to.col, adversario);
+                            const destinoDefendido = quadradoAtacado(temp, item.to.row, item.to.col, peca.color);
+                            if (destinoAtacado && !destinoDefendido) ordem -= valorPecaProfessor40(peca.type) * 2.1;
+                            if (destinoAtacado && destinoDefendido) ordem -= valorPecaProfessor40(peca.type) * 0.25;
+                        }
+                    } catch (_) {}
+                    ordem += centro26(item.to.row, item.to.col) * 8;
+                    return { ...item, order40: ordem };
+                }).sort((a, b) => b.order40 - a.order40);
+            }
+
+            function buscaProfessor40(board, corDaVez, profundidade, alpha, beta, corBase) {
+                const movimentosBase = todosMovimentosLegais(corDaVez, board) || [];
+                if (profundidade <= 0 || !movimentosBase.length) return avaliarPosicaoProfessor40(board, corBase);
+
+                const maximizando = corDaVez === corBase;
+                // ✅ PROFISSIONAL 41: limite menor para não travar o online.
+                const limite = profundidade >= 3 ? 6 : (profundidade === 2 ? 8 : 12);
+                const movimentos = ordenarMovimentosProfessor40(movimentosBase, board, corDaVez).slice(0, limite);
+
+                if (maximizando) {
+                    let melhor = -Infinity;
+                    for (const item of movimentos) {
+                        const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                        if (!temp) continue;
+                        const valor = buscaProfessor40(temp, corOposta(corDaVez), profundidade - 1, alpha, beta, corBase);
+                        if (valor > melhor) melhor = valor;
+                        if (valor > alpha) alpha = valor;
+                        if (beta <= alpha) break;
+                    }
+                    return melhor;
+                }
+
+                let pior = Infinity;
+                for (const item of movimentos) {
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!temp) continue;
+                    const valor = buscaProfessor40(temp, corOposta(corDaVez), profundidade - 1, alpha, beta, corBase);
+                    if (valor < pior) pior = valor;
+                    if (valor < beta) beta = valor;
+                    if (beta <= alpha) break;
+                }
+                return pior;
+            }
+
+            function melhorGanhoRespostaAlunoProfessor40(boardDepois, corBase) {
+                const aluno = corOposta(corBase);
+                let pior = 0;
+                try {
+                    const respostas = ordenarMovimentosProfessor40(todosMovimentosLegais(aluno, boardDepois) || [], boardDepois, aluno).slice(0, 5);
+                    respostas.forEach(resp => {
+                        const alvo = pecaCapturadaRoboProfessorXadrez30(boardDepois, resp);
+                        if (alvo) pior = Math.max(pior, valorPecaProfessor40(alvo.type));
+                        const temp = aplicarMovimentoTreinoEmClone(boardDepois, resp, 'queen');
+                        if (temp && reiEstaEmXeque(temp, corBase)) pior = Math.max(pior, 420);
+                    });
+                } catch (_) {}
+                return pior;
+            }
+
+            function avaliarLanceProfundoRoboProfessorXadrez30(item, board = chessBoard, cor = 'white') {
+                try {
+                    const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!temp || !peca) return -9999999;
+
+                    const adversario = corOposta(cor);
+                    const capturada = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    const respostas = todosMovimentosLegais(adversario, temp) || [];
+                    if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 9000000;
+
+                    // ✅ PROFISSIONAL 41: profundidade reduzida para manter o jogo leve.
+                    // O robô continua forte por heurística, mas não trava durante a sincronização online.
+                    let score = buscaProfessor40(temp, adversario, 2, -99999999, 99999999, cor);
+
+                    if (capturada) score += valorPecaProfessor40(capturada.type) * 2.15 - valorPecaProfessor40(peca.type) * 0.12;
+                    if (reiEstaEmXeque(temp, adversario)) score += 700;
+                    if (item.to?.castle) score += 360;
+                    if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 2200;
+                    score += centro26(item.to.row, item.to.col) * 24;
+
+                    const mateContra = detectarMateEmUmTreinoXadrez(adversario, temp);
+                    if (mateContra) score -= 6500000;
+
+                    const meuMateProximo = detectarMateEmUmTreinoXadrez(cor, temp);
+                    if (meuMateProximo) score += 520000;
+
+                    if (peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
+                        const defendida = quadradoAtacado(temp, item.to.row, item.to.col, cor);
+                        score -= valorPecaProfessor40(peca.type) * (defendida ? 0.34 : 1.55);
+                    }
+
+                    score -= melhorGanhoRespostaAlunoProfessor40(temp, cor) * 0.95;
+
+                    return score;
+                } catch (_) {
+                    return -9999999;
+                }
+            }
+
+            function melhoresLancesProfundosRoboProfessorXadrez30(cor, board = chessBoard, limite = 5) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, board) || []; } catch (_) { movimentos = []; }
+                if (!movimentos.length) return [];
+
+                // ✅ PROFISSIONAL 41: calcula menos candidatos por ciclo para não pesar no celular/notebook.
+                const candidatos = ordenarMovimentosProfessor40(movimentos, board, cor).slice(0, 12);
+                return candidatos.map(item => {
+                    const peca = board?.[item.from.row]?.[item.from.col] || null;
+                    const score = avaliarLanceProfundoRoboProfessorXadrez30(item, board, cor);
+                    return { ...item, peca, score, motivo30: classificarLanceRoboProfessorXadrez30(item, board, cor) };
+                }).sort((a, b) => b.score - a.score).slice(0, limite);
+            }
+
+            function melhorRespostaRoboProfessorXadrez30(cor, board = chessBoard) {
+                const lista = melhoresLancesProfundosRoboProfessorXadrez30(cor, board, 1);
+                return lista[0] || null;
+            }
+
+            function montarPlanoTresLancesRoboProfessorXadrez30(cor, board = chessBoard) {
+                const melhores = melhoresLancesProfundosRoboProfessorXadrez30(cor, board, 3);
+                const melhor = melhores[0] || null;
+                if (!melhor) return { melhores: [], plano: [] };
+                const adversario = corOposta(cor);
+                const depoisDoPrimeiro = aplicarMovimentoTreinoEmClone(board, melhor, 'queen');
+                const resposta = depoisDoPrimeiro ? melhorRespostaRoboProfessorXadrez30(adversario, depoisDoPrimeiro) : null;
+                const depoisDaResposta = resposta ? aplicarMovimentoTreinoEmClone(depoisDoPrimeiro, resposta, 'queen') : depoisDoPrimeiro;
+                const continuacao = depoisDaResposta ? melhorRespostaRoboProfessorXadrez30(cor, depoisDaResposta) : null;
+                const plano = [
+                    { tipo: 'melhor', item: melhor, board, cor, label: '1', titulo: 'Melhor lance' },
+                    resposta ? { tipo: 'resposta', item: resposta, board: depoisDoPrimeiro, cor: adversario, label: '2', titulo: 'Resposta provável do aluno' } : null,
+                    continuacao ? { tipo: 'continua', item: continuacao, board: depoisDaResposta, cor, label: '3', titulo: 'Continuação para manter vantagem' } : null
+                ].filter(Boolean);
+                return { melhores, plano };
+            }
+
+            function limparRoboProfessorXadrez30(atualizarTexto = false) {
+                roboProfessorXadrez30Ativo = false;
+                roboProfessorXadrez30Plano = [];
+                if (atualizarTexto) {
+                    roboProfessorXadrez31AutoAtivo = false;
+                    clearTimeout(roboProfessorXadrez31AutoTimer);
+                    roboProfessorXadrez31AutoTimer = null;
+                    roboProfessorXadrez31UltimaAssinatura = '';
+                    atualizarBotaoAutoRoboProfessorXadrez31();
+                }
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove('teacher-robo-from-30', 'teacher-robo-to-30', 'teacher-robo-step1-30', 'teacher-robo-step2-30', 'teacher-robo-step3-30');
+                    square.removeAttribute('data-teacher-robo-label');
+                    square.removeAttribute('data-teacher-robo-origin');
+                    square.removeAttribute('title');
+                });
+                if (atualizarTexto) atualizarStatusRoboProfessorXadrez30('Robô limpo. Toque em uma peça e peça um novo estudo quando quiser.');
+            }
+
+            function pintarPlanoRoboProfessorXadrez30(plano = []) {
+                limparRoboProfessorXadrez30(false);
+                plano.slice(0, 3).forEach((passo, index) => {
+                    const item = passo.item;
+                    if (!item) return;
+                    const ordem = index + 1;
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    const titulo = `${passo.titulo}: ${textoMovimentoRoboProfessorXadrez30(item, passo.board)} — ${passo.item.motivo30 || classificarLanceRoboProfessorXadrez30(item, passo.board, passo.cor)}`;
+                    if (from) {
+                        from.classList.add('teacher-robo-from-30', `teacher-robo-step${ordem}-30`);
+                        from.setAttribute('data-teacher-robo-origin', passo.label || String(ordem));
+                        from.setAttribute('title', titulo);
+                    }
+                    if (to) {
+                        to.classList.add('teacher-robo-to-30', `teacher-robo-step${ordem}-30`);
+                        to.setAttribute('data-teacher-robo-label', passo.label || String(ordem));
+                        to.setAttribute('title', titulo);
+                    }
+                });
+            }
+
+            function textoPlanoRoboProfessorXadrez30(resultado, cor, modo = 'estudo') {
+                const melhores = resultado.melhores || [];
+                const plano = resultado.plano || [];
+                if (!melhores.length) return 'O robô não encontrou lance legal agora. Verifique se a partida terminou ou se o rei está sem saída.';
+                const melhor = melhores[0];
+                const vantagem = melhor.score > 900000 ? 'mate encontrado' : (melhor.score > 600 ? 'vantagem forte' : (melhor.score > 80 ? 'boa vantagem' : 'jogada segura'));
+                const linhas = [];
+                linhas.push(`<strong>Robô estudou as ${nomeLadoRoboProfessorXadrez30(cor)}:</strong> <span class="robo-good-30">${escapeBubble27(vantagem)}</span>.`);
+                linhas.push(`<span class="robo-good-30">1)</span> ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(melhor, chessBoard))} — ${escapeBubble27(melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, cor))}.`);
+                const resposta = plano.find(p => p.tipo === 'resposta');
+                const continuacao = plano.find(p => p.tipo === 'continua');
+                if (resposta) linhas.push(`<span class="robo-warn-30">2)</span> Se o aluno responder forte: ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(resposta.item, resposta.board))}.`);
+                if (continuacao) linhas.push(`<span class="robo-blue-30">3)</span> Continue com: ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(continuacao.item, continuacao.board))}.`);
+                linhas.push(`<strong>Como ensinar:</strong> peça para o aluno explicar 3 perguntas: o que eu ganho, o que eu protejo e qual ameaça eu crio?`);
+                if (modo === 'plano') linhas.push(`Cores: <span class="robo-good-30">verde = lance vencedor</span>, <span class="robo-warn-30">vermelho = resposta provável</span>, <span class="robo-blue-30">azul = continuação</span>.`);
+                return linhas.join('<br>');
+            }
+
+            function estudarJogoRoboProfessorXadrez30(modo = 'estudo') {
+                const cor = corFocoRoboProfessorXadrez30();
+                roboProfessorXadrez30Cor = cor;
+                roboProfessorXadrez30Modo = modo;
+                atualizarStatusRoboProfessorXadrez30('🤖 Estudando a posição...');
+                try {
+                    const resultado = montarPlanoTresLancesRoboProfessorXadrez30(cor, chessBoard);
+                    roboProfessorXadrez30Ativo = true;
+                    roboProfessorXadrez30Plano = resultado.plano || [];
+                    pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
+                    atualizarStatusRoboProfessorXadrez30(textoPlanoRoboProfessorXadrez30(resultado, cor, modo));
+                } catch (err) {
+                    atualizarStatusRoboProfessorXadrez30('Não consegui estudar essa posição agora. Tente tocar em uma peça e apertar de novo.');
+                }
+            }
+
+            function mostrarAmeacasDoAlunoRoboProfessorXadrez30() {
+                const cor = corFocoRoboProfessorXadrez30();
+                const aluno = corOposta(cor);
+                atualizarStatusRoboProfessorXadrez30('⚠️ Procurando ameaças do aluno...');
+                try {
+                    const ameaças = melhoresLancesProfundosRoboProfessorXadrez30(aluno, chessBoard, 3);
+                    if (!ameaças.length) {
+                        limparRoboProfessorXadrez30(false);
+                        atualizarStatusRoboProfessorXadrez30('Não encontrei ameaça legal do aluno agora. Aproveite para desenvolver e melhorar suas peças.');
+                        return;
+                    }
+                    const plano = ameaças.map((item, index) => ({ tipo: 'resposta', item, board: chessBoard, cor: aluno, label: `A${index + 1}`, titulo: 'Ameaça do aluno' }));
+                    roboProfessorXadrez30Ativo = true;
+                    roboProfessorXadrez30Modo = 'ameacas';
+                    roboProfessorXadrez30Cor = aluno;
+                    roboProfessorXadrez30Plano = plano;
+                    pintarPlanoRoboProfessorXadrez30(plano);
+                    const html = `<strong>Ameaças do aluno (${nomeLadoRoboProfessorXadrez30(aluno)}):</strong><br>` + ameaças.map((item, i) => {
+                        return `<span class="robo-warn-30">A${i + 1})</span> ${escapeBubble27(textoMovimentoRoboProfessorXadrez30(item, chessBoard))} — ${escapeBubble27(item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, aluno))}.`;
+                    }).join('<br>') + '<br><strong>Como ensinar:</strong> mostre para o aluno que antes de atacar ele precisa enxergar a ameaça do adversário.';
+                    atualizarStatusRoboProfessorXadrez30(html);
+                } catch (_) {
+                    atualizarStatusRoboProfessorXadrez30('Não consegui calcular as ameaças agora. Tente novamente depois de tocar em uma peça.');
+                }
+            }
+
+            function botaoAutoRoboProfessorXadrez31() {
+                return document.querySelector('#teacher-piece-bubble-27 [data-robo30="auto"]');
+            }
+
+            function atualizarBotaoAutoRoboProfessorXadrez31() {
+                const btn = botaoAutoRoboProfessorXadrez31();
+                if (!btn) return;
+                btn.classList.toggle('auto-on-31', !!roboProfessorXadrez31AutoAtivo);
+                btn.textContent = roboProfessorXadrez31AutoAtivo ? 'Auto após jogada do aluno: ON' : 'Auto após jogada do aluno: OFF';
+            }
+
+            function assinaturaAutoRoboProfessorXadrez31() {
+                try {
+                    return JSON.stringify({
+                        turn: chessTurn,
+                        color: chessPlayerColor || '',
+                        over: !!chessGameOver,
+                        moves: Array.isArray(moveHistory) ? moveHistory.length : 0,
+                        last: lastChessMove || null,
+                        board: chessBoard || []
+                    });
+                } catch (_) {
+                    return `${chessTurn || ''}|${chessPlayerColor || ''}|${Date.now()}`;
+                }
+            }
+
+            function corRespostaProfessorAutoXadrez31() {
+                if (chessPlayerColor === 'white' || chessPlayerColor === 'black') return chessPlayerColor;
+                return corFocoRoboProfessorXadrez30();
+            }
+
+            function textoUltimaJogadaAlunoAutoXadrez31() {
+                try {
+                    if (!lastChessMove || !lastChessMove.from || !lastChessMove.to) return 'O aluno mexeu. O robô recalculou sua resposta.';
+                    return `Depois da jogada do aluno (${alg(lastChessMove.from.row, lastChessMove.from.col)} → ${alg(lastChessMove.to.row, lastChessMove.to.col)}), esta é a melhor resposta para você ensinar.`;
+                } catch (_) {
+                    return 'O aluno mexeu. O robô recalculou sua resposta.';
+                }
+            }
+
+            function atualizarAutoRoboProfessorXadrez31(forcar = false, origem = 'auto') {
+                if (!roboProfessorXadrez31AutoAtivo) return;
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+
+                const assinatura = assinaturaAutoRoboProfessorXadrez31();
+                if (!forcar && assinatura === roboProfessorXadrez31UltimaAssinatura) return;
+                roboProfessorXadrez31UltimaAssinatura = assinatura;
+
+                if (chessGameOver) {
+                    limparRoboProfessorXadrez30(false);
+                    atualizarStatusRoboProfessorXadrez30('Auto ligado, mas a partida terminou. Comece outra posição para o robô voltar a orientar.');
+                    return;
+                }
+
+                const corProfessor = corRespostaProfessorAutoXadrez31();
+                if (chessMode === 'online' && chessPlayerColor && chessTurn !== corProfessor) {
+                    limparRoboProfessorXadrez30(false);
+                    atualizarStatusRoboProfessorXadrez30(
+                        `<span class="bubble-robo-auto-line-31">Auto ligado.</span>` +
+                        `Aguardando o aluno jogar. Assim que voltar a vez das ${nomeLadoRoboProfessorXadrez30(corProfessor)}, eu recalculo a melhor resposta para você ensinar.`
+                    );
+                    return;
+                }
+
+                try {
+                    const resultado = montarPlanoTresLancesRoboProfessorXadrez30(corProfessor, chessBoard);
+                    roboProfessorXadrez30Ativo = true;
+                    roboProfessorXadrez30Modo = 'auto31';
+                    roboProfessorXadrez30Cor = corProfessor;
+                    roboProfessorXadrez30Plano = resultado.plano || [];
+                    pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
+                    const cabecalho = origem === 'manual'
+                        ? '<span class="bubble-robo-auto-line-31">Auto ligado: análise inicial feita.</span>'
+                        : `<span class="bubble-robo-auto-line-31">Auto atualizou: ${escapeBubble27(textoUltimaJogadaAlunoAutoXadrez31())}</span>`;
+                    atualizarStatusRoboProfessorXadrez30(cabecalho + textoPlanoRoboProfessorXadrez30(resultado, corProfessor, 'plano'));
+                } catch (_) {
+                    atualizarStatusRoboProfessorXadrez30('Auto ligado, mas não consegui recalcular essa posição agora. Toque em uma peça ou aperte Plano vencedor.');
+                }
+            }
+
+            function agendarAutoRoboProfessorXadrez31(forcar = false, origem = 'auto') {
+                if (!roboProfessorXadrez31AutoAtivo) return;
+                clearTimeout(roboProfessorXadrez31AutoTimer);
+                roboProfessorXadrez31AutoTimer = setTimeout(() => atualizarAutoRoboProfessorXadrez31(forcar, origem), 160);
+            }
+
+            function alternarAutoRoboProfessorXadrez31() {
+                roboProfessorXadrez31AutoAtivo = !roboProfessorXadrez31AutoAtivo;
+                atualizarBotaoAutoRoboProfessorXadrez31();
+                if (roboProfessorXadrez31AutoAtivo) {
+                    roboProfessorXadrez31UltimaAssinatura = '';
+                    atualizarStatusRoboProfessorXadrez30('Auto ligado. Quando o aluno fizer uma jogada e voltar sua vez, o robô vai recalcular a melhor resposta automaticamente.');
+                    agendarAutoRoboProfessorXadrez31(true, 'manual');
+                } else {
+                    clearTimeout(roboProfessorXadrez31AutoTimer);
+                    roboProfessorXadrez31AutoTimer = null;
+                    roboProfessorXadrez31UltimaAssinatura = '';
+                    atualizarStatusRoboProfessorXadrez30('Auto desligado. Use Estudar jogo, Plano vencedor ou Ameaças aluno quando quiser.');
+                }
+            }
+
+            function reaplicarRoboProfessorXadrez30() {
+                if (!roboProfessorXadrez30Ativo || !roboProfessorXadrez30Plano.length) return;
+                pintarPlanoRoboProfessorXadrez30(roboProfessorXadrez30Plano);
+            }
+
+            function reaplicarGuiaMelhoresJogadasXadrez29() {
+                if (guiaMelhoresJogadasXadrez29Ativo) {
+                    if (guiaMelhoresJogadasXadrez29Modo === 'peca') mostrarGuiaPecaAtualXadrez29(false);
+                    else if (guiaMelhoresJogadasXadrez29Modo === 'lado') mostrarGuiaLadoAtualXadrez29(false);
+                    else pintarGuiaMelhoresJogadasXadrez29(guiaMelhoresJogadasXadrez29Lista);
+                }
+                reaplicarRoboProfessorXadrez30();
+                agendarAutoRoboProfessorXadrez31(false, 'auto');
+                agendarGuiaDiretaProfessorXadrez33(false, 'auto');
+                atualizarPainelFlutuanteGuiaDiretaXadrez33();
+            }
+
+            if (!window.__teacherBestGuideXadrez29RenderHook) {
+                window.__teacherBestGuideXadrez29RenderHook = true;
+                const renderAnteriorGuia29 = renderChessBoard;
+                renderChessBoard = function renderChessBoardGuiaMelhores29() {
+                    const retorno = renderAnteriorGuia29.apply(this, arguments);
+                    setTimeout(reaplicarGuiaMelhoresJogadasXadrez29, 0);
+                    return retorno;
+                };
+            }
+
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 33 — GUIA DIRETO DO ROBÔ NO TABULEIRO
+               O professor escolhe: abrir o balão ao tocar na peça ou deixar o robô
+               guiar direto no tabuleiro. Não envia nada para o Firebase e não mexe
+               na partida online. É apenas visual no aparelho do professor.
+            ===================================================================== */
+            const GUIA_DIRETA_XADREZ_33_MODO_KEY = 'tabuleiro_arena_professor_xadrez_33_modo_toque';
+            const GUIA_DIRETA_XADREZ_33_AUTO_KEY = 'tabuleiro_arena_professor_xadrez_33_auto_direto';
+            let guiaDiretaXadrez33Timer = null;
+            let guiaDiretaXadrez33UltimaAssinatura = '';
+            let guiaDiretaXadrez33UltimoClique = null;
+
+            function instalarCssGuiaDiretaRoboProfessorXadrez33() {
+                if (document.getElementById('teacher-direct-guide-33-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-direct-guide-33-style';
+                style.textContent = `
+                    #teacher-piece-bubble-27 .bubble-direct-tools-33 {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 5px;
+                        padding: 7px 0 4px 0;
+                        border-bottom: 1px solid rgba(148,163,184,.14);
+                    }
+                    #teacher-piece-bubble-27 .bubble-direct-title-33 {
+                        grid-column: 1 / -1;
+                        color: #fde68a;
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        text-align: center;
+                        line-height: 1.15;
+                    }
+                    #teacher-piece-bubble-27 .bubble-direct-btn-33 {
+                        border: 1px solid rgba(250,204,21,.30);
+                        background: rgba(113,63,18,.68);
+                        color: #fef3c7;
+                        border-radius: 999px;
+                        padding: 7px 6px;
+                        font-size: .61rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-piece-bubble-27 .bubble-direct-btn-33.direct-on-33,
+                    #teacher-piece-bubble-27 .bubble-direct-btn-33.auto-on-33 {
+                        border-color: rgba(34,197,94,.70) !important;
+                        background: linear-gradient(90deg, rgba(22,101,52,.96), rgba(21,128,61,.90)) !important;
+                        color: #dcfce7 !important;
+                        box-shadow: 0 0 12px rgba(34,197,94,.23) !important;
+                    }
+                    #teacher-piece-bubble-27 .bubble-direct-status-33 {
+                        grid-column: 1 / -1;
+                        min-height: 26px;
+                        max-height: 108px;
+                        overflow: auto;
+                        border-radius: 10px;
+                        padding: 7px 8px;
+                        background: rgba(3,7,18,.72);
+                        border: 1px solid rgba(250,204,21,.14);
+                        color: #e5e7eb;
+                        font-size: .62rem;
+                        line-height: 1.25;
+                    }
+                    #teacher-piece-bubble-27 .bubble-direct-status-33 strong,
+                    #teacher-direct-guide-33 strong { color: #fef08a; }
+                    #teacher-piece-bubble-27 .bubble-direct-status-33 .good-33,
+                    #teacher-direct-guide-33 .good-33 { color: #86efac; font-weight: 1000; }
+                    #teacher-piece-bubble-27 .bubble-direct-status-33 .bad-33,
+                    #teacher-direct-guide-33 .bad-33 { color: #fca5a5; font-weight: 1000; }
+                    #teacher-piece-bubble-27 .bubble-direct-status-33 .yellow-33,
+                    #teacher-direct-guide-33 .yellow-33 { color: #fde68a; font-weight: 1000; }
+
+                    #teacher-direct-guide-33 {
+                        position: fixed;
+                        left: 8px;
+                        right: auto;
+                        top: 74px;
+                        bottom: auto;
+                        z-index: 999998;
+                        display: none;
+                        width: min(272px, calc(100vw - 16px));
+                        max-width: 560px;
+                        margin: 0;
+                        border-radius: 15px;
+                        border: 2px solid rgba(250,204,21,.72);
+                        background: linear-gradient(180deg, rgba(8,13,28,.96), rgba(3,7,18,.98));
+                        color: #e5e7eb;
+                        box-shadow: 0 16px 38px rgba(0,0,0,.52), 0 0 24px rgba(250,204,21,.18);
+                        padding: 8px;
+                        font-family: inherit;
+                        text-align: left;
+                    }
+                    #teacher-direct-guide-33.visible-33 { display: block; }
+                    #teacher-direct-guide-33 .direct-head-33 {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                        font-size: .68rem;
+                        font-weight: 1000;
+                        color: #fde68a;
+                        letter-spacing: .04em;
+                        text-transform: uppercase;
+                        margin-bottom: 5px;
+                    }
+                    #teacher-direct-guide-33 .direct-actions-33 {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+                        gap: 5px;
+                        margin-bottom: 6px;
+                    }
+                    #teacher-direct-guide-33 button {
+                        border: 1px solid rgba(148,163,184,.22);
+                        background: rgba(15,23,42,.86);
+                        color: #e5e7eb;
+                        border-radius: 999px;
+                        padding: 6px 5px;
+                        font-size: .60rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-direct-guide-33 button.active-33 {
+                        background: linear-gradient(90deg, rgba(22,101,52,.96), rgba(21,128,61,.90));
+                        color: #dcfce7;
+                        border-color: rgba(34,197,94,.64);
+                    }
+                    #teacher-direct-guide-33 .direct-status-33 {
+                        border-radius: 11px;
+                        border: 1px solid rgba(148,163,184,.14);
+                        background: rgba(15,23,42,.72);
+                        padding: 7px 8px;
+                        max-height: 92px;
+                        overflow: auto;
+                        font-size: .67rem;
+                        line-height: 1.27;
+                    }
+
+                    #chess-board .chess-square.teacher-direct-from-33,
+                    .chess-square.teacher-direct-from-33 {
+                        position: relative !important;
+                        outline: 4px solid rgba(250,204,21,.98) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 5px rgba(250,204,21,.25), 0 0 22px rgba(250,204,21,.70) !important;
+                        animation: teacherDirectYellow33 1s ease-in-out infinite !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33,
+                    .chess-square.teacher-direct-to-33 {
+                        position: relative !important;
+                        outline: 4px solid rgba(34,197,94,.98) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 5px rgba(34,197,94,.28), 0 0 25px rgba(34,197,94,.76) !important;
+                        animation: teacherDirectGreen33 1s ease-in-out infinite !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33,
+                    .chess-square.teacher-direct-bad-33 {
+                        position: relative !important;
+                        outline: 4px solid rgba(239,68,68,.98) !important;
+                        outline-offset: -5px !important;
+                        box-shadow: inset 0 0 0 5px rgba(127,29,29,.45), 0 0 20px rgba(239,68,68,.58) !important;
+                        filter: saturate(1.2) contrast(1.08);
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    .chess-square.teacher-direct-bad-33::before {
+                        content: attr(data-teacher-direct-label);
+                        position: absolute;
+                        left: 3px;
+                        top: 3px;
+                        z-index: 15;
+                        min-width: 20px;
+                        height: 20px;
+                        padding: 0 4px;
+                        border-radius: 999px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: rgba(2,6,23,.90);
+                        color: #fff;
+                        border: 1px solid rgba(255,255,255,.58);
+                        font-size: .58rem;
+                        font-weight: 1000;
+                        line-height: 1;
+                        text-shadow: none;
+                    }
+                    @keyframes teacherDirectYellow33 {
+                        0%, 100% { box-shadow: inset 0 0 0 4px rgba(250,204,21,.22), 0 0 12px rgba(250,204,21,.38); }
+                        50% { box-shadow: inset 0 0 0 6px rgba(250,204,21,.40), 0 0 30px rgba(250,204,21,.88); }
+                    }
+                    @keyframes teacherDirectGreen33 {
+                        0%, 100% { box-shadow: inset 0 0 0 4px rgba(34,197,94,.22), 0 0 12px rgba(34,197,94,.38); }
+                        50% { box-shadow: inset 0 0 0 6px rgba(34,197,94,.42), 0 0 32px rgba(34,197,94,.90); }
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::after,
+                    .chess-square.teacher-direct-from-33::after,
+                    #chess-board .chess-square.teacher-direct-to-33::after,
+                    .chess-square.teacher-direct-to-33::after,
+                    #chess-board .chess-square.teacher-direct-bad-33::after,
+                    .chess-square.teacher-direct-bad-33::after {
+                        content: '';
+                        position: absolute;
+                        inset: 5px;
+                        z-index: 4;
+                        border-radius: 10px;
+                        pointer-events: none;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::after,
+                    .chess-square.teacher-direct-from-33::after {
+                        background: rgba(250,204,21,.34);
+                        border: 3px solid rgba(250,204,21,1);
+                        box-shadow: 0 0 24px rgba(250,204,21,.95), inset 0 0 20px rgba(250,204,21,.45);
+                        animation: teacherDirectYellow33 0.72s ease-in-out infinite !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33::after,
+                    .chess-square.teacher-direct-to-33::after {
+                        background: rgba(34,197,94,.36);
+                        border: 3px solid rgba(34,197,94,1);
+                        box-shadow: 0 0 26px rgba(34,197,94,.98), inset 0 0 20px rgba(34,197,94,.50);
+                        animation: teacherDirectGreen33 0.72s ease-in-out infinite !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33::after,
+                    .chess-square.teacher-direct-bad-33::after {
+                        background: rgba(239,68,68,.30);
+                        border: 3px solid rgba(239,68,68,.96);
+                        box-shadow: 0 0 18px rgba(239,68,68,.70), inset 0 0 18px rgba(127,29,29,.42);
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-from-33 span,
+                    #chess-board .chess-square.teacher-direct-to-33 span,
+                    #chess-board .chess-square.teacher-direct-bad-33 span {
+                        position: relative;
+                        z-index: 9;
+                    }
+                    #teacher-direct-guide-33.teacher-guide-strong-35 {
+                        display: block !important;
+                    }
+                    @media (max-width: 560px) {
+                        #teacher-direct-guide-33 {
+                            left: 6px;
+                            right: auto;
+                            top: 72px;
+                            bottom: auto;
+                            width: min(252px, calc(100vw - 12px));
+                            padding: 7px;
+                        }
+                        #teacher-direct-guide-33 .direct-actions-33 { grid-template-columns: repeat(2, 1fr); }
+                        #teacher-direct-guide-33 .direct-status-33 { font-size: .63rem; max-height: 84px; }
+                        #teacher-piece-bubble-27.size-small-32 .bubble-direct-tools-33 { gap: 4px; padding: 6px 0 4px 0; }
+                        #teacher-piece-bubble-27.size-small-32 .bubble-direct-title-33 { font-size: .56rem; }
+                        #teacher-piece-bubble-27.size-small-32 .bubble-direct-btn-33 { font-size: .55rem; padding: 6px 5px; }
+                        #teacher-piece-bubble-27.size-small-32 .bubble-direct-status-33 { font-size: .56rem; max-height: 78px; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function lerModoToqueGuiaDiretaXadrez33() {
+                try {
+                    const valor = localStorage.getItem(GUIA_DIRETA_XADREZ_33_MODO_KEY) || 'bubble';
+                    return valor === 'direct' ? 'direct' : 'bubble';
+                } catch (_) {
+                    return 'bubble';
+                }
+            }
+
+            function salvarModoToqueGuiaDiretaXadrez33(modo) {
+                const final = modo === 'direct' ? 'direct' : 'bubble';
+                try { localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, final); } catch (_) {}
+                atualizarBotoesGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33();
+            }
+
+            function autoGuiaDiretaAtivaXadrez33() {
+                try { return localStorage.getItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY) === '1'; } catch (_) { return false; }
+            }
+
+            function salvarAutoGuiaDiretaXadrez33(ativo) {
+                try { localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, ativo ? '1' : '0'); } catch (_) {}
+                if (!ativo) {
+                    clearTimeout(guiaDiretaXadrez33Timer);
+                    guiaDiretaXadrez33Timer = null;
+                    guiaDiretaXadrez33UltimaAssinatura = '';
+                }
+                atualizarBotoesGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33();
+                if (ativo) agendarGuiaDiretaProfessorXadrez33(true, 'manual');
+            }
+
+            function corProfessorGuiaDiretaXadrez33() {
+                if (chessPlayerColor === 'white' || chessPlayerColor === 'black') return chessPlayerColor;
+                return chessTurn || 'white';
+            }
+
+            function limparGuiaDiretaProfessorXadrez33() {
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove('teacher-direct-from-33', 'teacher-direct-to-33', 'teacher-direct-bad-33');
+                    square.removeAttribute('data-teacher-direct-label');
+                    if (square.getAttribute('data-teacher-direct-title')) {
+                        square.removeAttribute('data-teacher-direct-title');
+                        square.removeAttribute('title');
+                    }
+                });
+            }
+
+            function assinaturaGuiaDiretaXadrez33() {
+                try {
+                    return JSON.stringify({
+                        turn: chessTurn,
+                        color: chessPlayerColor || '',
+                        over: !!chessGameOver,
+                        moves: Array.isArray(moveHistory) ? moveHistory.length : 0,
+                        last: lastChessMove || null,
+                        board: chessBoard || []
+                    });
+                } catch (_) {
+                    return `${chessTurn || ''}|${chessPlayerColor || ''}|${Date.now()}`;
+                }
+            }
+
+            function chaveCasaGuiaDiretaXadrez33(pos) {
+                return `${pos?.row},${pos?.col}`;
+            }
+
+            function nomePecaCasaGuiaDiretaXadrez33(row, col) {
+                const peca = chessBoard?.[row]?.[col] || null;
+                return nomeCurtoPecaRoboProfessorXadrez30(peca?.type || 'piece');
+            }
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 41 — PERIGO RÁPIDO SEM TRAVAR
+               Antes o robô avaliava todas as peças ruins com busca profunda. Isso
+               ficava pesado durante o online. Agora a parte vermelha usa uma
+               análise rápida: captura, peça pendurada, casa atacada, defesa e centro.
+               A melhor jogada continua calculada pelo cérebro forte, mas com limite.
+            ===================================================================== */
+            function pontuarPerigoRapidoProfessor41(item, cor) {
+                try {
+                    const peca = chessBoard?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    if (!peca) return -999999;
+
+                    const adversario = corOposta(cor);
+                    const valor = valorPecaProfessor40(peca.type);
+                    const capturada = pecaCapturadaRoboProfessorXadrez30(chessBoard, item);
+                    let score = 0;
+
+                    try { score += pontuarMovimentoGuiaXadrez29(item, cor) * 0.35; } catch (_) {}
+                    if (capturada) score += valorPecaProfessor40(capturada.type) * 1.45 - valor * 0.10;
+                    if (item.to?.castle) score += 260;
+                    if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 1700;
+                    score += centro26(item.to.row, item.to.col) * 14;
+
+                    const origemAtacada = quadradoAtacado(chessBoard, item.from.row, item.from.col, adversario);
+                    const origemDefendida = quadradoAtacado(chessBoard, item.from.row, item.from.col, cor);
+                    if (origemAtacada && !origemDefendida) score += Math.min(260, valor * 0.45);
+
+                    const temp = aplicarMovimentoTreinoEmClone(chessBoard, item, 'queen');
+                    if (temp && peca.type !== 'king') {
+                        const destinoAtacado = quadradoAtacado(temp, item.to.row, item.to.col, adversario);
+                        const destinoDefendido = quadradoAtacado(temp, item.to.row, item.to.col, cor);
+                        if (destinoAtacado && !destinoDefendido) score -= valor * 1.65;
+                        else if (destinoAtacado && destinoDefendido) score -= valor * 0.22;
+
+                        // Penaliza jogada que deixa uma peça importante sem defesa direta.
+                        if (!destinoDefendido && valor >= 320 && !capturada) score -= 90;
+                    }
+
+                    return score;
+                } catch (_) {
+                    return -999999;
+                }
+            }
+
+            function avaliarMovimentosParaNaoMexerXadrez33(cor, melhor) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, chessBoard) || []; } catch (_) { movimentos = []; }
+
+                const melhorKey = chaveCasaGuiaDiretaXadrez33(melhor?.from);
+                const melhorScore = Number.isFinite(melhor?.score) ? melhor.score : 0;
+                const porPeca = new Map();
+
+                movimentos.forEach(move => {
+                    const peca = chessBoard?.[move.from.row]?.[move.from.col] || null;
+                    if (!peca || peca.color !== cor) return;
+                    const item = { ...move, peca };
+                    const score = pontuarPerigoRapidoProfessor41(item, cor);
+                    const key = chaveCasaGuiaDiretaXadrez33(item.from);
+                    const atual = porPeca.get(key);
+                    if (!atual || score > atual.score) porPeca.set(key, { item, score, key });
+                });
+
+                const adversario = corOposta(cor);
+                const perigos = [];
+                porPeca.forEach(x => {
+                    const peca = chessBoard?.[x.item.from.row]?.[x.item.from.col] || null;
+                    const valor = valorPecaProfessor40(peca?.type);
+                    let pecaEmRisco = false;
+                    try {
+                        pecaEmRisco = !!(
+                            peca &&
+                            peca.type !== 'king' &&
+                            quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, adversario) &&
+                            !quadradoAtacado(chessBoard, x.item.from.row, x.item.from.col, cor)
+                        );
+                    } catch (_) {}
+
+                    const muitoPior = x.key !== melhorKey && (melhorScore - x.score > Math.max(220, valor * 0.45));
+                    const ruimMesmo = x.key !== melhorKey && x.score < -150;
+                    if (muitoPior || ruimMesmo || (pecaEmRisco && x.key !== melhorKey)) perigos.push(x);
+                });
+
+                return perigos
+                    .sort((a, b) => a.score - b.score)
+                    .slice(0, 5)
+                    .map(x => x.item);
+            }
+
+            function calcularGuiaDiretaProfessorXadrez33(cor, clicada = null) {
+                const melhores = melhoresLancesProfundosRoboProfessorXadrez30(cor, chessBoard, 3);
+                const melhor = melhores[0] || null;
+                const ruins = melhor ? avaliarMovimentosParaNaoMexerXadrez33(cor, melhor) : [];
+                if (clicada && chessBoard?.[clicada.row]?.[clicada.col]?.color === cor && melhor) {
+                    const clicadaKey = `${clicada.row},${clicada.col}`;
+                    const melhorKey = chaveCasaGuiaDiretaXadrez33(melhor.from);
+                    if (clicadaKey !== melhorKey && !ruins.some(item => item.from.row === clicada.row && item.from.col === clicada.col)) {
+                        const movimentos = melhoresDaPecaGuiaXadrez29(clicada.row, clicada.col, 1);
+                        const item = movimentos[0] || { from: { row: clicada.row, col: clicada.col }, to: { row: clicada.row, col: clicada.col }, peca: chessBoard[clicada.row][clicada.col] };
+                        ruins.unshift(item);
+                    }
+                }
+                return { melhores, melhor, ruins };
+            }
+
+            function pintarGuiaDiretaProfessorXadrez33(resultado) {
+                limparCoresGuiaMelhoresJogadasXadrez29();
+                limparRoboProfessorXadrez30(false);
+                limparGuiaDiretaProfessorXadrez33();
+
+                const melhores = Array.isArray(resultado?.melhores)
+                    ? resultado.melhores.filter(Boolean).slice(0, 3)
+                    : (resultado?.melhor ? [resultado.melhor] : []);
+
+                const casasProtegidas = new Set();
+
+                melhores.forEach((item, index) => {
+                    const ordem = index + 1;
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    const titulo = `${ordem}ª opção do robô: ${textoMovimentoRoboProfessorXadrez30(item, chessBoard)} — ${item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
+                    const labelPeca = ordem === 1 ? 'PEÇA' : `P${ordem}`;
+                    const labelCasa = ordem === 1 ? 'IR' : `IR${ordem}`;
+
+                    if (from) {
+                        from.classList.add('teacher-direct-from-33');
+                        from.setAttribute('data-teacher-direct-label', labelPeca);
+                        from.setAttribute('data-teacher-direct-title', String(ordem));
+                        from.setAttribute('title', titulo);
+                        casasProtegidas.add(`${item.from.row},${item.from.col}`);
+                    }
+                    if (to) {
+                        to.classList.add('teacher-direct-to-33');
+                        to.setAttribute('data-teacher-direct-label', labelCasa);
+                        to.setAttribute('data-teacher-direct-title', String(ordem));
+                        to.setAttribute('title', titulo);
+                        casasProtegidas.add(`${item.to.row},${item.to.col}`);
+                    }
+                });
+
+                (resultado?.ruins || []).slice(0, 8).forEach(item => {
+                    const fromKey = `${item.from.row},${item.from.col}`;
+                    const toKey = `${item.to.row},${item.to.col}`;
+
+                    const from = squareGuiaXadrez29(item.from.row, item.from.col);
+                    if (from && !casasProtegidas.has(fromKey)) {
+                        from.classList.add('teacher-direct-bad-33');
+                        from.setAttribute('data-teacher-direct-label', 'NÃO');
+                        from.setAttribute('data-teacher-direct-title', '1');
+                        from.setAttribute('title', `Evite mexer agora: ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} em ${alg(item.from.row, item.from.col)} pode perder tempo, peça ou defesa.`);
+                    }
+
+                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
+                    if (to && !casasProtegidas.has(toKey) && !to.classList.contains('teacher-direct-from-33')) {
+                        to.classList.add('teacher-direct-bad-33');
+                        to.setAttribute('data-teacher-direct-label', 'NÃO');
+                        to.setAttribute('data-teacher-direct-title', '1');
+                        to.setAttribute('title', `Evite esta casa agora: ${alg(item.to.row, item.to.col)} pode deixar peça solta, perder material ou enfraquecer a defesa.`);
+                    }
+                });
+            }
+
+            function textoGuiaDiretaProfessorXadrez33(resultado, cor, origem = 'manual') {
+                const melhor = resultado?.melhor || null;
+                if (!melhor) return 'Não encontrei lance legal agora. Verifique se a partida terminou ou se o rei está sem saída.';
+                const peca = chessBoard?.[melhor.from.row]?.[melhor.from.col] || melhor.peca || null;
+                const ruins = resultado?.ruins || [];
+                const melhores = Array.isArray(resultado?.melhores) ? resultado.melhores.slice(0, 3) : [melhor];
+                const cabecalho = origem === 'auto'
+                    ? 'Robô por cores atualizou depois da jogada do aluno.'
+                    : (origem === 'toque' ? 'Robô por cores atualizado pelo toque.' : 'Robô por cores atualizado.');
+                let html = `<strong>${escapeBubble27(cabecalho)}</strong><br>`;
+                html += `<span class="yellow-33">Amarelo:</span> peça(s) recomendada(s) para mexer. `;
+                html += `<span class="good-33">Verde:</span> casa(s) boas para ir. `;
+                html += `<span class="bad-33">Vermelho:</span> evite peça/casa perigosa.<br>`;
+                html += `Melhor agora: mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em ${escapeBubble27(alg(melhor.from.row, melhor.from.col))} e vá para ${escapeBubble27(alg(melhor.to.row, melhor.to.col))}.<br>`;
+                html += `Motivo: ${escapeBubble27(melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, cor))}.`;
+                if (melhores.length > 1) {
+                    const extras = melhores.slice(1, 3).map((item, idx) => `${idx + 2}) ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}`);
+                    html += `<br>Outras boas: ${escapeBubble27(extras.join(' | '))}.`;
+                }
+                if (ruins.length) {
+                    const nomes = ruins.slice(0, 4).map(item => `${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)}`);
+                    html += `<br><span class="bad-33">Não mexer agora:</span> ${escapeBubble27(nomes.join(', '))}.`;
+                }
+                html += '<br>Frase para aula: “veja a cor do tabuleiro: amarelo prepara, verde executa e vermelho alerta o perigo.”';
+                return html;
+            }
+
+            function atualizarStatusGuiaDiretaProfessorXadrez33(html) {
+                const b = document.getElementById('bubble-direct-status-33');
+                if (b) b.innerHTML = html;
+                const p = document.getElementById('teacher-direct-guide-status-33');
+                if (p) p.innerHTML = html;
+            }
+
+            function aplicarGuiaDiretaProfessorXadrez33({ forcar = false, origem = 'manual', clicada = null } = {}) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const autoLigado = autoGuiaDiretaAtivaXadrez33();
+                if (!forcar && modo !== 'direct' && !autoLigado) return;
+
+                // ✅ PROFISSIONAL 39 — modo leve e sincronizado.
+                // No online, o robô do professor só calcula quando volta a vez do professor.
+                // Isso evita travar o jogo e evita a confusão “no meu aparelho é vez do outro”.
+                const cor = corProfessorGuiaDiretaXadrez33();
+                if (chessMode === 'online' && chessPlayerColor && chessTurn !== cor) {
+                    if (origem !== 'silencioso39') {
+                        limparGuiaDiretaProfessorXadrez33();
+                        atualizarStatusGuiaDiretaProfessorXadrez33('Aguardando o aluno jogar. Quando voltar sua vez, o robô por cores recalcula sozinho e mostra amarelo, verde e vermelho.');
+                    }
+                    atualizarPainelFlutuanteGuiaDiretaXadrez33(false);
+                    return;
+                }
+
+                if (chessGameOver) {
+                    limparGuiaDiretaProfessorXadrez33();
+                    atualizarStatusGuiaDiretaProfessorXadrez33('A partida terminou. Comece outra posição para o guia voltar a orientar.');
+                    atualizarPainelFlutuanteGuiaDiretaXadrez33();
+                    return;
+                }
+                try {
+                    const resultado = calcularGuiaDiretaProfessorXadrez33(cor, clicada || guiaDiretaXadrez33UltimoClique);
+                    pintarGuiaDiretaProfessorXadrez33(resultado);
+                    const textoBase35 = textoGuiaDiretaProfessorXadrez33(resultado, cor, origem);
+                    atualizarStatusGuiaDiretaProfessorXadrez33(textoBase35);
+                    atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                } catch (_) {
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Não consegui calcular o guia direto agora. Toque em uma peça ou abra o balão para tentar novamente.');
+                    atualizarPainelFlutuanteGuiaDiretaXadrez33();
+                }
+            }
+
+            function agendarGuiaDiretaProfessorXadrez33(forcar = false, origem = 'auto') {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const autoLigado = autoGuiaDiretaAtivaXadrez33();
+                if (modo !== 'direct' && !autoLigado) return;
+                if (chessMode === 'online' && chessPlayerColor && chessTurn !== corProfessorGuiaDiretaXadrez33()) return;
+                const assinatura = assinaturaGuiaDiretaXadrez33();
+                if (!forcar && assinatura === guiaDiretaXadrez33UltimaAssinatura) return;
+                guiaDiretaXadrez33UltimaAssinatura = assinatura;
+                clearTimeout(guiaDiretaXadrez33Timer);
+                // ✅ PROFISSIONAL 41: espera um pouco mais a sincronização do Firebase/render terminar antes de pintar.
+                guiaDiretaXadrez33Timer = setTimeout(() => aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem }), 900);
+            }
+
+            function fecharBalaoProfessorXadrez34() {
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble) bubble.classList.remove('open');
+            }
+
+            function definirJanelinhaProfessorXadrez34(ligada) {
+                if (ligada) {
+                    salvarModoToqueGuiaDiretaXadrez33('bubble');
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha ligada. Ao tocar na peça, o quadro de dicas pode abrir. Você ainda pode usar o robô por cores quando quiser.');
+                } else {
+                    salvarModoToqueGuiaDiretaXadrez33('direct');
+                    salvarAutoGuiaDiretaXadrez33(true);
+                    fecharBalaoProfessorXadrez34();
+                    aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha OFF. O robô vai guiar direto no tabuleiro por cores: amarelo = peça boa, verde = casa boa, vermelho = perigo.');
+                }
+                atualizarBotoesGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+            }
+
+            function definirRoboCoresProfessorXadrez34(ligado) {
+                salvarAutoGuiaDiretaXadrez33(!!ligado);
+                if (ligado) {
+                    aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores ON. A janelinha continua no estado escolhido: ON abre o balão ao tocar na peça; OFF guia somente pelo tabuleiro. Amarelo = peça boa, verde = casa boa, vermelho = evite.');
+                } else {
+                    limparGuiaDiretaProfessorXadrez33();
+                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô por cores OFF. As cores foram limpas. A janelinha continua funcionando se estiver ON.');
+                }
+                atualizarBotoesGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                try { atualizarControlesProfessorXadrez37(); } catch (_) {}
+            }
+
+            function instalarGuiaDiretaRoboProfessorXadrez33(bubble) {
+                instalarCssGuiaDiretaRoboProfessorXadrez33();
+                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                if (!bubble || bubble.querySelector('.bubble-direct-tools-33')) {
+                    atualizarBotoesGuiaDiretaXadrez33();
+                    return;
+                }
+                const tools = document.createElement('div');
+                tools.className = 'bubble-direct-tools-33';
+                tools.innerHTML = `
+                    <div class="bubble-direct-title-33">🎯 professor: janelinha ou robô por cores</div>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="window">Janelinha: ON</button>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="colors">Robô cores: OFF</button>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="refresh">Atualizar cores</button>
+                    <button class="bubble-direct-btn-33" type="button" data-direct33="clear">Limpar cores</button>
+                    <div id="bubble-direct-status-33" class="bubble-direct-status-33">Use Janelinha OFF para não abrir este quadro. Use Robô cores ON para ele guiar direto no tabuleiro: amarelo = peça boa, verde = casa boa, vermelho = perigo.</div>
+                `;
+                const body = bubble.querySelector('.bubble-body-27');
+                if (body) bubble.insertBefore(tools, body);
+                else bubble.appendChild(tools);
+                tools.querySelectorAll('[data-direct33]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-direct33');
+                        if (acao === 'window' || acao === 'mode') {
+                            const janelinhaLigada = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                            definirJanelinhaProfessorXadrez34(janelinhaLigada);
+                        }
+                        if (acao === 'colors' || acao === 'auto') {
+                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
+                        }
+                        if (acao === 'refresh') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
+                        if (acao === 'clear') {
+                            limparGuiaDiretaProfessorXadrez33();
+                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas. Ligue Robô cores ON para voltar a guiar pelo tabuleiro.');
+                            atualizarPainelFlutuanteGuiaDiretaXadrez33();
+                        }
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                atualizarBotoesGuiaDiretaXadrez33();
+            }
+
+            function garantirPainelFlutuanteGuiaDiretaXadrez33() {
+                instalarCssGuiaDiretaRoboProfessorXadrez33();
+                let panel = document.getElementById('teacher-direct-guide-33');
+                if (panel) return panel;
+                panel = document.createElement('div');
+                panel.id = 'teacher-direct-guide-33';
+                panel.innerHTML = `
+                    <div class="direct-head-33"><span>🎓 Robô professor</span><span data-direct33-mini-state>OFF</span></div>
+                    <div class="direct-actions-33">
+                        <button type="button" data-direct33-mini="window">Janelinha ON</button>
+                        <button type="button" data-direct33-mini="colors">Robô cores OFF</button>
+                        <button type="button" data-direct33-mini="refresh">Atualizar cores</button>
+                        <button type="button" data-direct33-mini="bubble">Abrir balão</button>
+                        <button type="button" data-direct33-mini="clear">Limpar</button>
+                    </div>
+                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Para aparecer no tabuleiro: toque em Robô cores ON. Amarelo pisca na peça certa, verde pisca na casa boa e vermelho marca perigo.</div>
+                `;
+                document.body.appendChild(panel);
+                panel.querySelectorAll('[data-direct33-mini]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-direct33-mini');
+                        if (acao === 'bubble') abrirBalaoPeloPainelGuiaDiretaXadrez33();
+                        if (acao === 'window' || acao === 'mode') {
+                            const janelinhaLigada = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                            definirJanelinhaProfessorXadrez34(janelinhaLigada);
+                        }
+                        if (acao === 'colors' || acao === 'auto') {
+                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
+                        }
+                        if (acao === 'refresh') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
+                        if (acao === 'clear') {
+                            limparGuiaDiretaProfessorXadrez33();
+                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas.');
+                        }
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                atualizarPainelFlutuanteGuiaDiretaXadrez33();
+                return panel;
+            }
+
+            function abrirBalaoPeloPainelGuiaDiretaXadrez33() {
+                salvarModoToqueGuiaDiretaXadrez33('bubble');
+                const pos = guiaDiretaXadrez33UltimoClique || guiaMelhoresJogadasXadrez29UltimaPeca || null;
+                let row = pos?.row, col = pos?.col;
+                if (!Number.isFinite(row) || !Number.isFinite(col) || !chessBoard?.[row]?.[col]) {
+                    const melhor = melhorRespostaRoboProfessorXadrez30(corProfessorGuiaDiretaXadrez33(), chessBoard);
+                    row = melhor?.from?.row;
+                    col = melhor?.from?.col;
+                }
+                if (Number.isFinite(row) && Number.isFinite(col) && chessBoard?.[row]?.[col]) {
+                    tentarAbrirBubbleProfessorXadrez27(row, col);
+                }
+                atualizarPainelFlutuanteGuiaDiretaXadrez33();
+            }
+
+            function atualizarBotoesGuiaDiretaXadrez33() {
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const autoLigado = autoGuiaDiretaAtivaXadrez33();
+                const janelinhaOff = modo === 'direct';
+
+                document.querySelectorAll('[data-direct33="window"], [data-direct33="mode"]').forEach(btn => {
+                    btn.classList.toggle('direct-on-33', janelinhaOff);
+                    btn.textContent = janelinhaOff ? 'Janelinha: OFF' : 'Janelinha: ON';
+                });
+                document.querySelectorAll('[data-direct33="colors"], [data-direct33="auto"]').forEach(btn => {
+                    btn.classList.toggle('auto-on-33', autoLigado);
+                    btn.textContent = autoLigado ? 'Robô cores: ON' : 'Robô cores: OFF';
+                });
+
+                document.querySelectorAll('[data-direct33-mini="window"], [data-direct33-mini="mode"]').forEach(btn => {
+                    btn.classList.toggle('active-33', janelinhaOff);
+                    btn.textContent = janelinhaOff ? 'Janelinha OFF' : 'Janelinha ON';
+                });
+                document.querySelectorAll('[data-direct33-mini="colors"], [data-direct33-mini="auto"]').forEach(btn => {
+                    btn.classList.toggle('active-33', autoLigado);
+                    btn.textContent = autoLigado ? 'Robô cores ON' : 'Robô cores OFF';
+                });
+                const state = document.querySelector('[data-direct33-mini-state]');
+                if (state) {
+                    if (janelinhaOff && autoLigado) state.textContent = 'CORES';
+                    else if (janelinhaOff) state.textContent = 'SEM JANELA';
+                    else if (autoLigado) state.textContent = 'AUTO';
+                    else state.textContent = 'JANELA';
+                }
+            }
+
+            function atualizarPainelFlutuanteGuiaDiretaXadrez33(mostrar = false) {
+                const panel = garantirPainelFlutuanteGuiaDiretaXadrez33();
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const autoLigado = autoGuiaDiretaAtivaXadrez33();
+                const pode = !!(professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19());
+                const deveMostrar35 = pode && (mostrar || modo === 'direct' || autoLigado || chessProfessorPrivadoAtivo);
+                panel.classList.toggle('visible-33', deveMostrar35);
+                panel.classList.toggle('teacher-guide-strong-35', deveMostrar35);
+                atualizarBotoesGuiaDiretaXadrez33();
+                if (deveMostrar35 && autoLigado && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                    clearTimeout(window.__teacherGuideProf39RefreshTimer);
+                    window.__teacherGuideProf39RefreshTimer = setTimeout(() => {
+                        try { agendarGuiaDiretaProfessorXadrez33(false, 'auto39'); } catch (_) {}
+                    }, 420);
+                }
+            }
+
+            /* ✅ PROFISSIONAL 35 — ROBÔ CORES LIGA E PINTA COM MAIS FORÇA
+               Correção do ponto visto no teste: o professor não estava enxergando as cores
+               porque o modo podia ficar desligado/salvo como janelinha. Agora, quando o
+               professor está ativo, a aba aparece e o robô pode ligar direto, recalcular e
+               repintar o tabuleiro depois de cada renderização. */
+            function garantirRoboCoresProfessorXadrez35(ativarSeVazio = true) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
+                try {
+                    if (ativarSeVazio && localStorage.getItem(GUIA_DIRETA_XADREZ_33_MODO_KEY) === null) {
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                    }
+                    if (ativarSeVazio && localStorage.getItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY) === null) {
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
+                    }
+                } catch (_) {}
+                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                // Profissional 39: não recalcular pesado em todo render; o cálculo fica por mudança real de vez/tabuleiro.
+                return true;
+            }
+
+            if (!window.__teacherGuideXadrez35RenderHook) {
+                window.__teacherGuideXadrez35RenderHook = true;
+                const renderAnteriorGuia35 = renderChessBoard;
+                renderChessBoard = function renderChessBoardGuiaCoresProfessor35() {
+                    const retorno = renderAnteriorGuia35.apply(this, arguments);
+                    setTimeout(() => {
+                        try { garantirRoboCoresProfessorXadrez35(false); } catch (_) {}
+                    }, 30);
+                    return retorno;
+                };
+            }
+
+            let ultimoBubbleProfessorXadrez27 = 0;
+            function tentarAbrirBubbleProfessorXadrez27(row, col) {
+                try {
+                    const peca = chessBoard?.[row]?.[col] || null;
+                    const clicouDestinoDeJogada = !!(selectedSquare && Array.isArray(legalMoves) && legalMoves.some(m => m.row === row && m.col === col));
+                    const pode = !!(chessProfessorPrivadoAtivo && chessMode === 'online' && !chessIsSpectator && document.body.classList.contains('chess-board-visible') && peca && !clicouDestinoDeJogada);
+                    if (!pode) return false;
+                    if (lerModoToqueGuiaDiretaXadrez33 && lerModoToqueGuiaDiretaXadrez33() === 'direct') {
+                        guiaDiretaXadrez33UltimoClique = { row, col };
+                        aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'toque', clicada: { row, col } });
+                        ultimoBubbleProfessorXadrez27 = Date.now();
+                        return true;
+                    }
+                    let movimentos = [];
+                    try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                    const rect = rectQuadradoXadrez26(row, col);
+                    const dados = criarDadosPopupXadrez26(peca, row, col, movimentos, rect);
+                    marcarPecaBubbleProfessorXadrez27(row, col);
+                    abrirBubbleProfessorXadrez27(dados);
+                    ultimoBubbleProfessorXadrez27 = Date.now();
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            document.addEventListener('click', (ev) => {
+                const square = ev.target && ev.target.closest ? ev.target.closest('#chess-board .chess-square[data-row][data-col]') : null;
+                if (!square) return;
+                const row = Number(square.dataset.row);
+                const col = Number(square.dataset.col);
+                if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+                setTimeout(() => {
+                    if (Date.now() - ultimoBubbleProfessorXadrez27 < 90) return;
+                    tentarAbrirBubbleProfessorXadrez27(row, col);
+                }, 25);
+            }, true);
+
+            document.addEventListener('click', (ev) => {
+                if (!ev.target || !ev.target.closest) return;
+                if (ev.target.closest('#teacher-piece-bubble-27')) return;
+                if (ev.target.closest('#chess-board .chess-square')) return;
+                const bubble = document.getElementById('teacher-piece-bubble-27');
+                if (bubble) bubble.classList.remove('open');
+            }, true);
+
+            const clickAnterior26 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickPopupProfessor26(row, col) {
+                const pecaAntes = chessBoard?.[row]?.[col] || null;
+                const clicouDestinoDeJogada = !!(selectedSquare && Array.isArray(legalMoves) && legalMoves.some(m => m.row === row && m.col === col));
+                const podeAbrir = !!(chessProfessorPrivadoAtivo && chessMode === 'online' && !chessIsSpectator && document.body.classList.contains('chess-board-visible') && pecaAntes && !clicouDestinoDeJogada && (!lerModoToqueGuiaDiretaXadrez33 || lerModoToqueGuiaDiretaXadrez33() !== 'direct'));
+                let movimentosAntes = [];
+                let anchorRect = null;
+                if (podeAbrir) {
+                    try { movimentosAntes = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentosAntes = []; }
+                    anchorRect = rectQuadradoXadrez26(row, col);
+                }
+                const retorno = await clickAnterior26.apply(this, arguments);
+                if (podeAbrir) {
+                    setTimeout(() => {
+                        try {
+                            marcarPecaBubbleProfessorXadrez27(row, col);
+                            abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
+                        } catch (_) {
+                            if (window.abrirPopupProfessorPeca25) window.abrirPopupProfessorPeca25(criarDadosPopupXadrez26(pecaAntes, row, col, movimentosAntes, anchorRect));
+                        }
+                    }, 80);
+                }
+                return retorno;
+            };
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 36 — CORREÇÃO VISÍVEL DO PROFESSOR
+               O usuário testou a Profissional 35 e mostrou que:
+               1) o balão da peça podia ficar sem abrir porque o modo estava salvo como Janelinha OFF;
+               2) o robô por cores não estava óbvio no tabuleiro.
+
+               Esta correção mantém tudo que ficou bom e acrescenta uma central clara dentro
+               da aba "Professor inteligente": Janelinha ON/OFF, Robô cores ON/OFF,
+               Atualizar cores e Abrir balão. Também reforça as cores diretamente nas casas.
+            ===================================================================== */
+            const PROF36_MIGRATION_KEY = 'tabuleiro_arena_prof36_professor_padrao_aplicado';
+
+            function instalarCssProfessorVisivelXadrez36() {
+                if (document.getElementById('teacher-prof36-visible-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof36-visible-style';
+                style.textContent = `
+                    #teacher-prof36-controls {
+                        margin: 8px 0 9px 0;
+                        padding: 8px;
+                        border-radius: 13px;
+                        border: 1px solid rgba(250,204,21,.32);
+                        background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(30,41,59,.76));
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+                    }
+                    #teacher-prof36-controls .prof36-title {
+                        color: #fde68a;
+                        font-size: .70rem;
+                        font-weight: 1000;
+                        text-transform: uppercase;
+                        letter-spacing: .05em;
+                        margin-bottom: 7px;
+                        display: flex;
+                        justify-content: space-between;
+                        gap: 8px;
+                        align-items: center;
+                    }
+                    #teacher-prof36-controls .prof36-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 6px;
+                    }
+                    #teacher-prof36-controls button {
+                        border-radius: 999px;
+                        border: 1px solid rgba(148,163,184,.24);
+                        background: rgba(15,23,42,.92);
+                        color: #e5e7eb;
+                        padding: 8px 6px;
+                        font-size: .64rem;
+                        font-weight: 1000;
+                        line-height: 1.05;
+                        text-transform: none;
+                        box-shadow: none;
+                    }
+                    #teacher-prof36-controls button.on36 {
+                        background: linear-gradient(90deg, rgba(22,101,52,.96), rgba(21,128,61,.92));
+                        color: #dcfce7;
+                        border-color: rgba(34,197,94,.72);
+                        box-shadow: 0 0 14px rgba(34,197,94,.22);
+                    }
+                    #teacher-prof36-controls button.warn36 {
+                        background: linear-gradient(90deg, rgba(113,63,18,.96), rgba(180,83,9,.90));
+                        color: #fef3c7;
+                        border-color: rgba(250,204,21,.62);
+                    }
+                    #teacher-prof36-controls .prof36-help {
+                        margin-top: 7px;
+                        padding: 6px 7px;
+                        border-radius: 10px;
+                        background: rgba(2,6,23,.55);
+                        border: 1px solid rgba(148,163,184,.15);
+                        color: #bfdbfe;
+                        font-size: .62rem;
+                        line-height: 1.25;
+                    }
+
+                    /* Cores bem fortes no tabuleiro: não dependem só de outline. */
+                    #chess-board .chess-square.teacher-direct-from-33,
+                    .chess-square.teacher-direct-from-33 {
+                        background: linear-gradient(135deg, #facc15, #fef08a) !important;
+                        outline: 5px solid #facc15 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(133,77,14,.22), 0 0 34px rgba(250,204,21,.98) !important;
+                        animation: teacherProf36Yellow .68s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33,
+                    .chess-square.teacher-direct-to-33 {
+                        background: linear-gradient(135deg, #16a34a, #bbf7d0) !important;
+                        outline: 5px solid #22c55e !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(20,83,45,.24), 0 0 36px rgba(34,197,94,1) !important;
+                        animation: teacherProf36Green .68s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33,
+                    .chess-square.teacher-direct-bad-33 {
+                        background: linear-gradient(135deg, #dc2626, #fecaca) !important;
+                        outline: 5px solid #ef4444 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(127,29,29,.30), 0 0 30px rgba(239,68,68,.86) !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    .chess-square.teacher-direct-bad-33::before {
+                        z-index: 60 !important;
+                        min-width: 26px !important;
+                        height: 22px !important;
+                        font-size: .62rem !important;
+                        border: 2px solid rgba(255,255,255,.90) !important;
+                        box-shadow: 0 3px 8px rgba(0,0,0,.35) !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-from-33 span,
+                    #chess-board .chess-square.teacher-direct-to-33 span,
+                    #chess-board .chess-square.teacher-direct-bad-33 span {
+                        position: relative !important;
+                        z-index: 50 !important;
+                        text-shadow: 0 3px 8px rgba(0,0,0,.45) !important;
+                    }
+                    @keyframes teacherProf36Yellow {
+                        0%, 100% { filter: brightness(1.00) saturate(1.12); }
+                        50% { filter: brightness(1.35) saturate(1.55); }
+                    }
+                    @keyframes teacherProf36Green {
+                        0%, 100% { filter: brightness(1.00) saturate(1.12); }
+                        50% { filter: brightness(1.35) saturate(1.60); }
+                    }
+                    @media(max-width:560px){
+                        #teacher-prof36-controls { padding: 7px; }
+                        #teacher-prof36-controls button { font-size:.59rem; padding:7px 5px; }
+                        #teacher-prof36-controls .prof36-help { font-size:.58rem; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function aplicarPadraoProfessorXadrez36() {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                instalarCssProfessorVisivelXadrez36();
+                try {
+                    if (localStorage.getItem(PROF36_MIGRATION_KEY) !== '1') {
+                        // Restaura o balão por padrão, porque no teste ele ficou sem abrir.
+                        // Mantém o robô por cores ligado para o professor enxergar a orientação no tabuleiro.
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
+                        localStorage.setItem(PROF36_MIGRATION_KEY, '1');
+                    }
+                } catch (_) {}
+                garantirControlesProfessorXadrez36();
+                atualizarControlesProfessorXadrez36();
+                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                    agendarGuiaDiretaProfessorXadrez33(false, 'auto36leve39');
+                }
+            }
+
+            function garantirControlesProfessorXadrez36() {
+                instalarCssProfessorVisivelXadrez36();
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (!panel) return null;
+                const body = document.getElementById('chess-private-teacher-body') || panel;
+                let box = document.getElementById('teacher-prof36-controls');
+                if (box) return box;
+                box = document.createElement('div');
+                box.id = 'teacher-prof36-controls';
+                box.innerHTML = `
+                    <div class="prof36-title"><span>🎯 Controle do robô do professor</span><span data-prof36-state>ATIVO</span></div>
+                    <div class="prof36-grid">
+                        <button type="button" data-prof36="window">Janelinha ON</button>
+                        <button type="button" data-prof36="colors">Robô cores ON</button>
+                        <button type="button" data-prof36="refresh">Atualizar cores</button>
+                        <button type="button" data-prof36="bubble">Abrir balão</button>
+                        <button type="button" data-prof36="clear">Limpar cores</button>
+                        <button type="button" data-prof36="help">Legenda</button>
+                    </div>
+                    <div class="prof36-help" data-prof36-help>
+                        Amarelo piscando = peça boa para mexer. Verde piscando = casa boa para ir. Vermelho = perigo/evitar. A janelinha pode ficar ON ou OFF.
+                    </div>
+                `;
+                body.insertBefore(box, body.firstChild || null);
+
+                box.querySelectorAll('[data-prof36]').forEach(btn => {
+                    btn.addEventListener('click', ev => {
+                        const acao = btn.getAttribute('data-prof36');
+                        if (acao === 'window') {
+                            const estaOff = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                            definirJanelinhaProfessorXadrez34(estaOff);
+                        }
+                        if (acao === 'colors') {
+                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
+                        }
+                        if (acao === 'refresh') {
+                            aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual36' });
+                        }
+                        if (acao === 'bubble') {
+                            salvarModoToqueGuiaDiretaXadrez33('bubble');
+                            abrirBalaoPeloPainelGuiaDiretaXadrez33();
+                        }
+                        if (acao === 'clear') {
+                            salvarAutoGuiaDiretaXadrez33(false);
+                            limparGuiaDiretaProfessorXadrez33();
+                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas. Ligue Robô cores ON quando quiser o guia no tabuleiro.');
+                        }
+                        if (acao === 'help') {
+                            atualizarStatusGuiaDiretaProfessorXadrez33('<strong>Legenda do professor:</strong><br><span class="yellow-33">Amarelo</span> = peça recomendada. <span class="good-33">Verde</span> = casa recomendada. <span class="bad-33">Vermelho</span> = evite agora.');
+                        }
+                        atualizarControlesProfessorXadrez36();
+                        atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                });
+                return box;
+            }
+
+            function atualizarControlesProfessorXadrez36() {
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const auto = autoGuiaDiretaAtivaXadrez33();
+                const box = document.getElementById('teacher-prof36-controls');
+                if (!box) return;
+                const btnWindow = box.querySelector('[data-prof36="window"]');
+                const btnColors = box.querySelector('[data-prof36="colors"]');
+                const state = box.querySelector('[data-prof36-state]');
+                if (btnWindow) {
+                    const off = modo === 'direct';
+                    btnWindow.textContent = off ? 'Janelinha OFF' : 'Janelinha ON';
+                    btnWindow.classList.toggle('warn36', off);
+                    btnWindow.classList.toggle('on36', !off);
+                }
+                if (btnColors) {
+                    btnColors.textContent = auto ? 'Robô cores ON' : 'Robô cores OFF';
+                    btnColors.classList.toggle('on36', auto);
+                    btnColors.classList.toggle('warn36', !auto);
+                }
+                if (state) {
+                    state.textContent = auto ? 'CORES ON' : 'CORES OFF';
+                    state.style.color = auto ? '#86efac' : '#fca5a5';
+                }
+            }
+
+            function abrirBubbleProfessorXadrez36SePossivel(row, col) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
+                if (lerModoToqueGuiaDiretaXadrez33() === 'direct') return false;
+                const peca = chessBoard?.[row]?.[col] || null;
+                if (!peca) return false;
+                try {
+                    let movimentos = [];
+                    try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                    const rect = rectQuadradoXadrez26(row, col);
+                    registrarUltimaPecaGuiaXadrez29({ row, col });
+                    marcarPecaBubbleProfessorXadrez27(row, col);
+                    abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(peca, row, col, movimentos, rect));
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            if (!window.__teacherProf36SquareClick) {
+                window.__teacherProf36SquareClick = true;
+                document.addEventListener('click', (ev) => {
+                    const square = ev.target && ev.target.closest ? ev.target.closest('#chess-board .chess-square[data-row][data-col]') : null;
+                    if (!square) return;
+                    const row = Number(square.dataset.row);
+                    const col = Number(square.dataset.col);
+                    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+                    setTimeout(() => {
+                        try {
+                            aplicarPadraoProfessorXadrez36();
+                            if (lerModoToqueGuiaDiretaXadrez33() !== 'direct') abrirBubbleProfessorXadrez36SePossivel(row, col);
+                            if (autoGuiaDiretaAtivaXadrez33()) aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'toque36', clicada: { row, col } });
+                        } catch (_) {}
+                    }, 140);
+                }, true);
+            }
+
+            if (!window.__teacherProf36RenderHook) {
+                window.__teacherProf36RenderHook = true;
+                const renderAnteriorProf36 = renderChessBoard;
+                renderChessBoard = function renderChessBoardProfessor36() {
+                    const retorno = renderAnteriorProf36.apply(this, arguments);
+                    setTimeout(() => {
+                        try {
+                            aplicarPadraoProfessorXadrez36();
+                            if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                                agendarGuiaDiretaProfessorXadrez33(false, 'auto36leve39');
+                            }
+                        } catch (_) {}
+                    }, 260);
+                    return retorno;
+                };
+            }
+
+            const mostrarTabuleiroAnteriorProf36 = mostrarTabuleiroXadrezAposEscolha;
+            mostrarTabuleiroXadrezAposEscolha = function mostrarTabuleiroXadrezAposEscolhaProfessor36() {
+                mostrarTabuleiroAnteriorProf36.apply(this, arguments);
+                setTimeout(() => {
+                    try { aplicarPadraoProfessorXadrez36(); } catch (_) {}
+                }, 220);
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    try { aplicarPadraoProfessorXadrez36(); } catch (_) {}
+                }, 500);
+            });
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 37 — CONTROLE CORRETO NA ABA DO PROFESSOR
+               Correção do teste mostrado pelo usuário:
+               - a janelinha ficou OFF salva no navegador e parou de abrir ao tocar nas peças;
+               - os botões precisavam ficar DENTRO da aba Professor Inteligente, perto do Analisar posição;
+               - Robô cores precisa ser independente da janelinha.
+
+               Agora:
+               Janelinha ON/OFF e Robô cores ON/OFF ficam dentro da aba do professor.
+               Janelinha ON = tocar na peça abre o balão.
+               Janelinha OFF + Robô cores ON = orienta só por cores no tabuleiro.
+            ===================================================================== */
+            const PROF37_MIGRATION_KEY = 'tabuleiro_arena_prof37_janelinha_controle_correto';
+
+            function instalarCssControlesProfessorXadrez37() {
+                if (document.getElementById('teacher-prof37-controls-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof37-controls-style';
+                style.textContent = `
+                    #teacher-prof37-controls,
+                    .teacher-prof37-controls {
+                        display: block !important;
+                        margin: 0 0 9px 0 !important;
+                        padding: 9px !important;
+                        border-radius: 13px !important;
+                        border: 1px solid rgba(250,204,21,.38) !important;
+                        background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.86)) !important;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 20px rgba(0,0,0,.18) !important;
+                    }
+                    #teacher-prof37-controls .prof37-title,
+                    .teacher-prof37-controls .prof37-title {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        gap: 8px !important;
+                        color: #fde68a !important;
+                        font-size: .70rem !important;
+                        font-weight: 1000 !important;
+                        letter-spacing: .05em !important;
+                        text-transform: uppercase !important;
+                        margin-bottom: 8px !important;
+                    }
+                    #teacher-prof37-controls [data-prof37-state],
+                    .teacher-prof37-controls [data-prof37-state] {
+                        padding: 2px 7px !important;
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(56,189,248,.30) !important;
+                        background: rgba(14,165,233,.12) !important;
+                        color: #bae6fd !important;
+                        white-space: nowrap !important;
+                    }
+                    #teacher-prof37-controls .prof37-grid,
+                    .teacher-prof37-controls .prof37-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 6px !important;
+                    }
+                    #teacher-prof37-controls button,
+                    .teacher-prof37-controls button {
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(148,163,184,.28) !important;
+                        background: rgba(15,23,42,.94) !important;
+                        color: #e5e7eb !important;
+                        padding: 8px 6px !important;
+                        font-size: .64rem !important;
+                        font-weight: 1000 !important;
+                        line-height: 1.05 !important;
+                        text-transform: none !important;
+                        box-shadow: none !important;
+                        min-height: 34px !important;
+                    }
+                    #teacher-prof37-controls button.prof37-on,
+                    .teacher-prof37-controls button.prof37-on {
+                        background: linear-gradient(90deg, rgba(22,101,52,.98), rgba(21,128,61,.94)) !important;
+                        color: #dcfce7 !important;
+                        border-color: rgba(34,197,94,.75) !important;
+                        box-shadow: 0 0 13px rgba(34,197,94,.20) !important;
+                    }
+                    #teacher-prof37-controls button.prof37-off,
+                    .teacher-prof37-controls button.prof37-off {
+                        background: linear-gradient(90deg, rgba(127,29,29,.96), rgba(185,28,28,.88)) !important;
+                        color: #fee2e2 !important;
+                        border-color: rgba(248,113,113,.55) !important;
+                    }
+                    #teacher-prof37-controls button.prof37-warn,
+                    .teacher-prof37-controls button.prof37-warn {
+                        background: linear-gradient(90deg, rgba(113,63,18,.96), rgba(180,83,9,.90)) !important;
+                        color: #fef3c7 !important;
+                        border-color: rgba(250,204,21,.62) !important;
+                    }
+                    #teacher-prof37-controls .prof37-help,
+                    .teacher-prof37-controls .prof37-help {
+                        margin-top: 7px !important;
+                        padding: 7px 8px !important;
+                        border-radius: 10px !important;
+                        background: rgba(2,6,23,.58) !important;
+                        border: 1px solid rgba(148,163,184,.16) !important;
+                        color: #bfdbfe !important;
+                        font-size: .62rem !important;
+                        line-height: 1.28 !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33,
+                    .chess-square.teacher-direct-from-33 {
+                        background: radial-gradient(circle at center, #fef08a 0%, #facc15 55%, #a16207 100%) !important;
+                        outline: 5px solid #fde047 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(113,63,18,.24), 0 0 38px rgba(250,204,21,1) !important;
+                        animation: teacherProf37PulseYellow .58s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-to-33,
+                    .chess-square.teacher-direct-to-33 {
+                        background: radial-gradient(circle at center, #bbf7d0 0%, #22c55e 55%, #166534 100%) !important;
+                        outline: 5px solid #4ade80 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(20,83,45,.28), 0 0 40px rgba(34,197,94,1) !important;
+                        animation: teacherProf37PulseGreen .58s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-bad-33,
+                    .chess-square.teacher-direct-bad-33 {
+                        background: radial-gradient(circle at center, #fecaca 0%, #ef4444 58%, #7f1d1d 100%) !important;
+                        outline: 5px solid #f87171 !important;
+                        outline-offset: -6px !important;
+                        box-shadow: inset 0 0 0 6px rgba(127,29,29,.32), 0 0 34px rgba(239,68,68,.94) !important;
+                        animation: teacherProf37PulseRed .78s ease-in-out infinite !important;
+                        position: relative !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    .chess-square.teacher-direct-from-33::before,
+                    .chess-square.teacher-direct-to-33::before,
+                    .chess-square.teacher-direct-bad-33::before {
+                        z-index: 70 !important;
+                        min-width: 28px !important;
+                        height: 22px !important;
+                        font-size: .62rem !important;
+                        border: 2px solid rgba(255,255,255,.94) !important;
+                        box-shadow: 0 4px 10px rgba(0,0,0,.42) !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-from-33 span,
+                    #chess-board .chess-square.teacher-direct-to-33 span,
+                    #chess-board .chess-square.teacher-direct-bad-33 span {
+                        position: relative !important;
+                        z-index: 55 !important;
+                        text-shadow: 0 3px 8px rgba(0,0,0,.55) !important;
+                    }
+                    @keyframes teacherProf37PulseYellow {
+                        0%,100% { filter: brightness(1) saturate(1.1); transform: scale(1); }
+                        50% { filter: brightness(1.45) saturate(1.7); transform: scale(.985); }
+                    }
+                    @keyframes teacherProf37PulseGreen {
+                        0%,100% { filter: brightness(1) saturate(1.12); transform: scale(1); }
+                        50% { filter: brightness(1.48) saturate(1.75); transform: scale(.985); }
+                    }
+                    @keyframes teacherProf37PulseRed {
+                        0%,100% { filter: brightness(1) saturate(1.1); }
+                        50% { filter: brightness(1.30) saturate(1.55); }
+                    }
+                    @media(max-width:560px){
+                        #teacher-prof37-controls,
+                        .teacher-prof37-controls { padding: 8px !important; }
+                        #teacher-prof37-controls button,
+                        .teacher-prof37-controls button { font-size:.59rem !important; padding:7px 5px !important; }
+                        #teacher-prof37-controls .prof37-help,
+                        .teacher-prof37-controls .prof37-help { font-size:.58rem !important; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function aplicarMigracaoProfessorXadrez37() {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                try {
+                    if (localStorage.getItem(PROF37_MIGRATION_KEY) !== '1') {
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                        localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '0');
+                        localStorage.setItem(PROF37_MIGRATION_KEY, '1');
+                    }
+                } catch (_) {}
+            }
+
+            function garantirControlesProfessorXadrez37() {
+                instalarCssControlesProfessorXadrez37();
+                const panel = document.getElementById('chess-private-teacher-panel');
+                if (!panel) return null;
+                const body = document.getElementById('chess-private-teacher-body') || panel;
+                let box = document.getElementById('teacher-prof37-controls');
+                if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'teacher-prof37-controls';
+                    box.className = 'teacher-prof37-controls';
+                    box.innerHTML = `
+                        <div class="prof37-title"><span>🎯 Robô do professor</span><span data-prof37-state>PRONTO</span></div>
+                        <div class="prof37-grid">
+                            <button type="button" data-prof37="window">Janelinha ON</button>
+                            <button type="button" data-prof37="colors">Robô cores OFF</button>
+                            <button type="button" data-prof37="refresh">Atualizar cores</button>
+                            <button type="button" data-prof37="bubble">Abrir balão</button>
+                            <button type="button" data-prof37="clear">Limpar cores</button>
+                            <button type="button" data-prof37="legend">Legenda</button>
+                        </div>
+                        <div class="prof37-help" data-prof37-help>Janelinha ON: tocar na peça abre o balão. Robô cores ON: amarelo pisca na peça indicada, verde pisca na casa boa e vermelho marca perigo.</div>
+                    `;
+                    body.insertBefore(box, body.firstChild || null);
+                }
+                if (box.dataset.prof37Bound !== '1') {
+                    box.dataset.prof37Bound = '1';
+                    box.querySelectorAll('[data-prof37]').forEach(btn => {
+                        btn.addEventListener('click', ev => {
+                            const acao = btn.getAttribute('data-prof37');
+                            if (acao === 'window') {
+                                const offAgora = lerModoToqueGuiaDiretaXadrez33() === 'direct';
+                                if (offAgora) {
+                                    salvarModoToqueGuiaDiretaXadrez33('bubble');
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha ON. Agora, ao tocar numa peça, o balão de dicas volta a abrir. O robô por cores pode ficar ligado junto.');
+                                } else {
+                                    salvarModoToqueGuiaDiretaXadrez33('direct');
+                                    fecharBalaoProfessorXadrez34();
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Janelinha OFF. O balão não abre ao tocar na peça; use Robô cores ON para orientar direto pelo tabuleiro.');
+                                }
+                            }
+                            if (acao === 'colors') {
+                                const ligar = !autoGuiaDiretaAtivaXadrez33();
+                                salvarAutoGuiaDiretaXadrez33(ligar);
+                                if (ligar) {
+                                    aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'prof37' });
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô cores ON. Ele vai acompanhar o jogo e marcar no tabuleiro: amarelo = peça boa, verde = casa boa, vermelho = perigo.');
+                                } else {
+                                    limparGuiaDiretaProfessorXadrez33();
+                                    atualizarStatusGuiaDiretaProfessorXadrez33('Robô cores OFF. As cores foram limpas. A janelinha continua no estado escolhido.');
+                                }
+                            }
+                            if (acao === 'refresh') {
+                                salvarAutoGuiaDiretaXadrez33(true);
+                                aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'prof37' });
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Cores atualizadas. Amarelo = peça indicada, verde = destino, vermelho = perigo.');
+                            }
+                            if (acao === 'bubble') {
+                                salvarModoToqueGuiaDiretaXadrez33('bubble');
+                                abrirBalaoPeloPainelGuiaDiretaXadrez33();
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Balão aberto. Se não houver peça selecionada, toque em uma peça no tabuleiro.');
+                            }
+                            if (acao === 'clear') {
+                                salvarAutoGuiaDiretaXadrez33(false);
+                                limparGuiaDiretaProfessorXadrez33();
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas. Ligue Robô cores ON quando quiser orientação no tabuleiro.');
+                            }
+                            if (acao === 'legend') {
+                                atualizarStatusGuiaDiretaProfessorXadrez33('<strong>Legenda:</strong><br><span class="yellow-33">Amarelo piscando</span> = peça recomendada para mexer.<br><span class="good-33">Verde piscando</span> = casa recomendada para ir.<br><span class="bad-33">Vermelho</span> = peça/casa perigosa para evitar.');
+                            }
+                            atualizarControlesProfessorXadrez37();
+                            atualizarBotoesGuiaDiretaXadrez33();
+                            atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                        });
+                    });
+                }
+                atualizarControlesProfessorXadrez37();
+                return box;
+            }
+
+            function atualizarControlesProfessorXadrez37() {
+                const box = document.getElementById('teacher-prof37-controls');
+                if (!box) return;
+                const modo = lerModoToqueGuiaDiretaXadrez33();
+                const auto = autoGuiaDiretaAtivaXadrez33();
+                const off = modo === 'direct';
+                const btnWindow = box.querySelector('[data-prof37="window"]');
+                const btnColors = box.querySelector('[data-prof37="colors"]');
+                const state = box.querySelector('[data-prof37-state]');
+                const help = box.querySelector('[data-prof37-help]');
+                if (btnWindow) {
+                    btnWindow.textContent = off ? 'Janelinha OFF' : 'Janelinha ON';
+                    btnWindow.classList.toggle('prof37-on', !off);
+                    btnWindow.classList.toggle('prof37-off', off);
+                }
+                if (btnColors) {
+                    btnColors.textContent = auto ? 'Robô cores ON' : 'Robô cores OFF';
+                    btnColors.classList.toggle('prof37-on', auto);
+                    btnColors.classList.toggle('prof37-off', !auto);
+                }
+                if (state) {
+                    if (!off && auto) state.textContent = 'BALÃO + CORES';
+                    else if (!off) state.textContent = 'JANELA ON';
+                    else if (auto) state.textContent = 'SÓ CORES';
+                    else state.textContent = 'OFF';
+                    state.style.color = auto || !off ? '#86efac' : '#fca5a5';
+                }
+                if (help) {
+                    help.innerHTML = off
+                        ? 'Janelinha OFF: o balão não abre sozinho. Ligue <strong>Robô cores ON</strong> para o tabuleiro guiar por cores.'
+                        : 'Janelinha ON: tocar numa peça abre o balão. Você também pode ligar <strong>Robô cores ON</strong> para ver amarelo, verde e vermelho no tabuleiro.';
+                }
+            }
+
+            function abrirBubbleProfessorXadrez37SePossivel(row, col) {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return false;
+                if (lerModoToqueGuiaDiretaXadrez33() === 'direct') return false;
+                const peca = chessBoard?.[row]?.[col] || null;
+                if (!peca) return false;
+                try {
+                    let movimentos = [];
+                    try { movimentos = calcularMovimentosLegais(row, col, chessBoard) || []; } catch (_) { movimentos = []; }
+                    const rect = rectQuadradoXadrez26(row, col);
+                    guiaDiretaXadrez33UltimoClique = { row, col };
+                    try { registrarUltimaPecaGuiaXadrez29({ row, col }); } catch (_) {}
+                    marcarPecaBubbleProfessorXadrez27(row, col);
+                    abrirBubbleProfessorXadrez27(criarDadosPopupXadrez26(peca, row, col, movimentos, rect));
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function iniciarProfessorXadrez37() {
+                if (!professorPrivadoPodeAparecerXadrez19 || !professorPrivadoPodeAparecerXadrez19()) return;
+                aplicarMigracaoProfessorXadrez37();
+                garantirControlesProfessorXadrez37();
+                atualizarControlesProfessorXadrez37();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) agendarGuiaDiretaProfessorXadrez33(false, 'prof37leve39');
+            }
+
+            if (!window.__teacherProf37ManualWrapper) {
+                window.__teacherProf37ManualWrapper = true;
+                const atualizarManualAnterior37 = atualizarManualPrivadoProfessorXadrez19;
+                atualizarManualPrivadoProfessorXadrez19 = function atualizarManualPrivadoProfessorXadrez37(texto = '') {
+                    const retorno = atualizarManualAnterior37.apply(this, arguments);
+                    setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 0);
+                    return retorno;
+                };
+            }
+
+            if (!window.__teacherProf37ClickFix) {
+                window.__teacherProf37ClickFix = true;
+                document.addEventListener('click', (ev) => {
+                    const square = ev.target && ev.target.closest ? ev.target.closest('#chess-board .chess-square[data-row][data-col]') : null;
+                    if (!square) return;
+                    const row = Number(square.dataset.row);
+                    const col = Number(square.dataset.col);
+                    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+                    setTimeout(() => {
+                        try {
+                            iniciarProfessorXadrez37();
+                            if (lerModoToqueGuiaDiretaXadrez33() !== 'direct') abrirBubbleProfessorXadrez37SePossivel(row, col);
+                            if (autoGuiaDiretaAtivaXadrez33()) aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'toque37', clicada: { row, col } });
+                        } catch (_) {}
+                    }, 170);
+                }, true);
+            }
+
+            if (!window.__teacherProf37RenderHook) {
+                window.__teacherProf37RenderHook = true;
+                const renderAnteriorProf37 = renderChessBoard;
+                renderChessBoard = function renderChessBoardProfessor37() {
+                    const retorno = renderAnteriorProf37.apply(this, arguments);
+                    setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 160);
+                    return retorno;
+                };
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => { try { iniciarProfessorXadrez37(); } catch (_) {} }, 700);
+            });
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 39 — ROBÔ POR CORES LEVE E SINCRONIZADO
+               O robô do professor continua top, mas agora não pesa na jogada online.
+               Ele espera a vez do professor voltar, calcula uma vez, pinta o tabuleiro
+               e não fica recalculando sem necessidade enquanto o aluno pensa.
+            ===================================================================== */
+            if (!window.__teacherProf39LeveSync) {
+                window.__teacherProf39LeveSync = true;
+                let prof39Timer = null;
+                let prof39UltimaAssinatura = '';
+
+                function prof39AssinaturaLeve() {
+                    try {
+                        return JSON.stringify({
+                            turn: chessTurn,
+                            color: chessPlayerColor || '',
+                            over: !!chessGameOver,
+                            last: lastChessMove || null,
+                            hist: Array.isArray(moveHistory) ? moveHistory.length : 0,
+                            board: chessBoard || []
+                        });
+                    } catch (_) {
+                        return String(Date.now());
+                    }
+                }
+
+                function prof39PodeCalcular() {
+                    try {
+                        return !!(
+                            professorPrivadoPodeAparecerXadrez19 &&
+                            professorPrivadoPodeAparecerXadrez19() &&
+                            autoGuiaDiretaAtivaXadrez33() &&
+                            !chessGameOver &&
+                            (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())
+                        );
+                    } catch (_) {
+                        return false;
+                    }
+                }
+
+                function prof39AgendarCalculo(motivo = 'auto39', forcar = false) {
+                    clearTimeout(prof39Timer);
+                    if (!prof39PodeCalcular()) {
+                        try {
+                            if (chessMode === 'online' && chessPlayerColor && chessTurn !== corProfessorGuiaDiretaXadrez33()) {
+                                atualizarStatusGuiaDiretaProfessorXadrez33('Aguardando o aluno jogar. Quando voltar sua vez, o robô por cores atualiza sozinho.');
+                            }
+                        } catch (_) {}
+                        return;
+                    }
+                    const assinatura = prof39AssinaturaLeve();
+                    if (!forcar && assinatura === prof39UltimaAssinatura) return;
+                    prof39UltimaAssinatura = assinatura;
+                    prof39Timer = setTimeout(() => {
+                        try { aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: motivo }); } catch (_) {}
+                    }, 1050);
+                }
+
+                const aplicarRemotoAnterior39 = aplicarEstadoXadrezRemoto;
+                aplicarEstadoXadrezRemoto = function aplicarEstadoXadrezRemotoProf39(data) {
+                    const retorno = aplicarRemotoAnterior39.apply(this, arguments);
+                    setTimeout(() => prof39AgendarCalculo('apos-jogada-aluno41', false), 1200);
+                    return retorno;
+                };
+
+                const publicarAnterior39 = publicarEstadoXadrezOnline;
+                publicarEstadoXadrezOnline = async function publicarEstadoXadrezOnlineProf39(extra = {}) {
+                    // mantém a publicação original, só evita que o robô tente calcular junto com a sincronização
+                    const retorno = await publicarAnterior39.apply(this, arguments);
+                    setTimeout(() => prof39AgendarCalculo('apos-minha-jogada41', false), 1400);
+                    return retorno;
+                };
+
+                document.addEventListener('click', (ev) => {
+                    const btn = ev.target && ev.target.closest ? ev.target.closest('[data-prof36="refresh"], [data-prof37="refresh"], [data-direct33="refresh"], [data-direct33-mini="refresh"]') : null;
+                    if (!btn) return;
+                    setTimeout(() => prof39AgendarCalculo('manual39', true), 120);
+                }, true);
+            }
+
+            /* =====================================================================
+               ✅ PROFISSIONAL 42 — PRONTA PARA RAIZ + ROBÔ EM 3 NÍVEIS
+               Base: Profissional 41 aprovada pelo usuário.
+               Objetivo:
+               - manter o jogo leve para publicar na raiz;
+               - deixar o Robô Cores desligado por padrão em aparelhos novos;
+               - permitir 3 níveis: Leve, Forte e Aula;
+               - o professor escolhe o nível dentro da aba Professor Inteligente;
+               - não mexe na Damas, Admin, Firebase, salas, ranking ou torneios.
+            ===================================================================== */
+            const PROF42_ROBO_NIVEL_KEY = 'tabuleiro_arena_professor_robo_nivel_42';
+            const PROF42_PADRAO_RAIZ_KEY = 'tabuleiro_arena_prof42_padrao_raiz_aplicado';
+
+            function nivelRoboProfessor42() {
+                try {
+                    const v = localStorage.getItem(PROF42_ROBO_NIVEL_KEY) || 'leve';
+                    return ['leve', 'forte', 'aula'].includes(v) ? v : 'leve';
+                } catch (_) {
+                    return 'leve';
+                }
+            }
+
+            function nomeNivelRoboProfessor42(nivel = nivelRoboProfessor42()) {
+                if (nivel === 'forte') return 'Forte';
+                if (nivel === 'aula') return 'Aula';
+                return 'Leve';
+            }
+
+            function descricaoNivelRoboProfessor42(nivel = nivelRoboProfessor42()) {
+                if (nivel === 'forte') return 'Forte: analisa mais candidatos e protege melhor contra resposta do aluno. Use quando quiser mais precisão.';
+                if (nivel === 'aula') return 'Aula: prioriza explicação simples, jogadas seguras, defesa do Rei e material. Bom para ensinar sem pesar.';
+                return 'Leve: melhor para celular e partida online. Guia por cores sem ficar travando o jogo.';
+            }
+
+            function salvarNivelRoboProfessor42(nivel) {
+                const final = ['leve', 'forte', 'aula'].includes(nivel) ? nivel : 'leve';
+                try { localStorage.setItem(PROF42_ROBO_NIVEL_KEY, final); } catch (_) {}
+                atualizarControlesProfessor42();
+                atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
+                if (autoGuiaDiretaAtivaXadrez33() && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                    clearTimeout(guiaDiretaXadrez33Timer);
+                    guiaDiretaXadrez33UltimaAssinatura = '';
+                    guiaDiretaXadrez33Timer = setTimeout(() => {
+                        try { aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'nivel42' }); } catch (_) {}
+                    }, final === 'forte' ? 850 : 420);
+                }
+            }
+
+            function aplicarPadraoRaizProfessor42() {
+                try {
+                    if (localStorage.getItem(PROF42_PADRAO_RAIZ_KEY) !== '1') {
+                        // Em aparelhos novos, o robô fica desligado para o jogo abrir leve.
+                        // Quem já ligou antes mantém sua escolha, para não bagunçar o professor.
+                        if (localStorage.getItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY) === null) {
+                            localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '0');
+                        }
+                        if (localStorage.getItem(GUIA_DIRETA_XADREZ_33_MODO_KEY) === null) {
+                            localStorage.setItem(GUIA_DIRETA_XADREZ_33_MODO_KEY, 'bubble');
+                        }
+                        if (localStorage.getItem(PROF42_ROBO_NIVEL_KEY) === null) {
+                            localStorage.setItem(PROF42_ROBO_NIVEL_KEY, 'leve');
+                        }
+                        localStorage.setItem(PROF42_PADRAO_RAIZ_KEY, '1');
+                    }
+                } catch (_) {}
+            }
+
+            function instalarCssProfessor42() {
+                if (document.getElementById('teacher-prof42-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof42-style';
+                style.textContent = `
+                    #teacher-prof42-level {
+                        margin: 8px 0 0 0 !important;
+                        padding: 8px !important;
+                        border-radius: 12px !important;
+                        border: 1px solid rgba(96,165,250,.34) !important;
+                        background: linear-gradient(135deg, rgba(15,23,42,.94), rgba(30,41,59,.80)) !important;
+                    }
+                    #teacher-prof42-level .prof42-line {
+                        display: grid !important;
+                        grid-template-columns: 1fr auto !important;
+                        align-items: center !important;
+                        gap: 7px !important;
+                    }
+                    #teacher-prof42-level .prof42-title {
+                        color: #bfdbfe !important;
+                        font-size: .67rem !important;
+                        font-weight: 1000 !important;
+                        letter-spacing: .04em !important;
+                        text-transform: uppercase !important;
+                    }
+                    #teacher-prof42-level select {
+                        min-width: 92px !important;
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(147,197,253,.48) !important;
+                        background: rgba(2,6,23,.92) !important;
+                        color: #e0f2fe !important;
+                        padding: 6px 8px !important;
+                        font-size: .65rem !important;
+                        font-weight: 900 !important;
+                        outline: none !important;
+                    }
+                    #teacher-prof42-level .prof42-desc {
+                        margin-top: 6px !important;
+                        color: #cbd5e1 !important;
+                        font-size: .62rem !important;
+                        line-height: 1.25 !important;
+                    }
+                    #teacher-prof42-level .prof42-root {
+                        margin-top: 5px !important;
+                        color: #86efac !important;
+                        font-size: .58rem !important;
+                        font-weight: 900 !important;
+                        line-height: 1.2 !important;
+                    }
+                    #teacher-direct-guide-33 .prof42-mini {
+                        margin-top: 6px !important;
+                        padding-top: 6px !important;
+                        border-top: 1px solid rgba(148,163,184,.18) !important;
+                        display: grid !important;
+                        grid-template-columns: auto 1fr !important;
+                        gap: 5px !important;
+                        align-items: center !important;
+                        font-size: .60rem !important;
+                    }
+                    #teacher-direct-guide-33 .prof42-mini select {
+                        width: 100% !important;
+                        min-width: 0 !important;
+                        border-radius: 999px !important;
+                        border: 1px solid rgba(147,197,253,.38) !important;
+                        background: rgba(2,6,23,.90) !important;
+                        color: #e0f2fe !important;
+                        padding: 5px 6px !important;
+                        font-size: .60rem !important;
+                        font-weight: 900 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function garantirControlesProfessor42() {
+                aplicarPadraoRaizProfessor42();
+                instalarCssProfessor42();
+
+                const box37 = document.getElementById('teacher-prof37-controls') || document.querySelector('.teacher-prof37-controls');
+                if (box37 && !document.getElementById('teacher-prof42-level')) {
+                    const bloco = document.createElement('div');
+                    bloco.id = 'teacher-prof42-level';
+                    bloco.innerHTML = `
+                        <div class="prof42-line">
+                            <span class="prof42-title">Força do robô</span>
+                            <select id="teacher-prof42-level-select" aria-label="Força do robô do professor">
+                                <option value="leve">Leve</option>
+                                <option value="forte">Forte</option>
+                                <option value="aula">Aula</option>
+                            </select>
+                        </div>
+                        <div class="prof42-desc" data-prof42-desc></div>
+                        <div class="prof42-root">✅ Versão segura para raiz: robô inicia OFF em aparelho novo.</div>
+                    `;
+                    box37.appendChild(bloco);
+                    const select = bloco.querySelector('#teacher-prof42-level-select');
+                    select?.addEventListener('change', () => salvarNivelRoboProfessor42(select.value));
+                }
+
+                const mini = document.getElementById('teacher-direct-guide-33');
+                if (mini && !mini.querySelector('.prof42-mini')) {
+                    const blocoMini = document.createElement('div');
+                    blocoMini.className = 'prof42-mini';
+                    blocoMini.innerHTML = `
+                        <span>Força</span>
+                        <select id="teacher-prof42-mini-select" aria-label="Força do robô do professor">
+                            <option value="leve">Leve</option>
+                            <option value="forte">Forte</option>
+                            <option value="aula">Aula</option>
+                        </select>
+                    `;
+                    mini.appendChild(blocoMini);
+                    const selectMini = blocoMini.querySelector('#teacher-prof42-mini-select');
+                    selectMini?.addEventListener('change', () => salvarNivelRoboProfessor42(selectMini.value));
+                }
+
+                atualizarControlesProfessor42();
+            }
+
+            function atualizarControlesProfessor42() {
+                const nivel = nivelRoboProfessor42();
+                document.querySelectorAll('#teacher-prof42-level-select, #teacher-prof42-mini-select').forEach(sel => {
+                    if (sel && sel.value !== nivel) sel.value = nivel;
+                });
+                document.querySelectorAll('[data-prof42-desc]').forEach(el => {
+                    el.textContent = descricaoNivelRoboProfessor42(nivel);
+                });
+                const p = document.getElementById('teacher-direct-guide-status-33');
+                if (p && autoGuiaDiretaAtivaXadrez33() && p.innerHTML && !p.innerHTML.includes('Modo do robô')) {
+                    p.innerHTML += `<br><strong>Modo do robô:</strong> ${nomeNivelRoboProfessor42(nivel)}.`;
+                }
+            }
+
+            function scoreRapidoProfessor42(item, board, cor, modo = 'leve') {
+                try {
+                    const peca = board?.[item.from.row]?.[item.from.col] || item.peca || null;
+                    const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                    if (!peca || !temp) return -9999999;
+                    const adversario = corOposta(cor);
+                    const alvo = pecaCapturadaRoboProfessorXadrez30(board, item);
+                    const respostas = todosMovimentosLegais(adversario, temp) || [];
+                    if (!respostas.length && reiEstaEmXeque(temp, adversario)) return 9000000;
+
+                    let score = avaliarPosicaoProfessor40(temp, cor);
+                    if (alvo) score += valorPecaProfessor40(alvo.type) * (modo === 'aula' ? 2.2 : 2.55) - valorPecaProfessor40(peca.type) * 0.08;
+                    if (reiEstaEmXeque(temp, adversario)) score += modo === 'aula' ? 520 : 780;
+                    if (item.to?.castle) score += 430;
+                    if (peca.type === 'pawn' && (item.to.row === 0 || item.to.row === 7)) score += 2600;
+                    score += centro26(item.to.row, item.to.col) * (modo === 'aula' ? 28 : 20);
+
+                    const mateContra = detectarMateEmUmTreinoXadrez(adversario, temp);
+                    if (mateContra) score -= 8000000;
+
+                    if (peca.type !== 'king' && quadradoAtacado(temp, item.to.row, item.to.col, adversario)) {
+                        const defendida = quadradoAtacado(temp, item.to.row, item.to.col, cor);
+                        score -= valorPecaProfessor40(peca.type) * (defendida ? 0.46 : 2.15);
+                    }
+
+                    const respostasOrdenadas = ordenarMovimentosProfessor40(respostas, temp, adversario).slice(0, modo === 'forte' ? 7 : 4);
+                    let piorResposta = 0;
+                    respostasOrdenadas.forEach(resp => {
+                        const alvoResp = pecaCapturadaRoboProfessorXadrez30(temp, resp);
+                        const after = aplicarMovimentoTreinoEmClone(temp, resp, 'queen');
+                        let dano = alvoResp ? valorPecaProfessor40(alvoResp.type) * 2.25 : 0;
+                        if (after && reiEstaEmXeque(after, cor)) dano += 560;
+                        if (after && detectarMateEmUmTreinoXadrez(adversario, after)) dano += 2000000;
+                        piorResposta = Math.max(piorResposta, dano);
+                    });
+                    score -= piorResposta;
+
+                    if (modo === 'aula') {
+                        // No modo aula, favorece lance fácil de explicar: captura segura, roque, peça desenvolvida e centro.
+                        if ((peca.type === 'knight' || peca.type === 'bishop') && (peca.color === 'white' ? item.from.row === 7 : item.from.row === 0)) score += 180;
+                        if (alvo && !quadradoAtacado(temp, item.to.row, item.to.col, adversario)) score += 260;
+                    }
+
+                    return score;
+                } catch (_) {
+                    return -9999999;
+                }
+            }
+
+            function melhoresLancesProfessor42(cor, board = chessBoard, limite = 5) {
+                let movimentos = [];
+                try { movimentos = todosMovimentosLegais(cor, board) || []; } catch (_) { movimentos = []; }
+                if (!movimentos.length) return [];
+
+                const nivel = nivelRoboProfessor42();
+                const maxCandidatos = nivel === 'forte' ? 14 : (nivel === 'aula' ? 9 : 7);
+                const candidatos = ordenarMovimentosProfessor40(movimentos, board, cor).slice(0, maxCandidatos);
+
+                return candidatos.map(item => {
+                    const peca = board?.[item.from.row]?.[item.from.col] || null;
+                    let score = scoreRapidoProfessor42(item, board, cor, nivel);
+
+                    if (nivel === 'forte') {
+                        // Forte sem travar: aprofunda só nos melhores candidatos e com limite.
+                        try {
+                            const temp = aplicarMovimentoTreinoEmClone(board, item, 'queen');
+                            if (temp) score += buscaProfessor40(temp, corOposta(cor), 2, -99999999, 99999999, cor) * 0.34;
+                        } catch (_) {}
+                    }
+
+                    return {
+                        ...item,
+                        peca,
+                        score,
+                        motivo30: classificarLanceRoboProfessorXadrez30(item, board, cor),
+                        nivel42: nivel
+                    };
+                }).sort((a, b) => b.score - a.score).slice(0, limite);
+            }
+
+            const melhoresLancesProfundosOriginal42 = melhoresLancesProfundosRoboProfessorXadrez30;
+            melhoresLancesProfundosRoboProfessorXadrez30 = function melhoresLancesProfundosRoboProfessorXadrez42(cor, board = chessBoard, limite = 5) {
+                try {
+                    const nivel = nivelRoboProfessor42();
+                    if (nivel === 'leve' && limite <= 1) {
+                        // Para tarefas pequenas, usa cálculo mais leve ainda.
+                        return melhoresLancesProfessor42(cor, board, limite);
+                    }
+                    if (nivel === 'forte' || nivel === 'aula' || nivel === 'leve') {
+                        return melhoresLancesProfessor42(cor, board, limite);
+                    }
+                } catch (_) {}
+                return melhoresLancesProfundosOriginal42(cor, board, limite);
+            };
+
+            const textoGuiaDiretaOriginal42 = textoGuiaDiretaProfessorXadrez33;
+            textoGuiaDiretaProfessorXadrez33 = function textoGuiaDiretaProfessorXadrez42(resultado, cor, origem = 'manual') {
+                let html = textoGuiaDiretaOriginal42.apply(this, arguments);
+                const nivel = nivelRoboProfessor42();
+                const melhor = resultado?.melhor || null;
+                if (melhor) {
+                    html += `<br><strong>Modo do robô:</strong> ${nomeNivelRoboProfessor42(nivel)}.`;
+                    if (nivel === 'forte') html += ' O robô olhou mais respostas do aluno antes de indicar.';
+                    if (nivel === 'aula') html += ' Use a explicação como roteiro: segurança, material e plano simples.';
+                    if (nivel === 'leve') html += ' Indicação rápida para não travar a aula online.';
+                }
+                return html;
+            };
+
+            const atualizarPainelAnterior42 = atualizarPainelFlutuanteGuiaDiretaXadrez33;
+            atualizarPainelFlutuanteGuiaDiretaXadrez33 = function atualizarPainelFlutuanteGuiaDiretaXadrez42(mostrar = false) {
+                const retorno = atualizarPainelAnterior42.apply(this, arguments);
+                setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 0);
+                return retorno;
+            };
+
+            const controles37Anterior42 = atualizarControlesProfessorXadrez37;
+            atualizarControlesProfessorXadrez37 = function atualizarControlesProfessorXadrez37Prof42() {
+                const retorno = controles37Anterior42.apply(this, arguments);
+                try { garantirControlesProfessor42(); } catch (_) {}
+                return retorno;
+            };
+
+            const manualAnterior42 = atualizarManualPrivadoProfessorXadrez19;
+            atualizarManualPrivadoProfessorXadrez19 = function atualizarManualPrivadoProfessorXadrez42(texto = '') {
+                const retorno = manualAnterior42.apply(this, arguments);
+                setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 0);
+                return retorno;
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => { try { garantirControlesProfessor42(); } catch (_) {} }, 900);
+            });
+        }
+
+        instalarPopupProfessorXadrez26();
 
         window.abrirXadrezArena = abrirXadrezArena;
         window.resetChessGame = resetChessGame;
@@ -12560,6 +16632,663 @@ Compartilhe com os amigos e entre no horário marcado.`;
     }
 
     instalarReforcoDefinitivoProfessorDamas23();
+
+    /* =====================================================================
+       ✅ PROFISSIONAL 25 — POPUP DIDÁTICO DA PEÇA NO MODO PROFESSOR
+       Popup privado para o professor explicar a peça selecionada no online.
+       Serve para Xadrez e Damas. Não aparece para aluno, não grava na sala,
+       não muda Firebase, não altera jogadas e não reinicia partida.
+    ===================================================================== */
+    function instalarPopupProfessorPeca25Global() {
+        if (window.__popupProfessorPeca25GlobalInstalado) return;
+        window.__popupProfessorPeca25GlobalInstalado = true;
+
+        function instalarCssPopup25() {
+            if (document.getElementById('popup-professor-peca-25-style')) return;
+            const style = document.createElement('style');
+            style.id = 'popup-professor-peca-25-style';
+            style.textContent = `
+                #teacher-piece-popup-25 {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 999999;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 18px;
+                    background: rgba(2, 6, 23, .72);
+                    backdrop-filter: blur(5px);
+                }
+                #teacher-piece-popup-25.open { display: flex; }
+                #teacher-piece-popup-25 .teacher-piece-card {
+                    width: min(520px, 96vw);
+                    max-height: 88vh;
+                    overflow: auto;
+                    border-radius: 22px;
+                    border: 1px solid rgba(34, 197, 94, .45);
+                    background: linear-gradient(180deg, rgba(8, 25, 38, .98), rgba(4, 13, 24, .99));
+                    box-shadow: 0 25px 70px rgba(0, 0, 0, .55), 0 0 28px rgba(34,197,94,.14);
+                    color: #e5f6ef;
+                }
+                #teacher-piece-popup-25 .teacher-piece-head {
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 14px 15px;
+                    border-bottom: 1px solid rgba(148, 163, 184, .20);
+                    background: rgba(15, 118, 110, .18);
+                }
+                #teacher-piece-popup-25 .teacher-piece-titlebox {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-width: 0;
+                }
+                #teacher-piece-popup-25 .teacher-piece-symbol {
+                    width: 44px;
+                    height: 44px;
+                    min-width: 44px;
+                    border-radius: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.75rem;
+                    background: rgba(250, 204, 21, .13);
+                    border: 1px solid rgba(250, 204, 21, .32);
+                    color: #fef3c7;
+                }
+                #teacher-piece-popup-25 .teacher-piece-title {
+                    font-weight: 950;
+                    font-size: 1rem;
+                    line-height: 1.15;
+                    color: #f8fafc;
+                }
+                #teacher-piece-popup-25 .teacher-piece-subtitle {
+                    margin-top: 3px;
+                    font-size: .75rem;
+                    color: #94a3b8;
+                    font-weight: 700;
+                }
+                #teacher-piece-popup-25 .teacher-piece-close {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(148, 163, 184, .25);
+                    background: rgba(15, 23, 42, .84);
+                    color: #e5e7eb;
+                    cursor: pointer;
+                    font-weight: 950;
+                    font-size: 1.05rem;
+                }
+                #teacher-piece-popup-25 .teacher-piece-body {
+                    padding: 14px 15px 16px 15px;
+                    font-size: .89rem;
+                    line-height: 1.48;
+                }
+                #teacher-piece-popup-25 .teacher-piece-section {
+                    margin: 0 0 10px 0;
+                    padding: 10px 11px;
+                    border-radius: 14px;
+                    border: 1px solid rgba(148, 163, 184, .16);
+                    background: rgba(2, 6, 23, .26);
+                }
+                #teacher-piece-popup-25 .teacher-piece-label {
+                    display: block;
+                    margin-bottom: 4px;
+                    color: #86efac;
+                    text-transform: uppercase;
+                    font-size: .68rem;
+                    letter-spacing: .08em;
+                    font-weight: 950;
+                }
+                #teacher-piece-popup-25 .teacher-piece-moves {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    margin-top: 6px;
+                }
+                #teacher-piece-popup-25 .teacher-piece-move {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 5px 8px;
+                    border-radius: 999px;
+                    background: rgba(14, 165, 233, .14);
+                    border: 1px solid rgba(56, 189, 248, .24);
+                    color: #bfdbfe;
+                    font-weight: 850;
+                    font-size: .76rem;
+                }
+                #teacher-piece-popup-25 .teacher-piece-audio {
+                    border-color: rgba(250, 204, 21, .28);
+                    background: rgba(113, 63, 18, .18);
+                    color: #fef3c7;
+                }
+                #teacher-piece-popup-25 .teacher-piece-footer {
+                    display: flex;
+                    gap: 8px;
+                    justify-content: flex-end;
+                    padding: 0 15px 15px 15px;
+                }
+                #teacher-piece-popup-25 .teacher-piece-ok {
+                    border: 0;
+                    border-radius: 13px;
+                    padding: 10px 14px;
+                    cursor: pointer;
+                    color: #052e2b;
+                    font-weight: 950;
+                    background: linear-gradient(135deg, #86efac, #22c55e);
+                }
+                @media (max-width: 620px) {
+                    #teacher-piece-popup-25 { padding: 10px; align-items: flex-end; }
+                    #teacher-piece-popup-25 .teacher-piece-card { width: 100%; max-height: 86vh; border-radius: 19px; }
+                    #teacher-piece-popup-25 .teacher-piece-head { padding: 12px; }
+                    #teacher-piece-popup-25 .teacher-piece-body { padding: 12px; font-size: .83rem; }
+                    #teacher-piece-popup-25 .teacher-piece-symbol { width: 40px; height: 40px; min-width: 40px; font-size: 1.45rem; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function escape25(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function garantirPopup25() {
+            instalarCssPopup25();
+            let overlay = document.getElementById('teacher-piece-popup-25');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'teacher-piece-popup-25';
+                overlay.innerHTML = `
+                    <div class="teacher-piece-card" role="dialog" aria-modal="true" aria-label="Manual do professor">
+                        <div class="teacher-piece-head">
+                            <div class="teacher-piece-titlebox">
+                                <div id="teacher-piece-symbol-25" class="teacher-piece-symbol">♟</div>
+                                <div>
+                                    <div id="teacher-piece-title-25" class="teacher-piece-title">Manual do Professor</div>
+                                    <div id="teacher-piece-subtitle-25" class="teacher-piece-subtitle">Explicação privada</div>
+                                </div>
+                            </div>
+                            <button id="teacher-piece-close-25" class="teacher-piece-close" type="button">×</button>
+                        </div>
+                        <div id="teacher-piece-body-25" class="teacher-piece-body"></div>
+                        <div class="teacher-piece-footer">
+                            <button id="teacher-piece-ok-25" class="teacher-piece-ok" type="button">Entendi</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                const fechar = () => overlay.classList.remove('open');
+                overlay.addEventListener('click', (ev) => {
+                    if (ev.target === overlay) fechar();
+                });
+                overlay.querySelector('#teacher-piece-close-25')?.addEventListener('click', fechar);
+                overlay.querySelector('#teacher-piece-ok-25')?.addEventListener('click', fechar);
+                document.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Escape') fechar();
+                });
+            }
+            return overlay;
+        }
+
+        window.abrirPopupProfessorPeca25 = function abrirPopupProfessorPeca25(dados = {}) {
+            const overlay = garantirPopup25();
+            const simbolo = overlay.querySelector('#teacher-piece-symbol-25');
+            const title = overlay.querySelector('#teacher-piece-title-25');
+            const subtitle = overlay.querySelector('#teacher-piece-subtitle-25');
+            const body = overlay.querySelector('#teacher-piece-body-25');
+            const movimentos = Array.isArray(dados.ondePodeIr) && dados.ondePodeIr.length
+                ? dados.ondePodeIr.map(m => `<span class="teacher-piece-move">${escape25(m)}</span>`).join('')
+                : '<span class="teacher-piece-move">Sem casa legal agora</span>';
+
+            if (simbolo) simbolo.textContent = dados.simbolo || '♟';
+            if (title) title.textContent = dados.titulo || 'Peça selecionada';
+            if (subtitle) subtitle.textContent = `${dados.jogo || 'Jogo'} • posição ${dados.posicao || '—'}`;
+            if (body) {
+                body.innerHTML = `
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">O que é esta peça</span>
+                        ${escape25(dados.oQueE || 'Esta peça faz parte da estratégia da posição.')}
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">O que ela faz</span>
+                        ${escape25(dados.comoAnda || 'Ela se movimenta conforme as regras do jogo.')}
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">Onde pode ir agora</span>
+                        <div class="teacher-piece-moves">${movimentos}</div>
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">Por que isso importa no jogo</span>
+                        ${escape25(dados.porque || 'Use esta posição para ensinar ataque, defesa e cuidado antes de jogar.')}
+                    </div>
+                    <div class="teacher-piece-section teacher-piece-audio">
+                        <span class="teacher-piece-label">Frase para instruir por áudio</span>
+                        “${escape25(dados.fraseAula || 'Observe a peça, veja para onde ela pode ir e pense no que ela protege ou ameaça antes de jogar.')}”
+                    </div>
+                `;
+            }
+            overlay.classList.add('open');
+        };
+    }
+
+    function instalarPopupDidaticoPecaDamas25() {
+        if (window.__popupPecaDamas25Instalado) return;
+        window.__popupPecaDamas25Instalado = true;
+
+        function professorDamasAtivo25() {
+            let ativo = false;
+            try {
+                ativo = sessionStorage.getItem('damas_professor_privado_ativo_23') === '1' || sessionStorage.getItem('damas_professor_privado_ativo_21') === '1';
+            } catch (_) {}
+            const boardWrapper = document.getElementById('normal-board-wrapper');
+            return !!(
+                ativo &&
+                !isPracticeMode &&
+                (playerRole === 'p1' || playerRole === 'p2') &&
+                gameScreen &&
+                gameScreen.style.display !== 'none' &&
+                boardWrapper &&
+                boardWrapper.style.display !== 'none' &&
+                currentGameState &&
+                currentGameState.board
+            );
+        }
+
+        function coord25(r, c) {
+            const letras = 'ABCDEFGH';
+            return `${letras[c] || '?'}${8 - r}`;
+        }
+
+        function dono25(peca) {
+            if (peca === 1 || peca === 2) return 1;
+            if (peca === 3 || peca === 4) return 2;
+            return 0;
+        }
+
+        function ladoNome25(lado) {
+            return lado === 2 ? 'pretas' : 'vermelhas';
+        }
+
+        function tipoNome25(peca) {
+            return (peca === 2 || peca === 4) ? 'Dama' : 'Peça comum';
+        }
+
+        function movimentosTextoDamas25(movs) {
+            if (!movs || !movs.length) return ['Sem casa legal agora'];
+            return movs.slice(0, 14).map(m => {
+                let txt = `${coord25(m.fromR, m.fromC)} → ${coord25(m.toR, m.toC)}`;
+                if (m.capture) txt += ` captura em ${coord25(m.capture.r, m.capture.c)}`;
+                return txt;
+            });
+        }
+
+        function criarDadosPopupDamas25(r, c) {
+            const board = currentGameState?.board;
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return null;
+            let movimentos = [];
+            try { movimentos = computeValidMovesForPieceEngine(r, c, board, false) || []; } catch (_) { movimentos = []; }
+            let capturasObrigatorias = [];
+            try { capturasObrigatorias = computeAllValidMovesEngine(dono25(peca), board, null).filter(m => m.capture); } catch (_) { capturasObrigatorias = []; }
+            const eDama = peca === 2 || peca === 4;
+            const capturasDaPeca = movimentos.filter(m => m.capture).length;
+            const lado = dono25(peca);
+            const doProfessor = (playerRole === 'p1' && lado === 1) || (playerRole === 'p2' && lado === 2);
+
+            let oQueE = eDama
+                ? 'A Dama é a peça coroada. Ela é mais forte porque anda pelas diagonais longas enquanto houver caminho livre.'
+                : 'A peça comum é a base da Damas. Ela avança pelas diagonais, protege caminhos e tenta chegar ao outro lado para virar Dama.';
+            let comoAnda = eDama
+                ? 'A Dama anda em qualquer diagonal, para frente ou para trás, quantas casas livres puder. Para capturar, ela pula a peça adversária e cai numa casa livre depois dela.'
+                : 'A peça comum anda uma casa na diagonal para frente. Ela captura pulando a peça adversária na diagonal. Neste jogo, quando existe captura, a captura deve ser feita.';
+            let porque = '';
+            if (capturasDaPeca > 0) {
+                porque = 'Esta peça tem captura disponível. Use isso para ensinar que na Damas ganhar material e respeitar a captura obrigatória muda a partida.';
+            } else if (capturasObrigatorias.length > 0) {
+                porque = 'Existe captura obrigatória para este lado, mas talvez não seja com esta peça. Ensine o aluno a procurar todas as capturas antes de andar.';
+            } else if (eDama) {
+                porque = 'A Dama controla muitas diagonais. Ela serve para atacar de longe, defender peças e cortar caminhos do adversário.';
+            } else {
+                porque = 'Esta peça ajuda no avanço, no controle do centro e na formação de defesa. O objetivo é avançar sem deixar captura fácil.';
+            }
+            if (!doProfessor) {
+                porque = 'Esta é uma peça do aluno/adversário. Use para explicar o que ela ameaça, quais caminhos ela tem e como evitar deixar captura para ela.';
+            }
+
+            return {
+                jogo: 'Damas online',
+                simbolo: eDama ? '👑' : '●',
+                titulo: `${tipoNome25(peca)} ${ladoNome25(lado)}`,
+                posicao: coord25(r, c),
+                oQueE,
+                comoAnda,
+                ondePodeIr: movimentosTextoDamas25(movimentos),
+                porque,
+                fraseAula: eDama
+                    ? 'A Dama é forte porque domina diagonais longas; antes de mover, olhe tudo o que ela ataca e tudo o que ela precisa defender.'
+                    : 'Antes de andar, procure captura obrigatória, veja se a peça ficará protegida e pense se ela está avançando com segurança.'
+            };
+        }
+
+        const clicarAnterior25 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionPopupDamas25(r, c) {
+            const board = currentGameState?.board;
+            const pecaAntes = board?.[r]?.[c] || 0;
+            const clicouDestino = !!(selectedPiece && Array.isArray(validMoves) && validMoves.some(m => m.toR === r && m.toC === c));
+            const deveAbrir = !!(professorDamasAtivo25() && pecaAntes && !clicouDestino);
+            const dados = deveAbrir ? criarDadosPopupDamas25(r, c) : null;
+            const retorno = clicarAnterior25.apply(this, arguments);
+            if (dados && window.abrirPopupProfessorPeca25) {
+                setTimeout(() => window.abrirPopupProfessorPeca25(dados), 60);
+            }
+            return retorno;
+        };
+    }
+
+    instalarPopupProfessorPeca25Global();
+    instalarPopupDidaticoPecaDamas25();
+
+    /* =====================================================================
+       ✅ PROFISSIONAL 26 — POPUP PEQUENO ACIMA DA PEÇA
+       Troca o popup central por um quadrinho pequeno perto da peça tocada,
+       com explicação, movimento e melhor dica didática para o professor.
+    ===================================================================== */
+    function instalarPopupProfessorPeca26Global() {
+        if (window.__popupProfessorPeca26GlobalInstalado) return;
+        window.__popupProfessorPeca26GlobalInstalado = true;
+        const abrirOriginalPopupProfessor25 = window.abrirPopupProfessorPeca25;
+
+        function escape26(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function instalarCss26() {
+            if (document.getElementById('popup-professor-peca-26-style')) return;
+            const style = document.createElement('style');
+            style.id = 'popup-professor-peca-26-style';
+            style.textContent = `
+                #teacher-piece-popup-25 {
+                    position: fixed !important;
+                    inset: 0 !important;
+                    z-index: 999999 !important;
+                    display: none !important;
+                    background: transparent !important;
+                    backdrop-filter: none !important;
+                    padding: 0 !important;
+                    pointer-events: none !important;
+                }
+                #teacher-piece-popup-25.open { display: block !important; }
+                #teacher-piece-popup-25 .teacher-piece-card {
+                    position: fixed !important;
+                    width: min(340px, calc(100vw - 18px)) !important;
+                    max-height: min(430px, 72vh) !important;
+                    overflow: auto !important;
+                    border-radius: 16px !important;
+                    border: 1px solid rgba(125, 211, 252, .55) !important;
+                    background: linear-gradient(180deg, rgba(8, 20, 38, .98), rgba(2, 8, 23, .99)) !important;
+                    box-shadow: 0 18px 45px rgba(0,0,0,.55), 0 0 24px rgba(14,165,233,.20) !important;
+                    color: #e5f6ff !important;
+                    pointer-events: auto !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-card::after {
+                    content: '';
+                    position: absolute;
+                    left: var(--arrow-left, 28px);
+                    top: 100%;
+                    width: 14px;
+                    height: 14px;
+                    transform: rotate(45deg);
+                    margin-top: -7px;
+                    background: rgba(2, 8, 23, .99);
+                    border-right: 1px solid rgba(125, 211, 252, .45);
+                    border-bottom: 1px solid rgba(125, 211, 252, .45);
+                }
+                #teacher-piece-popup-25 .teacher-piece-head {
+                    padding: 10px 11px !important;
+                    gap: 9px !important;
+                    background: rgba(14, 116, 144, .20) !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-symbol {
+                    width: 36px !important;
+                    height: 36px !important;
+                    min-width: 36px !important;
+                    border-radius: 11px !important;
+                    font-size: 1.45rem !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-title {
+                    font-size: .92rem !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-subtitle {
+                    font-size: .68rem !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-close {
+                    width: 32px !important;
+                    height: 32px !important;
+                    border-radius: 10px !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-body {
+                    padding: 10px 11px 11px 11px !important;
+                    font-size: .80rem !important;
+                    line-height: 1.36 !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-section {
+                    margin-bottom: 7px !important;
+                    padding: 8px 9px !important;
+                    border-radius: 11px !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-label {
+                    font-size: .61rem !important;
+                    margin-bottom: 3px !important;
+                    color: #7dd3fc !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-moves { gap: 4px !important; }
+                #teacher-piece-popup-25 .teacher-piece-move {
+                    padding: 4px 7px !important;
+                    font-size: .68rem !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-best {
+                    border-color: rgba(34, 197, 94, .34) !important;
+                    background: rgba(20, 83, 45, .22) !important;
+                    color: #dcfce7 !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-audio {
+                    border-color: rgba(250, 204, 21, .28) !important;
+                    background: rgba(113, 63, 18, .16) !important;
+                }
+                #teacher-piece-popup-25 .teacher-piece-footer { display: none !important; }
+                @media (max-width: 620px) {
+                    #teacher-piece-popup-25 .teacher-piece-card {
+                        width: min(330px, calc(100vw - 14px)) !important;
+                        max-height: 62vh !important;
+                        border-radius: 15px !important;
+                    }
+                    #teacher-piece-popup-25 .teacher-piece-body { font-size: .78rem !important; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function garantirPopup26() {
+            instalarCss26();
+            if (typeof abrirOriginalPopupProfessor25 !== 'function') return null;
+            let overlay = document.getElementById('teacher-piece-popup-25');
+            if (!overlay) {
+                abrirOriginalPopupProfessor25({ titulo: 'Professor', jogo: 'Carregando', posicao: '—' });
+                overlay = document.getElementById('teacher-piece-popup-25');
+                if (overlay) overlay.classList.remove('open');
+            }
+            return overlay;
+        }
+
+        function calcularPosicao26(dados, card) {
+            const rect = dados.anchorRect || null;
+            const vw = window.innerWidth || 360;
+            const vh = window.innerHeight || 640;
+            const cw = Math.min(340, vw - 18);
+            let left = rect ? (rect.left + rect.width / 2 - cw / 2) : (vw / 2 - cw / 2);
+            left = Math.max(9, Math.min(left, vw - cw - 9));
+            const estimatedH = Math.min(430, Math.max(260, card?.offsetHeight || 320));
+            let top = rect ? (rect.top - estimatedH - 10) : (vh * .18);
+            if (top < 8 && rect) top = Math.min(rect.bottom + 10, vh - estimatedH - 8);
+            top = Math.max(8, Math.min(top, vh - 80));
+            const arrow = rect ? Math.max(18, Math.min(cw - 26, (rect.left + rect.width / 2) - left - 7)) : 28;
+            return { left, top, cw, arrow };
+        }
+
+        window.abrirPopupProfessorPeca25 = window.abrirPopupProfessorPeca26 = function abrirPopupProfessorPeca26(dados = {}) {
+            const overlay = garantirPopup26();
+            if (!overlay) return;
+            const simbolo = overlay.querySelector('#teacher-piece-symbol-25');
+            const title = overlay.querySelector('#teacher-piece-title-25');
+            const subtitle = overlay.querySelector('#teacher-piece-subtitle-25');
+            const body = overlay.querySelector('#teacher-piece-body-25');
+            const card = overlay.querySelector('.teacher-piece-card');
+            const movimentos = Array.isArray(dados.ondePodeIr) && dados.ondePodeIr.length
+                ? dados.ondePodeIr.map(m => `<span class="teacher-piece-move">${escape26(m)}</span>`).join('')
+                : '<span class="teacher-piece-move">Sem casa legal agora</span>';
+
+            if (simbolo) simbolo.textContent = dados.simbolo || '♟';
+            if (title) title.textContent = dados.titulo || 'Peça selecionada';
+            if (subtitle) subtitle.textContent = `${dados.jogo || 'Jogo'} • ${dados.posicao || '—'}`;
+            if (body) {
+                body.innerHTML = `
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">O que é / função</span>
+                        ${escape26(dados.oQueE || 'Esta peça faz parte da estratégia da posição.')}
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">O que ela faz</span>
+                        ${escape26(dados.comoAnda || 'Ela se movimenta conforme as regras do jogo.')}
+                    </div>
+                    <div class="teacher-piece-section">
+                        <span class="teacher-piece-label">Onde pode ir agora</span>
+                        <div class="teacher-piece-moves">${movimentos}</div>
+                    </div>
+                    <div class="teacher-piece-section teacher-piece-best">
+                        <span class="teacher-piece-label">Melhor dica para instruir</span>
+                        ${escape26(dados.melhorJogada || dados.porque || 'Observe se a jogada ganha material, protege o Rei e não deixa peça sem defesa.')}
+                    </div>
+                    <div class="teacher-piece-section teacher-piece-audio">
+                        <span class="teacher-piece-label">Como explicar por áudio</span>
+                        “${escape26(dados.fraseAula || 'Antes de jogar, veja o que a peça ataca, o que ela protege e se ela fica segura depois do movimento.')}”
+                    </div>
+                `;
+            }
+            overlay.classList.add('open');
+            if (card) {
+                card.style.left = '-9999px';
+                card.style.top = '8px';
+                card.style.width = '';
+                requestAnimationFrame(() => {
+                    const pos = calcularPosicao26(dados, card);
+                    card.style.left = `${pos.left}px`;
+                    card.style.top = `${pos.top}px`;
+                    card.style.width = `${pos.cw}px`;
+                    card.style.setProperty('--arrow-left', `${pos.arrow}px`);
+                });
+            }
+        };
+    }
+
+    function instalarPopupProfessorDamas26() {
+        if (window.__popupProfessorDamas26Instalado) return;
+        window.__popupProfessorDamas26Instalado = true;
+
+        function professorDamasAtivo26() {
+            let ativo = false;
+            try {
+                ativo = sessionStorage.getItem('damas_professor_privado_ativo_23') === '1' || sessionStorage.getItem('damas_professor_privado_ativo_21') === '1';
+            } catch (_) {}
+            return !!(ativo && !isPracticeMode && (playerRole === 'p1' || playerRole === 'p2') && currentGameState?.board && gameScreen && gameScreen.style.display !== 'none');
+        }
+        function coord26(r, c) { const letras = 'ABCDEFGH'; return `${letras[c] || '?'}${8 - r}`; }
+        function dono26(p) { if (p === 1 || p === 2) return 1; if (p === 3 || p === 4) return 2; return 0; }
+        function nomeLado26(lado) { return lado === 2 ? 'pretas' : 'vermelhas'; }
+        function rectDamas26(r, c) {
+            try {
+                const el = document.querySelector(`#game-board .square[data-row="${r}"][data-col="${c}"]`) || document.querySelector(`.square[data-row="${r}"][data-col="${c}"]`);
+                if (el) { const x = el.getBoundingClientRect(); return { left: x.left, top: x.top, right: x.right, bottom: x.bottom, width: x.width, height: x.height }; }
+            } catch (_) {}
+            return null;
+        }
+        function melhorDicaDamas26(peca, r, c, movimentos, board) {
+            const lista = Array.isArray(movimentos) ? movimentos : [];
+            const eDama = peca === 2 || peca === 4;
+            if (!lista.length) return 'Melhor orientação: esta peça está travada agora. Use isso para explicar bloqueio, proteção e por que nem toda peça pode sair a qualquer momento.';
+            const avaliadas = lista.map(m => {
+                let score = 0;
+                const razoes = [];
+                if (m.capture) { score += eDama ? 260 : 220; razoes.push(`captura em ${coord26(m.capture.r, m.capture.c)}`); }
+                const vaiCoroar = (peca === 1 && m.toR === 0) || (peca === 3 && m.toR === 7);
+                if (vaiCoroar) { score += 420; razoes.push('chega para virar Dama'); }
+                const centro = 7 - (Math.abs(3.5 - m.toR) + Math.abs(3.5 - m.toC));
+                if (centro >= 5.5) { score += 65; razoes.push('controla melhor o centro'); }
+                if (!m.capture && ((peca === 1 && m.toR < r) || (peca === 3 && m.toR > r))) { score += 38; razoes.push('avança com objetivo'); }
+                if (eDama) { score += 45; razoes.push('mantém pressão de Dama nas diagonais'); }
+                return { m, score, razoes };
+            }).sort((a,b) => b.score - a.score);
+            const best = avaliadas[0];
+            const motivos = best.razoes.length ? best.razoes.slice(0,3).join(', ') : 'melhora a posição com segurança';
+            return `Boa jogada didática: ${coord26(best.m.fromR, best.m.fromC)} → ${coord26(best.m.toR, best.m.toC)}. Motivo: ${motivos}. Ensine assim: “na Damas primeiro procure captura obrigatória, depois veja se a peça ficará protegida e se aproxima da coroação.”`;
+        }
+        function criarDadosDamas26(r, c, anchorRect) {
+            const board = currentGameState?.board;
+            const peca = board?.[r]?.[c] || 0;
+            if (!peca) return null;
+            let movimentos = [];
+            try { movimentos = computeValidMovesForPieceEngine(r, c, board, false) || []; } catch (_) {
+                try { movimentos = computeValidMovesForPiece(r, c, board) || []; } catch (__) { movimentos = []; }
+            }
+            const eDama = peca === 2 || peca === 4;
+            const lado = dono26(peca);
+            const capturas = movimentos.filter(m => m.capture).length;
+            return {
+                jogo: 'Damas online',
+                simbolo: eDama ? '👑' : '●',
+                titulo: `${eDama ? 'Dama' : 'Peça comum'} ${nomeLado26(lado)}`,
+                posicao: coord26(r, c),
+                oQueE: eDama ? 'A Dama é a peça coroada da Damas. Ela é mais forte porque controla diagonais longas.' : 'A peça comum é a base do jogo de Damas. Ela avança, protege caminhos e tenta chegar ao outro lado para virar Dama.',
+                comoAnda: eDama ? 'A Dama anda pelas diagonais para frente ou para trás enquanto houver caminho livre. Para capturar, pula a peça adversária e cai depois dela.' : 'A peça comum anda uma casa na diagonal para frente. Captura pulando a peça adversária na diagonal. Quando há captura, a captura é obrigatória.',
+                ondePodeIr: movimentos.length ? movimentos.slice(0,14).map(m => `${coord26(m.fromR,m.fromC)} → ${coord26(m.toR,m.toC)}${m.capture ? ' captura' : ''}`) : ['Sem casa legal agora'],
+                porque: capturas ? 'Esta peça tem captura. Use para ensinar que a captura obrigatória muda todo o plano da jogada.' : 'Use esta peça para ensinar avanço seguro, controle do centro, defesa e caminho para coroação.',
+                melhorJogada: melhorDicaDamas26(peca, r, c, movimentos, board),
+                fraseAula: eDama ? 'A Dama domina diagonais longas; olhe tudo que ela ataca antes de mover.' : 'Na Damas, antes de andar, procure captura obrigatória e veja se a peça continuará protegida.',
+                anchorRect,
+                row: r,
+                col: c
+            };
+        }
+
+        const clickAnteriorDamas26 = handleSquareInteraction;
+        handleSquareInteraction = function handleSquareInteractionPopupDamas26(r, c) {
+            const board = currentGameState?.board;
+            const pecaAntes = board?.[r]?.[c] || 0;
+            const clicouDestino = !!(selectedPiece && Array.isArray(validMoves) && validMoves.some(m => m.toR === r && m.toC === c));
+            const pode = !!(professorDamasAtivo26() && pecaAntes && !clicouDestino);
+            const rect = pode ? rectDamas26(r, c) : null;
+            const dados = pode ? criarDadosDamas26(r, c, rect) : null;
+            const retorno = clickAnteriorDamas26.apply(this, arguments);
+            if (dados && window.abrirPopupProfessorPeca25) setTimeout(() => window.abrirPopupProfessorPeca25(dados), 120);
+            return retorno;
+        };
+    }
+
+    instalarPopupProfessorPeca26Global();
+    instalarPopupProfessorDamas26();
+
 
 
 })();
