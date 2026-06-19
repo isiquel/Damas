@@ -17943,3 +17943,484 @@ setInterval(() => {
         garantirControlesOnlineNoTabuleiro3612(!chessIsSpectator);
     }
 }, 1000);
+
+/* =====================================================================
+   ✅ PROFISSIONAL 47 — PAINEL ROBÔ PROFESSOR REALMENTE MÓVEL E FECHÁVEL
+   Correção em cima da Profissional 46:
+   - o painel flutuante estava aparecendo sem os botões de fechar/minimizar;
+   - agora os botões ficam em uma barra própria, bem visível;
+   - o painel pode ser arrastado pelo topo ou pela barra "ARRASTAR";
+   - fechar/minimizar/maximizar não desliga o robô por cores;
+   - o menu fixo Professor Inteligente continua sendo o lugar principal de controle.
+===================================================================== */
+(function instalarPainelRoboProfessor47() {
+    if (window.__prof47PainelRoboProfessorOk) return;
+    window.__prof47PainelRoboProfessorOk = true;
+
+    const PANEL_ID = 'teacher-direct-guide-33';
+    const CLOSED_KEY = 'tabuleiro_arena_prof47_painel_fechado';
+    const MODE_KEY = 'tabuleiro_arena_prof47_painel_modo';
+    const POS_KEY = 'tabuleiro_arena_prof47_painel_pos';
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    function storageGet(key, fallback) {
+        try {
+            const v = localStorage.getItem(key);
+            return v == null ? fallback : v;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    function storageSet(key, value) {
+        try { localStorage.setItem(key, value); } catch (_) {}
+    }
+
+    function painel() {
+        return document.getElementById(PANEL_ID);
+    }
+
+    function fechado() {
+        return storageGet(CLOSED_KEY, '0') === '1';
+    }
+
+    function modo() {
+        return storageGet(MODE_KEY, 'normal') || 'normal';
+    }
+
+    function setFechado(value) {
+        storageSet(CLOSED_KEY, value ? '1' : '0');
+    }
+
+    function setModo(value) {
+        storageSet(MODE_KEY, value || 'normal');
+    }
+
+    function viewport() {
+        const vv = window.visualViewport;
+        return {
+            width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360),
+            height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640)
+        };
+    }
+
+    function clamp(value, min, max) {
+        if (!Number.isFinite(value)) return min;
+        if (max < min) return min;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function css47() {
+        if (document.getElementById('prof47-robo-professor-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof47-robo-professor-css';
+        style.textContent = `
+            #teacher-direct-guide-33.prof47-panel {
+                z-index: 1000005 !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+                touch-action: auto !important;
+            }
+
+            #teacher-direct-guide-33.prof47-manual-pos {
+                position: fixed !important;
+                right: auto !important;
+                bottom: auto !important;
+                margin: 0 !important;
+            }
+
+            #teacher-direct-guide-33.prof47-closed {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
+            #teacher-direct-guide-33 .direct-head-33,
+            #teacher-direct-guide-33 .prof47-drag-handle {
+                cursor: grab !important;
+                touch-action: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+            }
+
+            #teacher-direct-guide-33.prof47-dragging .direct-head-33,
+            #teacher-direct-guide-33.prof47-dragging .prof47-drag-handle {
+                cursor: grabbing !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-toolbar {
+                display: grid !important;
+                grid-template-columns: 1.45fr .7fr .7fr .7fr !important;
+                gap: 5px !important;
+                margin: 6px 0 7px 0 !important;
+                padding: 6px !important;
+                border-radius: 12px !important;
+                border: 1px solid rgba(250,204,21,.38) !important;
+                background: rgba(2,6,23,.72) !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-toolbar button {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 30px !important;
+                padding: 6px 5px !important;
+                border-radius: 10px !important;
+                border: 1px solid rgba(148,163,184,.35) !important;
+                background: rgba(15,23,42,.94) !important;
+                color: #f8fafc !important;
+                font-size: .64rem !important;
+                font-weight: 1000 !important;
+                line-height: 1.05 !important;
+                box-shadow: none !important;
+                text-transform: none !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-toolbar button:hover,
+            #teacher-direct-guide-33 .prof47-toolbar button:focus {
+                transform: none !important;
+                background: rgba(37,99,235,.95) !important;
+                color: #fff !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-drag-handle {
+                background: linear-gradient(90deg, rgba(250,204,21,.92), rgba(14,165,233,.80)) !important;
+                color: #04111f !important;
+                border-color: rgba(250,204,21,.75) !important;
+                letter-spacing: .02em !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-close-btn {
+                background: rgba(127,29,29,.95) !important;
+                color: #fee2e2 !important;
+                border-color: rgba(248,113,113,.55) !important;
+            }
+
+            #teacher-direct-guide-33.prof47-minimized {
+                width: min(236px, calc(100vw - 12px)) !important;
+                padding: 8px !important;
+                max-height: none !important;
+                overflow: hidden !important;
+            }
+
+            #teacher-direct-guide-33.prof47-minimized .direct-actions-33,
+            #teacher-direct-guide-33.prof47-minimized .direct-status-33,
+            #teacher-direct-guide-33.prof47-minimized .prof42-mini,
+            #teacher-direct-guide-33.prof47-minimized .prof44-safe-note {
+                display: none !important;
+            }
+
+            #teacher-direct-guide-33.prof47-maximized {
+                width: min(430px, calc(100vw - 12px)) !important;
+                max-height: calc(100vh - 12px) !important;
+                overflow: auto !important;
+            }
+
+            #teacher-prof37-controls button[data-prof47-panel-toggle],
+            #teacher-prof36-controls button[data-prof47-panel-toggle],
+            .teacher-prof37-controls button[data-prof47-panel-toggle] {
+                background: linear-gradient(90deg, rgba(14,116,144,.96), rgba(37,99,235,.94)) !important;
+                color: #e0f2fe !important;
+                border-color: rgba(56,189,248,.55) !important;
+            }
+
+            #teacher-prof37-controls button[data-prof47-panel-toggle].prof47-menu-closed,
+            #teacher-prof36-controls button[data-prof47-panel-toggle].prof47-menu-closed,
+            .teacher-prof37-controls button[data-prof47-panel-toggle].prof47-menu-closed {
+                background: rgba(15,23,42,.92) !important;
+                color: #fde68a !important;
+                border-color: rgba(250,204,21,.45) !important;
+            }
+
+            @media (max-width: 560px) {
+                #teacher-direct-guide-33.prof47-panel {
+                    width: min(260px, calc(100vw - 10px)) !important;
+                    max-height: calc(100vh - 10px) !important;
+                    overflow: auto !important;
+                }
+
+                #teacher-direct-guide-33.prof47-minimized {
+                    width: min(210px, calc(100vw - 10px)) !important;
+                }
+
+                #teacher-direct-guide-33.prof47-maximized {
+                    width: min(336px, calc(100vw - 10px)) !important;
+                }
+
+                #teacher-direct-guide-33 .prof47-toolbar {
+                    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+                    gap: 4px !important;
+                    padding: 5px !important;
+                }
+
+                #teacher-direct-guide-33 .prof47-toolbar button {
+                    min-height: 29px !important;
+                    font-size: .58rem !important;
+                    padding: 5px 3px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function salvarPos(left, top) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+    }
+
+    function lerPos() {
+        try { return JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (_) { return null; }
+    }
+
+    function aplicarPos(p, left, top, salvar) {
+        if (!p) return;
+        const vp = viewport();
+        const rect = p.getBoundingClientRect();
+        const w = Math.max(130, Math.min(rect.width || 260, vp.width - 8));
+        const h = Math.max(44, Math.min(rect.height || 180, vp.height - 8));
+        const margin = 5;
+        const safeLeft = clamp(left, margin, Math.max(margin, vp.width - w - margin));
+        const safeTop = clamp(top, margin, Math.max(margin, vp.height - h - margin));
+
+        p.classList.add('prof47-manual-pos');
+        p.style.setProperty('position', 'fixed', 'important');
+        p.style.setProperty('left', Math.round(safeLeft) + 'px', 'important');
+        p.style.setProperty('top', Math.round(safeTop) + 'px', 'important');
+        p.style.setProperty('right', 'auto', 'important');
+        p.style.setProperty('bottom', 'auto', 'important');
+        p.style.setProperty('z-index', '1000005', 'important');
+
+        if (salvar) salvarPos(safeLeft, safeTop);
+    }
+
+    function manterDentro() {
+        const p = painel();
+        if (!p || fechado()) return;
+        const rect = p.getBoundingClientRect();
+        aplicarPos(p, rect.left, rect.top, true);
+    }
+
+    function aplicarEstado() {
+        const p = painel();
+        if (!p) return;
+        const m = modo();
+        p.classList.add('prof47-panel');
+        p.classList.toggle('prof47-closed', fechado());
+        p.classList.toggle('prof47-minimized', m === 'min');
+        p.classList.toggle('prof47-maximized', m === 'max');
+
+        const minBtn = p.querySelector('[data-prof47-action="min"]');
+        const maxBtn = p.querySelector('[data-prof47-action="max"]');
+        if (minBtn) minBtn.textContent = m === 'min' ? 'Abrir' : '− Min';
+        if (maxBtn) maxBtn.textContent = m === 'max' ? 'Normal' : '□ Max';
+
+        atualizarBotoesMenu();
+    }
+
+    function iniciarArraste(ev) {
+        const target = ev.target;
+        if (target && target.closest && target.closest('button:not(.prof47-drag-handle),select,input,textarea,a')) return;
+        const p = painel();
+        if (!p || fechado()) return;
+        const point = ev.touches?.[0] || ev;
+        const rect = p.getBoundingClientRect();
+        dragging = true;
+        startX = point.clientX;
+        startY = point.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        p.classList.add('prof47-dragging');
+        aplicarPos(p, rect.left, rect.top, false);
+        try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (_) {}
+        ev.preventDefault?.();
+        ev.stopPropagation?.();
+        ev.stopImmediatePropagation?.();
+    }
+
+    function moverArraste(ev) {
+        if (!dragging) return;
+        const p = painel();
+        if (!p) return;
+        const point = ev.touches?.[0] || ev;
+        aplicarPos(p, startLeft + (point.clientX - startX), startTop + (point.clientY - startY), false);
+        ev.preventDefault?.();
+    }
+
+    function pararArraste(ev) {
+        if (!dragging) return;
+        dragging = false;
+        const p = painel();
+        if (p) {
+            p.classList.remove('prof47-dragging');
+            const rect = p.getBoundingClientRect();
+            aplicarPos(p, rect.left, rect.top, true);
+        }
+        ev?.preventDefault?.();
+    }
+
+    function fecharPainel() {
+        setFechado(true);
+        const p = painel();
+        if (p) {
+            p.classList.add('prof47-closed');
+            p.classList.remove('visible-33');
+        }
+        atualizarBotoesMenu();
+    }
+
+    function abrirPainel() {
+        setFechado(false);
+        setModo('normal');
+        const p = painel();
+        if (p) {
+            p.classList.remove('prof47-closed');
+            p.classList.add('visible-33');
+            const pos = lerPos();
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) aplicarPos(p, pos.left, pos.top, false);
+            else aplicarPos(p, 8, 74, true);
+        }
+        aplicarEstado();
+        setTimeout(manterDentro, 0);
+    }
+
+    function ensureToolbar() {
+        css47();
+        const p = painel();
+        if (!p) return false;
+        p.classList.add('prof47-panel');
+
+        const head = p.querySelector('.direct-head-33') || p.firstElementChild;
+        if (head && head.dataset.prof47Drag !== '1') {
+            head.dataset.prof47Drag = '1';
+            head.addEventListener('pointerdown', iniciarArraste, { passive: false });
+            head.addEventListener('touchstart', iniciarArraste, { passive: false });
+            head.addEventListener('mousedown', iniciarArraste, { passive: false });
+        }
+
+        let toolbar = p.querySelector('.prof47-toolbar');
+        if (!toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.className = 'prof47-toolbar';
+            toolbar.innerHTML = `
+                <button type="button" class="prof47-drag-handle" data-prof47-action="drag">↔ Arrastar</button>
+                <button type="button" data-prof47-action="min">− Min</button>
+                <button type="button" data-prof47-action="max">□ Max</button>
+                <button type="button" class="prof47-close-btn" data-prof47-action="close">× Fechar</button>
+            `;
+            if (head && head.parentNode) head.insertAdjacentElement('afterend', toolbar);
+            else p.insertBefore(toolbar, p.firstChild);
+
+            toolbar.querySelectorAll('[data-prof47-action]').forEach(btn => {
+                const action = btn.getAttribute('data-prof47-action');
+                if (action === 'drag') {
+                    btn.addEventListener('pointerdown', iniciarArraste, { passive: false });
+                    btn.addEventListener('touchstart', iniciarArraste, { passive: false });
+                    btn.addEventListener('mousedown', iniciarArraste, { passive: false });
+                }
+                btn.addEventListener('click', ev => {
+                    const acao = btn.getAttribute('data-prof47-action');
+                    if (acao === 'min') {
+                        setFechado(false);
+                        setModo(modo() === 'min' ? 'normal' : 'min');
+                        aplicarEstado();
+                        manterDentro();
+                    }
+                    if (acao === 'max') {
+                        setFechado(false);
+                        setModo(modo() === 'max' ? 'normal' : 'max');
+                        aplicarEstado();
+                        manterDentro();
+                    }
+                    if (acao === 'close') fecharPainel();
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    ev.stopImmediatePropagation?.();
+                }, true);
+            });
+        }
+
+        if (p.dataset.prof47PosRestored !== '1') {
+            p.dataset.prof47PosRestored = '1';
+            const pos = lerPos();
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) aplicarPos(p, pos.left, pos.top, false);
+        }
+
+        aplicarEstado();
+        return true;
+    }
+
+    function atualizarBotoesMenu() {
+        const texto = fechado() ? 'Abrir painel' : 'Fechar painel';
+        document.querySelectorAll('[data-prof47-panel-toggle]').forEach(btn => {
+            btn.textContent = texto;
+            btn.classList.toggle('prof47-menu-closed', fechado());
+        });
+    }
+
+    function ensureBotaoMenu() {
+        const grids = [
+            document.querySelector('#teacher-prof37-controls .prof37-grid'),
+            document.querySelector('.teacher-prof37-controls .prof37-grid'),
+            document.querySelector('#teacher-prof36-controls .prof36-grid')
+        ].filter(Boolean);
+
+        grids.forEach(grid => {
+            if (grid.querySelector('[data-prof47-panel-toggle]')) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('data-prof47-panel-toggle', '1');
+            btn.textContent = fechado() ? 'Abrir painel' : 'Fechar painel';
+            btn.addEventListener('click', ev => {
+                if (fechado()) abrirPainel();
+                else fecharPainel();
+                ev.preventDefault();
+                ev.stopPropagation();
+                ev.stopImmediatePropagation?.();
+            }, true);
+            grid.appendChild(btn);
+        });
+
+        atualizarBotoesMenu();
+    }
+
+    function ensureAll() {
+        ensureToolbar();
+        ensureBotaoMenu();
+        const p = painel();
+        if (p && fechado()) {
+            p.classList.add('prof47-closed');
+            p.classList.remove('visible-33');
+        }
+    }
+
+    if ('PointerEvent' in window) {
+        document.addEventListener('pointermove', moverArraste, { passive: false });
+        document.addEventListener('pointerup', pararArraste, { passive: false });
+        document.addEventListener('pointercancel', pararArraste, { passive: false });
+    } else {
+        document.addEventListener('touchmove', moverArraste, { passive: false });
+        document.addEventListener('touchend', pararArraste, { passive: false });
+        document.addEventListener('mousemove', moverArraste, { passive: false });
+        document.addEventListener('mouseup', pararArraste, { passive: false });
+    }
+
+    document.addEventListener('click', function () {
+        setTimeout(ensureAll, 0);
+        setTimeout(ensureAll, 250);
+    }, true);
+
+    window.addEventListener('resize', manterDentro);
+    window.visualViewport?.addEventListener?.('resize', manterDentro);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureAll);
+    } else {
+        ensureAll();
+    }
+
+    [80, 300, 800, 1500, 3000, 6000].forEach(ms => setTimeout(ensureAll, ms));
+})();
