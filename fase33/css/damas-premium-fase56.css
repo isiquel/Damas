@@ -782,3 +782,37 @@ button:disabled {
     grid-column: 2;
   }
 }
+
+
+/* Fase 59 — Dashboard funcional da Damas */
+.damas-stat-card strong[id^="damas-stat-"] {
+  font-size: clamp(1.7rem, 5vw, 2.35rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin: 3px 0 7px 0;
+  text-shadow: 0 0 18px rgba(29,211,255,0.18);
+}
+
+.damas-stat-card.stat-gold strong[id^="damas-stat-"] {
+  color: #ffd76a;
+  text-shadow: 0 0 18px rgba(247,181,0,0.20);
+}
+
+.damas-stat-card.stat-green strong[id^="damas-stat-"] {
+  color: #86efac;
+  text-shadow: 0 0 18px rgba(74,222,128,0.20);
+}
+
+.damas-stat-card.stat-purple strong[id^="damas-stat-"] {
+  color: #c4b5fd;
+  text-shadow: 0 0 18px rgba(167,139,250,0.20);
+}
+
+.damas-premium-dashboard.damas-live-loaded .damas-premium-seal {
+  animation: damasLivePulse59 2.8s ease-in-out infinite;
+}
+
+@keyframes damasLivePulse59 {
+  0%, 100% { box-shadow: 0 0 18px rgba(74,222,128,0.08); }
+  50% { box-shadow: 0 0 28px rgba(74,222,128,0.20); }
+}

@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
-    <link rel="stylesheet" href="css/style.css?v=prof58">
-    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof58">
-    <link rel="manifest" href="manifest.json?v=prof58">
+    <link rel="stylesheet" href="css/style.css?v=prof59">
+    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof59">
+    <link rel="manifest" href="manifest.json?v=prof59">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
@@ -166,32 +166,32 @@
             <div class="damas-premium-stats">
                 <div class="damas-stat-card stat-blue">
                     <span class="damas-stat-icon">🎮</span>
-                    <strong>Online</strong>
-                    <small>Salas e partidas em tempo real</small>
+                    <strong id="damas-stat-online">0</strong>
+                    <small>salas online agora</small>
                 </div>
                 <div class="damas-stat-card stat-green">
                     <span class="damas-stat-icon">🎓</span>
-                    <strong>Treino</strong>
-                    <small>Prática contra a máquina</small>
+                    <strong id="damas-stat-treino">0</strong>
+                    <small>jogadores no ranking treino</small>
                 </div>
                 <div class="damas-stat-card stat-gold">
                     <span class="damas-stat-icon">🏆</span>
-                    <strong>Ranking</strong>
-                    <small>Desempenho dos melhores</small>
+                    <strong id="damas-stat-ranking">0</strong>
+                    <small>jogadores no ranking online</small>
                 </div>
                 <div class="damas-stat-card stat-purple">
                     <span class="damas-stat-icon">👁️</span>
-                    <strong>Espectador</strong>
-                    <small>Acompanhe partidas ao vivo</small>
+                    <strong id="damas-stat-espectadores">0</strong>
+                    <small>espectadores nas salas</small>
                 </div>
             </div>
 
             <div class="damas-premium-grid">
                 <div class="damas-premium-box damas-top-box">
                     <div class="damas-box-title">🏆 Top da Damas</div>
-                    <div class="damas-top-row"><span>1º</span><strong>Campeão da rodada</strong><em>Vitórias</em></div>
-                    <div class="damas-top-row"><span>2º</span><strong>Jogador em destaque</strong><em>Ranking</em></div>
-                    <div class="damas-top-row"><span>3º</span><strong>Promessa da semana</strong><em>Evolução</em></div>
+                    <div class="damas-top-row"><span>1º</span><strong id="damas-top-1">Aguardando ranking</strong><em id="damas-top-1-score">0 pts</em></div>
+                    <div class="damas-top-row"><span>2º</span><strong id="damas-top-2">Aguardando ranking</strong><em id="damas-top-2-score">0 pts</em></div>
+                    <div class="damas-top-row"><span>3º</span><strong id="damas-top-3">Aguardando ranking</strong><em id="damas-top-3-score">0 pts</em></div>
                 </div>
 
                 <div class="damas-premium-box damas-school-box">
@@ -550,12 +550,12 @@
     </div>
 </div>
 
-<script src="js/config.js?v=prof58"></script>
-<script src="js/utils.js?v=prof58"></script>
-<script src="js/ui.js?v=prof58"></script>
-<script src="js/chat-ui.js?v=prof58"></script>
-<script type="module" src="js/app.js?v=prof58"></script>
-<script src="js/fase40-controles-recolhidos.js?v=prof58"></script>
+<script src="js/config.js?v=prof59"></script>
+<script src="js/utils.js?v=prof59"></script>
+<script src="js/ui.js?v=prof59"></script>
+<script src="js/chat-ui.js?v=prof59"></script>
+<script type="module" src="js/app.js?v=prof59"></script>
+<script src="js/fase40-controles-recolhidos.js?v=prof59"></script>
 
 
 <!--

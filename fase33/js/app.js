@@ -18103,6 +18103,97 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
         instalarPainelRoboProfessorXadrez46();
 
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
 
 
@@ -18617,6 +18708,97 @@ setInterval(() => {
     }
 
     [80, 300, 800, 1500, 3000, 6000].forEach(ms => setTimeout(ensureAll, ms));
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
 
 
@@ -19114,6 +19296,97 @@ setInterval(() => {
     }
 
     [80, 250, 700, 1500, 3500, 7000].forEach(ms => setTimeout(sincronizar48, ms));
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
 
 /*
@@ -19212,6 +19485,97 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(fecharEEsconderPainel49, 0);
         setTimeout(fecharEEsconderPainel49, 120);
     }, false);
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
 
 
@@ -19293,6 +19657,97 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(remover50, 0);
         setTimeout(remover50, 80);
     }, true);
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
 
 
@@ -19358,6 +19813,97 @@ na Damas, no Admin, nas salas, ranking ou torneios.
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', css51);
     else css51();
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
 
 /*
@@ -19682,4 +20228,95 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(() => checarEExibirFim52('after-click'), 50);
         return retorno;
     };
+
+    /* PROF59_DASHBOARD_DAMAS_FUNCIONAL
+       Liga o painel premium da Damas aos dados reais do Firebase.
+       Não muda regra do jogo, salas, ranking, treino nem Xadrez. */
+    function iniciarDashboardPremiumDamas59() {
+        const painel = document.getElementById('damas-premium-dashboard');
+        if (!painel || painel.dataset.prof59Started === '1') return;
+        painel.dataset.prof59Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeSeguroDash = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('damas-stat-online', salasOnline);
+                setTxt('damas-stat-espectadores', espectadores);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar salas da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('damas-stat-ranking', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`damas-top-${i + 1}`, item ? nomeSeguroDash(item.name) : 'Aguardando ranking');
+                    setTxt(`damas-top-${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking online da Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('damas-stat-treino', Object.keys(data).length);
+                painel.classList.add('damas-live-loaded');
+            });
+        } catch (e) {
+            console.warn('Prof59: não consegui atualizar ranking do treino:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
+    } else {
+        iniciarDashboardPremiumDamas59();
+    }
+
 })();
