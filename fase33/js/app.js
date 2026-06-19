@@ -19147,3 +19147,327 @@ na Damas, no Admin, nas salas, ranking ou torneios.
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', css51);
     else css51();
 })();
+
+/*
+============================================================
+✅ PROFISSIONAL 52 — XEQUE-MATE ONLINE COM POP-UP PROFISSIONAL
+============================================================
+- Corrige situação em que o rei fica em xeque/sem movimento e o jogo parece travado.
+- Depois de qualquer jogada ou sincronização online, confere se o lado da vez tem movimento legal.
+- Se não tiver movimento e o rei estiver em xeque: mostra vitória/derrota com modal bonito.
+- Se não tiver movimento e não for xeque: mostra empate por afogamento.
+- Não mexe no robô por cores, Damas, Admin, Firebase da Damas, salas, ranking ou torneios.
+============================================================
+*/
+(function instalarXequeMateProfissional52() {
+    if (window.__prof52XequeMateModalInstalado) return;
+    window.__prof52XequeMateModalInstalado = true;
+
+    let ultimoResultado52 = '';
+    let publicandoResultado52 = false;
+
+    function css52() {
+        if (document.getElementById('prof52-xeque-mate-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof52-xeque-mate-css';
+        style.textContent = `
+            #prof52-mate-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                background: radial-gradient(circle at top, rgba(30,64,175,.38), rgba(2,6,23,.94) 55%, rgba(0,0,0,.98));
+                backdrop-filter: blur(8px);
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+            }
+            #prof52-mate-modal.open { display: flex !important; }
+            .prof52-mate-card {
+                width: min(92vw, 430px);
+                background: linear-gradient(135deg, #020617, #111827 52%, #1e1b4b);
+                border: 2px solid rgba(250,204,21,.85);
+                border-radius: 24px;
+                padding: 20px;
+                color: #e5e7eb;
+                text-align: center;
+                box-shadow: 0 24px 80px rgba(0,0,0,.78), 0 0 42px rgba(250,204,21,.18);
+                animation: prof52Pop .18s ease-out;
+            }
+            @keyframes prof52Pop { from { transform: scale(.92); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+            .prof52-mate-icon {
+                width: 76px;
+                height: 76px;
+                margin: 0 auto 10px auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                background: radial-gradient(circle, rgba(250,204,21,.32), rgba(250,204,21,.08));
+                border: 1px solid rgba(250,204,21,.65);
+                font-size: 2.2rem;
+                box-shadow: 0 0 28px rgba(250,204,21,.32);
+            }
+            .prof52-mate-title {
+                font-size: 1.45rem;
+                line-height: 1.1;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: .6px;
+                color: #fef3c7;
+                margin-bottom: 8px;
+            }
+            .prof52-mate-subtitle {
+                font-size: .98rem;
+                line-height: 1.45;
+                color: #dbeafe;
+                margin-bottom: 12px;
+            }
+            .prof52-mate-box {
+                background: rgba(15,23,42,.82);
+                border: 1px solid rgba(148,163,184,.22);
+                border-radius: 16px;
+                padding: 12px;
+                text-align: left;
+                color: #cbd5e1;
+                font-size: .88rem;
+                line-height: 1.45;
+                margin-bottom: 14px;
+            }
+            .prof52-mate-box strong { color: #fef08a; }
+            .prof52-mate-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 9px;
+            }
+            .prof52-mate-actions button {
+                border: 0;
+                border-radius: 14px;
+                padding: 12px 10px;
+                font-weight: 1000;
+                color: #fff;
+                text-transform: none;
+                font-size: .88rem;
+                box-shadow: none;
+            }
+            #prof52-new-game-btn { background: linear-gradient(135deg, #16a34a, #22c55e); }
+            #prof52-close-btn { background: linear-gradient(135deg, #334155, #0f172a); border: 1px solid rgba(255,255,255,.16); }
+            .prof52-mate-card.loss { border-color: rgba(248,113,113,.88); box-shadow: 0 24px 80px rgba(0,0,0,.78), 0 0 38px rgba(239,68,68,.18); }
+            .prof52-mate-card.loss .prof52-mate-icon { border-color: rgba(248,113,113,.75); background: radial-gradient(circle, rgba(239,68,68,.28), rgba(127,29,29,.08)); }
+            .prof52-mate-card.draw { border-color: rgba(96,165,250,.88); }
+            .prof52-mate-card.draw .prof52-mate-icon { border-color: rgba(96,165,250,.75); background: radial-gradient(circle, rgba(59,130,246,.28), rgba(30,64,175,.08)); }
+            @media (max-width: 560px) {
+                .prof52-mate-card { padding: 18px 14px; border-radius: 20px; }
+                .prof52-mate-title { font-size: 1.18rem; }
+                .prof52-mate-subtitle { font-size: .88rem; }
+                .prof52-mate-actions { grid-template-columns: 1fr; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function modal52() {
+        css52();
+        let modal = document.getElementById('prof52-mate-modal');
+        if (modal) return modal;
+
+        modal = document.createElement('div');
+        modal.id = 'prof52-mate-modal';
+        modal.setAttribute('aria-hidden', 'true');
+        modal.innerHTML = `
+            <div id="prof52-mate-card" class="prof52-mate-card" role="dialog" aria-modal="true" aria-label="Resultado do Xadrez">
+                <div id="prof52-mate-icon" class="prof52-mate-icon">♟️</div>
+                <div id="prof52-mate-title" class="prof52-mate-title">Xeque-mate</div>
+                <div id="prof52-mate-subtitle" class="prof52-mate-subtitle">A partida terminou.</div>
+                <div id="prof52-mate-box" class="prof52-mate-box"></div>
+                <div class="prof52-mate-actions">
+                    <button id="prof52-new-game-btn" type="button">Nova partida</button>
+                    <button id="prof52-close-btn" type="button">Continuar olhando</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('prof52-close-btn')?.addEventListener('click', () => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        });
+        document.getElementById('prof52-new-game-btn')?.addEventListener('click', () => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            try { resetChessGame(); } catch (_) {}
+            try { focarTabuleiroXadrez(false); } catch (_) {}
+        });
+        return modal;
+    }
+
+    function assinaturaFim52(tipo, perdedor, vencedor) {
+        try {
+            return [tipo, perdedor, vencedor, chessMode, chessRoomId || '', (moveHistory || []).length, JSON.stringify(lastChessMove || null)].join('|');
+        } catch (_) {
+            return `${tipo}|${perdedor}|${vencedor}|${Date.now()}`;
+        }
+    }
+
+    function mostrarModal52(info) {
+        if (!info) return;
+        const modal = modal52();
+        const card = document.getElementById('prof52-mate-card');
+        const icon = document.getElementById('prof52-mate-icon');
+        const title = document.getElementById('prof52-mate-title');
+        const subtitle = document.getElementById('prof52-mate-subtitle');
+        const box = document.getElementById('prof52-mate-box');
+
+        const voceJoga = chessMode === 'online' && !chessIsSpectator && (chessPlayerColor === 'white' || chessPlayerColor === 'black');
+        const voceGanhou = voceJoga && info.vencedor && chessPlayerColor === info.vencedor;
+        const vocePerdeu = voceJoga && info.perdedor && chessPlayerColor === info.perdedor;
+
+        if (card) {
+            card.className = 'prof52-mate-card';
+            if (info.tipo === 'draw') card.classList.add('draw');
+            else if (vocePerdeu) card.classList.add('loss');
+        }
+
+        if (info.tipo === 'draw') {
+            if (icon) icon.textContent = '🤝';
+            if (title) title.textContent = 'Empate';
+            if (subtitle) subtitle.textContent = 'O jogador da vez não tem movimento legal.';
+            if (box) box.innerHTML = `A partida ficou em <strong>afogamento</strong>: não há jogada legal disponível, mas o rei não está em xeque.`;
+        } else {
+            if (icon) icon.textContent = voceGanhou ? '🏆' : vocePerdeu ? '♟️' : '♟️';
+            if (title) title.textContent = voceGanhou ? 'Você ganhou!' : vocePerdeu ? 'Você perdeu!' : `${nomeVencedor(info.vencedor)} venceram!`;
+            if (subtitle) subtitle.textContent = 'Xeque-mate detectado. A partida terminou.';
+            if (box) box.innerHTML = `O rei das <strong>${nomeCor(info.perdedor)}</strong> está em xeque e não existe nenhuma jogada legal para fugir, capturar a peça atacante ou bloquear o ataque.<br><br><strong>${nomeVencedor(info.vencedor)} venceram por xeque-mate.</strong>`;
+        }
+
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function textoFim52(info) {
+        if (!info) return '';
+        if (info.tipo === 'draw') return 'Empate por afogamento: o jogador da vez não tem movimento legal.';
+        return `Xeque-mate! ${nomeVencedor(info.vencedor)} venceram. O rei das ${nomeCor(info.perdedor)} está em xeque e não tem movimento legal.`;
+    }
+
+    function detectarFim52() {
+        try {
+            if (!Array.isArray(chessBoard) || !chessBoard.length) return null;
+            const cor = chessTurn === 'black' ? 'black' : 'white';
+            const movimentos = todosMovimentosLegais(cor, chessBoard) || [];
+            if (movimentos.length > 0) return null;
+            const emXeque = reiEstaEmXeque(chessBoard, cor);
+            if (emXeque) return { tipo: 'mate', perdedor: cor, vencedor: corOposta(cor) };
+            return { tipo: 'draw', perdedor: cor, vencedor: null };
+        } catch (e) {
+            console.warn('Prof52: não consegui checar xeque-mate agora:', e);
+            return null;
+        }
+    }
+
+    function publicarFim52(info) {
+        if (!info || publicandoResultado52) return;
+        if (chessMode !== 'online' || !chessRoomRef || chessOnlineSyncing) return;
+        publicandoResultado52 = true;
+        const texto = textoFim52(info);
+        try {
+            update(chessRoomRef, {
+                gameOver: true,
+                lastMoveMessage: texto,
+                prof52Result: {
+                    tipo: info.tipo,
+                    perdedor: info.perdedor || null,
+                    vencedor: info.vencedor || null,
+                    texto,
+                    at: Date.now()
+                },
+                updatedAt: Date.now()
+            }).catch(() => {});
+        } catch (_) {}
+        setTimeout(() => { publicandoResultado52 = false; }, 700);
+    }
+
+    function checarEExibirFim52(origem = '') {
+        const info = detectarFim52();
+        if (!info) return false;
+        const assinatura = assinaturaFim52(info.tipo, info.perdedor, info.vencedor);
+        const texto = textoFim52(info);
+
+        chessGameOver = true;
+        lastMoveMessage = texto;
+
+        try {
+            const status = document.getElementById('chess-status');
+            if (status) {
+                status.classList.remove('chess-status-check', 'chess-status-draw');
+                status.classList.add(info.tipo === 'draw' ? 'chess-status-draw' : 'chess-status-mate');
+                const onlinePill = chessMode === 'online' ? ` <span class="chess-status-online-pill">ONLINE ${chessIsSpectator ? 'ESPECTADOR' : (chessPlayerColor === 'white' ? 'BRANCAS' : 'PRETAS')}</span>` : '';
+                status.innerHTML = escapeHtmlXadrez(texto) + onlinePill;
+            }
+        } catch (_) {}
+
+        if (ultimoResultado52 !== assinatura) {
+            ultimoResultado52 = assinatura;
+            mostrarModal52(info);
+            try { mostrarResultadoXadrezSeTerminou(texto); } catch (_) {}
+            try { mostrarToastXadrez(info.tipo === 'draw' ? '🤝 Empate por afogamento.' : '♟️ XEQUE-MATE! ' + texto, 'mate'); } catch (_) {}
+            publicarFim52(info);
+        }
+        return true;
+    }
+
+    css52();
+
+    const avaliarAnterior52 = avaliarEstadoDoJogo;
+    avaliarEstadoDoJogo = function avaliarEstadoDoJogoProf52(mensagemBase = '') {
+        const info = detectarFim52();
+        if (info) {
+            chessGameOver = true;
+            lastMoveMessage = textoFim52(info);
+            return lastMoveMessage;
+        }
+        return avaliarAnterior52.apply(this, arguments);
+    };
+
+    const renderAnterior52 = renderChessBoard;
+    renderChessBoard = function renderChessBoardProf52() {
+        const retorno = renderAnterior52.apply(this, arguments);
+        setTimeout(() => checarEExibirFim52('render'), 0);
+        return retorno;
+    };
+
+    const aplicarRemotoAnterior52 = aplicarEstadoXadrezRemoto;
+    aplicarEstadoXadrezRemoto = function aplicarEstadoXadrezRemotoProf52(data) {
+        const retorno = aplicarRemotoAnterior52.apply(this, arguments);
+        setTimeout(() => {
+            if (data && data.gameOver && data.prof52Result) {
+                const info = {
+                    tipo: data.prof52Result.tipo === 'draw' ? 'draw' : 'mate',
+                    perdedor: data.prof52Result.perdedor || null,
+                    vencedor: data.prof52Result.vencedor || null
+                };
+                if (data.prof52Result.texto) lastMoveMessage = data.prof52Result.texto;
+                chessGameOver = true;
+                mostrarModal52(info);
+                return;
+            }
+            checarEExibirFim52('remote');
+        }, 30);
+        return retorno;
+    };
+
+    const executarAnterior52 = executarMovimentoXadrez;
+    executarMovimentoXadrez = async function executarMovimentoXadrezProf52() {
+        const retorno = await executarAnterior52.apply(this, arguments);
+        setTimeout(() => checarEExibirFim52('move'), 40);
+        return retorno;
+    };
+
+    const clickAnterior52 = handleChessSquareClick;
+    handleChessSquareClick = async function handleChessSquareClickProf52(row, col) {
+        if (checarEExibirFim52('before-click')) return false;
+        const retorno = await clickAnterior52.apply(this, arguments);
+        setTimeout(() => checarEExibirFim52('after-click'), 50);
+        return retorno;
+    };
+})();
