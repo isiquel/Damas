@@ -4361,6 +4361,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessCurrentRoomData = {};
         let chessAdminUnsubscribeRooms = null;
         let chessAdminUnsubscribeChat = null;
+        let chessAdminUnsubscribeRanking = null;
 
         // ✅ PROFISSIONAL 19 - MANUAL PRIVADO DO PROFESSOR
         // Ativa somente no aparelho de quem entrou com # no nome.
@@ -5058,11 +5059,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 ranking.innerHTML = `
                     <div class="chess-training-ranking-head">
                         <div>
-                            <div class="chess-training-ranking-title">🏆 Ranking do Treino de Xadrez</div>
-                            <div id="chess-training-ranking-badge" class="chess-training-ranking-badge">Separado da Damas</div>
+                            <div class="chess-training-ranking-title">🏆 Ranking do Xadrez</div>
+                            <div id="chess-training-ranking-badge" class="chess-training-ranking-badge">Modo treino + partidas online</div>
                         </div>
                         <button id="chess-ranking-toggle-btn" class="chess-ranking-toggle-btn" type="button" aria-expanded="false">+</button>
                     </div>
+                    <div class="chess-ranking-section-title">🤖 Modo treino neste aparelho</div>
                     <div class="chess-training-ranking-grid">
                         <div class="chess-training-ranking-stat"><div id="chess-rank-points" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Pontos</div></div>
                         <div class="chess-training-ranking-stat"><div id="chess-rank-wins" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Vitórias</div></div>
@@ -5075,11 +5077,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                         <div class="chess-training-ranking-line"><strong>Melhor nível vencido:</strong><br><span id="chess-rank-best">Nenhum ainda</span></div>
                         <div class="chess-training-ranking-line"><strong>Último resultado:</strong><br><span id="chess-rank-last">Nenhuma partida finalizada</span></div>
                     </div>
-                    <div class="chess-training-ranking-actions">
-                        <button id="chess-ranking-refresh-btn" class="btn-chess-ranking-refresh" type="button">Atualizar ranking</button>
-                        <button id="chess-ranking-clear-btn" class="btn-chess-ranking-clear" type="button">Limpar ranking</button>
+                    <div class="chess-ranking-section-title online">🌐 Top 3 das partidas online</div>
+                    <div id="chess-online-ranking-top-list" class="chess-online-ranking-top-list">
+                        <div class="chess-online-ranking-empty">Carregando campeões online...</div>
                     </div>
-                    <div class="chess-training-ranking-note">Pontuação: Aprender +5, Fácil +10, Médio +20 e Difícil +35 por vitória. Empate soma 2 pontos. Este ranking é local e não mistura com a Damas.</div>
+                    <div class="chess-training-ranking-note">Ranking público é somente consulta. Atualizar e limpar ranking ficam apenas no Admin do Xadrez.</div>
                 `;
                 const trainingPanel = document.getElementById('chess-training-panel');
                 if (trainingPanel) trainingPanel.insertAdjacentElement('afterend', ranking);
@@ -5586,20 +5588,27 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const status = document.getElementById('chess-training-status');
             const coach = document.getElementById('chess-training-coach');
             const beginnerBox = document.getElementById('chess-beginner-box');
-            const beginnerActive = chessMode === 'training' && chessTrainingLearnMode;
+            const boardVisible = document.body.classList.contains('chess-board-visible');
+            const beginnerActive = chessMode === 'training' && chessTrainingLearnMode && boardVisible;
             document.body.classList.toggle('chess-beginner-mode', beginnerActive);
             if (beginnerBox) beginnerBox.style.display = beginnerActive ? 'block' : 'none';
             document.querySelectorAll('#chess-training-panel .btn-chess-training').forEach(btn => btn.classList.remove('active'));
             const id = chessTrainingLearnMode ? 'chess-training-learn-btn' : `chess-training-${chessTrainingDifficulty === 'facil' ? 'easy' : chessTrainingDifficulty === 'dificil' ? 'hard' : 'medium'}-btn`;
             document.getElementById(id)?.classList.add('active');
             if (!status) return;
+            if (!boardVisible) {
+                status.textContent = 'Escolha um modo acima para abrir o tabuleiro. A explicação das peças fica no botão “Conhecer as peças”.';
+                if (coach) coach.style.display = 'none';
+                if (beginnerBox) beginnerBox.style.display = 'none';
+                return;
+            }
             if (chessMode !== 'training') {
                 status.textContent = 'Treino desligado. Escolha um nível para começar contra a máquina.';
                 if (coach) coach.style.display = 'none';
                 return;
             }
             const vez = chessTurn === chessHumanColor ? 'Sua vez de jogar.' : 'A máquina está pensando...';
-            status.textContent = chessTrainingLearnMode ? `Aprender do Zero ligado. Você joga com as brancas. Clique numa peça branca: verde anda, vermelho captura. ${vez}` : `Treino ligado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas. ${vez}`;
+            status.textContent = chessTrainingLearnMode ? `Aprender do Zero ligado. Clique numa peça branca: verde anda, vermelho captura. ${vez}` : `Treino ligado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas. ${vez}`;
             if (coach) coach.style.display = chessTrainingLearnMode ? 'block' : 'none';
             if (chessTrainingLearnMode && chessTurn === chessHumanColor && !chessGameOver) {
                 atualizarProfessorXadrez('Clique em uma peça branca. Eu vou explicar como ela anda e marcar um exemplo no tabuleiro.', null);
@@ -5764,8 +5773,59 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('chess-rank-best', data.bestDifficulty ? nomeDificuldadeRankingXadrez(data.bestDifficulty) : 'Nenhum ainda');
             setText('chess-rank-last', data.lastResult || 'Nenhuma partida finalizada');
             const badge = document.getElementById('chess-training-ranking-badge');
-            if (badge) badge.textContent = data.games ? `${data.games} partida${data.games === 1 ? '' : 's'} registrada${data.games === 1 ? '' : 's'}` : 'Separado da Damas';
+            if (badge) badge.textContent = data.games ? `${data.games} partida${data.games === 1 ? '' : 's'} no treino • online abaixo` : 'Modo treino + online';
             renderConquistasXadrez();
+            renderRankingOnlineXadrezMenu();
+        }
+
+
+        let chessRankingMenuPublicUnsubscribe = null;
+
+        function montarLinhaRankingOnlineXadrezMenu(jogador, posicao) {
+            const nome = nomeSeguro(jogador?.name || 'Jogador');
+            const jogos = numeroSeguro(jogador?.games);
+            const vitorias = numeroSeguro(jogador?.wins);
+            const derrotas = numeroSeguro(jogador?.losses);
+            const empates = numeroSeguro(jogador?.draws);
+            const pontos = numeroSeguro(jogador?.points);
+            return `
+                <div class="chess-online-ranking-row">
+                    <div class="chess-online-ranking-medal">${posicao === 1 ? '🥇' : posicao === 2 ? '🥈' : '🥉'}</div>
+                    <div class="chess-online-ranking-info">
+                        <strong>${escapeHtmlXadrez(nome)}</strong>
+                        <span>${jogos} partidas • ${vitorias} vitórias • ${derrotas} derrotas • ${empates} empates</span>
+                    </div>
+                    <div class="chess-online-ranking-points">${pontos} pts</div>
+                </div>
+            `;
+        }
+
+        function renderRankingOnlineXadrezMenu() {
+            const list = document.getElementById('chess-online-ranking-top-list');
+            if (!list) return;
+            if (chessRankingMenuPublicUnsubscribe) return;
+            try {
+                chessRankingMenuPublicUnsubscribe = onValue(ref(db, 'chessRanking'), (snap) => {
+                    const data = snap.val() || {};
+                    const jogadores = Object.values(data)
+                        .filter(j => j && typeof j === 'object')
+                        .sort((a, b) =>
+                            numeroSeguro(b.wins) - numeroSeguro(a.wins) ||
+                            numeroSeguro(b.points) - numeroSeguro(a.points) ||
+                            numeroSeguro(b.games) - numeroSeguro(a.games)
+                        )
+                        .slice(0, 3);
+                    if (!jogadores.length) {
+                        list.innerHTML = '<div class="chess-online-ranking-empty">Ainda não há partidas online registradas.</div>';
+                        return;
+                    }
+                    list.innerHTML = jogadores.map((j, i) => montarLinhaRankingOnlineXadrezMenu(j, i + 1)).join('');
+                }, () => {
+                    list.innerHTML = '<div class="chess-online-ranking-empty">Não foi possível carregar o ranking online agora.</div>';
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="chess-online-ranking-empty">Ranking online indisponível.</div>';
+            }
         }
 
         function prepararRankingTreinoXadrez() {
@@ -7750,6 +7810,9 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-admin-grid button { padding:10px 7px; font-size:.72rem; text-transform:none; border-radius:8px; }
                     .chess-admin-panel input { margin:0 0 10px 0; text-align:left; border:1px solid #4c1d95; background:#020617; }
                     .chess-admin-list, .chess-admin-chat-monitor { background:#020617; border:1px solid #312e81; border-radius:10px; padding:10px; max-height:240px; overflow-y:auto; font-size:.78rem; color:#e2e8f0; margin-top:10px; }
+                    .chess-admin-ranking-box { margin:12px 0; padding:12px; border:1px solid rgba(250,204,21,.45); border-radius:12px; background:linear-gradient(135deg,rgba(113,63,18,.32),rgba(15,23,42,.86)); }
+                    .chess-admin-ranking-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+                    .chess-admin-ranking-actions button { padding:10px 8px; border-radius:9px; font-size:.72rem; text-transform:none; }
                     .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
                     .chess-admin-room-row.blocked { border-left-color:#ef4444; }
                     .chess-admin-room-row:hover { background:#172554; }
@@ -8464,6 +8527,16 @@ Link: ${location.origin}${location.pathname}`;
                         <button id="chess-admin-monitor-chat-btn" type="button" style="background:#2563eb;">Monitorar chat</button>
                     </div>
 
+                    <div class="chess-admin-ranking-box">
+                        <div class="chess-admin-tournament-title">🏆 Ranking do Xadrez</div>
+                        <div class="chess-admin-desc">Aqui o administrador acompanha e limpa o ranking online. No menu público, os jogadores só visualizam.</div>
+                        <div class="chess-admin-ranking-actions">
+                            <button id="chess-admin-refresh-ranking-btn" type="button" style="background:#2563eb;">Atualizar ranking</button>
+                            <button id="chess-admin-clear-ranking-btn" type="button" style="background:#991b1b;">Limpar ranking online</button>
+                        </div>
+                        <div id="chess-admin-ranking-list" class="chess-admin-list">Carregando ranking online...</div>
+                    </div>
+
                     <div class="chess-admin-tournament-box">
                         <div class="chess-admin-tournament-title">🏆 Central de Torneios do Xadrez</div>
                         <div class="chess-admin-desc">Use esta área para marcar torneios de Xadrez, gerar aviso para WhatsApp e definir a sala oficial da rodada.</div>
@@ -8501,8 +8574,11 @@ Link: ${location.origin}${location.pathname}`;
                 document.getElementById('chess-admin-reset-btn')?.addEventListener('click', adminResetarSalaXadrez);
                 document.getElementById('chess-admin-delete-btn')?.addEventListener('click', adminExcluirSalaXadrez);
                 document.getElementById('chess-admin-monitor-chat-btn')?.addEventListener('click', adminMonitorarChatXadrez);
+                document.getElementById('chess-admin-refresh-ranking-btn')?.addEventListener('click', carregarRankingXadrezAdmin);
+                document.getElementById('chess-admin-clear-ranking-btn')?.addEventListener('click', adminLimparRankingOnlineXadrez);
                 document.getElementById('chess-admin-create-tournament-btn')?.addEventListener('click', criarTorneioXadrezAdmin);
                 document.getElementById('chess-admin-whatsapp-tournament-btn')?.addEventListener('click', gerarAvisosXadrezWhatsapp);
+                carregarRankingXadrezAdmin();
                 carregarTorneiosXadrezAdmin();
             }
         }
@@ -9102,6 +9178,48 @@ Compartilhe com os amigos e entre no horário marcado.`;
             });
         }
 
+
+        function renderLinhaRankingAdminXadrez(jogador, posicao) {
+            const nome = nomeSeguro(jogador?.name || 'Jogador');
+            const jogos = numeroSeguro(jogador?.games);
+            const vitorias = numeroSeguro(jogador?.wins);
+            const derrotas = numeroSeguro(jogador?.losses);
+            const empates = numeroSeguro(jogador?.draws);
+            const pontos = numeroSeguro(jogador?.points);
+            return `<div class="chess-admin-room-row"><div><strong>#${posicao} ${escapeHtmlXadrez(nome)}</strong><div style="color:#94a3b8; margin-top:3px;">${jogos} partidas • ${vitorias} vitórias • ${derrotas} derrotas • ${empates} empates</div></div><div style="color:#facc15; font-weight:900;">${pontos} pts</div></div>`;
+        }
+
+        function carregarRankingXadrezAdmin() {
+            const list = document.getElementById('chess-admin-ranking-list');
+            if (!list) return;
+            if (chessAdminUnsubscribeRanking) chessAdminUnsubscribeRanking();
+            chessAdminUnsubscribeRanking = onValue(ref(db, 'chessRanking'), (snap) => {
+                const data = snap.val() || {};
+                const jogadores = Object.values(data)
+                    .filter(j => j && typeof j === 'object')
+                    .sort((a, b) =>
+                        numeroSeguro(b.wins) - numeroSeguro(a.wins) ||
+                        numeroSeguro(b.points) - numeroSeguro(a.points) ||
+                        numeroSeguro(b.games) - numeroSeguro(a.games)
+                    )
+                    .slice(0, 20);
+                if (!jogadores.length) {
+                    list.innerHTML = '<div style="color:#94a3b8; font-style:italic;">Nenhum ranking online registrado ainda.</div>';
+                    return;
+                }
+                list.innerHTML = jogadores.map((j, i) => renderLinhaRankingAdminXadrez(j, i + 1)).join('');
+            });
+        }
+
+        async function adminLimparRankingOnlineXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            exibirConfirmacao('Limpar ranking online do Xadrez', 'Tem certeza de que deseja limpar o <strong>ranking online do Xadrez</strong>?<br><br>A Damas e o ranking local de treino não serão alterados.', async () => {
+                await remove(ref(db, 'chessRanking'));
+                carregarRankingXadrezAdmin();
+                mostrarToastXadrez('🏆 Ranking online do Xadrez limpo pelo Admin.');
+            });
+        }
+
         async function abrirAdminXadrezCentral() {
             if (!(await exigirAdminSeguro())) {
                 exibirAlertaDoSistema('Acesso negado 🛡️', 'Entre primeiro com o login do administrador.');
@@ -9129,6 +9247,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (online) online.style.display = 'none';
             atualizarStatusOnlineXadrez('🛡️ Modo administrador do Xadrez ativo. Só o painel administrativo fica visível.');
             ativarDashboardAdminXadrez();
+            carregarRankingXadrezAdmin();
             panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -10658,9 +10777,17 @@ Compartilhe com os amigos e entre no horário marcado.`;
             handleChessSquareClick = async function handleChessSquareClickProfessor19(row, col) {
                 if (professorPrivadoPodeAparecerXadrez19()) {
                     const peca = chessBoard[row]?.[col] || null;
-                    // Quando não é a vez do professor, ou quando ele toca peça do aluno,
-                    // o clique vira apenas consulta pedagógica local e não mexe na sala.
-                    if (peca && (chessIsSpectator || chessPlayerColor !== chessTurn || peca.color !== chessPlayerColor)) {
+                    const clicouDestinoLegalProfessor45 = !!(
+                        selectedSquare &&
+                        Array.isArray(legalMoves) &&
+                        legalMoves.some(m => m.row === row && m.col === col)
+                    );
+                    // ✅ PROFISSIONAL 45 — captura legal tem prioridade.
+                    // Antes, no modo professor, tocar numa peça do aluno virava apenas consulta local.
+                    // Isso quebrava capturas legais: o professor selecionava a peça branca e, ao tocar
+                    // na peça preta marcada em verde, o clique era bloqueado antes da jogada acontecer.
+                    // Agora, se a casa clicada é destino legal da peça já selecionada, deixa o jogo executar.
+                    if (!clicouDestinoLegalProfessor45 && peca && (chessIsSpectator || chessPlayerColor !== chessTurn || peca.color !== chessPlayerColor)) {
                         atualizarManualPorPecaProfessorXadrez19(row, col, 'Consulta local do professor: nada foi enviado para a sala online.');
                         return;
                     }
@@ -13201,82 +13328,92 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 limparRoboProfessorXadrez30(false);
                 limparGuiaDiretaProfessorXadrez33();
 
-                const melhores = Array.isArray(resultado?.melhores)
-                    ? resultado.melhores.filter(Boolean).slice(0, 3)
+                // ✅ PROFISSIONAL 51 — CORES MAIS LIMPAS PARA AULA
+                // Antes o robô pintava 2ª e 3ª opção, muitos vermelhos e verdes.
+                // Isso deixava o professor indeciso no momento da aula.
+                // Agora o padrão mostra somente a MELHOR JOGADA PRINCIPAL:
+                // amarelo = peça certa, verde = casa certa, vermelho = poucas peças perigosas.
+                const listaMelhores = Array.isArray(resultado?.melhores)
+                    ? resultado.melhores.filter(Boolean)
                     : (resultado?.melhor ? [resultado.melhor] : []);
 
+                const principal = resultado?.melhor || listaMelhores[0] || null;
+                const melhores = principal ? [principal] : [];
                 const casasProtegidas = new Set();
 
-                melhores.forEach((item, index) => {
-                    const ordem = index + 1;
+                melhores.forEach((item) => {
                     const from = squareGuiaXadrez29(item.from.row, item.from.col);
                     const to = squareGuiaXadrez29(item.to.row, item.to.col);
-                    const titulo = `${ordem}ª opção do robô: ${textoMovimentoRoboProfessorXadrez30(item, chessBoard)} — ${item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
-                    const labelPeca = ordem === 1 ? 'PEÇA' : `P${ordem}`;
-                    const labelCasa = ordem === 1 ? 'IR' : `IR${ordem}`;
+                    const titulo = `1ª e melhor opção do robô: ${textoMovimentoRoboProfessorXadrez30(item, chessBoard)} — ${item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
 
                     if (from) {
-                        from.classList.add('teacher-direct-from-33');
-                        from.setAttribute('data-teacher-direct-label', labelPeca);
-                        from.setAttribute('data-teacher-direct-title', String(ordem));
+                        from.classList.add('teacher-direct-from-33', 'teacher-direct-main-51');
+                        from.setAttribute('data-teacher-direct-label', '1ª');
+                        from.setAttribute('data-teacher-direct-title', '1');
                         from.setAttribute('title', titulo);
                         casasProtegidas.add(`${item.from.row},${item.from.col}`);
                     }
                     if (to) {
-                        to.classList.add('teacher-direct-to-33');
-                        to.setAttribute('data-teacher-direct-label', labelCasa);
-                        to.setAttribute('data-teacher-direct-title', String(ordem));
+                        to.classList.add('teacher-direct-to-33', 'teacher-direct-main-51');
+                        to.setAttribute('data-teacher-direct-label', 'IR');
+                        to.setAttribute('data-teacher-direct-title', '1');
                         to.setAttribute('title', titulo);
                         casasProtegidas.add(`${item.to.row},${item.to.col}`);
                     }
                 });
 
-                (resultado?.ruins || []).slice(0, 8).forEach(item => {
+                // Vermelho ficou apenas como ALERTA curto. Não pinta vários destinos vermelhos,
+                // porque isso poluía o tabuleiro e parecia que havia muitas ordens ao mesmo tempo.
+                const ruinsUnicos = [];
+                const vistos = new Set();
+                (resultado?.ruins || []).forEach(item => {
                     const fromKey = `${item.from.row},${item.from.col}`;
-                    const toKey = `${item.to.row},${item.to.col}`;
+                    if (casasProtegidas.has(fromKey)) return;
+                    if (vistos.has(fromKey)) return;
+                    vistos.add(fromKey);
+                    ruinsUnicos.push(item);
+                });
 
+                ruinsUnicos.slice(0, 3).forEach(item => {
+                    const fromKey = `${item.from.row},${item.from.col}`;
                     const from = squareGuiaXadrez29(item.from.row, item.from.col);
                     if (from && !casasProtegidas.has(fromKey)) {
-                        from.classList.add('teacher-direct-bad-33');
-                        from.setAttribute('data-teacher-direct-label', 'NÃO');
-                        from.setAttribute('data-teacher-direct-title', '1');
+                        from.classList.add('teacher-direct-bad-33', 'teacher-direct-warning-51');
+                        from.setAttribute('data-teacher-direct-label', 'EVITE');
+                        from.setAttribute('data-teacher-direct-title', 'x');
                         from.setAttribute('title', `Evite mexer agora: ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} em ${alg(item.from.row, item.from.col)} pode perder tempo, peça ou defesa.`);
-                    }
-
-                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
-                    if (to && !casasProtegidas.has(toKey) && !to.classList.contains('teacher-direct-from-33')) {
-                        to.classList.add('teacher-direct-bad-33');
-                        to.setAttribute('data-teacher-direct-label', 'NÃO');
-                        to.setAttribute('data-teacher-direct-title', '1');
-                        to.setAttribute('title', `Evite esta casa agora: ${alg(item.to.row, item.to.col)} pode deixar peça solta, perder material ou enfraquecer a defesa.`);
                     }
                 });
             }
 
             function textoGuiaDiretaProfessorXadrez33(resultado, cor, origem = 'manual') {
-                const melhor = resultado?.melhor || null;
+                const melhor = resultado?.melhor || (Array.isArray(resultado?.melhores) ? resultado.melhores[0] : null) || null;
                 if (!melhor) return 'Não encontrei lance legal agora. Verifique se a partida terminou ou se o rei está sem saída.';
                 const peca = chessBoard?.[melhor.from.row]?.[melhor.from.col] || melhor.peca || null;
                 const ruins = resultado?.ruins || [];
-                const melhores = Array.isArray(resultado?.melhores) ? resultado.melhores.slice(0, 3) : [melhor];
                 const cabecalho = origem === 'auto'
                     ? 'Robô por cores atualizou depois da jogada do aluno.'
                     : (origem === 'toque' ? 'Robô por cores atualizado pelo toque.' : 'Robô por cores atualizado.');
                 let html = `<strong>${escapeBubble27(cabecalho)}</strong><br>`;
-                html += `<span class="yellow-33">Amarelo:</span> peça(s) recomendada(s) para mexer. `;
-                html += `<span class="good-33">Verde:</span> casa(s) boas para ir. `;
-                html += `<span class="bad-33">Vermelho:</span> evite peça/casa perigosa.<br>`;
-                html += `Melhor agora: mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em ${escapeBubble27(alg(melhor.from.row, melhor.from.col))} e vá para ${escapeBubble27(alg(melhor.to.row, melhor.to.col))}.<br>`;
+                html += `<span class="yellow-33">Siga a 1ª melhor opção:</span> agora eu deixei o tabuleiro mais limpo para aula.<br>`;
+                html += `<span class="yellow-33">Amarelo/1ª:</span> peça principal. `;
+                html += `<span class="good-33">Verde/IR:</span> casa principal. `;
+                html += `<span class="bad-33">Vermelho/EVITE:</span> poucas peças perigosas para não mexer agora.<br>`;
+                html += `<strong>Melhor agora:</strong> mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em <strong>${escapeBubble27(alg(melhor.from.row, melhor.from.col))}</strong> e vá para <strong>${escapeBubble27(alg(melhor.to.row, melhor.to.col))}</strong>.<br>`;
                 html += `Motivo: ${escapeBubble27(melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, cor))}.`;
-                if (melhores.length > 1) {
-                    const extras = melhores.slice(1, 3).map((item, idx) => `${idx + 2}) ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}`);
-                    html += `<br>Outras boas: ${escapeBubble27(extras.join(' | '))}.`;
-                }
                 if (ruins.length) {
-                    const nomes = ruins.slice(0, 4).map(item => `${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)}`);
-                    html += `<br><span class="bad-33">Não mexer agora:</span> ${escapeBubble27(nomes.join(', '))}.`;
+                    const nomes = [];
+                    const vistos = new Set();
+                    ruins.forEach(item => {
+                        const k = `${item.from.row},${item.from.col}`;
+                        if (!vistos.has(k) && nomes.length < 3) {
+                            vistos.add(k);
+                            nomes.push(`${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)}`);
+                        }
+                    });
+                    if (nomes.length) html += `<br><span class="bad-33">Evite agora:</span> ${escapeBubble27(nomes.join(', '))}.`;
                 }
-                html += '<br>Frase para aula: “veja a cor do tabuleiro: amarelo prepara, verde executa e vermelho alerta o perigo.”';
+                html += '<br>Frase para aula: “não escolha entre muitas cores; siga a peça 1ª e vá para a casa IR.”';
                 return html;
             }
 
@@ -13374,7 +13511,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
             function instalarGuiaDiretaRoboProfessorXadrez33(bubble) {
                 instalarCssGuiaDiretaRoboProfessorXadrez33();
-                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                removerPainelFlutuanteGuiaDiretaXadrez50?.();
                 if (!bubble || bubble.querySelector('.bubble-direct-tools-33')) {
                     atualizarBotoesGuiaDiretaXadrez33();
                     return;
@@ -13415,46 +13552,19 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 atualizarBotoesGuiaDiretaXadrez33();
             }
 
-            function garantirPainelFlutuanteGuiaDiretaXadrez33() {
-                instalarCssGuiaDiretaRoboProfessorXadrez33();
-                let panel = document.getElementById('teacher-direct-guide-33');
-                if (panel) return panel;
-                panel = document.createElement('div');
-                panel.id = 'teacher-direct-guide-33';
-                panel.innerHTML = `
-                    <div class="direct-head-33"><span>🎓 Robô professor</span><span data-direct33-mini-state>OFF</span></div>
-                    <div class="direct-actions-33">
-                        <button type="button" data-direct33-mini="window">Janelinha ON</button>
-                        <button type="button" data-direct33-mini="colors">Robô cores OFF</button>
-                        <button type="button" data-direct33-mini="refresh">Atualizar cores</button>
-                        <button type="button" data-direct33-mini="bubble">Abrir balão</button>
-                        <button type="button" data-direct33-mini="clear">Limpar</button>
-                    </div>
-                    <div id="teacher-direct-guide-status-33" class="direct-status-33">Para aparecer no tabuleiro: toque em Robô cores ON. Amarelo pisca na peça certa, verde pisca na casa boa e vermelho marca perigo.</div>
-                `;
-                document.body.appendChild(panel);
-                panel.querySelectorAll('[data-direct33-mini]').forEach(btn => {
-                    btn.addEventListener('click', ev => {
-                        const acao = btn.getAttribute('data-direct33-mini');
-                        if (acao === 'bubble') abrirBalaoPeloPainelGuiaDiretaXadrez33();
-                        if (acao === 'window' || acao === 'mode') {
-                            const janelinhaLigada = lerModoToqueGuiaDiretaXadrez33() === 'direct';
-                            definirJanelinhaProfessorXadrez34(janelinhaLigada);
-                        }
-                        if (acao === 'colors' || acao === 'auto') {
-                            definirRoboCoresProfessorXadrez34(!autoGuiaDiretaAtivaXadrez33());
-                        }
-                        if (acao === 'refresh') aplicarGuiaDiretaProfessorXadrez33({ forcar: true, origem: 'manual' });
-                        if (acao === 'clear') {
-                            limparGuiaDiretaProfessorXadrez33();
-                            atualizarStatusGuiaDiretaProfessorXadrez33('Cores limpas.');
-                        }
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                    });
+            function removerPainelFlutuanteGuiaDiretaXadrez50() {
+                // Profissional 50: o painel flutuante lateral foi removido de verdade.
+                // Os controles ficam somente dentro da aba Professor Inteligente.
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+                document.querySelectorAll('#teacher-direct-guide-33, .teacher-direct-guide-33').forEach(el => {
+                    try { el.remove(); } catch (_) {}
                 });
-                atualizarPainelFlutuanteGuiaDiretaXadrez33();
-                return panel;
+            }
+
+            function garantirPainelFlutuanteGuiaDiretaXadrez33() {
+                removerPainelFlutuanteGuiaDiretaXadrez50();
+                return null;
             }
 
             function abrirBalaoPeloPainelGuiaDiretaXadrez33() {
@@ -13504,15 +13614,14 @@ Compartilhe com os amigos e entre no horário marcado.`;
             }
 
             function atualizarPainelFlutuanteGuiaDiretaXadrez33(mostrar = false) {
-                const panel = garantirPainelFlutuanteGuiaDiretaXadrez33();
-                const modo = lerModoToqueGuiaDiretaXadrez33();
+                // Profissional 50: não existe mais painel flutuante lateral.
+                // A função continua existindo para não quebrar código antigo, mas só atualiza
+                // os botões do menu inferior e o robô por cores.
+                removerPainelFlutuanteGuiaDiretaXadrez50();
                 const autoLigado = autoGuiaDiretaAtivaXadrez33();
                 const pode = !!(professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19());
-                const deveMostrar35 = pode && (mostrar || modo === 'direct' || autoLigado || chessProfessorPrivadoAtivo);
-                panel.classList.toggle('visible-33', deveMostrar35);
-                panel.classList.toggle('teacher-guide-strong-35', deveMostrar35);
                 atualizarBotoesGuiaDiretaXadrez33();
-                if (deveMostrar35 && autoLigado && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
+                if (pode && autoLigado && (!chessPlayerColor || chessTurn === corProfessorGuiaDiretaXadrez33())) {
                     clearTimeout(window.__teacherGuideProf39RefreshTimer);
                     window.__teacherGuideProf39RefreshTimer = setTimeout(() => {
                         try { agendarGuiaDiretaProfessorXadrez33(false, 'auto39'); } catch (_) {}
@@ -13535,7 +13644,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                         localStorage.setItem(GUIA_DIRETA_XADREZ_33_AUTO_KEY, '1');
                     }
                 } catch (_) {}
-                garantirPainelFlutuanteGuiaDiretaXadrez33();
+                removerPainelFlutuanteGuiaDiretaXadrez50?.();
                 atualizarPainelFlutuanteGuiaDiretaXadrez33(true);
                 // Profissional 39: não recalcular pesado em todo render; o cálculo fica por mudança real de vez/tabuleiro.
                 return true;
@@ -17290,8 +17399,619 @@ Compartilhe com os amigos e entre no horário marcado.`;
     instalarPopupProfessorDamas26();
 
 
+        /* =====================================================================
+           ✅ PROFISSIONAL 44 — ROBÔ POR CORES SOMENTE VISUAL
+           ✅ PROFISSIONAL 45 — DESTRAVA CAPTURAS LEGAIS COM ROBÔ ATIVO
+           Correção de segurança: o robô do professor NUNCA pode mover peça.
+           Ele apenas pinta o tabuleiro. Esta camada bloqueia qualquer movimento
+           durante o cálculo visual, limpa seleção escondida e impede clique em
+           casas vermelhas marcadas como "NÃO".
+        ===================================================================== */
+        function instalarRoboCoresSomenteVisualProfessor44() {
+            if (window.__prof44RoboSomenteVisualInstalado) return;
+            window.__prof44RoboSomenteVisualInstalado = true;
+
+            window.__prof44RoboVisualLock = false;
+
+            function prof44CssSeguro() {
+                if (document.getElementById('teacher-prof44-visual-only-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof44-visual-only-style';
+                style.textContent = `
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    #chess-board .chess-square.teacher-direct-from-33::after,
+                    #chess-board .chess-square.teacher-direct-to-33::after,
+                    #chess-board .chess-square.teacher-direct-bad-33::after {
+                        pointer-events: none !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece {
+                        pointer-events: auto !important;
+                    }
+                    #teacher-direct-guide-33 .prof44-safe-note {
+                        margin-top: 6px !important;
+                        padding: 6px 7px !important;
+                        border-radius: 10px !important;
+                        background: rgba(22,101,52,.18) !important;
+                        border: 1px solid rgba(34,197,94,.28) !important;
+                        color: #bbf7d0 !important;
+                        font-size: .58rem !important;
+                        font-weight: 900 !important;
+                        line-height: 1.22 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function prof44Clone(obj) {
+                try { return JSON.parse(JSON.stringify(obj)); } catch (_) { return obj; }
+            }
+
+            function prof44ClonarBoardSeguro(board) {
+                try {
+                    return (board || []).map(row => (row || []).map(p => p ? { ...p } : null));
+                } catch (_) {
+                    try { return prof44Clone(board); } catch (__) { return board; }
+                }
+            }
+
+            function prof44AssinaturaEstado() {
+                try {
+                    return JSON.stringify({
+                        board: chessBoard || [],
+                        turn: chessTurn || '',
+                        over: !!chessGameOver,
+                        last: lastChessMove || null,
+                        ep: enPassantTarget || null,
+                        history: Array.isArray(moveHistory) ? moveHistory : []
+                    });
+                } catch (_) {
+                    return String(Date.now());
+                }
+            }
+
+            function prof44SnapshotEstado() {
+                return {
+                    assinatura: prof44AssinaturaEstado(),
+                    board: prof44ClonarBoardSeguro(chessBoard),
+                    turn: chessTurn,
+                    gameOver: chessGameOver,
+                    lastMoveMessage,
+                    lastChessMove: prof44Clone(lastChessMove),
+                    enPassantTarget: prof44Clone(enPassantTarget),
+                    moveHistory: prof44Clone(moveHistory)
+                };
+            }
+
+            function prof44RestaurarSeMudou(snapshot) {
+                if (!snapshot) return false;
+                const atual = prof44AssinaturaEstado();
+                if (atual === snapshot.assinatura) return false;
+
+                // Se o cálculo visual alterou algo sem querer, volta imediatamente.
+                chessBoard = prof44ClonarBoardSeguro(snapshot.board);
+                chessTurn = snapshot.turn;
+                chessGameOver = snapshot.gameOver;
+                lastMoveMessage = snapshot.lastMoveMessage;
+                lastChessMove = prof44Clone(snapshot.lastChessMove);
+                enPassantTarget = prof44Clone(snapshot.enPassantTarget);
+                moveHistory = prof44Clone(snapshot.moveHistory) || [];
+                return true;
+            }
+
+            function prof44LimparSelecaoDeMovimento() {
+                try { selectedSquare = null; } catch (_) {}
+                try { legalMoves = []; } catch (_) {}
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove('selected', 'legal', 'capture', 'castle', 'en-passant');
+                });
+            }
+
+            function prof44RoboCoresLigado() {
+                try {
+                    return !!(
+                        professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19() &&
+                        autoGuiaDiretaAtivaXadrez33 && autoGuiaDiretaAtivaXadrez33()
+                    );
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function prof44AvisoSeguro() {
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (panel && !panel.querySelector('.prof44-safe-note')) {
+                    const note = document.createElement('div');
+                    note.className = 'prof44-safe-note';
+                    note.textContent = '✅ Modo seguro: o robô por cores só pinta o tabuleiro. Ele não move peça, não joga sozinho e não bloqueia capturas legais.';
+                    panel.appendChild(note);
+                }
+            }
+
+            const aplicarOriginal44 = aplicarGuiaDiretaProfessorXadrez33;
+            aplicarGuiaDiretaProfessorXadrez33 = function aplicarGuiaDiretaProfessorXadrez44SomenteVisual() {
+                const ativo = prof44RoboCoresLigado();
+                const snapshot = ativo ? prof44SnapshotEstado() : null;
+                let retorno;
+
+                if (ativo) window.__prof44RoboVisualLock = true;
+                try {
+                    retorno = aplicarOriginal44.apply(this, arguments);
+                } finally {
+                    if (ativo) {
+                        const restaurou = prof44RestaurarSeMudou(snapshot);
+                        // ✅ PROFISSIONAL 45 — não limpa a seleção do jogador.
+                        // O robô por cores é somente visual; ele não deve apagar a peça que o professor
+                        // selecionou para capturar. Limpar selectedSquare aqui fazia a captura legal falhar.
+                        prof44AvisoSeguro();
+                        if (restaurou) {
+                            try { atualizarStatusGuiaDiretaProfessorXadrez33('✅ Segurança aplicada: o robô tentou analisar, mas qualquer alteração real foi bloqueada. As cores continuam sendo apenas orientação visual.'); } catch (_) {}
+                        }
+                        setTimeout(() => { window.__prof44RoboVisualLock = false; }, 180);
+                    } else {
+                        window.__prof44RoboVisualLock = false;
+                    }
+                }
+                return retorno;
+            };
+
+            const moverOriginal44 = executarMovimentoXadrez;
+            executarMovimentoXadrez = async function executarMovimentoXadrezProf44BloqueioVisual() {
+                if (window.__prof44RoboVisualLock) {
+                    try { mostrarToastXadrez('🎓 Robô por cores é somente visual. Nenhuma peça foi movida pelo robô.', 'check'); } catch (_) {}
+                    return false;
+                }
+                return moverOriginal44.apply(this, arguments);
+            };
+
+            const clickOriginal44 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickProf44Seguro(row, col) {
+                if (window.__prof44RoboVisualLock) {
+                    try { mostrarToastXadrez('Aguarde o robô terminar de pintar as dicas.', 'check'); } catch (_) {}
+                    return false;
+                }
+
+                const square = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+                if (prof44RoboCoresLigado() && square && square.classList.contains('teacher-direct-bad-33')) {
+                    // ✅ PROFISSIONAL 45 — vermelho é aviso, não trava.
+                    // O robô pode dizer que uma casa é perigosa, mas nunca pode bloquear uma jogada legal.
+                    // O professor decide se joga ou não.
+                    try { mostrarToastXadrez('🔴 Vermelho é só aviso de perigo. Se a jogada for legal, o jogo permite normalmente.', 'check'); } catch (_) {}
+                }
+
+                return clickOriginal44.apply(this, arguments);
+            };
+
+            const atualizarPainelAnterior44 = atualizarPainelFlutuanteGuiaDiretaXadrez33;
+            atualizarPainelFlutuanteGuiaDiretaXadrez33 = function atualizarPainelFlutuanteGuiaDiretaXadrez44() {
+                const retorno = atualizarPainelAnterior44.apply(this, arguments);
+                setTimeout(prof44AvisoSeguro, 0);
+                return retorno;
+            };
+
+            prof44CssSeguro();
+        }
+
+
+        instalarRoboCoresSomenteVisualProfessor44();
+
+        /* =====================================================================
+           ✅ PROFISSIONAL 46 — PAINEL DO ROBÔ MINIMIZAR / MAXIMIZAR / FECHAR
+           Correção do teste mostrado pelo professor:
+           - o painel flutuante do Robô Professor ficava aberto e atrapalhava o tabuleiro;
+           - agora ele pode ser arrastado, minimizado, maximizado e fechado;
+           - o menu fixo "Professor Inteligente" continua funcionando embaixo;
+           - fechar o painel flutuante não desliga o robô de cores nem a janelinha.
+        ===================================================================== */
+        function instalarPainelRoboProfessorXadrez46() {
+            if (window.__prof46PainelRoboProfessorInstalado) return;
+            window.__prof46PainelRoboProfessorInstalado = true;
+
+            const PROF46_CLOSED_KEY = 'tabuleiro_arena_prof46_painel_robo_fechado';
+            const PROF46_MODE_KEY = 'tabuleiro_arena_prof46_painel_robo_modo';
+            const PROF46_POS_KEY = 'tabuleiro_arena_prof46_painel_robo_pos';
+            let dragging46 = false;
+            let startX46 = 0;
+            let startY46 = 0;
+            let startLeft46 = 0;
+            let startTop46 = 0;
+
+            function prof46Css() {
+                if (document.getElementById('teacher-prof46-panel-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof46-panel-style';
+                style.textContent = `
+                    #teacher-direct-guide-33.prof46-panel {
+                        touch-action: auto !important;
+                        user-select: none !important;
+                        -webkit-user-select: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-panel .direct-head-33 {
+                        cursor: grab !important;
+                        touch-action: none !important;
+                        user-select: none !important;
+                        -webkit-user-select: none !important;
+                        gap: 6px !important;
+                    }
+                    #teacher-direct-guide-33.prof46-dragging .direct-head-33 {
+                        cursor: grabbing !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-title {
+                        min-width: 0 !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        white-space: nowrap !important;
+                        flex: 1 1 auto !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-tools {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 4px !important;
+                        flex: 0 0 auto !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-tools button {
+                        width: 25px !important;
+                        height: 25px !important;
+                        min-width: 25px !important;
+                        padding: 0 !important;
+                        border-radius: 9px !important;
+                        background: rgba(15,23,42,.94) !important;
+                        border: 1px solid rgba(250,204,21,.42) !important;
+                        color: #fef3c7 !important;
+                        font-size: .75rem !important;
+                        line-height: 1 !important;
+                        box-shadow: none !important;
+                    }
+                    #teacher-direct-guide-33 .prof46-head-tools button:hover,
+                    #teacher-direct-guide-33 .prof46-head-tools button:focus {
+                        background: rgba(37,99,235,.92) !important;
+                        color: #fff !important;
+                        transform: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-minimized {
+                        width: min(220px, calc(100vw - 14px)) !important;
+                        padding: 7px !important;
+                        border-radius: 13px !important;
+                        opacity: .97 !important;
+                    }
+                    #teacher-direct-guide-33.prof46-minimized .direct-actions-33,
+                    #teacher-direct-guide-33.prof46-minimized .direct-status-33,
+                    #teacher-direct-guide-33.prof46-minimized .prof42-mini,
+                    #teacher-direct-guide-33.prof46-minimized .prof44-safe-note {
+                        display: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-maximized {
+                        width: min(420px, calc(100vw - 14px)) !important;
+                        max-height: calc(100vh - 14px) !important;
+                        overflow: auto !important;
+                    }
+                    #teacher-direct-guide-33.prof46-closed {
+                        display: none !important;
+                    }
+                    #teacher-direct-guide-33.prof46-manual-pos {
+                        right: auto !important;
+                        bottom: auto !important;
+                    }
+                    #teacher-prof37-controls button[data-prof46-panel-open],
+                    #teacher-prof36-controls button[data-prof46-panel-open] {
+                        background: linear-gradient(90deg, rgba(14,116,144,.96), rgba(37,99,235,.90)) !important;
+                        color: #e0f2fe !important;
+                        border-color: rgba(56,189,248,.52) !important;
+                    }
+                    @media(max-width:560px){
+                        #teacher-direct-guide-33.prof46-panel {
+                            width: min(252px, calc(100vw - 10px)) !important;
+                            max-height: calc(100vh - 10px) !important;
+                            overflow: auto !important;
+                        }
+                        #teacher-direct-guide-33.prof46-minimized {
+                            width: min(190px, calc(100vw - 10px)) !important;
+                        }
+                        #teacher-direct-guide-33.prof46-maximized {
+                            width: min(330px, calc(100vw - 10px)) !important;
+                        }
+                        #teacher-direct-guide-33 .prof46-head-tools button {
+                            width: 24px !important;
+                            height: 24px !important;
+                            min-width: 24px !important;
+                            font-size: .70rem !important;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function prof46Viewport() {
+                const vv = window.visualViewport;
+                return {
+                    width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360),
+                    height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640)
+                };
+            }
+
+            function prof46Clamp(v, min, max) {
+                if (!Number.isFinite(v)) return min;
+                if (max < min) return min;
+                return Math.max(min, Math.min(max, v));
+            }
+
+            function prof46IsClosed() {
+                try { return localStorage.getItem(PROF46_CLOSED_KEY) === '1'; } catch (_) { return false; }
+            }
+
+            function prof46SetClosed(value) {
+                try { localStorage.setItem(PROF46_CLOSED_KEY, value ? '1' : '0'); } catch (_) {}
+            }
+
+            function prof46Mode() {
+                try { return localStorage.getItem(PROF46_MODE_KEY) || 'normal'; } catch (_) { return 'normal'; }
+            }
+
+            function prof46SetMode(mode) {
+                try { localStorage.setItem(PROF46_MODE_KEY, mode || 'normal'); } catch (_) {}
+            }
+
+            function prof46SavePos(left, top) {
+                try { localStorage.setItem(PROF46_POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+            }
+
+            function prof46ReadPos() {
+                try { return JSON.parse(localStorage.getItem(PROF46_POS_KEY) || 'null'); } catch (_) { return null; }
+            }
+
+            function prof46ApplyPos(panel, left, top, save) {
+                if (!panel) return;
+                const vp = prof46Viewport();
+                const rect = panel.getBoundingClientRect();
+                const w = Math.max(140, Math.min(rect.width || 250, vp.width - 8));
+                const h = Math.max(42, Math.min(rect.height || 120, vp.height - 8));
+                const margin = 5;
+                const safeLeft = prof46Clamp(left, margin, Math.max(margin, vp.width - w - margin));
+                const safeTop = prof46Clamp(top, margin, Math.max(margin, vp.height - h - margin));
+                panel.classList.add('prof46-manual-pos');
+                panel.style.setProperty('position', 'fixed', 'important');
+                panel.style.setProperty('left', Math.round(safeLeft) + 'px', 'important');
+                panel.style.setProperty('top', Math.round(safeTop) + 'px', 'important');
+                panel.style.setProperty('right', 'auto', 'important');
+                panel.style.setProperty('bottom', 'auto', 'important');
+                if (save) prof46SavePos(safeLeft, safeTop);
+            }
+
+            function prof46KeepInside() {
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel || prof46IsClosed()) return;
+                const rect = panel.getBoundingClientRect();
+                prof46ApplyPos(panel, rect.left, rect.top, true);
+            }
+
+            function prof46ApplyState() {
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel) return;
+                panel.classList.add('prof46-panel');
+                panel.classList.toggle('prof46-closed', prof46IsClosed());
+                const mode = prof46Mode();
+                panel.classList.toggle('prof46-minimized', mode === 'min');
+                panel.classList.toggle('prof46-maximized', mode === 'max');
+                const minBtn = panel.querySelector('[data-prof46-panel="min"]');
+                const maxBtn = panel.querySelector('[data-prof46-panel="max"]');
+                if (minBtn) minBtn.textContent = mode === 'min' ? '▣' : '−';
+                if (maxBtn) maxBtn.textContent = mode === 'max' ? '▢' : '□';
+                atualizarBotaoAbrirPainel46();
+            }
+
+            function prof46EnsureHeaderTools() {
+                prof46Css();
+                let panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel) {
+                    try { panel = garantirPainelFlutuanteGuiaDiretaXadrez33(); } catch (_) { panel = null; }
+                }
+                if (!panel) return null;
+                panel.classList.add('prof46-panel');
+                const head = panel.querySelector('.direct-head-33');
+                if (!head) return panel;
+
+                const firstSpan = head.querySelector('span:first-child');
+                if (firstSpan && !firstSpan.classList.contains('prof46-head-title')) firstSpan.classList.add('prof46-head-title');
+
+                if (!head.querySelector('.prof46-head-tools')) {
+                    const tools = document.createElement('span');
+                    tools.className = 'prof46-head-tools';
+                    tools.innerHTML = `
+                        <button type="button" data-prof46-panel="min" title="Minimizar">−</button>
+                        <button type="button" data-prof46-panel="max" title="Maximizar">□</button>
+                        <button type="button" data-prof46-panel="close" title="Fechar">×</button>
+                    `;
+                    head.appendChild(tools);
+                    tools.querySelectorAll('[data-prof46-panel]').forEach(btn => {
+                        btn.addEventListener('click', ev => {
+                            const action = btn.getAttribute('data-prof46-panel');
+                            if (action === 'min') {
+                                prof46SetClosed(false);
+                                prof46SetMode(prof46Mode() === 'min' ? 'normal' : 'min');
+                                prof46ApplyState();
+                                prof46KeepInside();
+                            }
+                            if (action === 'max') {
+                                prof46SetClosed(false);
+                                prof46SetMode(prof46Mode() === 'max' ? 'normal' : 'max');
+                                prof46ApplyState();
+                                prof46KeepInside();
+                            }
+                            if (action === 'close') {
+                                prof46SetClosed(true);
+                                panel.classList.add('prof46-closed');
+                                panel.classList.remove('visible-33');
+                                atualizarBotaoAbrirPainel46();
+                                try { atualizarStatusGuiaDiretaProfessorXadrez33('Painel flutuante fechado. Use a aba Professor Inteligente embaixo para abrir de novo quando quiser.'); } catch (_) {}
+                            }
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                        });
+                    });
+                }
+
+                if (head.dataset.prof46DragBound !== '1') {
+                    head.dataset.prof46DragBound = '1';
+                    const start = ev => {
+                        if (ev.target && ev.target.closest && ev.target.closest('button,select,input,textarea,a')) return;
+                        const p = document.getElementById('teacher-direct-guide-33');
+                        if (!p || prof46IsClosed()) return;
+                        const point = ev.touches?.[0] || ev;
+                        const rect = p.getBoundingClientRect();
+                        dragging46 = true;
+                        startX46 = point.clientX;
+                        startY46 = point.clientY;
+                        startLeft46 = rect.left;
+                        startTop46 = rect.top;
+                        p.classList.add('prof46-dragging');
+                        prof46ApplyPos(p, rect.left, rect.top, false);
+                        try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (_) {}
+                        ev.preventDefault?.();
+                        ev.stopPropagation?.();
+                    };
+                    if ('PointerEvent' in window) {
+                        head.addEventListener('pointerdown', start, { passive: false });
+                    } else {
+                        head.addEventListener('touchstart', start, { passive: false });
+                        head.addEventListener('mousedown', start, { passive: false });
+                    }
+                }
+
+                const saved = prof46ReadPos();
+                if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+                    prof46ApplyPos(panel, saved.left, saved.top, false);
+                }
+                prof46ApplyState();
+                return panel;
+            }
+
+            function prof46Move(ev) {
+                if (!dragging46) return;
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (!panel) return;
+                const point = ev.touches?.[0] || ev;
+                prof46ApplyPos(panel, startLeft46 + (point.clientX - startX46), startTop46 + (point.clientY - startY46), false);
+                ev.preventDefault?.();
+            }
+
+            function prof46Stop(ev) {
+                if (!dragging46) return;
+                dragging46 = false;
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (panel) {
+                    panel.classList.remove('prof46-dragging');
+                    const rect = panel.getBoundingClientRect();
+                    prof46ApplyPos(panel, rect.left, rect.top, true);
+                }
+                ev?.preventDefault?.();
+            }
+
+            function atualizarBotaoAbrirPainel46() {
+                const texto = prof46IsClosed() ? 'Abrir painel' : 'Fechar painel';
+                document.querySelectorAll('[data-prof46-panel-open]').forEach(btn => {
+                    btn.textContent = texto;
+                    btn.classList.toggle('prof37-off', prof46IsClosed());
+                    btn.classList.toggle('prof37-on', !prof46IsClosed());
+                });
+            }
+
+            function prof46EnsureBotaoNoMenuProfessor() {
+                const grids = [
+                    document.querySelector('#teacher-prof37-controls .prof37-grid'),
+                    document.querySelector('#teacher-prof36-controls .prof36-grid')
+                ].filter(Boolean);
+                grids.forEach(grid => {
+                    if (grid.querySelector('[data-prof46-panel-open]')) return;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.setAttribute('data-prof46-panel-open', '1');
+                    btn.textContent = prof46IsClosed() ? 'Abrir painel' : 'Fechar painel';
+                    btn.addEventListener('click', ev => {
+                        const fechar = !prof46IsClosed();
+                        prof46SetClosed(fechar);
+                        if (!fechar) {
+                            prof46SetMode('normal');
+                            const panel = prof46EnsureHeaderTools();
+                            if (panel) {
+                                panel.classList.add('visible-33');
+                                panel.classList.remove('prof46-closed');
+                                prof46KeepInside();
+                            }
+                        } else {
+                            const panel = document.getElementById('teacher-direct-guide-33');
+                            if (panel) {
+                                panel.classList.add('prof46-closed');
+                                panel.classList.remove('visible-33');
+                            }
+                        }
+                        atualizarBotaoAbrirPainel46();
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    });
+                    grid.appendChild(btn);
+                });
+                atualizarBotaoAbrirPainel46();
+            }
+
+            if ('PointerEvent' in window) {
+                document.addEventListener('pointermove', prof46Move, { passive: false });
+                document.addEventListener('pointerup', prof46Stop, { passive: false });
+                document.addEventListener('pointercancel', prof46Stop, { passive: false });
+            } else {
+                document.addEventListener('touchmove', prof46Move, { passive: false });
+                document.addEventListener('touchend', prof46Stop, { passive: false });
+                document.addEventListener('mousemove', prof46Move, { passive: false });
+                document.addEventListener('mouseup', prof46Stop, { passive: false });
+            }
+
+            const atualizarPainelAnterior46 = atualizarPainelFlutuanteGuiaDiretaXadrez33;
+            atualizarPainelFlutuanteGuiaDiretaXadrez33 = function atualizarPainelFlutuanteGuiaDiretaXadrez46() {
+                const retorno = atualizarPainelAnterior46.apply(this, arguments);
+                setTimeout(() => {
+                    try {
+                        prof46EnsureHeaderTools();
+                        prof46EnsureBotaoNoMenuProfessor();
+                        const panel = document.getElementById('teacher-direct-guide-33');
+                        if (panel && prof46IsClosed()) {
+                            panel.classList.add('prof46-closed');
+                            panel.classList.remove('visible-33');
+                        }
+                        if (panel && !prof46IsClosed()) prof46KeepInside();
+                    } catch (_) {}
+                }, 0);
+                return retorno;
+            };
+
+            try {
+                if (typeof garantirControlesProfessorXadrez37 === 'function') {
+                    const garantirControlesAnterior46 = garantirControlesProfessorXadrez37;
+                    garantirControlesProfessorXadrez37 = function garantirControlesProfessorXadrez46() {
+                        const retorno = garantirControlesAnterior46.apply(this, arguments);
+                        setTimeout(() => { try { prof46EnsureBotaoNoMenuProfessor(); } catch (_) {} }, 0);
+                        return retorno;
+                    };
+                }
+            } catch (_) {}
+
+            window.addEventListener('resize', prof46KeepInside);
+            window.visualViewport?.addEventListener?.('resize', prof46KeepInside);
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    try {
+                        prof46EnsureHeaderTools();
+                        prof46EnsureBotaoNoMenuProfessor();
+                    } catch (_) {}
+                }, 800);
+            });
+        }
+
+        instalarPainelRoboProfessorXadrez46();
 
 })();
+
 
 
 
@@ -17324,3 +18044,1549 @@ setInterval(() => {
         garantirControlesOnlineNoTabuleiro3612(!chessIsSpectator);
     }
 }, 1000);
+
+/* =====================================================================
+   ✅ PROFISSIONAL 47 — PAINEL ROBÔ PROFESSOR REALMENTE MÓVEL E FECHÁVEL
+   Correção em cima da Profissional 46:
+   - o painel flutuante estava aparecendo sem os botões de fechar/minimizar;
+   - agora os botões ficam em uma barra própria, bem visível;
+   - o painel pode ser arrastado pelo topo ou pela barra "ARRASTAR";
+   - fechar/minimizar/maximizar não desliga o robô por cores;
+   - o menu fixo Professor Inteligente continua sendo o lugar principal de controle.
+===================================================================== */
+(function instalarPainelRoboProfessor47() {
+    if (window.__prof47PainelRoboProfessorOk) return;
+    window.__prof47PainelRoboProfessorOk = true;
+
+    const PANEL_ID = 'teacher-direct-guide-33';
+    const CLOSED_KEY = 'tabuleiro_arena_prof47_painel_fechado';
+    const MODE_KEY = 'tabuleiro_arena_prof47_painel_modo';
+    const POS_KEY = 'tabuleiro_arena_prof47_painel_pos';
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    function storageGet(key, fallback) {
+        try {
+            const v = localStorage.getItem(key);
+            return v == null ? fallback : v;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    function storageSet(key, value) {
+        try { localStorage.setItem(key, value); } catch (_) {}
+    }
+
+    function painel() {
+        return document.getElementById(PANEL_ID);
+    }
+
+    function fechado() {
+        return storageGet(CLOSED_KEY, '0') === '1';
+    }
+
+    function modo() {
+        return storageGet(MODE_KEY, 'normal') || 'normal';
+    }
+
+    function setFechado(value) {
+        storageSet(CLOSED_KEY, value ? '1' : '0');
+    }
+
+    function setModo(value) {
+        storageSet(MODE_KEY, value || 'normal');
+    }
+
+    function viewport() {
+        const vv = window.visualViewport;
+        return {
+            width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360),
+            height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640)
+        };
+    }
+
+    function clamp(value, min, max) {
+        if (!Number.isFinite(value)) return min;
+        if (max < min) return min;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function css47() {
+        if (document.getElementById('prof47-robo-professor-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof47-robo-professor-css';
+        style.textContent = `
+            #teacher-direct-guide-33.prof47-panel {
+                z-index: 1000005 !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+                touch-action: auto !important;
+            }
+
+            #teacher-direct-guide-33.prof47-manual-pos {
+                position: fixed !important;
+                right: auto !important;
+                bottom: auto !important;
+                margin: 0 !important;
+            }
+
+            #teacher-direct-guide-33.prof47-closed {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
+            #teacher-direct-guide-33 .direct-head-33,
+            #teacher-direct-guide-33 .prof47-drag-handle {
+                cursor: grab !important;
+                touch-action: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+            }
+
+            #teacher-direct-guide-33.prof47-dragging .direct-head-33,
+            #teacher-direct-guide-33.prof47-dragging .prof47-drag-handle {
+                cursor: grabbing !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-toolbar {
+                display: grid !important;
+                grid-template-columns: 1.45fr .7fr .7fr .7fr !important;
+                gap: 5px !important;
+                margin: 6px 0 7px 0 !important;
+                padding: 6px !important;
+                border-radius: 12px !important;
+                border: 1px solid rgba(250,204,21,.38) !important;
+                background: rgba(2,6,23,.72) !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-toolbar button {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 30px !important;
+                padding: 6px 5px !important;
+                border-radius: 10px !important;
+                border: 1px solid rgba(148,163,184,.35) !important;
+                background: rgba(15,23,42,.94) !important;
+                color: #f8fafc !important;
+                font-size: .64rem !important;
+                font-weight: 1000 !important;
+                line-height: 1.05 !important;
+                box-shadow: none !important;
+                text-transform: none !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-toolbar button:hover,
+            #teacher-direct-guide-33 .prof47-toolbar button:focus {
+                transform: none !important;
+                background: rgba(37,99,235,.95) !important;
+                color: #fff !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-drag-handle {
+                background: linear-gradient(90deg, rgba(250,204,21,.92), rgba(14,165,233,.80)) !important;
+                color: #04111f !important;
+                border-color: rgba(250,204,21,.75) !important;
+                letter-spacing: .02em !important;
+            }
+
+            #teacher-direct-guide-33 .prof47-close-btn {
+                background: rgba(127,29,29,.95) !important;
+                color: #fee2e2 !important;
+                border-color: rgba(248,113,113,.55) !important;
+            }
+
+            #teacher-direct-guide-33.prof47-minimized {
+                width: min(236px, calc(100vw - 12px)) !important;
+                padding: 8px !important;
+                max-height: none !important;
+                overflow: hidden !important;
+            }
+
+            #teacher-direct-guide-33.prof47-minimized .direct-actions-33,
+            #teacher-direct-guide-33.prof47-minimized .direct-status-33,
+            #teacher-direct-guide-33.prof47-minimized .prof42-mini,
+            #teacher-direct-guide-33.prof47-minimized .prof44-safe-note {
+                display: none !important;
+            }
+
+            #teacher-direct-guide-33.prof47-maximized {
+                width: min(430px, calc(100vw - 12px)) !important;
+                max-height: calc(100vh - 12px) !important;
+                overflow: auto !important;
+            }
+
+            #teacher-prof37-controls button[data-prof47-panel-toggle],
+            #teacher-prof36-controls button[data-prof47-panel-toggle],
+            .teacher-prof37-controls button[data-prof47-panel-toggle] {
+                background: linear-gradient(90deg, rgba(14,116,144,.96), rgba(37,99,235,.94)) !important;
+                color: #e0f2fe !important;
+                border-color: rgba(56,189,248,.55) !important;
+            }
+
+            #teacher-prof37-controls button[data-prof47-panel-toggle].prof47-menu-closed,
+            #teacher-prof36-controls button[data-prof47-panel-toggle].prof47-menu-closed,
+            .teacher-prof37-controls button[data-prof47-panel-toggle].prof47-menu-closed {
+                background: rgba(15,23,42,.92) !important;
+                color: #fde68a !important;
+                border-color: rgba(250,204,21,.45) !important;
+            }
+
+            @media (max-width: 560px) {
+                #teacher-direct-guide-33.prof47-panel {
+                    width: min(260px, calc(100vw - 10px)) !important;
+                    max-height: calc(100vh - 10px) !important;
+                    overflow: auto !important;
+                }
+
+                #teacher-direct-guide-33.prof47-minimized {
+                    width: min(210px, calc(100vw - 10px)) !important;
+                }
+
+                #teacher-direct-guide-33.prof47-maximized {
+                    width: min(336px, calc(100vw - 10px)) !important;
+                }
+
+                #teacher-direct-guide-33 .prof47-toolbar {
+                    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+                    gap: 4px !important;
+                    padding: 5px !important;
+                }
+
+                #teacher-direct-guide-33 .prof47-toolbar button {
+                    min-height: 29px !important;
+                    font-size: .58rem !important;
+                    padding: 5px 3px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function salvarPos(left, top) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+    }
+
+    function lerPos() {
+        try { return JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (_) { return null; }
+    }
+
+    function aplicarPos(p, left, top, salvar) {
+        if (!p) return;
+        const vp = viewport();
+        const rect = p.getBoundingClientRect();
+        const w = Math.max(130, Math.min(rect.width || 260, vp.width - 8));
+        const h = Math.max(44, Math.min(rect.height || 180, vp.height - 8));
+        const margin = 5;
+        const safeLeft = clamp(left, margin, Math.max(margin, vp.width - w - margin));
+        const safeTop = clamp(top, margin, Math.max(margin, vp.height - h - margin));
+
+        p.classList.add('prof47-manual-pos');
+        p.style.setProperty('position', 'fixed', 'important');
+        p.style.setProperty('left', Math.round(safeLeft) + 'px', 'important');
+        p.style.setProperty('top', Math.round(safeTop) + 'px', 'important');
+        p.style.setProperty('right', 'auto', 'important');
+        p.style.setProperty('bottom', 'auto', 'important');
+        p.style.setProperty('z-index', '1000005', 'important');
+
+        if (salvar) salvarPos(safeLeft, safeTop);
+    }
+
+    function manterDentro() {
+        const p = painel();
+        if (!p || fechado()) return;
+        const rect = p.getBoundingClientRect();
+        aplicarPos(p, rect.left, rect.top, true);
+    }
+
+    function aplicarEstado() {
+        const p = painel();
+        if (!p) return;
+        const m = modo();
+        p.classList.add('prof47-panel');
+        p.classList.toggle('prof47-closed', fechado());
+        p.classList.toggle('prof47-minimized', m === 'min');
+        p.classList.toggle('prof47-maximized', m === 'max');
+
+        const minBtn = p.querySelector('[data-prof47-action="min"]');
+        const maxBtn = p.querySelector('[data-prof47-action="max"]');
+        if (minBtn) minBtn.textContent = m === 'min' ? 'Abrir' : '− Min';
+        if (maxBtn) maxBtn.textContent = m === 'max' ? 'Normal' : '□ Max';
+
+        atualizarBotoesMenu();
+    }
+
+    function iniciarArraste(ev) {
+        const target = ev.target;
+        if (target && target.closest && target.closest('button:not(.prof47-drag-handle),select,input,textarea,a')) return;
+        const p = painel();
+        if (!p || fechado()) return;
+        const point = ev.touches?.[0] || ev;
+        const rect = p.getBoundingClientRect();
+        dragging = true;
+        startX = point.clientX;
+        startY = point.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        p.classList.add('prof47-dragging');
+        aplicarPos(p, rect.left, rect.top, false);
+        try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (_) {}
+        ev.preventDefault?.();
+        ev.stopPropagation?.();
+        ev.stopImmediatePropagation?.();
+    }
+
+    function moverArraste(ev) {
+        if (!dragging) return;
+        const p = painel();
+        if (!p) return;
+        const point = ev.touches?.[0] || ev;
+        aplicarPos(p, startLeft + (point.clientX - startX), startTop + (point.clientY - startY), false);
+        ev.preventDefault?.();
+    }
+
+    function pararArraste(ev) {
+        if (!dragging) return;
+        dragging = false;
+        const p = painel();
+        if (p) {
+            p.classList.remove('prof47-dragging');
+            const rect = p.getBoundingClientRect();
+            aplicarPos(p, rect.left, rect.top, true);
+        }
+        ev?.preventDefault?.();
+    }
+
+    function fecharPainel() {
+        setFechado(true);
+        const p = painel();
+        if (p) {
+            p.classList.add('prof47-closed');
+            p.classList.remove('visible-33');
+        }
+        atualizarBotoesMenu();
+    }
+
+    function abrirPainel() {
+        setFechado(false);
+        setModo('normal');
+        const p = painel();
+        if (p) {
+            p.classList.remove('prof47-closed');
+            p.classList.add('visible-33');
+            const pos = lerPos();
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) aplicarPos(p, pos.left, pos.top, false);
+            else aplicarPos(p, 8, 74, true);
+        }
+        aplicarEstado();
+        setTimeout(manterDentro, 0);
+    }
+
+    function ensureToolbar() {
+        css47();
+        const p = painel();
+        if (!p) return false;
+        p.classList.add('prof47-panel');
+
+        const head = p.querySelector('.direct-head-33') || p.firstElementChild;
+        if (head && head.dataset.prof47Drag !== '1') {
+            head.dataset.prof47Drag = '1';
+            head.addEventListener('pointerdown', iniciarArraste, { passive: false });
+            head.addEventListener('touchstart', iniciarArraste, { passive: false });
+            head.addEventListener('mousedown', iniciarArraste, { passive: false });
+        }
+
+        let toolbar = p.querySelector('.prof47-toolbar');
+        if (!toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.className = 'prof47-toolbar';
+            toolbar.innerHTML = `
+                <button type="button" class="prof47-drag-handle" data-prof47-action="drag">↔ Arrastar</button>
+                <button type="button" data-prof47-action="min">− Min</button>
+                <button type="button" data-prof47-action="max">□ Max</button>
+                <button type="button" class="prof47-close-btn" data-prof47-action="close">× Fechar</button>
+            `;
+            if (head && head.parentNode) head.insertAdjacentElement('afterend', toolbar);
+            else p.insertBefore(toolbar, p.firstChild);
+
+            toolbar.querySelectorAll('[data-prof47-action]').forEach(btn => {
+                const action = btn.getAttribute('data-prof47-action');
+                if (action === 'drag') {
+                    btn.addEventListener('pointerdown', iniciarArraste, { passive: false });
+                    btn.addEventListener('touchstart', iniciarArraste, { passive: false });
+                    btn.addEventListener('mousedown', iniciarArraste, { passive: false });
+                }
+                btn.addEventListener('click', ev => {
+                    const acao = btn.getAttribute('data-prof47-action');
+                    if (acao === 'min') {
+                        setFechado(false);
+                        setModo(modo() === 'min' ? 'normal' : 'min');
+                        aplicarEstado();
+                        manterDentro();
+                    }
+                    if (acao === 'max') {
+                        setFechado(false);
+                        setModo(modo() === 'max' ? 'normal' : 'max');
+                        aplicarEstado();
+                        manterDentro();
+                    }
+                    if (acao === 'close') fecharPainel();
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    ev.stopImmediatePropagation?.();
+                }, true);
+            });
+        }
+
+        if (p.dataset.prof47PosRestored !== '1') {
+            p.dataset.prof47PosRestored = '1';
+            const pos = lerPos();
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) aplicarPos(p, pos.left, pos.top, false);
+        }
+
+        aplicarEstado();
+        return true;
+    }
+
+    function atualizarBotoesMenu() {
+        const texto = fechado() ? 'Abrir painel' : 'Fechar painel';
+        document.querySelectorAll('[data-prof47-panel-toggle]').forEach(btn => {
+            btn.textContent = texto;
+            btn.classList.toggle('prof47-menu-closed', fechado());
+        });
+    }
+
+    function ensureBotaoMenu() {
+        const grids = [
+            document.querySelector('#teacher-prof37-controls .prof37-grid'),
+            document.querySelector('.teacher-prof37-controls .prof37-grid'),
+            document.querySelector('#teacher-prof36-controls .prof36-grid')
+        ].filter(Boolean);
+
+        grids.forEach(grid => {
+            if (grid.querySelector('[data-prof47-panel-toggle]')) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('data-prof47-panel-toggle', '1');
+            btn.textContent = fechado() ? 'Abrir painel' : 'Fechar painel';
+            btn.addEventListener('click', ev => {
+                if (fechado()) abrirPainel();
+                else fecharPainel();
+                ev.preventDefault();
+                ev.stopPropagation();
+                ev.stopImmediatePropagation?.();
+            }, true);
+            grid.appendChild(btn);
+        });
+
+        atualizarBotoesMenu();
+    }
+
+    function ensureAll() {
+        ensureToolbar();
+        ensureBotaoMenu();
+        const p = painel();
+        if (p && fechado()) {
+            p.classList.add('prof47-closed');
+            p.classList.remove('visible-33');
+        }
+    }
+
+    if ('PointerEvent' in window) {
+        document.addEventListener('pointermove', moverArraste, { passive: false });
+        document.addEventListener('pointerup', pararArraste, { passive: false });
+        document.addEventListener('pointercancel', pararArraste, { passive: false });
+    } else {
+        document.addEventListener('touchmove', moverArraste, { passive: false });
+        document.addEventListener('touchend', pararArraste, { passive: false });
+        document.addEventListener('mousemove', moverArraste, { passive: false });
+        document.addEventListener('mouseup', pararArraste, { passive: false });
+    }
+
+    document.addEventListener('click', function () {
+        setTimeout(ensureAll, 0);
+        setTimeout(ensureAll, 250);
+    }, true);
+
+    window.addEventListener('resize', manterDentro);
+    window.visualViewport?.addEventListener?.('resize', manterDentro);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureAll);
+    } else {
+        ensureAll();
+    }
+
+    [80, 300, 800, 1500, 3000, 6000].forEach(ms => setTimeout(ensureAll, ms));
+})();
+
+
+/* =====================================================================
+   ✅ PROFISSIONAL 48 — PAINEL ROBÔ PROFESSOR FECHA DE VERDADE
+   Correção direta do teste no celular:
+   - O painel flutuante #teacher-direct-guide-33 estava abrindo e ficando por cima.
+   - Agora ele começa FECHADO por padrão nesta versão.
+   - O botão dentro da aba Professor Inteligente abre/fecha o painel.
+   - Mesmo com Robô cores ON, o painel pode ficar fechado e o robô continua pintando.
+   - Inclui toolbar visível quando abrir: arrastar, minimizar, maximizar e fechar.
+   - Não interfere nas jogadas, Firebase, Damas, Admin ou capturas legais.
+===================================================================== */
+(function () {
+    if (window.__prof48PainelRoboProfessorFechaDeVerdade) return;
+    window.__prof48PainelRoboProfessorFechaDeVerdade = true;
+
+    const PANEL_ID = 'teacher-direct-guide-33';
+    const VISIBLE_KEY = 'tabuleiro_arena_prof48_painel_visivel';
+    const MODE_KEY = 'tabuleiro_arena_prof48_painel_modo';
+    const POS_KEY = 'tabuleiro_arena_prof48_painel_pos';
+    const MIGRATION_KEY = 'tabuleiro_arena_prof48_migracao_fechado_ok';
+
+    try {
+        // Nesta versão o painel começa fechado mesmo se versões antigas deixaram aberto.
+        if (localStorage.getItem(MIGRATION_KEY) !== '1') {
+            localStorage.setItem(VISIBLE_KEY, '0');
+            localStorage.setItem(MODE_KEY, 'normal');
+            localStorage.setItem(MIGRATION_KEY, '1');
+            // Também neutraliza chaves antigas que podiam manter o painel aberto.
+            localStorage.setItem('tabuleiro_arena_prof47_painel_fechado', '1');
+            localStorage.setItem('tabuleiro_arena_prof46_panel_closed', '1');
+        }
+    } catch (_) {}
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    let syncTimer = null;
+
+    function storageGet(key, fallback) {
+        try {
+            const v = localStorage.getItem(key);
+            return v === null ? fallback : v;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    function storageSet(key, value) {
+        try { localStorage.setItem(key, String(value)); } catch (_) {}
+    }
+
+    function painel() {
+        return document.getElementById(PANEL_ID);
+    }
+
+    function painelAberto() {
+        return storageGet(VISIBLE_KEY, '0') === '1';
+    }
+
+    function modoPainel() {
+        return storageGet(MODE_KEY, 'normal') || 'normal';
+    }
+
+    function setAberto(value) {
+        storageSet(VISIBLE_KEY, value ? '1' : '0');
+        // Sincroniza com a chave antiga para o código anterior não reabrir sozinho.
+        storageSet('tabuleiro_arena_prof47_painel_fechado', value ? '0' : '1');
+        storageSet('tabuleiro_arena_prof46_panel_closed', value ? '0' : '1');
+    }
+
+    function setModo(value) {
+        storageSet(MODE_KEY, value || 'normal');
+    }
+
+    function viewport() {
+        const vv = window.visualViewport;
+        return {
+            width: Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360),
+            height: Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640)
+        };
+    }
+
+    function clamp(value, min, max) {
+        if (!Number.isFinite(value)) return min;
+        if (max < min) return min;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function css48() {
+        if (document.getElementById('prof48-painel-robo-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof48-painel-robo-css';
+        style.textContent = `
+            #teacher-direct-guide-33.prof48-hidden,
+            #teacher-direct-guide-33.prof47-closed.prof48-hidden,
+            #teacher-direct-guide-33.prof46-closed.prof48-hidden {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
+            #teacher-direct-guide-33.prof48-open {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                z-index: 1000008 !important;
+            }
+
+            #teacher-direct-guide-33.prof48-floating {
+                position: fixed !important;
+                right: auto !important;
+                bottom: auto !important;
+                margin: 0 !important;
+                width: min(285px, calc(100vw - 12px)) !important;
+                max-height: calc(100vh - 12px) !important;
+                overflow: auto !important;
+                touch-action: auto !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-toolbar {
+                display: grid !important;
+                grid-template-columns: 1.25fr .75fr .75fr .9fr !important;
+                gap: 5px !important;
+                margin: 6px 0 7px 0 !important;
+                padding: 6px !important;
+                border-radius: 12px !important;
+                border: 1px solid rgba(250,204,21,.48) !important;
+                background: rgba(2,6,23,.78) !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-toolbar button {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 31px !important;
+                padding: 6px 4px !important;
+                border-radius: 10px !important;
+                border: 1px solid rgba(148,163,184,.38) !important;
+                background: rgba(15,23,42,.96) !important;
+                color: #f8fafc !important;
+                font-size: .58rem !important;
+                font-weight: 1000 !important;
+                line-height: 1.05 !important;
+                box-shadow: none !important;
+                text-transform: none !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-toolbar button:hover,
+            #teacher-direct-guide-33 .prof48-toolbar button:focus {
+                transform: none !important;
+                background: rgba(37,99,235,.96) !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-drag-btn,
+            #teacher-direct-guide-33 .direct-head-33 {
+                cursor: grab !important;
+                touch-action: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+            }
+
+            #teacher-direct-guide-33.prof48-dragging .prof48-drag-btn,
+            #teacher-direct-guide-33.prof48-dragging .direct-head-33 {
+                cursor: grabbing !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-drag-btn {
+                background: linear-gradient(90deg, rgba(250,204,21,.92), rgba(34,211,238,.78)) !important;
+                color: #04111f !important;
+                border-color: rgba(250,204,21,.72) !important;
+            }
+
+            #teacher-direct-guide-33 .prof48-close-btn {
+                background: rgba(127,29,29,.98) !important;
+                color: #fee2e2 !important;
+                border-color: rgba(248,113,113,.65) !important;
+            }
+
+            #teacher-direct-guide-33.prof48-minimized {
+                width: min(220px, calc(100vw - 12px)) !important;
+                max-height: none !important;
+                overflow: hidden !important;
+                padding: 8px !important;
+            }
+
+            #teacher-direct-guide-33.prof48-minimized .direct-actions-33,
+            #teacher-direct-guide-33.prof48-minimized .direct-status-33,
+            #teacher-direct-guide-33.prof48-minimized .prof42-mini,
+            #teacher-direct-guide-33.prof48-minimized .prof44-safe-note {
+                display: none !important;
+            }
+
+            #teacher-direct-guide-33.prof48-maximized {
+                width: min(340px, calc(100vw - 12px)) !important;
+                max-height: calc(100vh - 12px) !important;
+                overflow: auto !important;
+            }
+
+            #teacher-prof37-controls button[data-prof48-panel-toggle],
+            .teacher-prof37-controls button[data-prof48-panel-toggle],
+            #teacher-prof36-controls button[data-prof48-panel-toggle] {
+                background: linear-gradient(90deg, rgba(113,63,18,.98), rgba(37,99,235,.90)) !important;
+                color: #fff7ed !important;
+                border-color: rgba(250,204,21,.55) !important;
+            }
+
+            #teacher-prof37-controls button[data-prof48-panel-toggle].prof48-menu-off,
+            .teacher-prof37-controls button[data-prof48-panel-toggle].prof48-menu-off,
+            #teacher-prof36-controls button[data-prof48-panel-toggle].prof48-menu-off {
+                background: rgba(15,23,42,.96) !important;
+                color: #fde68a !important;
+                border-color: rgba(250,204,21,.45) !important;
+            }
+
+            @media (max-width: 560px) {
+                #teacher-direct-guide-33.prof48-floating {
+                    width: min(262px, calc(100vw - 12px)) !important;
+                }
+                #teacher-direct-guide-33.prof48-maximized {
+                    width: min(336px, calc(100vw - 12px)) !important;
+                }
+                #teacher-direct-guide-33 .prof48-toolbar {
+                    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+                    gap: 4px !important;
+                    padding: 5px !important;
+                }
+                #teacher-direct-guide-33 .prof48-toolbar button {
+                    min-height: 30px !important;
+                    font-size: .54rem !important;
+                    padding: 5px 3px !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function salvarPos(left, top) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (_) {}
+    }
+
+    function lerPos() {
+        try { return JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (_) { return null; }
+    }
+
+    function aplicarPos(p, left, top, salvar) {
+        if (!p) return;
+        const vp = viewport();
+        const rect = p.getBoundingClientRect();
+        const w = Math.max(130, Math.min(rect.width || 270, vp.width - 10));
+        const h = Math.max(42, Math.min(rect.height || 180, vp.height - 10));
+        const margin = 6;
+        const safeLeft = clamp(left, margin, Math.max(margin, vp.width - w - margin));
+        const safeTop = clamp(top, margin, Math.max(margin, vp.height - h - margin));
+
+        p.classList.add('prof48-floating');
+        p.style.setProperty('position', 'fixed', 'important');
+        p.style.setProperty('left', Math.round(safeLeft) + 'px', 'important');
+        p.style.setProperty('top', Math.round(safeTop) + 'px', 'important');
+        p.style.setProperty('right', 'auto', 'important');
+        p.style.setProperty('bottom', 'auto', 'important');
+        p.style.setProperty('z-index', '1000008', 'important');
+
+        if (salvar) salvarPos(safeLeft, safeTop);
+    }
+
+    function atualizarBotoesMenu48() {
+        const aberto = painelAberto();
+        document.querySelectorAll('[data-prof48-panel-toggle]').forEach(btn => {
+            btn.textContent = aberto ? 'Painel robô ON' : 'Painel robô OFF';
+            btn.classList.toggle('prof48-menu-off', !aberto);
+            btn.title = aberto ? 'Fechar o painel flutuante do Robô Professor' : 'Abrir o painel flutuante do Robô Professor';
+        });
+    }
+
+    function aplicarEstado() {
+        const p = painel();
+        if (!p) {
+            atualizarBotoesMenu48();
+            return;
+        }
+
+        css48();
+        p.classList.add('prof48-floating');
+        const aberto = painelAberto();
+        const modo = modoPainel();
+
+        if (!aberto) {
+            p.classList.add('prof48-hidden', 'prof47-closed', 'prof46-closed');
+            p.classList.remove('prof48-open', 'visible-33', 'teacher-guide-strong-35', 'prof48-minimized', 'prof48-maximized');
+            p.style.setProperty('display', 'none', 'important');
+        } else {
+            p.classList.remove('prof48-hidden', 'prof47-closed', 'prof46-closed');
+            p.classList.add('prof48-open', 'visible-33');
+            p.style.removeProperty('display');
+            p.classList.toggle('prof48-minimized', modo === 'min');
+            p.classList.toggle('prof48-maximized', modo === 'max');
+            const pos = lerPos();
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) aplicarPos(p, pos.left, pos.top, false);
+            else aplicarPos(p, 8, 74, true);
+        }
+
+        const minBtn = p.querySelector('[data-prof48-action="min"]');
+        const maxBtn = p.querySelector('[data-prof48-action="max"]');
+        if (minBtn) minBtn.textContent = modo === 'min' ? 'Abrir' : '− Min';
+        if (maxBtn) maxBtn.textContent = modo === 'max' ? 'Normal' : '□ Max';
+        atualizarBotoesMenu48();
+    }
+
+    function fecharPainel() {
+        setAberto(false);
+        aplicarEstado();
+    }
+
+    function abrirPainel() {
+        setAberto(true);
+        if (modoPainel() === 'closed') setModo('normal');
+        garantirToolbar48();
+        aplicarEstado();
+    }
+
+    function getPoint(ev) {
+        return ev.touches?.[0] || ev.changedTouches?.[0] || ev;
+    }
+
+    function iniciarArraste(ev) {
+        const target = ev.target;
+        if (target && target.closest && target.closest('button:not(.prof48-drag-btn),select,input,textarea,a')) return;
+        const p = painel();
+        if (!p || !painelAberto()) return;
+        const point = getPoint(ev);
+        const rect = p.getBoundingClientRect();
+        dragging = true;
+        startX = point.clientX;
+        startY = point.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        p.classList.add('prof48-dragging');
+        aplicarPos(p, rect.left, rect.top, false);
+        try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (_) {}
+        ev.preventDefault?.();
+        ev.stopPropagation?.();
+        ev.stopImmediatePropagation?.();
+    }
+
+    function moverArraste(ev) {
+        if (!dragging) return;
+        const p = painel();
+        if (!p) return;
+        const point = getPoint(ev);
+        aplicarPos(p, startLeft + (point.clientX - startX), startTop + (point.clientY - startY), false);
+        ev.preventDefault?.();
+    }
+
+    function pararArraste(ev) {
+        if (!dragging) return;
+        dragging = false;
+        const p = painel();
+        if (p) {
+            p.classList.remove('prof48-dragging');
+            const rect = p.getBoundingClientRect();
+            aplicarPos(p, rect.left, rect.top, true);
+        }
+        ev?.preventDefault?.();
+    }
+
+    function garantirToolbar48() {
+        css48();
+        const p = painel();
+        if (!p) return false;
+
+        p.classList.add('prof48-floating');
+
+        const head = p.querySelector('.direct-head-33') || p.firstElementChild;
+        if (head && head.dataset.prof48Drag !== '1') {
+            head.dataset.prof48Drag = '1';
+            head.addEventListener('pointerdown', iniciarArraste, { passive: false });
+            head.addEventListener('touchstart', iniciarArraste, { passive: false });
+            head.addEventListener('mousedown', iniciarArraste, { passive: false });
+        }
+
+        let toolbar = p.querySelector('.prof48-toolbar');
+        if (!toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.className = 'prof48-toolbar';
+            toolbar.innerHTML = `
+                <button type="button" class="prof48-drag-btn" data-prof48-action="drag">↔ Arrastar</button>
+                <button type="button" data-prof48-action="min">− Min</button>
+                <button type="button" data-prof48-action="max">□ Max</button>
+                <button type="button" class="prof48-close-btn" data-prof48-action="close">× Fechar</button>
+            `;
+            if (head && head.parentNode) head.insertAdjacentElement('afterend', toolbar);
+            else p.insertBefore(toolbar, p.firstChild);
+        }
+
+        if (toolbar.dataset.prof48Bound !== '1') {
+            toolbar.dataset.prof48Bound = '1';
+            toolbar.querySelectorAll('[data-prof48-action]').forEach(btn => {
+                const action = btn.getAttribute('data-prof48-action');
+                if (action === 'drag') {
+                    btn.addEventListener('pointerdown', iniciarArraste, { passive: false });
+                    btn.addEventListener('touchstart', iniciarArraste, { passive: false });
+                    btn.addEventListener('mousedown', iniciarArraste, { passive: false });
+                }
+                btn.addEventListener('click', ev => {
+                    const acao = btn.getAttribute('data-prof48-action');
+                    if (acao === 'min') {
+                        setAberto(true);
+                        setModo(modoPainel() === 'min' ? 'normal' : 'min');
+                        aplicarEstado();
+                    }
+                    if (acao === 'max') {
+                        setAberto(true);
+                        setModo(modoPainel() === 'max' ? 'normal' : 'max');
+                        aplicarEstado();
+                    }
+                    if (acao === 'close') fecharPainel();
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    ev.stopImmediatePropagation?.();
+                }, true);
+            });
+        }
+
+        return true;
+    }
+
+    function garantirBotaoMenu48() {
+        const grids = [
+            document.querySelector('#teacher-prof37-controls .prof37-grid'),
+            document.querySelector('.teacher-prof37-controls .prof37-grid'),
+            document.querySelector('#teacher-prof36-controls .prof36-grid')
+        ].filter(Boolean);
+
+        grids.forEach(grid => {
+            if (grid.querySelector('[data-prof48-panel-toggle]')) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('data-prof48-panel-toggle', '1');
+            btn.textContent = 'Painel robô OFF';
+            btn.addEventListener('click', ev => {
+                if (painelAberto()) fecharPainel();
+                else abrirPainel();
+                ev.preventDefault();
+                ev.stopPropagation();
+                ev.stopImmediatePropagation?.();
+            }, true);
+            grid.appendChild(btn);
+        });
+
+        atualizarBotoesMenu48();
+    }
+
+    function sincronizar48() {
+        syncTimer = null;
+        css48();
+        garantirToolbar48();
+        garantirBotaoMenu48();
+        aplicarEstado();
+    }
+
+    function agendarSync48() {
+        if (syncTimer) return;
+        syncTimer = setTimeout(sincronizar48, 0);
+    }
+
+    if ('PointerEvent' in window) {
+        document.addEventListener('pointermove', moverArraste, { passive: false });
+        document.addEventListener('pointerup', pararArraste, { passive: false });
+        document.addEventListener('pointercancel', pararArraste, { passive: false });
+    } else {
+        document.addEventListener('touchmove', moverArraste, { passive: false });
+        document.addEventListener('touchend', pararArraste, { passive: false });
+        document.addEventListener('mousemove', moverArraste, { passive: false });
+        document.addEventListener('mouseup', pararArraste, { passive: false });
+    }
+
+    document.addEventListener('click', function () {
+        // Roda depois dos handlers antigos para fechar de verdade se o painel estiver OFF.
+        setTimeout(sincronizar48, 0);
+        setTimeout(sincronizar48, 180);
+    }, false);
+
+    window.addEventListener('resize', agendarSync48);
+    window.visualViewport?.addEventListener?.('resize', agendarSync48);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', sincronizar48);
+    } else {
+        sincronizar48();
+    }
+
+    [80, 250, 700, 1500, 3500, 7000].forEach(ms => setTimeout(sincronizar48, ms));
+})();
+
+/*
+============================================================
+✅ PROFISSIONAL 49 — REMOVE PAINEL FLUTUANTE DO ROBÔ PROFESSOR
+============================================================
+Pedido do professor:
+- o quadrinho flutuante "Robô Professor" estava atrapalhando no celular;
+- os controles já existem dentro da aba "Professor Inteligente" embaixo;
+- portanto, o painel flutuante não deve aparecer mais.
+
+Esta correção NÃO mexe no robô de cores, nas capturas, no Firebase,
+na Damas, no Admin, nas salas, ranking ou torneios.
+============================================================
+*/
+(function removerPainelFlutuanteRoboProfessor49() {
+    if (window.__prof49RemovePainelFlutuanteRoboProfessor) return;
+    window.__prof49RemovePainelFlutuanteRoboProfessor = true;
+
+    function aplicarCss49() {
+        if (document.getElementById('prof49-remover-painel-flutuante-css')) return;
+
+        const style = document.createElement('style');
+        style.id = 'prof49-remover-painel-flutuante-css';
+        style.textContent = `
+            /* Remove somente o quadrinho flutuante lateral do Robô Professor. */
+            #teacher-direct-guide-33,
+            #teacher-direct-guide-33.prof48-open,
+            #teacher-direct-guide-33.visible-33,
+            #teacher-direct-guide-33.teacher-guide-strong-35,
+            .teacher-direct-guide-33 {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                left: -99999px !important;
+                top: -99999px !important;
+                width: 0 !important;
+                height: 0 !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
+                max-width: 0 !important;
+                max-height: 0 !important;
+                overflow: hidden !important;
+                z-index: -1 !important;
+            }
+
+            /* O botão antigo de abrir/fechar o painel flutuante não é mais necessário. */
+            [data-prof48-panel-toggle],
+            [data-prof47-panel-toggle] {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function fecharEEsconderPainel49() {
+        aplicarCss49();
+
+        try {
+            localStorage.setItem('tabuleiro_arena_prof48_painel_visivel', '0');
+            localStorage.setItem('tabuleiro_arena_prof47_painel_fechado', '1');
+            localStorage.setItem('tabuleiro_arena_prof46_painel_robo_fechado', '1');
+            localStorage.setItem('tabuleiro_arena_prof48_painel_modo', 'closed');
+            localStorage.setItem('tabuleiro_arena_prof47_painel_modo', 'closed');
+        } catch (_) {}
+
+        const painel = document.getElementById('teacher-direct-guide-33');
+        if (painel) {
+            painel.classList.add('prof49-removido', 'prof48-hidden', 'prof47-closed', 'prof46-closed');
+            painel.classList.remove('prof48-open', 'visible-33', 'teacher-guide-strong-35', 'prof48-floating', 'prof47-panel');
+            painel.style.setProperty('display', 'none', 'important');
+            painel.style.setProperty('visibility', 'hidden', 'important');
+            painel.style.setProperty('pointer-events', 'none', 'important');
+        }
+
+        document.querySelectorAll('[data-prof48-panel-toggle], [data-prof47-panel-toggle]').forEach(btn => {
+            btn.style.setProperty('display', 'none', 'important');
+            btn.setAttribute('aria-hidden', 'true');
+            btn.setAttribute('tabindex', '-1');
+        });
+    }
+
+    window.fecharPainelFlutuanteRoboProfessor49 = fecharEEsconderPainel49;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fecharEEsconderPainel49);
+    } else {
+        fecharEEsconderPainel49();
+    }
+
+    // Rodadas curtas apenas para vencer código antigo que tenta reabrir o painel no carregamento.
+    [0, 80, 200, 500, 1000, 2000, 4000].forEach(ms => setTimeout(fecharEEsconderPainel49, ms));
+
+    document.addEventListener('click', function () {
+        setTimeout(fecharEEsconderPainel49, 0);
+        setTimeout(fecharEEsconderPainel49, 120);
+    }, false);
+})();
+
+
+/*
+============================================================
+✅ PROFISSIONAL 50 — REMOVE DE VERDADE O QUADRINHO FLUTUANTE
+============================================================
+- O quadrinho lateral #teacher-direct-guide-33 foi removido da lógica principal.
+- O robô continua controlado apenas pela aba Professor Inteligente embaixo.
+- Este bloco é uma trava final contra cache/código antigo tentando recriar o painel.
+============================================================
+*/
+(function removerQuadrinhoFlutuanteProfessor50Final() {
+    if (window.__prof50SemQuadrinhoFlutuanteFinal) return;
+    window.__prof50SemQuadrinhoFlutuanteFinal = true;
+
+    function css50() {
+        if (document.getElementById('prof50-sem-quadrinho-flutuante-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof50-sem-quadrinho-flutuante-css';
+        style.textContent = `
+            #teacher-direct-guide-33,
+            #teacher-direct-guide-33.visible-33,
+            #teacher-direct-guide-33.teacher-guide-strong-35,
+            #teacher-direct-guide-33.prof48-open,
+            #teacher-direct-guide-33.prof47-panel,
+            #teacher-direct-guide-33.prof46-panel,
+            .teacher-direct-guide-33 {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                left: -999999px !important;
+                top: -999999px !important;
+                width: 0 !important;
+                height: 0 !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
+                max-width: 0 !important;
+                max-height: 0 !important;
+                overflow: hidden !important;
+                z-index: -999999 !important;
+            }
+            [data-prof48-panel-toggle],
+            [data-prof47-panel-toggle],
+            [data-prof46-panel-open] {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function remover50() {
+        css50();
+        document.querySelectorAll('#teacher-direct-guide-33, .teacher-direct-guide-33').forEach(el => {
+            try { el.remove(); } catch (_) {
+                try {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                    el.style.setProperty('pointer-events', 'none', 'important');
+                } catch (__){ }
+            }
+        });
+    }
+
+    window.removerQuadrinhoFlutuanteProfessor50 = remover50;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', remover50);
+    } else {
+        remover50();
+    }
+
+    // Rodadas curtas e leves só para vencer scripts antigos durante a abertura da página.
+    [0, 50, 120, 300, 700, 1200, 2200].forEach(ms => setTimeout(remover50, ms));
+
+    document.addEventListener('click', function () {
+        setTimeout(remover50, 0);
+        setTimeout(remover50, 80);
+    }, true);
+})();
+
+
+/*
+============================================================
+✅ PROFISSIONAL 51 — CORES LIMPAS: 1ª MELHOR JOGADA EM DESTAQUE
+============================================================
+- Mantém a Profissional 50 que removeu o quadrinho flutuante.
+- O robô por cores agora mostra menos informação para não confundir:
+  1 amarelo principal, 1 verde principal e poucos vermelhos de alerta.
+============================================================
+*/
+(function instalarCoresLimpasProfessor51() {
+    if (window.__prof51CoresLimpasProfessor) return;
+    window.__prof51CoresLimpasProfessor = true;
+
+    function css51() {
+        if (document.getElementById('prof51-cores-limpas-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof51-cores-limpas-css';
+        style.textContent = `
+            #chess-board .chess-square.teacher-direct-from-33.teacher-direct-main-51,
+            .chess-square.teacher-direct-from-33.teacher-direct-main-51 {
+                outline: 5px solid rgba(250,204,21,1) !important;
+                outline-offset: -6px !important;
+                background: linear-gradient(135deg, rgba(250,204,21,.92), rgba(254,240,138,.72)) !important;
+                box-shadow: inset 0 0 0 6px rgba(250,204,21,.38), 0 0 34px rgba(250,204,21,.96) !important;
+                animation: teacherDirectYellow33 .70s ease-in-out infinite !important;
+            }
+            #chess-board .chess-square.teacher-direct-to-33.teacher-direct-main-51,
+            .chess-square.teacher-direct-to-33.teacher-direct-main-51 {
+                outline: 5px solid rgba(34,197,94,1) !important;
+                outline-offset: -6px !important;
+                background: linear-gradient(135deg, rgba(22,163,74,.92), rgba(187,247,208,.74)) !important;
+                box-shadow: inset 0 0 0 6px rgba(34,197,94,.42), 0 0 36px rgba(34,197,94,.98) !important;
+                animation: teacherDirectGreen33 .70s ease-in-out infinite !important;
+            }
+            #chess-board .chess-square.teacher-direct-warning-51,
+            .chess-square.teacher-direct-warning-51 {
+                outline: 3px solid rgba(239,68,68,.88) !important;
+                outline-offset: -6px !important;
+                background: rgba(239,68,68,.45) !important;
+                box-shadow: inset 0 0 0 4px rgba(127,29,29,.30), 0 0 16px rgba(239,68,68,.48) !important;
+                filter: none !important;
+            }
+            #chess-board .chess-square.teacher-direct-from-33::before,
+            #chess-board .chess-square.teacher-direct-to-33::before,
+            #chess-board .chess-square.teacher-direct-bad-33::before,
+            .chess-square.teacher-direct-from-33::before,
+            .chess-square.teacher-direct-to-33::before,
+            .chess-square.teacher-direct-bad-33::before {
+                font-size: .60rem !important;
+                min-width: 22px !important;
+                height: 22px !important;
+                z-index: 25 !important;
+            }
+            #chess-board .chess-square.teacher-direct-bad-33:not(.teacher-direct-warning-51) {
+                display: initial;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', css51);
+    else css51();
+})();
+
+/*
+============================================================
+✅ PROFISSIONAL 52 — XEQUE-MATE ONLINE COM POP-UP PROFISSIONAL
+============================================================
+- Corrige situação em que o rei fica em xeque/sem movimento e o jogo parece travado.
+- Depois de qualquer jogada ou sincronização online, confere se o lado da vez tem movimento legal.
+- Se não tiver movimento e o rei estiver em xeque: mostra vitória/derrota com modal bonito.
+- Se não tiver movimento e não for xeque: mostra empate por afogamento.
+- Não mexe no robô por cores, Damas, Admin, Firebase da Damas, salas, ranking ou torneios.
+============================================================
+*/
+(function instalarXequeMateProfissional52() {
+    if (window.__prof52XequeMateModalInstalado) return;
+    window.__prof52XequeMateModalInstalado = true;
+
+    let ultimoResultado52 = '';
+    let publicandoResultado52 = false;
+
+    function css52() {
+        if (document.getElementById('prof52-xeque-mate-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof52-xeque-mate-css';
+        style.textContent = `
+            #prof52-mate-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                background: radial-gradient(circle at top, rgba(30,64,175,.38), rgba(2,6,23,.94) 55%, rgba(0,0,0,.98));
+                backdrop-filter: blur(8px);
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+            }
+            #prof52-mate-modal.open { display: flex !important; }
+            .prof52-mate-card {
+                width: min(92vw, 430px);
+                background: linear-gradient(135deg, #020617, #111827 52%, #1e1b4b);
+                border: 2px solid rgba(250,204,21,.85);
+                border-radius: 24px;
+                padding: 20px;
+                color: #e5e7eb;
+                text-align: center;
+                box-shadow: 0 24px 80px rgba(0,0,0,.78), 0 0 42px rgba(250,204,21,.18);
+                animation: prof52Pop .18s ease-out;
+            }
+            @keyframes prof52Pop { from { transform: scale(.92); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+            .prof52-mate-icon {
+                width: 76px;
+                height: 76px;
+                margin: 0 auto 10px auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                background: radial-gradient(circle, rgba(250,204,21,.32), rgba(250,204,21,.08));
+                border: 1px solid rgba(250,204,21,.65);
+                font-size: 2.2rem;
+                box-shadow: 0 0 28px rgba(250,204,21,.32);
+            }
+            .prof52-mate-title {
+                font-size: 1.45rem;
+                line-height: 1.1;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: .6px;
+                color: #fef3c7;
+                margin-bottom: 8px;
+            }
+            .prof52-mate-subtitle {
+                font-size: .98rem;
+                line-height: 1.45;
+                color: #dbeafe;
+                margin-bottom: 12px;
+            }
+            .prof52-mate-box {
+                background: rgba(15,23,42,.82);
+                border: 1px solid rgba(148,163,184,.22);
+                border-radius: 16px;
+                padding: 12px;
+                text-align: left;
+                color: #cbd5e1;
+                font-size: .88rem;
+                line-height: 1.45;
+                margin-bottom: 14px;
+            }
+            .prof52-mate-box strong { color: #fef08a; }
+            .prof52-mate-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 9px;
+            }
+            .prof52-mate-actions button {
+                border: 0;
+                border-radius: 14px;
+                padding: 12px 10px;
+                font-weight: 1000;
+                color: #fff;
+                text-transform: none;
+                font-size: .88rem;
+                box-shadow: none;
+            }
+            #prof52-new-game-btn { background: linear-gradient(135deg, #16a34a, #22c55e); }
+            #prof52-close-btn { background: linear-gradient(135deg, #334155, #0f172a); border: 1px solid rgba(255,255,255,.16); }
+            .prof52-mate-card.loss { border-color: rgba(248,113,113,.88); box-shadow: 0 24px 80px rgba(0,0,0,.78), 0 0 38px rgba(239,68,68,.18); }
+            .prof52-mate-card.loss .prof52-mate-icon { border-color: rgba(248,113,113,.75); background: radial-gradient(circle, rgba(239,68,68,.28), rgba(127,29,29,.08)); }
+            .prof52-mate-card.draw { border-color: rgba(96,165,250,.88); }
+            .prof52-mate-card.draw .prof52-mate-icon { border-color: rgba(96,165,250,.75); background: radial-gradient(circle, rgba(59,130,246,.28), rgba(30,64,175,.08)); }
+            @media (max-width: 560px) {
+                .prof52-mate-card { padding: 18px 14px; border-radius: 20px; }
+                .prof52-mate-title { font-size: 1.18rem; }
+                .prof52-mate-subtitle { font-size: .88rem; }
+                .prof52-mate-actions { grid-template-columns: 1fr; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function modal52() {
+        css52();
+        let modal = document.getElementById('prof52-mate-modal');
+        if (modal) return modal;
+
+        modal = document.createElement('div');
+        modal.id = 'prof52-mate-modal';
+        modal.setAttribute('aria-hidden', 'true');
+        modal.innerHTML = `
+            <div id="prof52-mate-card" class="prof52-mate-card" role="dialog" aria-modal="true" aria-label="Resultado do Xadrez">
+                <div id="prof52-mate-icon" class="prof52-mate-icon">♟️</div>
+                <div id="prof52-mate-title" class="prof52-mate-title">Xeque-mate</div>
+                <div id="prof52-mate-subtitle" class="prof52-mate-subtitle">A partida terminou.</div>
+                <div id="prof52-mate-box" class="prof52-mate-box"></div>
+                <div class="prof52-mate-actions">
+                    <button id="prof52-new-game-btn" type="button">Nova partida</button>
+                    <button id="prof52-close-btn" type="button">Continuar olhando</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('prof52-close-btn')?.addEventListener('click', () => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        });
+        document.getElementById('prof52-new-game-btn')?.addEventListener('click', () => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            try { resetChessGame(); } catch (_) {}
+            try { focarTabuleiroXadrez(false); } catch (_) {}
+        });
+        return modal;
+    }
+
+    function assinaturaFim52(tipo, perdedor, vencedor) {
+        try {
+            return [tipo, perdedor, vencedor, chessMode, chessRoomId || '', (moveHistory || []).length, JSON.stringify(lastChessMove || null)].join('|');
+        } catch (_) {
+            return `${tipo}|${perdedor}|${vencedor}|${Date.now()}`;
+        }
+    }
+
+    function mostrarModal52(info) {
+        if (!info) return;
+        const modal = modal52();
+        const card = document.getElementById('prof52-mate-card');
+        const icon = document.getElementById('prof52-mate-icon');
+        const title = document.getElementById('prof52-mate-title');
+        const subtitle = document.getElementById('prof52-mate-subtitle');
+        const box = document.getElementById('prof52-mate-box');
+
+        const voceJoga = chessMode === 'online' && !chessIsSpectator && (chessPlayerColor === 'white' || chessPlayerColor === 'black');
+        const voceGanhou = voceJoga && info.vencedor && chessPlayerColor === info.vencedor;
+        const vocePerdeu = voceJoga && info.perdedor && chessPlayerColor === info.perdedor;
+
+        if (card) {
+            card.className = 'prof52-mate-card';
+            if (info.tipo === 'draw') card.classList.add('draw');
+            else if (vocePerdeu) card.classList.add('loss');
+        }
+
+        if (info.tipo === 'draw') {
+            if (icon) icon.textContent = '🤝';
+            if (title) title.textContent = 'Empate';
+            if (subtitle) subtitle.textContent = 'O jogador da vez não tem movimento legal.';
+            if (box) box.innerHTML = `A partida ficou em <strong>afogamento</strong>: não há jogada legal disponível, mas o rei não está em xeque.`;
+        } else {
+            if (icon) icon.textContent = voceGanhou ? '🏆' : vocePerdeu ? '♟️' : '♟️';
+            if (title) title.textContent = voceGanhou ? 'Você ganhou!' : vocePerdeu ? 'Você perdeu!' : `${nomeVencedor(info.vencedor)} venceram!`;
+            if (subtitle) subtitle.textContent = 'Xeque-mate detectado. A partida terminou.';
+            if (box) box.innerHTML = `O rei das <strong>${nomeCor(info.perdedor)}</strong> está em xeque e não existe nenhuma jogada legal para fugir, capturar a peça atacante ou bloquear o ataque.<br><br><strong>${nomeVencedor(info.vencedor)} venceram por xeque-mate.</strong>`;
+        }
+
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function textoFim52(info) {
+        if (!info) return '';
+        if (info.tipo === 'draw') return 'Empate por afogamento: o jogador da vez não tem movimento legal.';
+        return `Xeque-mate! ${nomeVencedor(info.vencedor)} venceram. O rei das ${nomeCor(info.perdedor)} está em xeque e não tem movimento legal.`;
+    }
+
+    function detectarFim52() {
+        try {
+            if (!Array.isArray(chessBoard) || !chessBoard.length) return null;
+            const cor = chessTurn === 'black' ? 'black' : 'white';
+            const movimentos = todosMovimentosLegais(cor, chessBoard) || [];
+            if (movimentos.length > 0) return null;
+            const emXeque = reiEstaEmXeque(chessBoard, cor);
+            if (emXeque) return { tipo: 'mate', perdedor: cor, vencedor: corOposta(cor) };
+            return { tipo: 'draw', perdedor: cor, vencedor: null };
+        } catch (e) {
+            console.warn('Prof52: não consegui checar xeque-mate agora:', e);
+            return null;
+        }
+    }
+
+    function publicarFim52(info) {
+        if (!info || publicandoResultado52) return;
+        if (chessMode !== 'online' || !chessRoomRef || chessOnlineSyncing) return;
+        publicandoResultado52 = true;
+        const texto = textoFim52(info);
+        try {
+            update(chessRoomRef, {
+                gameOver: true,
+                lastMoveMessage: texto,
+                prof52Result: {
+                    tipo: info.tipo,
+                    perdedor: info.perdedor || null,
+                    vencedor: info.vencedor || null,
+                    texto,
+                    at: Date.now()
+                },
+                updatedAt: Date.now()
+            }).catch(() => {});
+        } catch (_) {}
+        setTimeout(() => { publicandoResultado52 = false; }, 700);
+    }
+
+    function checarEExibirFim52(origem = '') {
+        const info = detectarFim52();
+        if (!info) return false;
+        const assinatura = assinaturaFim52(info.tipo, info.perdedor, info.vencedor);
+        const texto = textoFim52(info);
+
+        chessGameOver = true;
+        lastMoveMessage = texto;
+
+        try {
+            const status = document.getElementById('chess-status');
+            if (status) {
+                status.classList.remove('chess-status-check', 'chess-status-draw');
+                status.classList.add(info.tipo === 'draw' ? 'chess-status-draw' : 'chess-status-mate');
+                const onlinePill = chessMode === 'online' ? ` <span class="chess-status-online-pill">ONLINE ${chessIsSpectator ? 'ESPECTADOR' : (chessPlayerColor === 'white' ? 'BRANCAS' : 'PRETAS')}</span>` : '';
+                status.innerHTML = escapeHtmlXadrez(texto) + onlinePill;
+            }
+        } catch (_) {}
+
+        if (ultimoResultado52 !== assinatura) {
+            ultimoResultado52 = assinatura;
+            mostrarModal52(info);
+            try { mostrarResultadoXadrezSeTerminou(texto); } catch (_) {}
+            try { mostrarToastXadrez(info.tipo === 'draw' ? '🤝 Empate por afogamento.' : '♟️ XEQUE-MATE! ' + texto, 'mate'); } catch (_) {}
+            publicarFim52(info);
+        }
+        return true;
+    }
+
+    css52();
+
+    const avaliarAnterior52 = avaliarEstadoDoJogo;
+    avaliarEstadoDoJogo = function avaliarEstadoDoJogoProf52(mensagemBase = '') {
+        const info = detectarFim52();
+        if (info) {
+            chessGameOver = true;
+            lastMoveMessage = textoFim52(info);
+            return lastMoveMessage;
+        }
+        return avaliarAnterior52.apply(this, arguments);
+    };
+
+    const renderAnterior52 = renderChessBoard;
+    renderChessBoard = function renderChessBoardProf52() {
+        const retorno = renderAnterior52.apply(this, arguments);
+        setTimeout(() => checarEExibirFim52('render'), 0);
+        return retorno;
+    };
+
+    const aplicarRemotoAnterior52 = aplicarEstadoXadrezRemoto;
+    aplicarEstadoXadrezRemoto = function aplicarEstadoXadrezRemotoProf52(data) {
+        const retorno = aplicarRemotoAnterior52.apply(this, arguments);
+        setTimeout(() => {
+            if (data && data.gameOver && data.prof52Result) {
+                const info = {
+                    tipo: data.prof52Result.tipo === 'draw' ? 'draw' : 'mate',
+                    perdedor: data.prof52Result.perdedor || null,
+                    vencedor: data.prof52Result.vencedor || null
+                };
+                if (data.prof52Result.texto) lastMoveMessage = data.prof52Result.texto;
+                chessGameOver = true;
+                mostrarModal52(info);
+                return;
+            }
+            checarEExibirFim52('remote');
+        }, 30);
+        return retorno;
+    };
+
+    const executarAnterior52 = executarMovimentoXadrez;
+    executarMovimentoXadrez = async function executarMovimentoXadrezProf52() {
+        const retorno = await executarAnterior52.apply(this, arguments);
+        setTimeout(() => checarEExibirFim52('move'), 40);
+        return retorno;
+    };
+
+    const clickAnterior52 = handleChessSquareClick;
+    handleChessSquareClick = async function handleChessSquareClickProf52(row, col) {
+        if (checarEExibirFim52('before-click')) return false;
+        const retorno = await clickAnterior52.apply(this, arguments);
+        setTimeout(() => checarEExibirFim52('after-click'), 50);
+        return retorno;
+    };
+})();

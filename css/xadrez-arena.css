@@ -2409,3 +2409,70 @@ body.chess-online-active-3612 #chess-call-toggle-btn {
         max-width: calc(100vw - 8px) !important;
     }
 }
+
+
+/* ✅ PROFISSIONAL 53 - MENU LIMPO + RANKING DO XADREZ */
+body.chess-selected:not(.chess-board-visible) #chess-training-coach,
+body.chess-selected:not(.chess-board-visible) #chess-beginner-box {
+    display: none !important;
+}
+.chess-ranking-section-title {
+    margin: 11px 0 7px 0;
+    color: #fde68a;
+    font-size: .78rem;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+    border-top: 1px solid rgba(148,163,184,.18);
+    padding-top: 10px;
+}
+.chess-ranking-section-title.online { color: #93c5fd; }
+.chess-online-ranking-top-list {
+    display: grid;
+    gap: 7px;
+    margin: 8px 0 10px 0;
+}
+.chess-online-ranking-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0,1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 9px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.86));
+    border: 1px solid rgba(96,165,250,.22);
+}
+.chess-online-ranking-medal { font-size: 1.25rem; text-align:center; }
+.chess-online-ranking-info strong {
+    display:block;
+    color:#f8fafc;
+    font-size:.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chess-online-ranking-info span {
+    display:block;
+    color:#cbd5e1;
+    font-size:.66rem;
+    line-height:1.25;
+}
+.chess-online-ranking-points {
+    color:#facc15;
+    font-weight:1000;
+    font-size:.72rem;
+    white-space:nowrap;
+}
+.chess-online-ranking-empty {
+    color:#94a3b8;
+    background: rgba(15,23,42,.72);
+    border: 1px dashed rgba(148,163,184,.25);
+    border-radius: 11px;
+    padding: 10px;
+    font-size:.74rem;
+    text-align:center;
+}
+@media(max-width:560px){
+    .chess-online-ranking-row { grid-template-columns: 28px minmax(0,1fr); }
+    .chess-online-ranking-points { grid-column: 2; }
+}
