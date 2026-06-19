@@ -18921,3 +18921,101 @@ setInterval(() => {
 
     [80, 250, 700, 1500, 3500, 7000].forEach(ms => setTimeout(sincronizar48, ms));
 })();
+
+/*
+============================================================
+✅ PROFISSIONAL 49 — REMOVE PAINEL FLUTUANTE DO ROBÔ PROFESSOR
+============================================================
+Pedido do professor:
+- o quadrinho flutuante "Robô Professor" estava atrapalhando no celular;
+- os controles já existem dentro da aba "Professor Inteligente" embaixo;
+- portanto, o painel flutuante não deve aparecer mais.
+
+Esta correção NÃO mexe no robô de cores, nas capturas, no Firebase,
+na Damas, no Admin, nas salas, ranking ou torneios.
+============================================================
+*/
+(function removerPainelFlutuanteRoboProfessor49() {
+    if (window.__prof49RemovePainelFlutuanteRoboProfessor) return;
+    window.__prof49RemovePainelFlutuanteRoboProfessor = true;
+
+    function aplicarCss49() {
+        if (document.getElementById('prof49-remover-painel-flutuante-css')) return;
+
+        const style = document.createElement('style');
+        style.id = 'prof49-remover-painel-flutuante-css';
+        style.textContent = `
+            /* Remove somente o quadrinho flutuante lateral do Robô Professor. */
+            #teacher-direct-guide-33,
+            #teacher-direct-guide-33.prof48-open,
+            #teacher-direct-guide-33.visible-33,
+            #teacher-direct-guide-33.teacher-guide-strong-35,
+            .teacher-direct-guide-33 {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                left: -99999px !important;
+                top: -99999px !important;
+                width: 0 !important;
+                height: 0 !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
+                max-width: 0 !important;
+                max-height: 0 !important;
+                overflow: hidden !important;
+                z-index: -1 !important;
+            }
+
+            /* O botão antigo de abrir/fechar o painel flutuante não é mais necessário. */
+            [data-prof48-panel-toggle],
+            [data-prof47-panel-toggle] {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function fecharEEsconderPainel49() {
+        aplicarCss49();
+
+        try {
+            localStorage.setItem('tabuleiro_arena_prof48_painel_visivel', '0');
+            localStorage.setItem('tabuleiro_arena_prof47_painel_fechado', '1');
+            localStorage.setItem('tabuleiro_arena_prof46_painel_robo_fechado', '1');
+            localStorage.setItem('tabuleiro_arena_prof48_painel_modo', 'closed');
+            localStorage.setItem('tabuleiro_arena_prof47_painel_modo', 'closed');
+        } catch (_) {}
+
+        const painel = document.getElementById('teacher-direct-guide-33');
+        if (painel) {
+            painel.classList.add('prof49-removido', 'prof48-hidden', 'prof47-closed', 'prof46-closed');
+            painel.classList.remove('prof48-open', 'visible-33', 'teacher-guide-strong-35', 'prof48-floating', 'prof47-panel');
+            painel.style.setProperty('display', 'none', 'important');
+            painel.style.setProperty('visibility', 'hidden', 'important');
+            painel.style.setProperty('pointer-events', 'none', 'important');
+        }
+
+        document.querySelectorAll('[data-prof48-panel-toggle], [data-prof47-panel-toggle]').forEach(btn => {
+            btn.style.setProperty('display', 'none', 'important');
+            btn.setAttribute('aria-hidden', 'true');
+            btn.setAttribute('tabindex', '-1');
+        });
+    }
+
+    window.fecharPainelFlutuanteRoboProfessor49 = fecharEEsconderPainel49;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fecharEEsconderPainel49);
+    } else {
+        fecharEEsconderPainel49();
+    }
+
+    // Rodadas curtas apenas para vencer código antigo que tenta reabrir o painel no carregamento.
+    [0, 80, 200, 500, 1000, 2000, 4000].forEach(ms => setTimeout(fecharEEsconderPainel49, ms));
+
+    document.addEventListener('click', function () {
+        setTimeout(fecharEEsconderPainel49, 0);
+        setTimeout(fecharEEsconderPainel49, 120);
+    }, false);
+})();
