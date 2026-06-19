@@ -519,3 +519,12 @@ button:disabled {
   }
   .chat-messages { height: 130px; }
 }
+
+
+/* Fase 57 — remove o botão Baixar Jogo de dentro do lobby da Damas.
+   O botão principal de baixar continua somente no menu inicial. */
+#download-btn-lobby,
+#lobby-screen #download-btn-lobby,
+#lobby-screen .btn-download.btn-browser-install {
+  display: none !important;
+}
