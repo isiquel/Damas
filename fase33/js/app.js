@@ -4361,6 +4361,7 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
         let chessCurrentRoomData = {};
         let chessAdminUnsubscribeRooms = null;
         let chessAdminUnsubscribeChat = null;
+        let chessAdminUnsubscribeRanking = null;
 
         // ✅ PROFISSIONAL 19 - MANUAL PRIVADO DO PROFESSOR
         // Ativa somente no aparelho de quem entrou com # no nome.
@@ -5058,11 +5059,12 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                 ranking.innerHTML = `
                     <div class="chess-training-ranking-head">
                         <div>
-                            <div class="chess-training-ranking-title">🏆 Ranking do Treino de Xadrez</div>
-                            <div id="chess-training-ranking-badge" class="chess-training-ranking-badge">Separado da Damas</div>
+                            <div class="chess-training-ranking-title">🏆 Ranking do Xadrez</div>
+                            <div id="chess-training-ranking-badge" class="chess-training-ranking-badge">Modo treino + partidas online</div>
                         </div>
                         <button id="chess-ranking-toggle-btn" class="chess-ranking-toggle-btn" type="button" aria-expanded="false">+</button>
                     </div>
+                    <div class="chess-ranking-section-title">🤖 Modo treino neste aparelho</div>
                     <div class="chess-training-ranking-grid">
                         <div class="chess-training-ranking-stat"><div id="chess-rank-points" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Pontos</div></div>
                         <div class="chess-training-ranking-stat"><div id="chess-rank-wins" class="chess-training-ranking-number">0</div><div class="chess-training-ranking-label">Vitórias</div></div>
@@ -5075,11 +5077,11 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
                         <div class="chess-training-ranking-line"><strong>Melhor nível vencido:</strong><br><span id="chess-rank-best">Nenhum ainda</span></div>
                         <div class="chess-training-ranking-line"><strong>Último resultado:</strong><br><span id="chess-rank-last">Nenhuma partida finalizada</span></div>
                     </div>
-                    <div class="chess-training-ranking-actions">
-                        <button id="chess-ranking-refresh-btn" class="btn-chess-ranking-refresh" type="button">Atualizar ranking</button>
-                        <button id="chess-ranking-clear-btn" class="btn-chess-ranking-clear" type="button">Limpar ranking</button>
+                    <div class="chess-ranking-section-title online">🌐 Top 3 das partidas online</div>
+                    <div id="chess-online-ranking-top-list" class="chess-online-ranking-top-list">
+                        <div class="chess-online-ranking-empty">Carregando campeões online...</div>
                     </div>
-                    <div class="chess-training-ranking-note">Pontuação: Aprender +5, Fácil +10, Médio +20 e Difícil +35 por vitória. Empate soma 2 pontos. Este ranking é local e não mistura com a Damas.</div>
+                    <div class="chess-training-ranking-note">Ranking público é somente consulta. Atualizar e limpar ranking ficam apenas no Admin do Xadrez.</div>
                 `;
                 const trainingPanel = document.getElementById('chess-training-panel');
                 if (trainingPanel) trainingPanel.insertAdjacentElement('afterend', ranking);
@@ -5586,20 +5588,27 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             const status = document.getElementById('chess-training-status');
             const coach = document.getElementById('chess-training-coach');
             const beginnerBox = document.getElementById('chess-beginner-box');
-            const beginnerActive = chessMode === 'training' && chessTrainingLearnMode;
+            const boardVisible = document.body.classList.contains('chess-board-visible');
+            const beginnerActive = chessMode === 'training' && chessTrainingLearnMode && boardVisible;
             document.body.classList.toggle('chess-beginner-mode', beginnerActive);
             if (beginnerBox) beginnerBox.style.display = beginnerActive ? 'block' : 'none';
             document.querySelectorAll('#chess-training-panel .btn-chess-training').forEach(btn => btn.classList.remove('active'));
             const id = chessTrainingLearnMode ? 'chess-training-learn-btn' : `chess-training-${chessTrainingDifficulty === 'facil' ? 'easy' : chessTrainingDifficulty === 'dificil' ? 'hard' : 'medium'}-btn`;
             document.getElementById(id)?.classList.add('active');
             if (!status) return;
+            if (!boardVisible) {
+                status.textContent = 'Escolha um modo acima para abrir o tabuleiro. A explicação das peças fica no botão “Conhecer as peças”.';
+                if (coach) coach.style.display = 'none';
+                if (beginnerBox) beginnerBox.style.display = 'none';
+                return;
+            }
             if (chessMode !== 'training') {
                 status.textContent = 'Treino desligado. Escolha um nível para começar contra a máquina.';
                 if (coach) coach.style.display = 'none';
                 return;
             }
             const vez = chessTurn === chessHumanColor ? 'Sua vez de jogar.' : 'A máquina está pensando...';
-            status.textContent = chessTrainingLearnMode ? `Aprender do Zero ligado. Você joga com as brancas. Clique numa peça branca: verde anda, vermelho captura. ${vez}` : `Treino ligado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas. ${vez}`;
+            status.textContent = chessTrainingLearnMode ? `Aprender do Zero ligado. Clique numa peça branca: verde anda, vermelho captura. ${vez}` : `Treino ligado no nível ${nomeDificuldadeTreinoXadrez()}. Você joga com as brancas. ${vez}`;
             if (coach) coach.style.display = chessTrainingLearnMode ? 'block' : 'none';
             if (chessTrainingLearnMode && chessTurn === chessHumanColor && !chessGameOver) {
                 atualizarProfessorXadrez('Clique em uma peça branca. Eu vou explicar como ela anda e marcar um exemplo no tabuleiro.', null);
@@ -5764,8 +5773,59 @@ O WhatsApp automático não é usado nesta versão: os avisos são manuais, para
             setText('chess-rank-best', data.bestDifficulty ? nomeDificuldadeRankingXadrez(data.bestDifficulty) : 'Nenhum ainda');
             setText('chess-rank-last', data.lastResult || 'Nenhuma partida finalizada');
             const badge = document.getElementById('chess-training-ranking-badge');
-            if (badge) badge.textContent = data.games ? `${data.games} partida${data.games === 1 ? '' : 's'} registrada${data.games === 1 ? '' : 's'}` : 'Separado da Damas';
+            if (badge) badge.textContent = data.games ? `${data.games} partida${data.games === 1 ? '' : 's'} no treino • online abaixo` : 'Modo treino + online';
             renderConquistasXadrez();
+            renderRankingOnlineXadrezMenu();
+        }
+
+
+        let chessRankingMenuPublicUnsubscribe = null;
+
+        function montarLinhaRankingOnlineXadrezMenu(jogador, posicao) {
+            const nome = nomeSeguro(jogador?.name || 'Jogador');
+            const jogos = numeroSeguro(jogador?.games);
+            const vitorias = numeroSeguro(jogador?.wins);
+            const derrotas = numeroSeguro(jogador?.losses);
+            const empates = numeroSeguro(jogador?.draws);
+            const pontos = numeroSeguro(jogador?.points);
+            return `
+                <div class="chess-online-ranking-row">
+                    <div class="chess-online-ranking-medal">${posicao === 1 ? '🥇' : posicao === 2 ? '🥈' : '🥉'}</div>
+                    <div class="chess-online-ranking-info">
+                        <strong>${escapeHtmlXadrez(nome)}</strong>
+                        <span>${jogos} partidas • ${vitorias} vitórias • ${derrotas} derrotas • ${empates} empates</span>
+                    </div>
+                    <div class="chess-online-ranking-points">${pontos} pts</div>
+                </div>
+            `;
+        }
+
+        function renderRankingOnlineXadrezMenu() {
+            const list = document.getElementById('chess-online-ranking-top-list');
+            if (!list) return;
+            if (chessRankingMenuPublicUnsubscribe) return;
+            try {
+                chessRankingMenuPublicUnsubscribe = onValue(ref(db, 'chessRanking'), (snap) => {
+                    const data = snap.val() || {};
+                    const jogadores = Object.values(data)
+                        .filter(j => j && typeof j === 'object')
+                        .sort((a, b) =>
+                            numeroSeguro(b.wins) - numeroSeguro(a.wins) ||
+                            numeroSeguro(b.points) - numeroSeguro(a.points) ||
+                            numeroSeguro(b.games) - numeroSeguro(a.games)
+                        )
+                        .slice(0, 3);
+                    if (!jogadores.length) {
+                        list.innerHTML = '<div class="chess-online-ranking-empty">Ainda não há partidas online registradas.</div>';
+                        return;
+                    }
+                    list.innerHTML = jogadores.map((j, i) => montarLinhaRankingOnlineXadrezMenu(j, i + 1)).join('');
+                }, () => {
+                    list.innerHTML = '<div class="chess-online-ranking-empty">Não foi possível carregar o ranking online agora.</div>';
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="chess-online-ranking-empty">Ranking online indisponível.</div>';
+            }
         }
 
         function prepararRankingTreinoXadrez() {
@@ -7750,6 +7810,9 @@ Link: ${location.origin}${location.pathname}`;
                     .chess-admin-grid button { padding:10px 7px; font-size:.72rem; text-transform:none; border-radius:8px; }
                     .chess-admin-panel input { margin:0 0 10px 0; text-align:left; border:1px solid #4c1d95; background:#020617; }
                     .chess-admin-list, .chess-admin-chat-monitor { background:#020617; border:1px solid #312e81; border-radius:10px; padding:10px; max-height:240px; overflow-y:auto; font-size:.78rem; color:#e2e8f0; margin-top:10px; }
+                    .chess-admin-ranking-box { margin:12px 0; padding:12px; border:1px solid rgba(250,204,21,.45); border-radius:12px; background:linear-gradient(135deg,rgba(113,63,18,.32),rgba(15,23,42,.86)); }
+                    .chess-admin-ranking-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+                    .chess-admin-ranking-actions button { padding:10px 8px; border-radius:9px; font-size:.72rem; text-transform:none; }
                     .chess-admin-room-row { padding:9px; border-radius:8px; background:#111827; margin-bottom:7px; border-left:4px solid #22c55e; cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
                     .chess-admin-room-row.blocked { border-left-color:#ef4444; }
                     .chess-admin-room-row:hover { background:#172554; }
@@ -8464,6 +8527,16 @@ Link: ${location.origin}${location.pathname}`;
                         <button id="chess-admin-monitor-chat-btn" type="button" style="background:#2563eb;">Monitorar chat</button>
                     </div>
 
+                    <div class="chess-admin-ranking-box">
+                        <div class="chess-admin-tournament-title">🏆 Ranking do Xadrez</div>
+                        <div class="chess-admin-desc">Aqui o administrador acompanha e limpa o ranking online. No menu público, os jogadores só visualizam.</div>
+                        <div class="chess-admin-ranking-actions">
+                            <button id="chess-admin-refresh-ranking-btn" type="button" style="background:#2563eb;">Atualizar ranking</button>
+                            <button id="chess-admin-clear-ranking-btn" type="button" style="background:#991b1b;">Limpar ranking online</button>
+                        </div>
+                        <div id="chess-admin-ranking-list" class="chess-admin-list">Carregando ranking online...</div>
+                    </div>
+
                     <div class="chess-admin-tournament-box">
                         <div class="chess-admin-tournament-title">🏆 Central de Torneios do Xadrez</div>
                         <div class="chess-admin-desc">Use esta área para marcar torneios de Xadrez, gerar aviso para WhatsApp e definir a sala oficial da rodada.</div>
@@ -8501,8 +8574,11 @@ Link: ${location.origin}${location.pathname}`;
                 document.getElementById('chess-admin-reset-btn')?.addEventListener('click', adminResetarSalaXadrez);
                 document.getElementById('chess-admin-delete-btn')?.addEventListener('click', adminExcluirSalaXadrez);
                 document.getElementById('chess-admin-monitor-chat-btn')?.addEventListener('click', adminMonitorarChatXadrez);
+                document.getElementById('chess-admin-refresh-ranking-btn')?.addEventListener('click', carregarRankingXadrezAdmin);
+                document.getElementById('chess-admin-clear-ranking-btn')?.addEventListener('click', adminLimparRankingOnlineXadrez);
                 document.getElementById('chess-admin-create-tournament-btn')?.addEventListener('click', criarTorneioXadrezAdmin);
                 document.getElementById('chess-admin-whatsapp-tournament-btn')?.addEventListener('click', gerarAvisosXadrezWhatsapp);
+                carregarRankingXadrezAdmin();
                 carregarTorneiosXadrezAdmin();
             }
         }
@@ -9102,6 +9178,48 @@ Compartilhe com os amigos e entre no horário marcado.`;
             });
         }
 
+
+        function renderLinhaRankingAdminXadrez(jogador, posicao) {
+            const nome = nomeSeguro(jogador?.name || 'Jogador');
+            const jogos = numeroSeguro(jogador?.games);
+            const vitorias = numeroSeguro(jogador?.wins);
+            const derrotas = numeroSeguro(jogador?.losses);
+            const empates = numeroSeguro(jogador?.draws);
+            const pontos = numeroSeguro(jogador?.points);
+            return `<div class="chess-admin-room-row"><div><strong>#${posicao} ${escapeHtmlXadrez(nome)}</strong><div style="color:#94a3b8; margin-top:3px;">${jogos} partidas • ${vitorias} vitórias • ${derrotas} derrotas • ${empates} empates</div></div><div style="color:#facc15; font-weight:900;">${pontos} pts</div></div>`;
+        }
+
+        function carregarRankingXadrezAdmin() {
+            const list = document.getElementById('chess-admin-ranking-list');
+            if (!list) return;
+            if (chessAdminUnsubscribeRanking) chessAdminUnsubscribeRanking();
+            chessAdminUnsubscribeRanking = onValue(ref(db, 'chessRanking'), (snap) => {
+                const data = snap.val() || {};
+                const jogadores = Object.values(data)
+                    .filter(j => j && typeof j === 'object')
+                    .sort((a, b) =>
+                        numeroSeguro(b.wins) - numeroSeguro(a.wins) ||
+                        numeroSeguro(b.points) - numeroSeguro(a.points) ||
+                        numeroSeguro(b.games) - numeroSeguro(a.games)
+                    )
+                    .slice(0, 20);
+                if (!jogadores.length) {
+                    list.innerHTML = '<div style="color:#94a3b8; font-style:italic;">Nenhum ranking online registrado ainda.</div>';
+                    return;
+                }
+                list.innerHTML = jogadores.map((j, i) => renderLinhaRankingAdminXadrez(j, i + 1)).join('');
+            });
+        }
+
+        async function adminLimparRankingOnlineXadrez() {
+            if (!(await exigirAdminSeguro())) return;
+            exibirConfirmacao('Limpar ranking online do Xadrez', 'Tem certeza de que deseja limpar o <strong>ranking online do Xadrez</strong>?<br><br>A Damas e o ranking local de treino não serão alterados.', async () => {
+                await remove(ref(db, 'chessRanking'));
+                carregarRankingXadrezAdmin();
+                mostrarToastXadrez('🏆 Ranking online do Xadrez limpo pelo Admin.');
+            });
+        }
+
         async function abrirAdminXadrezCentral() {
             if (!(await exigirAdminSeguro())) {
                 exibirAlertaDoSistema('Acesso negado 🛡️', 'Entre primeiro com o login do administrador.');
@@ -9129,6 +9247,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
             if (online) online.style.display = 'none';
             atualizarStatusOnlineXadrez('🛡️ Modo administrador do Xadrez ativo. Só o painel administrativo fica visível.');
             ativarDashboardAdminXadrez();
+            carregarRankingXadrezAdmin();
             panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
