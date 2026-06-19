@@ -10658,9 +10658,17 @@ Compartilhe com os amigos e entre no horário marcado.`;
             handleChessSquareClick = async function handleChessSquareClickProfessor19(row, col) {
                 if (professorPrivadoPodeAparecerXadrez19()) {
                     const peca = chessBoard[row]?.[col] || null;
-                    // Quando não é a vez do professor, ou quando ele toca peça do aluno,
-                    // o clique vira apenas consulta pedagógica local e não mexe na sala.
-                    if (peca && (chessIsSpectator || chessPlayerColor !== chessTurn || peca.color !== chessPlayerColor)) {
+                    const clicouDestinoLegalProfessor45 = !!(
+                        selectedSquare &&
+                        Array.isArray(legalMoves) &&
+                        legalMoves.some(m => m.row === row && m.col === col)
+                    );
+                    // ✅ PROFISSIONAL 45 — captura legal tem prioridade.
+                    // Antes, no modo professor, tocar numa peça do aluno virava apenas consulta local.
+                    // Isso quebrava capturas legais: o professor selecionava a peça branca e, ao tocar
+                    // na peça preta marcada em verde, o clique era bloqueado antes da jogada acontecer.
+                    // Agora, se a casa clicada é destino legal da peça já selecionada, deixa o jogo executar.
+                    if (!clicouDestinoLegalProfessor45 && peca && (chessIsSpectator || chessPlayerColor !== chessTurn || peca.color !== chessPlayerColor)) {
                         atualizarManualPorPecaProfessorXadrez19(row, col, 'Consulta local do professor: nada foi enviado para a sala online.');
                         return;
                     }
@@ -17292,6 +17300,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
         /* =====================================================================
            ✅ PROFISSIONAL 44 — ROBÔ POR CORES SOMENTE VISUAL
+           ✅ PROFISSIONAL 45 — DESTRAVA CAPTURAS LEGAIS COM ROBÔ ATIVO
            Correção de segurança: o robô do professor NUNCA pode mover peça.
            Ele apenas pinta o tabuleiro. Esta camada bloqueia qualquer movimento
            durante o cálculo visual, limpa seleção escondida e impede clique em
@@ -17319,7 +17328,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                     #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
                     #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
                     #chess-board .chess-square.teacher-direct-bad-33 .chess-piece {
-                        pointer-events: none !important;
+                        pointer-events: auto !important;
                     }
                     #teacher-direct-guide-33 .prof44-safe-note {
                         margin-top: 6px !important;
@@ -17416,7 +17425,7 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 if (panel && !panel.querySelector('.prof44-safe-note')) {
                     const note = document.createElement('div');
                     note.className = 'prof44-safe-note';
-                    note.textContent = '✅ Modo seguro: o robô por cores só pinta o tabuleiro. Ele não move peça e não joga sozinho.';
+                    note.textContent = '✅ Modo seguro: o robô por cores só pinta o tabuleiro. Ele não move peça, não joga sozinho e não bloqueia capturas legais.';
                     panel.appendChild(note);
                 }
             }
@@ -17433,7 +17442,9 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 } finally {
                     if (ativo) {
                         const restaurou = prof44RestaurarSeMudou(snapshot);
-                        prof44LimparSelecaoDeMovimento();
+                        // ✅ PROFISSIONAL 45 — não limpa a seleção do jogador.
+                        // O robô por cores é somente visual; ele não deve apagar a peça que o professor
+                        // selecionou para capturar. Limpar selectedSquare aqui fazia a captura legal falhar.
                         prof44AvisoSeguro();
                         if (restaurou) {
                             try { atualizarStatusGuiaDiretaProfessorXadrez33('✅ Segurança aplicada: o robô tentou analisar, mas qualquer alteração real foi bloqueada. As cores continuam sendo apenas orientação visual.'); } catch (_) {}
@@ -17464,9 +17475,10 @@ Compartilhe com os amigos e entre no horário marcado.`;
 
                 const square = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
                 if (prof44RoboCoresLigado() && square && square.classList.contains('teacher-direct-bad-33')) {
-                    prof44LimparSelecaoDeMovimento();
-                    try { mostrarToastXadrez('🔴 Vermelho significa perigo: o robô recomenda NÃO mexer nessa peça/casa agora.', 'check'); } catch (_) {}
-                    return false;
+                    // ✅ PROFISSIONAL 45 — vermelho é aviso, não trava.
+                    // O robô pode dizer que uma casa é perigosa, mas nunca pode bloquear uma jogada legal.
+                    // O professor decide se joga ou não.
+                    try { mostrarToastXadrez('🔴 Vermelho é só aviso de perigo. Se a jogada for legal, o jogo permite normalmente.', 'check'); } catch (_) {}
                 }
 
                 return clickOriginal44.apply(this, arguments);
