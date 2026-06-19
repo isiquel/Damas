@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
-    <link rel="stylesheet" href="css/style.css?v=prof57">
-    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof57">
-    <link rel="manifest" href="manifest.json?v=prof57">
+    <link rel="stylesheet" href="css/style.css?v=prof58">
+    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof58">
+    <link rel="manifest" href="manifest.json?v=prof58">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
@@ -149,6 +149,62 @@
     <div id="lobby-screen" class="card" style="display:none;">
         <button id="back-to-games-btn" class="back-to-games-btn" type="button">← Escolher outra modalidade</button>
         <div class="current-game-strip"><strong>Modalidade ativa:</strong> Damas Arena — jogue online, treine contra a máquina, aprenda estratégias e dispute torneios.</div>
+
+        <section id="damas-premium-dashboard" class="damas-premium-dashboard" aria-label="Painel premium da Damas Arena">
+            <div class="damas-premium-head">
+                <div>
+                    <div class="damas-premium-kicker">⚡ Damas Arena Premium</div>
+                    <h2>Controle, treino e competição em um só lugar</h2>
+                    <p>Visual moderno para apresentar a modalidade com mais impacto, organização e aparência profissional.</p>
+                </div>
+                <div class="damas-premium-seal">
+                    <span>ATIVO</span>
+                    <strong>ONLINE</strong>
+                </div>
+            </div>
+
+            <div class="damas-premium-stats">
+                <div class="damas-stat-card stat-blue">
+                    <span class="damas-stat-icon">🎮</span>
+                    <strong>Online</strong>
+                    <small>Salas e partidas em tempo real</small>
+                </div>
+                <div class="damas-stat-card stat-green">
+                    <span class="damas-stat-icon">🎓</span>
+                    <strong>Treino</strong>
+                    <small>Prática contra a máquina</small>
+                </div>
+                <div class="damas-stat-card stat-gold">
+                    <span class="damas-stat-icon">🏆</span>
+                    <strong>Ranking</strong>
+                    <small>Desempenho dos melhores</small>
+                </div>
+                <div class="damas-stat-card stat-purple">
+                    <span class="damas-stat-icon">👁️</span>
+                    <strong>Espectador</strong>
+                    <small>Acompanhe partidas ao vivo</small>
+                </div>
+            </div>
+
+            <div class="damas-premium-grid">
+                <div class="damas-premium-box damas-top-box">
+                    <div class="damas-box-title">🏆 Top da Damas</div>
+                    <div class="damas-top-row"><span>1º</span><strong>Campeão da rodada</strong><em>Vitórias</em></div>
+                    <div class="damas-top-row"><span>2º</span><strong>Jogador em destaque</strong><em>Ranking</em></div>
+                    <div class="damas-top-row"><span>3º</span><strong>Promessa da semana</strong><em>Evolução</em></div>
+                </div>
+
+                <div class="damas-premium-box damas-school-box">
+                    <div class="damas-box-title">🏫 Ideal para escolas</div>
+                    <ul>
+                        <li>Desenvolve raciocínio lógico</li>
+                        <li>Estimula concentração e estratégia</li>
+                        <li>Promove competição saudável</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
         <div class="live-podium" style="display:none !important;">
             <div class="podium-title">🏆 Top Campeões do Sistema</div>
@@ -494,12 +550,12 @@
     </div>
 </div>
 
-<script src="js/config.js?v=prof57"></script>
-<script src="js/utils.js?v=prof57"></script>
-<script src="js/ui.js?v=prof57"></script>
-<script src="js/chat-ui.js?v=prof57"></script>
-<script type="module" src="js/app.js?v=prof57"></script>
-<script src="js/fase40-controles-recolhidos.js?v=prof57"></script>
+<script src="js/config.js?v=prof58"></script>
+<script src="js/utils.js?v=prof58"></script>
+<script src="js/ui.js?v=prof58"></script>
+<script src="js/chat-ui.js?v=prof58"></script>
+<script type="module" src="js/app.js?v=prof58"></script>
+<script src="js/fase40-controles-recolhidos.js?v=prof58"></script>
 
 
 <!--

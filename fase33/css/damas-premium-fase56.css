@@ -528,3 +528,257 @@ button:disabled {
 #lobby-screen .btn-download.btn-browser-install {
   display: none !important;
 }
+
+
+/* Fase 58 — Dashboard premium no menu da Damas.
+   Somente visual. Não altera lógica, Firebase, salas ou ranking real. */
+.damas-premium-dashboard {
+  margin: 18px 0 22px 0;
+  padding: 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(29,211,255,0.13), transparent 36%),
+    radial-gradient(circle at top right, rgba(247,181,0,0.10), transparent 34%),
+    linear-gradient(180deg, rgba(7,16,33,0.98), rgba(4,10,22,0.98));
+  border: 1px solid rgba(29,211,255,0.18);
+  box-shadow: 0 22px 42px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow: hidden;
+  position: relative;
+}
+
+.damas-premium-dashboard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,0.05), transparent 28%, transparent 74%, rgba(247,181,0,0.05));
+}
+
+.damas-premium-head {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.damas-premium-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(29,211,255,0.10);
+  border: 1px solid rgba(29,211,255,0.22);
+  color: #75e5ff;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 9px;
+}
+
+.damas-premium-head h2 {
+  color: #fff;
+  font-size: clamp(1.15rem, 3.8vw, 1.65rem);
+  line-height: 1.1;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+.damas-premium-head p {
+  color: #b8c9e8;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  max-width: 560px;
+}
+
+.damas-premium-seal {
+  min-width: 96px;
+  padding: 11px 12px;
+  border-radius: 18px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(20,49,31,0.95), rgba(7,18,16,0.94));
+  border: 1px solid rgba(74,222,128,0.28);
+  box-shadow: 0 0 24px rgba(74,222,128,0.10);
+}
+
+.damas-premium-seal span {
+  display: block;
+  color: #86efac;
+  font-size: 0.62rem;
+  font-weight: 1000;
+  letter-spacing: 1px;
+}
+
+.damas-premium-seal strong {
+  display: block;
+  color: #fff;
+  font-size: 0.88rem;
+  margin-top: 2px;
+}
+
+.damas-premium-stats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.damas-stat-card {
+  min-height: 116px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: rgba(2, 8, 18, 0.72);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.damas-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.24);
+}
+
+.damas-stat-card strong {
+  display: block;
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.damas-stat-card small {
+  display: block;
+  color: #9eb4d7;
+  font-size: 0.75rem;
+  line-height: 1.28;
+}
+
+.damas-stat-card.stat-blue { border-color: rgba(29,211,255,0.22); }
+.damas-stat-card.stat-green { border-color: rgba(74,222,128,0.22); }
+.damas-stat-card.stat-gold { border-color: rgba(247,181,0,0.24); }
+.damas-stat-card.stat-purple { border-color: rgba(167,139,250,0.24); }
+
+.damas-premium-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 10px;
+}
+
+.damas-premium-box {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(3, 10, 22, 0.74);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.damas-box-title {
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 10px;
+}
+
+.damas-top-row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: #d9e8ff;
+}
+
+.damas-top-row:last-child { border-bottom: 0; }
+
+.damas-top-row span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f7b500, #c88600);
+  color: #2d2100;
+  font-size: 0.72rem;
+  font-weight: 1000;
+}
+
+.damas-top-row strong {
+  color: #fff;
+  font-size: 0.82rem;
+}
+
+.damas-top-row em {
+  color: #7dd3fc;
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.damas-school-box ul {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.damas-school-box li {
+  color: #c7d7f2;
+  font-size: 0.82rem;
+  line-height: 1.32;
+  padding-left: 22px;
+  position: relative;
+}
+
+.damas-school-box li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #4ade80;
+  font-weight: 1000;
+}
+
+@media (max-width: 760px) {
+  .damas-premium-head {
+    flex-direction: column;
+  }
+  .damas-premium-seal {
+    width: 100%;
+  }
+  .damas-premium-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .damas-premium-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .damas-premium-dashboard {
+    padding: 14px;
+  }
+  .damas-premium-stats {
+    grid-template-columns: 1fr;
+  }
+  .damas-stat-card {
+    min-height: auto;
+  }
+  .damas-top-row {
+    grid-template-columns: 32px 1fr;
+  }
+  .damas-top-row em {
+    grid-column: 2;
+  }
+}
