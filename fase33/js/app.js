@@ -13209,82 +13209,92 @@ Compartilhe com os amigos e entre no horário marcado.`;
                 limparRoboProfessorXadrez30(false);
                 limparGuiaDiretaProfessorXadrez33();
 
-                const melhores = Array.isArray(resultado?.melhores)
-                    ? resultado.melhores.filter(Boolean).slice(0, 3)
+                // ✅ PROFISSIONAL 51 — CORES MAIS LIMPAS PARA AULA
+                // Antes o robô pintava 2ª e 3ª opção, muitos vermelhos e verdes.
+                // Isso deixava o professor indeciso no momento da aula.
+                // Agora o padrão mostra somente a MELHOR JOGADA PRINCIPAL:
+                // amarelo = peça certa, verde = casa certa, vermelho = poucas peças perigosas.
+                const listaMelhores = Array.isArray(resultado?.melhores)
+                    ? resultado.melhores.filter(Boolean)
                     : (resultado?.melhor ? [resultado.melhor] : []);
 
+                const principal = resultado?.melhor || listaMelhores[0] || null;
+                const melhores = principal ? [principal] : [];
                 const casasProtegidas = new Set();
 
-                melhores.forEach((item, index) => {
-                    const ordem = index + 1;
+                melhores.forEach((item) => {
                     const from = squareGuiaXadrez29(item.from.row, item.from.col);
                     const to = squareGuiaXadrez29(item.to.row, item.to.col);
-                    const titulo = `${ordem}ª opção do robô: ${textoMovimentoRoboProfessorXadrez30(item, chessBoard)} — ${item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
-                    const labelPeca = ordem === 1 ? 'PEÇA' : `P${ordem}`;
-                    const labelCasa = ordem === 1 ? 'IR' : `IR${ordem}`;
+                    const titulo = `1ª e melhor opção do robô: ${textoMovimentoRoboProfessorXadrez30(item, chessBoard)} — ${item.motivo30 || classificarLanceRoboProfessorXadrez30(item, chessBoard, corProfessorGuiaDiretaXadrez33())}`;
 
                     if (from) {
-                        from.classList.add('teacher-direct-from-33');
-                        from.setAttribute('data-teacher-direct-label', labelPeca);
-                        from.setAttribute('data-teacher-direct-title', String(ordem));
+                        from.classList.add('teacher-direct-from-33', 'teacher-direct-main-51');
+                        from.setAttribute('data-teacher-direct-label', '1ª');
+                        from.setAttribute('data-teacher-direct-title', '1');
                         from.setAttribute('title', titulo);
                         casasProtegidas.add(`${item.from.row},${item.from.col}`);
                     }
                     if (to) {
-                        to.classList.add('teacher-direct-to-33');
-                        to.setAttribute('data-teacher-direct-label', labelCasa);
-                        to.setAttribute('data-teacher-direct-title', String(ordem));
+                        to.classList.add('teacher-direct-to-33', 'teacher-direct-main-51');
+                        to.setAttribute('data-teacher-direct-label', 'IR');
+                        to.setAttribute('data-teacher-direct-title', '1');
                         to.setAttribute('title', titulo);
                         casasProtegidas.add(`${item.to.row},${item.to.col}`);
                     }
                 });
 
-                (resultado?.ruins || []).slice(0, 8).forEach(item => {
+                // Vermelho ficou apenas como ALERTA curto. Não pinta vários destinos vermelhos,
+                // porque isso poluía o tabuleiro e parecia que havia muitas ordens ao mesmo tempo.
+                const ruinsUnicos = [];
+                const vistos = new Set();
+                (resultado?.ruins || []).forEach(item => {
                     const fromKey = `${item.from.row},${item.from.col}`;
-                    const toKey = `${item.to.row},${item.to.col}`;
+                    if (casasProtegidas.has(fromKey)) return;
+                    if (vistos.has(fromKey)) return;
+                    vistos.add(fromKey);
+                    ruinsUnicos.push(item);
+                });
 
+                ruinsUnicos.slice(0, 3).forEach(item => {
+                    const fromKey = `${item.from.row},${item.from.col}`;
                     const from = squareGuiaXadrez29(item.from.row, item.from.col);
                     if (from && !casasProtegidas.has(fromKey)) {
-                        from.classList.add('teacher-direct-bad-33');
-                        from.setAttribute('data-teacher-direct-label', 'NÃO');
-                        from.setAttribute('data-teacher-direct-title', '1');
+                        from.classList.add('teacher-direct-bad-33', 'teacher-direct-warning-51');
+                        from.setAttribute('data-teacher-direct-label', 'EVITE');
+                        from.setAttribute('data-teacher-direct-title', 'x');
                         from.setAttribute('title', `Evite mexer agora: ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} em ${alg(item.from.row, item.from.col)} pode perder tempo, peça ou defesa.`);
-                    }
-
-                    const to = squareGuiaXadrez29(item.to.row, item.to.col);
-                    if (to && !casasProtegidas.has(toKey) && !to.classList.contains('teacher-direct-from-33')) {
-                        to.classList.add('teacher-direct-bad-33');
-                        to.setAttribute('data-teacher-direct-label', 'NÃO');
-                        to.setAttribute('data-teacher-direct-title', '1');
-                        to.setAttribute('title', `Evite esta casa agora: ${alg(item.to.row, item.to.col)} pode deixar peça solta, perder material ou enfraquecer a defesa.`);
                     }
                 });
             }
 
             function textoGuiaDiretaProfessorXadrez33(resultado, cor, origem = 'manual') {
-                const melhor = resultado?.melhor || null;
+                const melhor = resultado?.melhor || (Array.isArray(resultado?.melhores) ? resultado.melhores[0] : null) || null;
                 if (!melhor) return 'Não encontrei lance legal agora. Verifique se a partida terminou ou se o rei está sem saída.';
                 const peca = chessBoard?.[melhor.from.row]?.[melhor.from.col] || melhor.peca || null;
                 const ruins = resultado?.ruins || [];
-                const melhores = Array.isArray(resultado?.melhores) ? resultado.melhores.slice(0, 3) : [melhor];
                 const cabecalho = origem === 'auto'
                     ? 'Robô por cores atualizou depois da jogada do aluno.'
                     : (origem === 'toque' ? 'Robô por cores atualizado pelo toque.' : 'Robô por cores atualizado.');
                 let html = `<strong>${escapeBubble27(cabecalho)}</strong><br>`;
-                html += `<span class="yellow-33">Amarelo:</span> peça(s) recomendada(s) para mexer. `;
-                html += `<span class="good-33">Verde:</span> casa(s) boas para ir. `;
-                html += `<span class="bad-33">Vermelho:</span> evite peça/casa perigosa.<br>`;
-                html += `Melhor agora: mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em ${escapeBubble27(alg(melhor.from.row, melhor.from.col))} e vá para ${escapeBubble27(alg(melhor.to.row, melhor.to.col))}.<br>`;
+                html += `<span class="yellow-33">Siga a 1ª melhor opção:</span> agora eu deixei o tabuleiro mais limpo para aula.<br>`;
+                html += `<span class="yellow-33">Amarelo/1ª:</span> peça principal. `;
+                html += `<span class="good-33">Verde/IR:</span> casa principal. `;
+                html += `<span class="bad-33">Vermelho/EVITE:</span> poucas peças perigosas para não mexer agora.<br>`;
+                html += `<strong>Melhor agora:</strong> mexa ${escapeBubble27(nomeCurtoPecaRoboProfessorXadrez30(peca?.type))} em <strong>${escapeBubble27(alg(melhor.from.row, melhor.from.col))}</strong> e vá para <strong>${escapeBubble27(alg(melhor.to.row, melhor.to.col))}</strong>.<br>`;
                 html += `Motivo: ${escapeBubble27(melhor.motivo30 || classificarLanceRoboProfessorXadrez30(melhor, chessBoard, cor))}.`;
-                if (melhores.length > 1) {
-                    const extras = melhores.slice(1, 3).map((item, idx) => `${idx + 2}) ${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)} → ${alg(item.to.row, item.to.col)}`);
-                    html += `<br>Outras boas: ${escapeBubble27(extras.join(' | '))}.`;
-                }
                 if (ruins.length) {
-                    const nomes = ruins.slice(0, 4).map(item => `${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)}`);
-                    html += `<br><span class="bad-33">Não mexer agora:</span> ${escapeBubble27(nomes.join(', '))}.`;
+                    const nomes = [];
+                    const vistos = new Set();
+                    ruins.forEach(item => {
+                        const k = `${item.from.row},${item.from.col}`;
+                        if (!vistos.has(k) && nomes.length < 3) {
+                            vistos.add(k);
+                            nomes.push(`${nomePecaCasaGuiaDiretaXadrez33(item.from.row, item.from.col)} ${alg(item.from.row, item.from.col)}`);
+                        }
+                    });
+                    if (nomes.length) html += `<br><span class="bad-33">Evite agora:</span> ${escapeBubble27(nomes.join(', '))}.`;
                 }
-                html += '<br>Frase para aula: “veja a cor do tabuleiro: amarelo prepara, verde executa e vermelho alerta o perigo.”';
+                html += '<br>Frase para aula: “não escolha entre muitas cores; siga a peça 1ª e vá para a casa IR.”';
                 return html;
             }
 
@@ -19071,4 +19081,69 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(remover50, 0);
         setTimeout(remover50, 80);
     }, true);
+})();
+
+
+/*
+============================================================
+✅ PROFISSIONAL 51 — CORES LIMPAS: 1ª MELHOR JOGADA EM DESTAQUE
+============================================================
+- Mantém a Profissional 50 que removeu o quadrinho flutuante.
+- O robô por cores agora mostra menos informação para não confundir:
+  1 amarelo principal, 1 verde principal e poucos vermelhos de alerta.
+============================================================
+*/
+(function instalarCoresLimpasProfessor51() {
+    if (window.__prof51CoresLimpasProfessor) return;
+    window.__prof51CoresLimpasProfessor = true;
+
+    function css51() {
+        if (document.getElementById('prof51-cores-limpas-css')) return;
+        const style = document.createElement('style');
+        style.id = 'prof51-cores-limpas-css';
+        style.textContent = `
+            #chess-board .chess-square.teacher-direct-from-33.teacher-direct-main-51,
+            .chess-square.teacher-direct-from-33.teacher-direct-main-51 {
+                outline: 5px solid rgba(250,204,21,1) !important;
+                outline-offset: -6px !important;
+                background: linear-gradient(135deg, rgba(250,204,21,.92), rgba(254,240,138,.72)) !important;
+                box-shadow: inset 0 0 0 6px rgba(250,204,21,.38), 0 0 34px rgba(250,204,21,.96) !important;
+                animation: teacherDirectYellow33 .70s ease-in-out infinite !important;
+            }
+            #chess-board .chess-square.teacher-direct-to-33.teacher-direct-main-51,
+            .chess-square.teacher-direct-to-33.teacher-direct-main-51 {
+                outline: 5px solid rgba(34,197,94,1) !important;
+                outline-offset: -6px !important;
+                background: linear-gradient(135deg, rgba(22,163,74,.92), rgba(187,247,208,.74)) !important;
+                box-shadow: inset 0 0 0 6px rgba(34,197,94,.42), 0 0 36px rgba(34,197,94,.98) !important;
+                animation: teacherDirectGreen33 .70s ease-in-out infinite !important;
+            }
+            #chess-board .chess-square.teacher-direct-warning-51,
+            .chess-square.teacher-direct-warning-51 {
+                outline: 3px solid rgba(239,68,68,.88) !important;
+                outline-offset: -6px !important;
+                background: rgba(239,68,68,.45) !important;
+                box-shadow: inset 0 0 0 4px rgba(127,29,29,.30), 0 0 16px rgba(239,68,68,.48) !important;
+                filter: none !important;
+            }
+            #chess-board .chess-square.teacher-direct-from-33::before,
+            #chess-board .chess-square.teacher-direct-to-33::before,
+            #chess-board .chess-square.teacher-direct-bad-33::before,
+            .chess-square.teacher-direct-from-33::before,
+            .chess-square.teacher-direct-to-33::before,
+            .chess-square.teacher-direct-bad-33::before {
+                font-size: .60rem !important;
+                min-width: 22px !important;
+                height: 22px !important;
+                z-index: 25 !important;
+            }
+            #chess-board .chess-square.teacher-direct-bad-33:not(.teacher-direct-warning-51) {
+                display: initial;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', css51);
+    else css51();
 })();
