@@ -1,0 +1,521 @@
+/* Fase 56 — Damas Arena visual premium.
+   Objetivo: modernizar o visual da DAMAS sem mexer na lógica.
+   Escopo: hub inicial, lobby da Damas, tabuleiro, status, chat e painéis de apoio. */
+
+:root {
+  --bg-color: #060c18;
+  --panel-bg: rgba(7, 16, 33, 0.94);
+  --accent-color: #1dd3ff;
+  --accent-2: #7c4dff;
+  --accent-gold: #f7b500;
+  --soft-line: rgba(86, 154, 255, 0.22);
+  --soft-line-2: rgba(255,255,255,0.08);
+  --soft-text: #bfd4ff;
+  --white: #f8fbff;
+  --panel-glow: 0 18px 44px rgba(0,0,0,0.42), 0 0 0 1px rgba(29,211,255,0.08);
+  --light-square: #f4ead6;
+  --dark-square: #bb9364;
+  --p1-color: #ef4444;
+  --p2-color: #0f172a;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(29,211,255,0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(124,77,255,0.12), transparent 24%),
+    linear-gradient(180deg, #040811 0%, #081223 48%, #050a14 100%);
+  color: var(--white);
+  padding: 18px;
+}
+
+.container {
+  width: 100%;
+  max-width: 1040px;
+}
+
+h1 {
+  margin-bottom: 16px;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  font-weight: 1000;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+
+.card,
+.games-hub-panel,
+#lobby-screen,
+#game-screen,
+#practice-mode-screen,
+#rank-screen,
+#rules-screen,
+#admin-screen,
+#spectator-screen {
+  position: relative;
+}
+
+.card,
+.games-hub-panel,
+#lobby-screen.card,
+#practice-mode-screen.card,
+#rank-screen.card,
+#rules-screen.card,
+#admin-screen.card,
+#spectator-screen.card {
+  background:
+    linear-gradient(180deg, rgba(9,18,36,0.98), rgba(7,14,28,0.96));
+  border: 1px solid var(--soft-line);
+  border-radius: 24px;
+  box-shadow: var(--panel-glow);
+  overflow: hidden;
+}
+
+.card::before,
+.games-hub-panel::before,
+.board-outer-container::before,
+.status-panel::before,
+.chat-container::before,
+.community-panel::before,
+.tournament-lobby-panel::before,
+.feedback-panel::before,
+.practice-ranking-panel::before,
+.call-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,0.04), transparent 18%, transparent 82%, rgba(29,211,255,0.05));
+}
+
+.brand-kicker {
+  background: rgba(29,211,255,0.10);
+  border-color: rgba(29,211,255,0.32);
+  color: #74e3ff;
+}
+
+.platform-subtitle {
+  max-width: 720px;
+  color: #bdd0f2;
+}
+
+.games-hub-panel {
+  padding: 24px;
+  text-align: left;
+}
+
+.games-hub-title {
+  font-size: 1.08rem;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.games-hub-desc {
+  color: #8aa5d3;
+}
+
+.game-mode-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.game-mode-card {
+  background: linear-gradient(180deg, rgba(7,16,33,0.96), rgba(3,8,18,0.95));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px;
+  min-height: 146px;
+  padding: 18px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.game-mode-card:hover {
+  background: linear-gradient(180deg, rgba(10,23,46,0.98), rgba(4,10,22,0.98));
+  border-color: rgba(29,211,255,0.48);
+  box-shadow: 0 14px 26px rgba(0,0,0,0.32), 0 0 0 1px rgba(29,211,255,0.10);
+}
+
+.game-mode-card.active {
+  border-color: rgba(71, 214, 102, 0.72);
+  background: linear-gradient(180deg, rgba(16,40,26,0.90), rgba(6,13,21,0.98));
+}
+
+.game-mode-card.admin-entry {
+  border-color: rgba(124,77,255,0.45);
+  background: linear-gradient(180deg, rgba(30,24,69,0.92), rgba(6,13,21,0.98));
+}
+
+.game-mode-icon { font-size: 2rem; }
+.game-mode-name { font-size: 1rem; }
+.game-mode-copy { font-size: 0.78rem; color: #b6c7e6; }
+.game-mode-badge {
+  background: linear-gradient(90deg, #f7b500, #ffd65c);
+  color: #2d2100;
+  box-shadow: 0 10px 18px rgba(247,181,0,0.18);
+}
+.game-mode-card.active .game-mode-badge {
+  background: linear-gradient(90deg, #4ade80, #86efac);
+  color: #073417;
+}
+
+.premium-install-panel {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-premium-install {
+  width: auto;
+  min-width: 310px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(29,211,255,0.28);
+  background: linear-gradient(90deg, #1dd3ff 0%, #3485ff 45%, #7c4dff 100%);
+  box-shadow: 0 16px 34px rgba(29,211,255,0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.btn-premium-install:hover:not(:disabled) {
+  background: linear-gradient(90deg, #37dbff 0%, #4a95ff 45%, #8d63ff 100%);
+}
+.premium-install-text { font-size: 1rem; letter-spacing: .3px; }
+.premium-install-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  font-size: 0.72rem;
+}
+
+#lobby-screen.card {
+  padding: 28px;
+  text-align: left;
+}
+
+.current-game-strip {
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, rgba(29,211,255,0.10), rgba(124,77,255,0.10));
+  border: 1px solid rgba(29,211,255,0.18);
+  color: #d9e9ff;
+  font-size: 0.92rem;
+}
+
+label {
+  color: #c5d7f7;
+  font-size: 0.82rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+input,
+.admin-input-control,
+.admin-login-panel input,
+.feedback-input {
+  background: rgba(4, 12, 26, 0.95);
+  border: 1px solid rgba(132, 153, 190, 0.20);
+  border-radius: 14px;
+  color: #fff;
+  text-align: left;
+  padding: 14px 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+input::placeholder,
+.feedback-input::placeholder { color: #7890bb; }
+
+input:focus,
+.admin-input-control:focus,
+.feedback-input:focus {
+  outline: none;
+  border-color: rgba(29,211,255,0.62);
+  box-shadow: 0 0 0 3px rgba(29,211,255,0.12);
+}
+
+.phone-consent-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: -8px;
+  margin-bottom: 14px;
+  color: #b8c9e8;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.phone-consent-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+.btn-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+button {
+  border-radius: 16px;
+  padding: 15px 18px;
+  background: linear-gradient(180deg, #2a7fff, #1b5dd6);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 12px 20px rgba(0,0,0,0.22);
+  font-size: 0.92rem;
+  letter-spacing: 0.3px;
+}
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+button:disabled {
+  opacity: 0.55;
+}
+.btn-secondary { background: linear-gradient(180deg, #13b26b, #0d8f56); }
+.btn-info { background: linear-gradient(180deg, #2ea7ff, #1d79d7); }
+.btn-ranking { background: linear-gradient(180deg, #8b5cf6, #6d3ef0); }
+.btn-spectate { background: linear-gradient(180deg, #425b7c, #31475f); }
+.btn-download { background: linear-gradient(180deg, #18c1ff, #0d8edd); }
+.btn-whatsapp { background: linear-gradient(180deg, #22c55e, #169f49); }
+
+.difficulty-selector-box {
+  grid-column: 1 / -1;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(5, 16, 32, 0.95), rgba(6, 12, 22, 0.96));
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  padding: 18px;
+}
+.difficulty-selector-title { color: #65f0a5; }
+.difficulty-buttons-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.btn-diff-select { border-radius: 14px; }
+
+.community-panel,
+.tournament-lobby-panel,
+.feedback-panel,
+.practice-ranking-panel,
+.system-status-panel,
+.admin-login-panel,
+.call-panel {
+  margin-top: 20px;
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(8,17,33,0.96), rgba(5,12,24,0.98));
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: var(--panel-glow);
+}
+
+.community-title,
+.tournament-title,
+.feedback-title,
+.practice-ranking-title,
+.system-status-title,
+.admin-login-title,
+.call-title {
+  color: #ffffff;
+  font-size: 0.95rem;
+  letter-spacing: 0.8px;
+}
+
+.community-desc,
+.tournament-desc,
+.feedback-desc,
+.system-status-text,
+.admin-login-desc,
+.call-status,
+.practice-ranking-row,
+.podium-row,
+.chat-msg-row,
+.modal-content li {
+  color: #b8cae8;
+}
+
+#game-screen {
+  width: 100%;
+  gap: 18px;
+}
+
+.status-panel {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(8,17,33,0.98), rgba(6,12,23,0.98));
+  border: 1px solid rgba(29,211,255,0.18);
+  box-shadow: var(--panel-glow);
+}
+
+.status-row {
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #e7f0ff;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+.badge-p1 { background: linear-gradient(90deg, #ef4444, #f87171); }
+.badge-p2 { background: linear-gradient(90deg, #334155, #475569); border: 0; }
+.badge-spec { background: linear-gradient(90deg, #64748b, #94a3b8); }
+.badge-admin { background: linear-gradient(90deg, #7c4dff, #9e7bff); }
+
+.board-outer-container {
+  max-width: 760px;
+  padding: 28px;
+  background: linear-gradient(180deg, #1f140d 0%, #2b1c11 100%);
+  border: 1px solid rgba(247,181,0,0.18);
+  border-radius: 28px;
+  box-shadow: 0 30px 55px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.board-wrapper {
+  border-radius: 12px;
+  border: 2px solid rgba(47, 28, 13, 0.9);
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.34);
+}
+
+.coord-row-top, .coord-row-bottom,
+.coord-col-left, .coord-col-right {
+  color: #ecd2a7;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.square.highlight {
+  background-color: #d9f8ef !important;
+  box-shadow: inset 0 0 0 3px rgba(46, 204, 113, 0.55), inset 0 0 18px rgba(46,204,113,0.42);
+}
+
+.piece {
+  width: 76%;
+  height: 76%;
+  box-shadow: 0 12px 18px rgba(0,0,0,0.42), inset 0 5px 8px rgba(255,255,255,0.20);
+}
+.p1-piece {
+  background: radial-gradient(circle at 30% 25%, #ff8b8b, #ef4444 45%, #a20d0d 100%);
+  border: 2px solid rgba(110, 0, 0, 0.9);
+}
+.p2-piece {
+  background: radial-gradient(circle at 30% 25%, #3e587a, #1e293b 48%, #04070d 100%);
+  border: 2px solid rgba(4, 7, 13, 0.98);
+}
+.piece.selected {
+  outline: 3px solid #1dd3ff;
+  box-shadow: 0 0 0 4px rgba(29,211,255,0.12), 0 0 20px rgba(29,211,255,0.42);
+}
+.king::after { font-size: 1.25rem; }
+
+.control-box {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 880px;
+}
+
+.chat-container {
+  position: relative;
+  max-width: 880px;
+  border-radius: 20px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(8,17,33,0.98), rgba(6,12,23,0.98));
+  border: 1px solid rgba(29,211,255,0.12);
+}
+.chat-header { color: #fff; border-bottom-color: rgba(255,255,255,0.08); }
+.chat-messages {
+  height: 150px;
+  border-radius: 14px;
+  background: rgba(3, 10, 22, 0.96);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.chat-input-box { gap: 10px; }
+.chat-input-box input { border-radius: 12px; }
+.chat-input-box button,
+.toggle-chat-btn {
+  width: auto;
+  border-radius: 12px;
+}
+.toggle-chat-btn { background: linear-gradient(180deg, #415b7c, #344861); }
+.toggle-chat-btn.off { background: linear-gradient(180deg, #d64b4b, #a92c2c); }
+
+.modal-content {
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(9,18,36,0.98), rgba(6,12,22,0.98));
+  border: 1px solid rgba(29,211,255,0.18);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.52);
+}
+.modal-content h2 { color: #ffffff; border-bottom-color: rgba(29,211,255,0.18) !important; }
+.rank-table th {
+  background: rgba(14, 25, 45, 0.96);
+  color: #7fdbff;
+}
+.rank-table tr:hover { background: rgba(255,255,255,0.03); }
+
+.practice-ranking-title,
+.tournament-title,
+.community-title,
+.feedback-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.practice-ranking-panel,
+.community-panel,
+.tournament-lobby-panel,
+.feedback-panel {
+  text-align: left;
+}
+
+.back-to-games-btn,
+.btn-practice-ranking,
+.btn-admin-login,
+.btn-admin-login-back,
+.btn-admin-logout,
+.btn-confirm-yes,
+.btn-confirm-no {
+  border-radius: 14px;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .container { max-width: 760px; }
+  .game-mode-grid { grid-template-columns: 1fr; }
+  .btn-group { grid-template-columns: 1fr; }
+  .difficulty-buttons-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  body { padding: 12px; }
+  .container { max-width: 100%; }
+  h1 { font-size: 2.25rem; }
+  .games-hub-panel,
+  #lobby-screen.card,
+  .community-panel,
+  .tournament-lobby-panel,
+  .feedback-panel,
+  .practice-ranking-panel,
+  .system-status-panel,
+  .admin-login-panel,
+  .chat-container,
+  .status-panel {
+    border-radius: 18px;
+  }
+  #lobby-screen.card { padding: 18px; }
+  .board-outer-container {
+    padding: 18px;
+    border-radius: 20px;
+  }
+  .coord-row-top, .coord-row-bottom,
+  .coord-col-left, .coord-col-right {
+    font-size: 0.8rem;
+  }
+  .control-box {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 100%;
+  }
+  .chat-messages { height: 130px; }
+}
