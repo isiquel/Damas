@@ -17290,6 +17290,201 @@ Compartilhe com os amigos e entre no horário marcado.`;
     instalarPopupProfessorDamas26();
 
 
+        /* =====================================================================
+           ✅ PROFISSIONAL 44 — ROBÔ POR CORES SOMENTE VISUAL
+           Correção de segurança: o robô do professor NUNCA pode mover peça.
+           Ele apenas pinta o tabuleiro. Esta camada bloqueia qualquer movimento
+           durante o cálculo visual, limpa seleção escondida e impede clique em
+           casas vermelhas marcadas como "NÃO".
+        ===================================================================== */
+        function instalarRoboCoresSomenteVisualProfessor44() {
+            if (window.__prof44RoboSomenteVisualInstalado) return;
+            window.__prof44RoboSomenteVisualInstalado = true;
+
+            window.__prof44RoboVisualLock = false;
+
+            function prof44CssSeguro() {
+                if (document.getElementById('teacher-prof44-visual-only-style')) return;
+                const style = document.createElement('style');
+                style.id = 'teacher-prof44-visual-only-style';
+                style.textContent = `
+                    #chess-board .chess-square.teacher-direct-from-33::before,
+                    #chess-board .chess-square.teacher-direct-to-33::before,
+                    #chess-board .chess-square.teacher-direct-bad-33::before,
+                    #chess-board .chess-square.teacher-direct-from-33::after,
+                    #chess-board .chess-square.teacher-direct-to-33::after,
+                    #chess-board .chess-square.teacher-direct-bad-33::after {
+                        pointer-events: none !important;
+                    }
+                    #chess-board .chess-square.teacher-direct-from-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-to-33 .chess-piece,
+                    #chess-board .chess-square.teacher-direct-bad-33 .chess-piece {
+                        pointer-events: none !important;
+                    }
+                    #teacher-direct-guide-33 .prof44-safe-note {
+                        margin-top: 6px !important;
+                        padding: 6px 7px !important;
+                        border-radius: 10px !important;
+                        background: rgba(22,101,52,.18) !important;
+                        border: 1px solid rgba(34,197,94,.28) !important;
+                        color: #bbf7d0 !important;
+                        font-size: .58rem !important;
+                        font-weight: 900 !important;
+                        line-height: 1.22 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            function prof44Clone(obj) {
+                try { return JSON.parse(JSON.stringify(obj)); } catch (_) { return obj; }
+            }
+
+            function prof44ClonarBoardSeguro(board) {
+                try {
+                    return (board || []).map(row => (row || []).map(p => p ? { ...p } : null));
+                } catch (_) {
+                    try { return prof44Clone(board); } catch (__) { return board; }
+                }
+            }
+
+            function prof44AssinaturaEstado() {
+                try {
+                    return JSON.stringify({
+                        board: chessBoard || [],
+                        turn: chessTurn || '',
+                        over: !!chessGameOver,
+                        last: lastChessMove || null,
+                        ep: enPassantTarget || null,
+                        history: Array.isArray(moveHistory) ? moveHistory : []
+                    });
+                } catch (_) {
+                    return String(Date.now());
+                }
+            }
+
+            function prof44SnapshotEstado() {
+                return {
+                    assinatura: prof44AssinaturaEstado(),
+                    board: prof44ClonarBoardSeguro(chessBoard),
+                    turn: chessTurn,
+                    gameOver: chessGameOver,
+                    lastMoveMessage,
+                    lastChessMove: prof44Clone(lastChessMove),
+                    enPassantTarget: prof44Clone(enPassantTarget),
+                    moveHistory: prof44Clone(moveHistory)
+                };
+            }
+
+            function prof44RestaurarSeMudou(snapshot) {
+                if (!snapshot) return false;
+                const atual = prof44AssinaturaEstado();
+                if (atual === snapshot.assinatura) return false;
+
+                // Se o cálculo visual alterou algo sem querer, volta imediatamente.
+                chessBoard = prof44ClonarBoardSeguro(snapshot.board);
+                chessTurn = snapshot.turn;
+                chessGameOver = snapshot.gameOver;
+                lastMoveMessage = snapshot.lastMoveMessage;
+                lastChessMove = prof44Clone(snapshot.lastChessMove);
+                enPassantTarget = prof44Clone(snapshot.enPassantTarget);
+                moveHistory = prof44Clone(snapshot.moveHistory) || [];
+                return true;
+            }
+
+            function prof44LimparSelecaoDeMovimento() {
+                try { selectedSquare = null; } catch (_) {}
+                try { legalMoves = []; } catch (_) {}
+                document.querySelectorAll('#chess-board .chess-square').forEach(square => {
+                    square.classList.remove('selected', 'legal', 'capture', 'castle', 'en-passant');
+                });
+            }
+
+            function prof44RoboCoresLigado() {
+                try {
+                    return !!(
+                        professorPrivadoPodeAparecerXadrez19 && professorPrivadoPodeAparecerXadrez19() &&
+                        autoGuiaDiretaAtivaXadrez33 && autoGuiaDiretaAtivaXadrez33()
+                    );
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function prof44AvisoSeguro() {
+                const panel = document.getElementById('teacher-direct-guide-33');
+                if (panel && !panel.querySelector('.prof44-safe-note')) {
+                    const note = document.createElement('div');
+                    note.className = 'prof44-safe-note';
+                    note.textContent = '✅ Modo seguro: o robô por cores só pinta o tabuleiro. Ele não move peça e não joga sozinho.';
+                    panel.appendChild(note);
+                }
+            }
+
+            const aplicarOriginal44 = aplicarGuiaDiretaProfessorXadrez33;
+            aplicarGuiaDiretaProfessorXadrez33 = function aplicarGuiaDiretaProfessorXadrez44SomenteVisual() {
+                const ativo = prof44RoboCoresLigado();
+                const snapshot = ativo ? prof44SnapshotEstado() : null;
+                let retorno;
+
+                if (ativo) window.__prof44RoboVisualLock = true;
+                try {
+                    retorno = aplicarOriginal44.apply(this, arguments);
+                } finally {
+                    if (ativo) {
+                        const restaurou = prof44RestaurarSeMudou(snapshot);
+                        prof44LimparSelecaoDeMovimento();
+                        prof44AvisoSeguro();
+                        if (restaurou) {
+                            try { atualizarStatusGuiaDiretaProfessorXadrez33('✅ Segurança aplicada: o robô tentou analisar, mas qualquer alteração real foi bloqueada. As cores continuam sendo apenas orientação visual.'); } catch (_) {}
+                        }
+                        setTimeout(() => { window.__prof44RoboVisualLock = false; }, 180);
+                    } else {
+                        window.__prof44RoboVisualLock = false;
+                    }
+                }
+                return retorno;
+            };
+
+            const moverOriginal44 = executarMovimentoXadrez;
+            executarMovimentoXadrez = async function executarMovimentoXadrezProf44BloqueioVisual() {
+                if (window.__prof44RoboVisualLock) {
+                    try { mostrarToastXadrez('🎓 Robô por cores é somente visual. Nenhuma peça foi movida pelo robô.', 'check'); } catch (_) {}
+                    return false;
+                }
+                return moverOriginal44.apply(this, arguments);
+            };
+
+            const clickOriginal44 = handleChessSquareClick;
+            handleChessSquareClick = async function handleChessSquareClickProf44Seguro(row, col) {
+                if (window.__prof44RoboVisualLock) {
+                    try { mostrarToastXadrez('Aguarde o robô terminar de pintar as dicas.', 'check'); } catch (_) {}
+                    return false;
+                }
+
+                const square = document.querySelector(`#chess-board .chess-square[data-row="${row}"][data-col="${col}"]`);
+                if (prof44RoboCoresLigado() && square && square.classList.contains('teacher-direct-bad-33')) {
+                    prof44LimparSelecaoDeMovimento();
+                    try { mostrarToastXadrez('🔴 Vermelho significa perigo: o robô recomenda NÃO mexer nessa peça/casa agora.', 'check'); } catch (_) {}
+                    return false;
+                }
+
+                return clickOriginal44.apply(this, arguments);
+            };
+
+            const atualizarPainelAnterior44 = atualizarPainelFlutuanteGuiaDiretaXadrez33;
+            atualizarPainelFlutuanteGuiaDiretaXadrez33 = function atualizarPainelFlutuanteGuiaDiretaXadrez44() {
+                const retorno = atualizarPainelAnterior44.apply(this, arguments);
+                setTimeout(prof44AvisoSeguro, 0);
+                return retorno;
+            };
+
+            prof44CssSeguro();
+        }
+
+        instalarRoboCoresSomenteVisualProfessor44();
+
+
 
 })();
 
