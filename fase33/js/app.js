@@ -955,8 +955,8 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
                     btn.textContent = '✅ Jogo instalado';
                     btn.title = 'O Tabuleiro Arena já está instalado neste aparelho.';
                 } else {
-                    btn.textContent = '📲 Baixar jogo pelo navegador';
-                    btn.title = 'Instalar o jogo na tela inicial pelo navegador.';
+                    btn.textContent = '📲 Baixar Jogo';
+                    btn.title = 'Instalar o Tabuleiro Arena como aplicativo.';
                 }
             });
         } catch (_) {}
@@ -992,7 +992,7 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
                 if (escolha && escolha.outcome === 'accepted') {
                     exibirAlertaDoSistema('Instalação iniciada ✅', 'O navegador aceitou instalar o Tabuleiro Arena. Procure o ícone na tela inicial do aparelho.');
                 } else {
-                    exibirAlertaDoSistema('Instalação cancelada', 'Você pode tentar novamente pelo botão <strong>Baixar jogo pelo navegador</strong>.');
+                    exibirAlertaDoSistema('Instalação cancelada', 'Você pode tentar novamente pelo botão <strong>Baixar Jogo</strong>.');
                 }
                 return;
             } catch (e) {
@@ -1007,7 +1007,7 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
             : isAndroid
                 ? 'No Android/Chrome: toque nos <strong>três pontinhos</strong> do navegador e escolha <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.'
                 : 'No computador: procure o ícone de instalação na barra de endereço do navegador ou abra o menu do navegador e escolha <strong>Instalar Tabuleiro Arena</strong>.';
-        exibirAlertaDoSistema('Baixar pelo navegador 📲', mensagem + '<br><br>Isso não baixa APK: instala o jogo pelo próprio navegador, como aplicativo.');
+        exibirAlertaDoSistema('Instalar Tabuleiro Arena 📲', mensagem + '<br><br>O jogo ficará com aparência de aplicativo na tela inicial.');
     }
 
     if (downloadBtnLobby) downloadBtnLobby.addEventListener('click', baixarJogoPeloNavegador);
@@ -1021,7 +1021,7 @@ ${limpo}`) && typeof callbackSim === 'function') callbackSim();
     try {
         if ('serviceWorker' in navigator && window.isSecureContext) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js?v=prof54').catch(err => console.warn('Service Worker não registrado:', err));
+                navigator.serviceWorker.register('service-worker.js?v=prof55').catch(err => console.warn('Service Worker não registrado:', err));
             });
         }
     } catch (_) {}
