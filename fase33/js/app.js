@@ -18479,6 +18479,79 @@ Compartilhe com os amigos e entre no horário marcado.`;
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
+    }
+
 })();
 
 
@@ -19369,6 +19442,79 @@ setInterval(() => {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
+    }
+
 })();
 
 
@@ -20242,6 +20388,79 @@ setInterval(() => {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
+    }
+
 })();
 
 /*
@@ -20716,6 +20935,79 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
+    }
+
 })();
 
 
@@ -21173,6 +21465,79 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
+    }
+
 })();
 
 
@@ -21612,6 +21977,79 @@ na Damas, no Admin, nas salas, ranking ou torneios.
     } else {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
     }
 
 })();
@@ -22312,6 +22750,79 @@ na Damas, no Admin, nas salas, ranking ou torneios.
     } else {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
+
+    /* PROF69_PAINEL_UTIL_DAMAS
+       Troca o painel de números zerados por atalhos práticos.
+       Não mexe nas regras, Firebase, treino ou Xadrez. */
+    function iniciarPainelUtilDamas69() {
+        const painel = document.getElementById('damas-painel-util69');
+        if (!painel || painel.dataset.prof69Started === '1') return;
+        painel.dataset.prof69Started = '1';
+
+        const msg = document.getElementById('util69-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof69Click !== '1') {
+                el.dataset.prof69Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('util69-online', () => {
+            setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique no botão verde “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarPara('name-input');
+            const nome = document.getElementById('name-input');
+            if (nome) nome.focus({ preventScroll: true });
+            piscar('join-btn');
+        });
+
+        ligar('util69-treino', () => {
+            setMsg('Treino selecionado: clique no botão “Contra a Máquina (Modo Treino)” logo abaixo e escolha o nível.');
+            rolarPara('practice-btn');
+            piscar('practice-btn');
+        });
+
+        ligar('util69-assistir', () => {
+            setMsg('Para assistir: informe o código da sala e clique no botão “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarPara('room-input');
+            piscar('spectate-btn');
+        });
+
+        ligar('util69-ranking', () => {
+            setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+            const btn = document.getElementById('rank-btn-lobby');
+            if (btn && !btn.disabled) btn.click();
+            else {
+                rolarPara('rank-btn-lobby');
+                piscar('rank-btn-lobby');
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
+    } else {
+        iniciarPainelUtilDamas69();
     }
 
 })();
