@@ -18564,6 +18564,74 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarDamasEducacionalPremium63();
     }
 
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
+    }
+
 })();
 
 
@@ -19539,6 +19607,74 @@ setInterval(() => {
         iniciarDamasEducacionalPremium63();
     }
 
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
+    }
+
 })();
 
 
@@ -20497,6 +20633,74 @@ setInterval(() => {
         iniciarDamasEducacionalPremium63();
     }
 
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
+    }
+
 })();
 
 /*
@@ -21056,6 +21260,74 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarDamasEducacionalPremium63();
     }
 
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
+    }
+
 })();
 
 
@@ -21598,6 +21870,74 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarDamasEducacionalPremium63();
     }
 
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
+    }
+
 })();
 
 
@@ -22122,6 +22462,74 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
     } else {
         iniciarDamasEducacionalPremium63();
+    }
+
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
     }
 
 })();
@@ -22907,6 +23315,74 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
     } else {
         iniciarDamasEducacionalPremium63();
+    }
+
+
+    /* PROF64_TORNEIO_ESCOLAR_DAMAS
+       Liga os indicadores da área de Torneio Escolar aos dados já existentes.
+       Não cria torneio real e não altera regras/salas/Firebase original. */
+    function iniciarTorneioEscolarDamas64() {
+        const painel = document.getElementById('damas-torneio-escolar64');
+        if (!painel || painel.dataset.prof64Started === '1') return;
+        painel.dataset.prof64Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+                if (sala.spectators && typeof sala.spectators === 'object') espectadores += Object.keys(sala.spectators).length;
+            });
+
+            return { total, espectadores };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarRooms(snapshot.val() || {});
+                setTxt('torneio64-salas', info.total);
+                setTxt('torneio64-espectadores', info.espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler salas para torneio escolar:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                setTxt('torneio64-ranking', Object.keys(snapshot.val() || {}).length);
+            });
+        } catch (e) {
+            console.warn('Prof64: erro ao ler ranking para torneio escolar:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const info = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('torneio64-salas')?.textContent || 0);
+                    if (info.total > atual) setTxt('torneio64-salas', info.total);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
+    } else {
+        iniciarTorneioEscolarDamas64();
     }
 
 })();

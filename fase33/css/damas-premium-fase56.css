@@ -1517,3 +1517,254 @@ button:disabled {
     min-height: auto;
   }
 }
+
+
+/* Fase 64 — Torneio Escolar da Damas.
+   Área visual/comercial para eventos escolares. Não altera torneios reais, partidas ou Firebase original. */
+.damas-torneio-escolar64 {
+  margin: 18px 0 22px 0;
+  padding: 18px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(247,181,0,0.14), transparent 34%),
+    radial-gradient(circle at top right, rgba(29,211,255,0.10), transparent 36%),
+    linear-gradient(180deg, rgba(7,16,33,0.98), rgba(4,10,22,0.98));
+  border: 1px solid rgba(247,181,0,0.22);
+  box-shadow: 0 24px 46px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow: hidden;
+  position: relative;
+}
+
+.damas-torneio-escolar64::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,0.04), transparent 28%, transparent 76%, rgba(29,211,255,0.04));
+}
+
+.torneio64-head {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.torneio64-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: #ffd76a;
+  background: rgba(247,181,0,0.11);
+  border: 1px solid rgba(247,181,0,0.22);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.torneio64-head h2 {
+  margin: 0 0 8px 0;
+  color: #ffffff;
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.torneio64-head p {
+  color: #b8c9e8;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  max-width: 650px;
+}
+
+.torneio64-status {
+  min-width: 118px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(29,211,255,0.18), rgba(3,10,22,0.88));
+  border: 1px solid rgba(29,211,255,0.24);
+  box-shadow: 0 14px 28px rgba(29,211,255,0.10);
+}
+
+.torneio64-status span {
+  display: block;
+  color: #7dd3fc;
+  font-size: 0.62rem;
+  font-weight: 1000;
+  letter-spacing: 1px;
+}
+
+.torneio64-status strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.9rem;
+  margin-top: 3px;
+}
+
+.torneio64-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.torneio64-card {
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(3, 10, 22, 0.74);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.torneio64-title {
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+.torneio64-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: #aebfdd;
+  font-size: 0.82rem;
+}
+
+.torneio64-line:last-child { border-bottom: 0; }
+
+.torneio64-line strong {
+  color: #fff;
+  text-align: right;
+}
+
+.torneio64-card ul {
+  list-style: none;
+  display: grid;
+  gap: 9px;
+}
+
+.torneio64-card li {
+  color: #dbeafe;
+  font-size: 0.82rem;
+  padding-left: 23px;
+  position: relative;
+}
+
+.torneio64-card li::before {
+  content: "🏅";
+  position: absolute;
+  left: 0;
+  top: -1px;
+}
+
+.torneio64-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.torneio64-step {
+  min-height: 128px;
+  padding: 14px 12px;
+  border-radius: 20px;
+  background: rgba(2, 8, 18, 0.76);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.torneio64-step span {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #2d2100;
+  background: linear-gradient(90deg, #f7b500, #ffd76a);
+  font-weight: 1000;
+  margin-bottom: 9px;
+}
+
+.torneio64-step strong {
+  display: block;
+  color: #fff;
+  font-size: 0.86rem;
+  margin-bottom: 5px;
+}
+
+.torneio64-step small {
+  display: block;
+  color: #9eb4d7;
+  font-size: 0.75rem;
+  line-height: 1.32;
+}
+
+.torneio64-live {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.torneio64-live div {
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(2, 8, 18, 0.76);
+  border: 1px solid rgba(247,181,0,0.13);
+}
+
+.torneio64-live span {
+  display: inline-flex;
+  margin-right: 8px;
+}
+
+.torneio64-live strong {
+  color: #ffd76a;
+  font-size: clamp(1.25rem, 4vw, 1.8rem);
+  letter-spacing: -0.04em;
+}
+
+.torneio64-live small {
+  display: block;
+  color: #9eb4d7;
+  font-size: 0.74rem;
+  margin-top: 3px;
+}
+
+@media (max-width: 900px) {
+  .torneio64-main,
+  .torneio64-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .damas-torneio-escolar64 {
+    padding: 14px;
+    border-radius: 22px;
+  }
+  .torneio64-head {
+    flex-direction: column;
+  }
+  .torneio64-status {
+    width: 100%;
+  }
+  .torneio64-main,
+  .torneio64-steps,
+  .torneio64-live {
+    grid-template-columns: 1fr;
+  }
+}
