@@ -18632,6 +18632,179 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarTorneioEscolarDamas64();
     }
 
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
+    }
+
 })();
 
 
@@ -19675,6 +19848,179 @@ setInterval(() => {
         iniciarTorneioEscolarDamas64();
     }
 
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
+    }
+
 })();
 
 
@@ -20701,6 +21047,179 @@ setInterval(() => {
         iniciarTorneioEscolarDamas64();
     }
 
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
+    }
+
 })();
 
 /*
@@ -21328,6 +21847,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarTorneioEscolarDamas64();
     }
 
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
+    }
+
 })();
 
 
@@ -21938,6 +22630,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarTorneioEscolarDamas64();
     }
 
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
+    }
+
 })();
 
 
@@ -22530,6 +23395,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
     } else {
         iniciarTorneioEscolarDamas64();
+    }
+
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
     }
 
 })();
@@ -23383,6 +24421,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarTorneioEscolarDamas64);
     } else {
         iniciarTorneioEscolarDamas64();
+    }
+
+
+    /* PROF65_CENTRAL_ESCOLAR_DAMAS
+       Central funcional local para escola/professor:
+       cadastra escola, turma, alunos, desafios e gera relatório/ impressão.
+       Dados ficam no navegador do professor. Não altera Firebase, partidas nem Xadrez. */
+    function iniciarCentralEscolarDamas65() {
+        const painel = document.getElementById('damas-central-escolar65');
+        if (!painel || painel.dataset.prof65Started === '1') return;
+        painel.dataset.prof65Started = '1';
+
+        const KEY = 'tabuleiroArenaCentralEscolarDamas65';
+        const $ = (id) => document.getElementById(id);
+        const estadoPadrao = { escola: '', professor: '', turma: '', alunos: [], desafios: [], destaqueId: null };
+
+        const carregar = () => {
+            try { return { ...estadoPadrao, ...(JSON.parse(localStorage.getItem(KEY) || '{}')) }; }
+            catch (e) { return { ...estadoPadrao }; }
+        };
+
+        let estado = carregar();
+        const textoSeguro = (v) => String(v || '').trim();
+
+        const gerarRelatorio = () => {
+            const escola = textoSeguro(estado.escola) || 'Escola/projeto não informado';
+            const professor = textoSeguro(estado.professor) || 'Professor responsável não informado';
+            const turma = textoSeguro(estado.turma) || 'Turma não informada';
+
+            const alunosHtml = estado.alunos.length
+                ? estado.alunos.map((a, i) => `<li>${i + 1}. ${a.nome} — nível ${a.nivel}${a.id === estado.destaqueId ? ' ⭐ destaque' : ''}</li>`).join('')
+                : '<li>Nenhum aluno cadastrado ainda.</li>';
+
+            const desafiosHtml = estado.desafios.length
+                ? estado.desafios.map((d, i) => `<li>${i + 1}. ${d.texto}</li>`).join('')
+                : '<li>Nenhum desafio criado ainda.</li>';
+
+            return `
+                <h3>Relatório — Central Escolar da Damas</h3>
+                <p><strong>Escola/Projeto:</strong> ${escola}</p>
+                <p><strong>Professor:</strong> ${professor}</p>
+                <p><strong>Turma/Grupo:</strong> ${turma}</p>
+                <p><strong>Total de alunos:</strong> ${estado.alunos.length}</p>
+                <p><strong>Total de desafios:</strong> ${estado.desafios.length}</p>
+                <p><strong>Objetivo pedagógico:</strong> usar a Damas para desenvolver raciocínio lógico, concentração, respeito às regras, tomada de decisão e competição saudável.</p>
+                <p><strong>Alunos cadastrados:</strong></p>
+                <ul>${alunosHtml}</ul>
+                <p><strong>Desafios pedagógicos:</strong></p>
+                <ul>${desafiosHtml}</ul>
+            `;
+        };
+
+        const salvar = () => {
+            localStorage.setItem(KEY, JSON.stringify(estado));
+            render();
+        };
+
+        const render = () => {
+            if ($('central65-escola')) $('central65-escola').value = estado.escola || '';
+            if ($('central65-professor')) $('central65-professor').value = estado.professor || '';
+            if ($('central65-turma')) $('central65-turma').value = estado.turma || '';
+
+            if ($('central65-stat-escola')) $('central65-stat-escola').textContent = estado.escola ? '1' : '0';
+            if ($('central65-stat-alunos')) $('central65-stat-alunos').textContent = estado.alunos.length;
+            if ($('central65-stat-desafios')) $('central65-stat-desafios').textContent = estado.desafios.length;
+            if ($('central65-stat-destaques')) $('central65-stat-destaques').textContent = estado.destaqueId ? '1' : '0';
+
+            const lista = $('central65-lista-alunos');
+            if (lista) {
+                if (!estado.alunos.length && !estado.desafios.length) {
+                    lista.innerHTML = 'Nenhum aluno cadastrado ainda.';
+                } else {
+                    const alunos = estado.alunos.map((a) => `
+                        <div class="central65-aluno-row">
+                            <div><strong>${a.nome}${a.id === estado.destaqueId ? ' ⭐' : ''}</strong><small>Nível: ${a.nivel}</small></div>
+                            <button type="button" data-central65-remove-aluno="${a.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    const desafios = estado.desafios.map((d) => `
+                        <div class="central65-desafio-row">
+                            <div><strong>🎯 Desafio</strong><small>${d.texto}</small></div>
+                            <button type="button" data-central65-remove-desafio="${d.id}">Remover</button>
+                        </div>
+                    `).join('');
+
+                    lista.innerHTML = alunos + desafios;
+                }
+            }
+
+            const rel = $('central65-relatorio');
+            if (rel) rel.innerHTML = gerarRelatorio();
+
+            painel.querySelectorAll('[data-central65-remove-aluno]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-aluno');
+                    estado.alunos = estado.alunos.filter((a) => String(a.id) !== String(id));
+                    if (String(estado.destaqueId) === String(id)) estado.destaqueId = null;
+                    salvar();
+                };
+            });
+
+            painel.querySelectorAll('[data-central65-remove-desafio]').forEach((btn) => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-central65-remove-desafio');
+                    estado.desafios = estado.desafios.filter((d) => String(d.id) !== String(id));
+                    salvar();
+                };
+            });
+        };
+
+        $('central65-salvar-escola')?.addEventListener('click', () => {
+            estado.escola = textoSeguro($('central65-escola')?.value);
+            estado.professor = textoSeguro($('central65-professor')?.value);
+            estado.turma = textoSeguro($('central65-turma')?.value);
+            salvar();
+            if (typeof showAlert === 'function') showAlert('Central Escolar', 'Dados da escola salvos neste aparelho.');
+        });
+
+        $('central65-add-aluno')?.addEventListener('click', () => {
+            const nome = textoSeguro($('central65-aluno')?.value);
+            const nivel = textoSeguro($('central65-nivel')?.value) || 'Iniciante';
+            if (!nome) {
+                if (typeof showAlert === 'function') showAlert('Aluno', 'Digite o nome do aluno.');
+                return;
+            }
+            estado.alunos.push({ id: Date.now(), nome, nivel });
+            if ($('central65-aluno')) $('central65-aluno').value = '';
+            salvar();
+        });
+
+        $('central65-marcar-destaque')?.addEventListener('click', () => {
+            if (!estado.alunos.length) {
+                if (typeof showAlert === 'function') showAlert('Destaque', 'Cadastre pelo menos um aluno primeiro.');
+                return;
+            }
+            estado.destaqueId = estado.alunos[estado.alunos.length - 1].id;
+            salvar();
+        });
+
+        $('central65-add-desafio')?.addEventListener('click', () => {
+            const texto = textoSeguro($('central65-desafio')?.value);
+            if (!texto) {
+                if (typeof showAlert === 'function') showAlert('Desafio', 'Digite a descrição do desafio.');
+                return;
+            }
+            estado.desafios.push({ id: Date.now(), texto });
+            if ($('central65-desafio')) $('central65-desafio').value = '';
+            salvar();
+        });
+
+        $('central65-limpar')?.addEventListener('click', () => {
+            if (!confirm('Deseja limpar a Central Escolar deste aparelho?')) return;
+            estado = { ...estadoPadrao };
+            localStorage.removeItem(KEY);
+            render();
+        });
+
+        $('central65-print')?.addEventListener('click', () => window.print());
+
+        painel.querySelectorAll('[data-central65-sugestao]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if ($('central65-desafio')) $('central65-desafio').value = btn.getAttribute('data-central65-sugestao') || '';
+            });
+        });
+
+        render();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
+    } else {
+        iniciarCentralEscolarDamas65();
     }
 
 })();
