@@ -18340,6 +18340,145 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarAdminDamasDashboard61();
     }
 
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
 })();
 
 
@@ -19091,6 +19230,145 @@ setInterval(() => {
         iniciarAdminDamasDashboard61();
     }
 
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
 })();
 
 
@@ -19825,6 +20103,145 @@ setInterval(() => {
         iniciarAdminDamasDashboard61();
     }
 
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
 })();
 
 /*
@@ -20160,6 +20577,145 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarAdminDamasDashboard61();
     }
 
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
 })();
 
 
@@ -20478,6 +21034,145 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarAdminDamasDashboard61();
     }
 
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
 })();
 
 
@@ -20778,6 +21473,145 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
     } else {
         iniciarAdminDamasDashboard61();
+    }
+
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
 })();
@@ -21339,6 +22173,145 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
     } else {
         iniciarAdminDamasDashboard61();
+    }
+
+
+    /* PROF62_CORRIGE_SALAS_LIBERADAS_DAMAS
+       Correção: Prof61 contava principalmente salas com jogo ativo.
+       Agora o dashboard também considera salas liberadas/configuradas pelo Admin,
+       mesmo quando ainda não há jogadores dentro.
+       Não muda regras, Firebase, partidas, ranking ou Xadrez. */
+    function iniciarCorrecaoSalasLiberadasDamas62() {
+        const painelDamas = document.getElementById('damas-premium-dashboard');
+        const painelAdmin = document.getElementById('admin-damas-premium-metrics61');
+        if ((!painelDamas && !painelAdmin) || window.__prof62SalasLiberadasDamasStarted) return;
+        window.__prof62SalasLiberadasDamasStarted = true;
+
+        const setTxt62 = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        const estado = {
+            roomsAtivas: 0,
+            roomsEspectadores: 0,
+            liberadas: 0,
+            adminRooms: 0,
+            torneios: 0
+        };
+
+        const atualizar62 = () => {
+            const salasTotal = Math.max(
+                Number(estado.roomsAtivas || 0),
+                Number(estado.liberadas || 0),
+                Number(estado.adminRooms || 0)
+            );
+
+            setTxt62('damas-stat-online', salasTotal);
+            setTxt62('admin-damas-salas61', salasTotal);
+            setTxt62('damas-stat-espectadores', estado.roomsEspectadores || 0);
+            setTxt62('admin-damas-espectadores61', estado.roomsEspectadores || 0);
+
+            if (painelDamas) painelDamas.classList.add('damas-live-loaded');
+        };
+
+        const contarRooms62 = (rooms) => {
+            let ativas = 0;
+            let espectadores = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    sala.status === 'open' || sala.status === 'aberta' || sala.status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) ativas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            estado.roomsAtivas = ativas;
+            estado.roomsEspectadores = espectadores;
+            atualizar62();
+        };
+
+        const contarObjetoSalas62 = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const status = String(sala.status || sala.roomStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                if (!bloqueada && !finalizada) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                contarRooms62(snapshot.val() || {});
+            });
+        } catch (e) {
+            console.warn('Prof62: erro ao ler rooms:', e);
+        }
+
+        // Caminhos de compatibilidade para salas liberadas criadas pelo Admin em versões anteriores.
+        // Se algum desses caminhos existir no Firebase, ele entra no cálculo automaticamente.
+        const caminhosSalasLiberadas62 = [
+            'releasedRooms',
+            'liberatedRooms',
+            'allowedRooms',
+            'adminRooms',
+            'roomsLiberadas',
+            'salasLiberadas',
+            'damasReleasedRooms',
+            'damasAllowedRooms',
+            'damasAdminRooms',
+            'damas/salasLiberadas',
+            'damas/rooms',
+            'damas/adminRooms'
+        ];
+
+        caminhosSalasLiberadas62.forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarObjetoSalas62(snapshot.val() || {});
+                    if (qtd > estado.liberadas) {
+                        estado.liberadas = qtd;
+                        atualizar62();
+                    }
+                });
+            } catch (e) {
+                console.warn('Prof62: caminho de salas liberadas não lido:', caminho, e);
+            }
+        });
+
+        atualizar62();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+            setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+        });
+    } else {
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
+        setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
 })();
