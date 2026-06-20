@@ -18552,6 +18552,179 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarPainelUtilDamas69();
     }
 
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
+    }
+
 })();
 
 
@@ -19515,6 +19688,179 @@ setInterval(() => {
         iniciarPainelUtilDamas69();
     }
 
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
+    }
+
 })();
 
 
@@ -20461,6 +20807,179 @@ setInterval(() => {
         iniciarPainelUtilDamas69();
     }
 
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
+    }
+
 })();
 
 /*
@@ -21008,6 +21527,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarPainelUtilDamas69();
     }
 
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
+    }
+
 })();
 
 
@@ -21538,6 +22230,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarPainelUtilDamas69();
     }
 
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
+    }
+
 })();
 
 
@@ -22050,6 +22915,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
     } else {
         iniciarPainelUtilDamas69();
+    }
+
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
     }
 
 })();
@@ -22823,6 +23861,179 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarPainelUtilDamas69);
     } else {
         iniciarPainelUtilDamas69();
+    }
+
+
+    /* PROF70_DASHBOARD_REAL_DAMAS
+       Painel real: métricas do Firebase + cliques robustos.
+       Não altera regras, partidas, treino, ranking original nem Xadrez. */
+    function iniciarDashboardRealDamas70() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof70Started === '1') return;
+        painel.dataset.prof70Started = '1';
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (txt) => { if (msg) msg.textContent = txt; };
+
+        const estado = { salas: 0, espectadores: 0, partidas: 0 };
+
+        const nomeCurto = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarRooms = (rooms) => {
+            let salas = 0;
+            let espectadores = 0;
+            let partidas = 0;
+
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+
+                const temJogador = !!(
+                    sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name ||
+                    sala.player1 || sala.player2 || sala.player1Name || sala.player2Name ||
+                    sala.redPlayer || sala.blackPlayer
+                );
+
+                const pareceLiberada = (
+                    sala.liberada === true || sala.enabled === true || sala.active === true ||
+                    status === 'open' || status === 'aberta' || status === 'liberada' ||
+                    sala.allowSpectators === true || sala.createdAt || sala.updatedAt
+                );
+
+                if (!finalizada && !bloqueada && (temJogador || pareceLiberada)) salas += 1;
+                if (temJogador || sala.moves || sala.board || sala.moveHistory) partidas += 1;
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { salas, espectadores, partidas };
+        };
+
+        const aplicarContagem = (info) => {
+            estado.salas = Math.max(estado.salas || 0, Number(info.salas || 0));
+            estado.espectadores = Math.max(estado.espectadores || 0, Number(info.espectadores || 0));
+            estado.partidas = Math.max(estado.partidas || 0, Number(info.partidas || 0));
+
+            setTxt('dash70-salas', estado.salas);
+            setTxt('dash70-espectadores', estado.espectadores);
+            setTxt('dash70-partidas', estado.partidas);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                aplicarContagem(contarRooms(snapshot.val() || {}));
+                setMsg('Dashboard conectado: dados da Damas carregados. Use os botões para jogar ou acompanhar.');
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler rooms:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    aplicarContagem(contarRooms(snapshot.val() || {}));
+                });
+            } catch(e) {}
+        });
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('dash70-jogadores', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof70: erro ao ler leaderboard:', e);
+        }
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1600);
+        };
+
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-dash70-action]');
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            const action = btn.getAttribute('data-dash70-action');
+
+            if (action === 'online') {
+                setMsg('Para jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)” abaixo.');
+                rolarPara('name-input');
+                const nome = document.getElementById('name-input');
+                if (nome) nome.focus({ preventScroll: true });
+                piscar('join-btn');
+            }
+
+            if (action === 'treino') {
+                setMsg('Treino selecionado: clique em “Contra a Máquina (Modo Treino)” abaixo e escolha o nível.');
+                rolarPara('practice-btn');
+                piscar('practice-btn');
+            }
+
+            if (action === 'assistir') {
+                setMsg('Para assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)” abaixo.');
+                rolarPara('room-input');
+                piscar('spectate-btn');
+            }
+
+            if (action === 'ranking') {
+                setMsg('Ranking selecionado: abrindo a classificação da Damas.');
+                const rank = document.getElementById('rank-btn-lobby');
+                if (rank && !rank.disabled) rank.click();
+                else {
+                    rolarPara('rank-btn-lobby');
+                    piscar('rank-btn-lobby');
+                }
+            }
+        }, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
+    } else {
+        iniciarDashboardRealDamas70();
     }
 
 })();

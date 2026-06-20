@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
-    <link rel="stylesheet" href="css/style.css?v=prof69">
-    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof69">
-    <link rel="manifest" href="manifest.json?v=prof69">
+    <link rel="stylesheet" href="css/style.css?v=prof70">
+    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof70">
+    <link rel="manifest" href="manifest.json?v=prof70">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
@@ -149,44 +149,67 @@
     <div id="lobby-screen" class="card" style="display:none;">
         <button id="back-to-games-btn" class="back-to-games-btn" type="button">← Escolher outra modalidade</button>
         <div class="current-game-strip"><strong>Modalidade ativa:</strong> Damas Arena — jogue online, treine contra a máquina, aprenda estratégias e dispute torneios.</div>
-        <section id="damas-painel-util69" class="damas-painel-util69" aria-label="Painel útil da Damas Arena">
-            <div class="damas-util-head69">
+        <section id="damas-dashboard-real70" class="damas-dashboard-real70" aria-label="Dashboard real da Damas Arena">
+            <div class="dash70-head">
                 <div>
-                    <div class="damas-util-kicker69">⚡ Damas Arena</div>
-                    <h2>O que você quer fazer agora?</h2>
-                    <p>Escolha uma ação prática. O tabuleiro abre pelos botões oficiais do jogo, mantendo tudo funcionando como antes.</p>
+                    <div class="dash70-kicker">📊 Dashboard da Damas</div>
+                    <h2>Painel vivo da modalidade</h2>
+                    <p>Números reais do sistema e atalhos práticos para jogar, treinar, assistir e acompanhar ranking.</p>
                 </div>
-                <div class="damas-util-status69">
-                    <span>STATUS</span>
-                    <strong>PRONTO</strong>
+                <div class="dash70-status">
+                    <span>DADOS</span>
+                    <strong>AO VIVO</strong>
                 </div>
             </div>
 
-            <div class="damas-util-grid69">
-                <button id="util69-online" type="button" class="damas-util-card69 util69-online">
-                    <span>⚔️</span>
-                    <strong>Jogar Online</strong>
-                    <small>Preencha nome e sala, depois entre para jogar.</small>
-                </button>
-                <button id="util69-treino" type="button" class="damas-util-card69 util69-treino">
-                    <span>🎯</span>
-                    <strong>Treinar</strong>
-                    <small>Jogar contra a máquina e praticar.</small>
-                </button>
-                <button id="util69-assistir" type="button" class="damas-util-card69 util69-assistir">
-                    <span>👁️</span>
-                    <strong>Assistir</strong>
-                    <small>Acompanhar uma sala como espectador.</small>
-                </button>
-                <button id="util69-ranking" type="button" class="damas-util-card69 util69-ranking">
+            <div class="dash70-metrics">
+                <div class="dash70-metric dash70-blue">
+                    <span>🎮</span>
+                    <strong id="dash70-salas">0</strong>
+                    <small>salas liberadas/ativas</small>
+                </div>
+                <div class="dash70-metric dash70-green">
+                    <span>👥</span>
+                    <strong id="dash70-jogadores">0</strong>
+                    <small>jogadores no ranking</small>
+                </div>
+                <div class="dash70-metric dash70-gold">
                     <span>🏆</span>
-                    <strong>Ranking</strong>
-                    <small>Ver classificação e desempenho.</small>
+                    <strong id="dash70-partidas">0</strong>
+                    <small>partidas registradas</small>
+                </div>
+                <div class="dash70-metric dash70-purple">
+                    <span>👁️</span>
+                    <strong id="dash70-espectadores">0</strong>
+                    <small>espectadores nas salas</small>
+                </div>
+            </div>
+
+            <div class="dash70-actions">
+                <button type="button" class="dash70-action" data-dash70-action="online">
+                    <span>⚔️</span><strong>Jogar Online</strong><small>Ir para nome, sala e botão de entrada.</small>
+                </button>
+                <button type="button" class="dash70-action" data-dash70-action="treino">
+                    <span>🎯</span><strong>Treinar</strong><small>Abrir modo contra a máquina.</small>
+                </button>
+                <button type="button" class="dash70-action" data-dash70-action="assistir">
+                    <span>👁️</span><strong>Assistir</strong><small>Acompanhar uma sala ao vivo.</small>
+                </button>
+                <button type="button" class="dash70-action" data-dash70-action="ranking">
+                    <span>🏅</span><strong>Ranking</strong><small>Ver classificação da Damas.</small>
                 </button>
             </div>
 
-            <div id="util69-msg" class="damas-util-msg69">
-                Painel prático: escolha uma opção acima ou use os botões oficiais logo abaixo.
+            <div class="dash70-bottom">
+                <div class="dash70-top">
+                    <div class="dash70-title">🏆 Top 3 da Damas</div>
+                    <div class="dash70-row"><span>1º</span><strong id="dash70-top1">Aguardando ranking</strong><em id="dash70-top1-score">0 pts</em></div>
+                    <div class="dash70-row"><span>2º</span><strong id="dash70-top2">Aguardando ranking</strong><em id="dash70-top2-score">0 pts</em></div>
+                    <div class="dash70-row"><span>3º</span><strong id="dash70-top3">Aguardando ranking</strong><em id="dash70-top3-score">0 pts</em></div>
+                </div>
+                <div class="dash70-message" id="dash70-msg">
+                    Conectando aos dados da Damas. Use os botões acima ou os botões oficiais logo abaixo.
+                </div>
             </div>
         </section>
 
@@ -536,12 +559,12 @@
     </div>
 </div>
 
-<script src="js/config.js?v=prof69"></script>
-<script src="js/utils.js?v=prof69"></script>
-<script src="js/ui.js?v=prof69"></script>
-<script src="js/chat-ui.js?v=prof69"></script>
-<script type="module" src="js/app.js?v=prof69"></script>
-<script src="js/fase40-controles-recolhidos.js?v=prof69"></script>
+<script src="js/config.js?v=prof70"></script>
+<script src="js/utils.js?v=prof70"></script>
+<script src="js/ui.js?v=prof70"></script>
+<script src="js/chat-ui.js?v=prof70"></script>
+<script type="module" src="js/app.js?v=prof70"></script>
+<script src="js/fase40-controles-recolhidos.js?v=prof70"></script>
 
 
 <!--
