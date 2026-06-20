@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
-    <link rel="stylesheet" href="css/style.css?v=prof71">
-    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof71">
-    <link rel="manifest" href="manifest.json?v=prof71">
+    <link rel="stylesheet" href="css/style.css?v=prof72">
+    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof72">
+    <link rel="manifest" href="manifest.json?v=prof72">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
@@ -149,71 +149,67 @@
     <div id="lobby-screen" class="card" style="display:none;">
         <button id="back-to-games-btn" class="back-to-games-btn" type="button">← Escolher outra modalidade</button>
         <div class="current-game-strip"><strong>Modalidade ativa:</strong> Damas Arena — jogue online, treine contra a máquina, aprenda estratégias e dispute torneios.</div>
-        <section id="damas-dashboard-real70" class="damas-dashboard-real70" aria-label="Dashboard real da Damas Arena">
-            <div class="dash70-head">
+
+        <section id="damas-premium-dashboard" class="damas-premium-dashboard" aria-label="Painel premium da Damas Arena">
+            <div class="damas-premium-head">
                 <div>
-                    <div class="dash70-kicker">📊 Dashboard da Damas</div>
-                    <h2>Painel vivo da modalidade</h2>
-                    <p>Números reais do sistema e atalhos práticos para jogar, treinar, assistir e acompanhar ranking.</p>
+                    <div class="damas-premium-kicker">⚡ Damas Arena Premium</div>
+                    <h2>Controle, treino e competição em um só lugar</h2>
+                    <p>Visual moderno para apresentar a modalidade com mais impacto, organização e aparência profissional.</p>
                 </div>
-                <div class="dash70-status">
-                    <span>DADOS</span>
-                    <strong>AO VIVO</strong>
+                <div class="damas-premium-seal">
+                    <span>ATIVO</span>
+                    <strong>ONLINE</strong>
                 </div>
             </div>
 
-            <div class="dash70-metrics">
-                <div class="dash70-metric dash70-blue">
-                    <span>🎮</span>
-                    <strong id="dash70-salas">0</strong>
-                    <small>salas liberadas/ativas</small>
+            <div class="damas-premium-stats">
+                <div class="damas-stat-card stat-blue">
+                    <span class="damas-stat-icon">🎮</span>
+                    <strong id="damas-stat-online">0</strong>
+                    <small>salas online agora</small>
                 </div>
-                <div class="dash70-metric dash70-green">
-                    <span>👥</span>
-                    <strong id="dash70-jogadores">0</strong>
-                    <small>jogadores no ranking</small>
+                <div class="damas-stat-card stat-green">
+                    <span class="damas-stat-icon">🎓</span>
+                    <strong id="damas-stat-treino">0</strong>
+                    <small>jogadores no ranking treino</small>
                 </div>
-                <div class="dash70-metric dash70-gold">
-                    <span>🏆</span>
-                    <strong id="dash70-partidas">0</strong>
-                    <small>partidas registradas</small>
+                <div class="damas-stat-card stat-gold">
+                    <span class="damas-stat-icon">🏆</span>
+                    <strong id="damas-stat-ranking">0</strong>
+                    <small>jogadores no ranking online</small>
                 </div>
-                <div class="dash70-metric dash70-purple">
-                    <span>👁️</span>
-                    <strong id="dash70-espectadores">0</strong>
+                <div class="damas-stat-card stat-purple">
+                    <span class="damas-stat-icon">👁️</span>
+                    <strong id="damas-stat-espectadores">0</strong>
                     <small>espectadores nas salas</small>
                 </div>
             </div>
 
-            <div class="dash70-actions">
-                <button type="button" class="dash70-action" data-dash70-action="online">
-                    <span>⚔️</span><strong>Jogar Online</strong><small>Ir para nome, sala e botão de entrada.</small>
-                </button>
-                <button type="button" class="dash70-action" data-dash70-action="treino">
-                    <span>🎯</span><strong>Treinar</strong><small>Abrir modo contra a máquina.</small>
-                </button>
-                <button type="button" class="dash70-action" data-dash70-action="assistir">
-                    <span>👁️</span><strong>Assistir</strong><small>Acompanhar uma sala ao vivo.</small>
-                </button>
-                <button type="button" class="dash70-action" data-dash70-action="ranking">
-                    <span>🏅</span><strong>Ranking</strong><small>Ver classificação da Damas.</small>
-                </button>
-            </div>
-
-            <div class="dash70-bottom">
-                <div class="dash70-top">
-                    <div class="dash70-title">🏆 Top 3 da Damas</div>
-                    <div class="dash70-row"><span>1º</span><strong id="dash70-top1">Aguardando ranking</strong><em id="dash70-top1-score">0 pts</em></div>
-                    <div class="dash70-row"><span>2º</span><strong id="dash70-top2">Aguardando ranking</strong><em id="dash70-top2-score">0 pts</em></div>
-                    <div class="dash70-row"><span>3º</span><strong id="dash70-top3">Aguardando ranking</strong><em id="dash70-top3-score">0 pts</em></div>
+            <div class="damas-premium-grid">
+                <div class="damas-premium-box damas-top-box">
+                    <div class="damas-box-title">🏆 Top da Damas</div>
+                    <div class="damas-top-row"><span>1º</span><strong id="damas-top-1">Aguardando ranking</strong><em id="damas-top-1-score">0 pts</em></div>
+                    <div class="damas-top-row"><span>2º</span><strong id="damas-top-2">Aguardando ranking</strong><em id="damas-top-2-score">0 pts</em></div>
+                    <div class="damas-top-row"><span>3º</span><strong id="damas-top-3">Aguardando ranking</strong><em id="damas-top-3-score">0 pts</em></div>
                 </div>
-                <div class="dash70-message" id="dash70-msg">
-                    Conectando aos dados da Damas. Use os botões acima ou os botões oficiais logo abaixo.
+
+                <div class="damas-premium-box damas-school-box">
+                    <div class="damas-box-title">🏫 Ideal para escolas</div>
+                    <ul>
+                        <li>Desenvolve raciocínio lógico</li>
+                        <li>Estimula concentração e estratégia</li>
+                        <li>Promove competição saudável</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-<p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
+        <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
+
+        <div id="damas-funcional-alerta68" class="damas-funcional-alerta68">
+            ✅ Correção de emergência: Damas restaurada para abrir e jogar. Preencha nome/sala e use os botões oficiais abaixo.
+        </div>
 
         <div class="live-podium" style="display:none !important;">
             <div class="podium-title">🏆 Top Campeões do Sistema</div>
@@ -559,12 +555,12 @@
     </div>
 </div>
 
-<script src="js/config.js?v=prof71"></script>
-<script src="js/utils.js?v=prof71"></script>
-<script src="js/ui.js?v=prof71"></script>
-<script src="js/chat-ui.js?v=prof71"></script>
-<script type="module" src="js/app.js?v=prof71"></script>
-<script src="js/fase40-controles-recolhidos.js?v=prof71"></script>
+<script src="js/config.js?v=prof72"></script>
+<script src="js/utils.js?v=prof72"></script>
+<script src="js/ui.js?v=prof72"></script>
+<script src="js/chat-ui.js?v=prof72"></script>
+<script type="module" src="js/app.js?v=prof72"></script>
+<script src="js/fase40-controles-recolhidos.js?v=prof72"></script>
 
 
 <!--

@@ -1,4 +1,4 @@
-// Tabuleiro Arena Profissional 71 - Service Worker leve, sem cache agressivo.
+// Tabuleiro Arena Profissional 72 - Service Worker leve, sem cache agressivo.
 self.addEventListener('install', event => { self.skipWaiting(); });
 self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch', event => { /* Sem cache forçado para evitar carregar versões antigas. */ });
