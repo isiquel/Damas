@@ -816,3 +816,209 @@ button:disabled {
   0%, 100% { box-shadow: 0 0 18px rgba(74,222,128,0.08); }
   50% { box-shadow: 0 0 28px rgba(74,222,128,0.20); }
 }
+
+
+/* Fase 60 — Visual premium para Administração da Damas.
+   Somente CSS. Não altera lógica, Firebase, salas, torneios, ranking ou Xadrez. */
+#admin-screen.card,
+#admin-screen {
+  max-width: 1040px;
+  width: 100%;
+}
+
+#admin-screen.card {
+  padding: 28px;
+  text-align: left;
+  background:
+    radial-gradient(circle at top left, rgba(124,77,255,0.14), transparent 34%),
+    radial-gradient(circle at top right, rgba(247,181,0,0.10), transparent 34%),
+    linear-gradient(180deg, rgba(7,16,33,0.98), rgba(4,10,22,0.98));
+  border: 1px solid rgba(124,77,255,0.25);
+  border-radius: 28px;
+  box-shadow: 0 28px 68px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+#admin-screen.card::after {
+  content: "PAINEL PREMIUM";
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 1000;
+  letter-spacing: 1px;
+  color: #2d2100;
+  background: linear-gradient(90deg, #f7b500, #ffd76a);
+  box-shadow: 0 12px 24px rgba(247,181,0,0.18);
+  pointer-events: none;
+}
+
+#admin-screen h2,
+#admin-screen h3 {
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+#admin-screen h2 {
+  font-size: clamp(1.45rem, 4vw, 2.1rem);
+  margin: 0 0 14px 0;
+  padding-right: 150px;
+}
+
+#admin-screen h2::before {
+  content: "🛡️ ";
+}
+
+#admin-screen h3 {
+  font-size: 1rem;
+  margin-top: 18px;
+  margin-bottom: 10px;
+  color: #dbeafe;
+}
+
+#admin-screen p,
+#admin-screen .tiny-muted,
+#admin-screen small {
+  color: #aebfdd;
+}
+
+#admin-screen .admin-dashboard-box,
+#admin-screen .admin-chat-monitor-box,
+#admin-screen .system-status-panel,
+#admin-screen .tournament-lobby-panel,
+#admin-screen .community-panel,
+#admin-screen .practice-ranking-panel,
+#admin-screen .feedback-panel,
+#admin-screen .central-admin-menu,
+#admin-screen .admin-login-panel {
+  background:
+    radial-gradient(circle at top left, rgba(29,211,255,0.08), transparent 36%),
+    linear-gradient(180deg, rgba(5,13,29,0.96), rgba(3,9,20,0.98));
+  border: 1px solid rgba(29,211,255,0.15);
+  border-radius: 22px;
+  box-shadow: 0 18px 34px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+#admin-screen .admin-dashboard-box {
+  max-height: 420px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+#admin-screen .admin-dashboard-title,
+#admin-screen .admin-chat-monitor-title {
+  color: #7dd3fc;
+  font-size: 0.78rem;
+  font-weight: 1000;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  border-bottom-color: rgba(125,211,252,0.18);
+}
+
+#admin-screen input,
+#admin-screen select,
+#admin-screen textarea,
+#admin-screen .admin-input-control {
+  background: rgba(3, 10, 22, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 13px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+#admin-screen input:focus,
+#admin-screen select:focus,
+#admin-screen textarea:focus,
+#admin-screen .admin-input-control:focus {
+  outline: none;
+  border-color: rgba(29,211,255,0.55);
+  box-shadow: 0 0 0 3px rgba(29,211,255,0.12);
+}
+
+#admin-screen button {
+  border-radius: 15px;
+  background: linear-gradient(180deg, #2a7fff, #1b5dd6);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.26);
+}
+
+#admin-screen button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+#admin-screen .btn-confirm-yes,
+#admin-screen .btn-danger,
+#admin-screen button[id*="delete"],
+#admin-screen button[id*="Delete"],
+#admin-screen button[id*="clear"],
+#admin-screen button[id*="reset"] {
+  background: linear-gradient(180deg, #ef4444, #b91c1c);
+}
+
+#admin-screen .btn-confirm-no,
+#admin-screen .btn-admin-logout,
+#admin-screen button[id*="back"],
+#admin-screen button[id*="Back"] {
+  background: linear-gradient(180deg, #475569, #334155);
+}
+
+#admin-screen .admin-dashboard-box > div,
+#admin-screen .admin-chat-monitor-feed > div,
+#admin-screen [id*="admin"] .podium-row,
+#admin-screen [id*="tournament"] .podium-row {
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+#admin-screen table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+#admin-screen th {
+  background: rgba(29,211,255,0.10);
+  color: #7dd3fc;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.7px;
+}
+
+#admin-screen td,
+#admin-screen th {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  color: #dbeafe;
+}
+
+#admin-screen .btn-group,
+#admin-screen .admin-actions,
+#admin-screen .admin-row,
+#admin-screen .admin-control-row {
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  #admin-screen.card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  #admin-screen.card::after {
+    position: static;
+    display: inline-flex;
+    margin-bottom: 12px;
+  }
+
+  #admin-screen h2 {
+    padding-right: 0;
+    font-size: 1.45rem;
+  }
+
+  #admin-screen .admin-dashboard-box {
+    max-height: 360px;
+  }
+}
