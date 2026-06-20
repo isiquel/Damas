@@ -18194,6 +18194,152 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarDashboardPremiumDamas59();
     }
 
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
+    }
+
 })();
 
 
@@ -18799,6 +18945,152 @@ setInterval(() => {
         iniciarDashboardPremiumDamas59();
     }
 
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
+    }
+
 })();
 
 
@@ -19387,6 +19679,152 @@ setInterval(() => {
         iniciarDashboardPremiumDamas59();
     }
 
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
+    }
+
 })();
 
 /*
@@ -19576,6 +20014,152 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarDashboardPremiumDamas59();
     }
 
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
+    }
+
 })();
 
 
@@ -19748,6 +20332,152 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarDashboardPremiumDamas59();
     }
 
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
+    }
+
 })();
 
 
@@ -19902,6 +20632,152 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
     } else {
         iniciarDashboardPremiumDamas59();
+    }
+
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
     }
 
 })();
@@ -20317,6 +21193,152 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarDashboardPremiumDamas59);
     } else {
         iniciarDashboardPremiumDamas59();
+    }
+
+
+    /* PROF61_ADMIN_DAMAS_DASHBOARD_FUNCIONAL
+       Cria um painel de métricas premium dentro da Administração da Damas.
+       Somente leitura dos dados. Não muda salas, ranking, partidas, torneios nem Xadrez. */
+    function iniciarAdminDamasDashboard61() {
+        const adminScreen = document.getElementById('admin-screen');
+        if (!adminScreen || adminScreen.dataset.prof61Started === '1') return;
+        adminScreen.dataset.prof61Started = '1';
+
+        const painel = document.createElement('section');
+        painel.id = 'admin-damas-premium-metrics61';
+        painel.className = 'admin-damas-premium-metrics61';
+        painel.innerHTML = `
+            <div class="admin-damas-premium-head61">
+                <div>
+                    <div class="admin-damas-premium-kicker61">📊 Administração da Damas</div>
+                    <h3>Dashboard geral da modalidade</h3>
+                    <p>Acompanhe a movimentação da Damas Arena com indicadores rápidos para gestão, apresentação e controle.</p>
+                </div>
+                <div class="admin-damas-live-badge61">DADOS AO VIVO</div>
+            </div>
+
+            <div class="admin-damas-metric-grid61">
+                <div class="admin-damas-metric-card61 blue61">
+                    <span class="metric-icon61">🎮</span>
+                    <strong id="admin-damas-salas61">0</strong>
+                    <span>salas online agora</span>
+                </div>
+                <div class="admin-damas-metric-card61 gold61">
+                    <span class="metric-icon61">🏆</span>
+                    <strong id="admin-damas-ranking61">0</strong>
+                    <span>jogadores no ranking online</span>
+                </div>
+                <div class="admin-damas-metric-card61 green61">
+                    <span class="metric-icon61">🎓</span>
+                    <strong id="admin-damas-treino61">0</strong>
+                    <span>jogadores no ranking treino</span>
+                </div>
+                <div class="admin-damas-metric-card61 purple61">
+                    <span class="metric-icon61">👁️</span>
+                    <strong id="admin-damas-espectadores61">0</strong>
+                    <span>espectadores acompanhando</span>
+                </div>
+            </div>
+
+            <div class="admin-damas-topbox61">
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">🏅 Top 3 online</div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top1-name61">Aguardando</span><em id="admin-damas-top1-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top2-name61">Aguardando</span><em id="admin-damas-top2-score61">0 pts</em></div>
+                    <div class="admin-damas-mini-line61"><span id="admin-damas-top3-name61">Aguardando</span><em id="admin-damas-top3-score61">0 pts</em></div>
+                </div>
+                <div class="admin-damas-mini-panel61">
+                    <div class="admin-damas-mini-title61">⚡ Estado da plataforma</div>
+                    <div class="admin-damas-mini-line61"><span>Firebase</span><em>conectado</em></div>
+                    <div class="admin-damas-mini-line61"><span>Damas Arena</span><em>ativa</em></div>
+                    <div class="admin-damas-mini-line61"><span>Visual</span><em>premium</em></div>
+                </div>
+            </div>
+        `;
+
+        const firstHeading = adminScreen.querySelector('h2, h3, .admin-dashboard-box');
+        if (firstHeading && firstHeading.parentNode === adminScreen) {
+            firstHeading.insertAdjacentElement('afterend', painel);
+        } else {
+            adminScreen.insertBefore(painel, adminScreen.firstChild);
+        }
+
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const nomeCurto61 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const pontosOnline61 = (p) => {
+            const wins = Number(p?.wins || 0);
+            const draws = Number(p?.draws || 0);
+            const losses = Number(p?.losses || 0);
+            const score = Number(p?.score || 0);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const rooms = snapshot.val() || {};
+                let salasOnline = 0;
+                let espectadores = 0;
+
+                Object.values(rooms).forEach((sala) => {
+                    if (!sala || typeof sala !== 'object') return;
+                    const temJogador = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name);
+                    const status = String(sala.status || 'playing').toLowerCase();
+                    const finalizada = status === 'finished' || status === 'ended' || status === 'closed';
+                    if (temJogador && !finalizada) salasOnline += 1;
+                    if (sala.spectators && typeof sala.spectators === 'object') {
+                        espectadores += Object.keys(sala.spectators).length;
+                    }
+                });
+
+                setTxt('admin-damas-salas61', salasOnline);
+                setTxt('admin-damas-espectadores61', espectadores);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar salas admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data)
+                    .map(([id, p]) => ({ id, ...(p || {}), pontos: pontosOnline61(p) }))
+                    .sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                setTxt('admin-damas-ranking61', lista.length);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`admin-damas-top${i + 1}-name61`, item ? nomeCurto61(item.name) : 'Aguardando');
+                    setTxt(`admin-damas-top${i + 1}-score61`, item ? `${item.pontos || 0} pts` : '0 pts');
+                }
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking admin Damas:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('admin-damas-treino61', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof61: erro ao carregar ranking treino admin Damas:', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarAdminDamasDashboard61);
+    } else {
+        iniciarAdminDamasDashboard61();
     }
 
 })();

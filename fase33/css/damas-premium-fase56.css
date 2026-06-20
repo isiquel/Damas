@@ -1022,3 +1022,193 @@ button:disabled {
     max-height: 360px;
   }
 }
+
+
+/* Fase 61 — Dashboard funcional dentro da Administração da Damas.
+   Painel visual inserido por JS, puxando dados reais quando o Admin abrir. */
+.admin-damas-premium-metrics61 {
+  margin: 16px 0 18px 0;
+  padding: 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(29,211,255,0.12), transparent 35%),
+    radial-gradient(circle at top right, rgba(247,181,0,0.09), transparent 33%),
+    linear-gradient(180deg, rgba(5,13,29,0.98), rgba(3,9,20,0.98));
+  border: 1px solid rgba(29,211,255,0.18);
+  box-shadow: 0 22px 42px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.admin-damas-premium-head61 {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.admin-damas-premium-kicker61 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #7dd3fc;
+  background: rgba(29,211,255,0.09);
+  border: 1px solid rgba(29,211,255,0.18);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.admin-damas-premium-head61 h3 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: clamp(1.15rem, 3.6vw, 1.55rem) !important;
+  line-height: 1.1;
+}
+
+.admin-damas-premium-head61 p {
+  margin-top: 7px;
+  color: #aebfdd;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  max-width: 580px;
+}
+
+.admin-damas-live-badge61 {
+  min-width: 110px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  text-align: center;
+  color: #052e16;
+  background: linear-gradient(90deg, #4ade80, #86efac);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.8px;
+  box-shadow: 0 14px 28px rgba(74,222,128,0.16);
+}
+
+.admin-damas-metric-grid61 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-damas-metric-card61 {
+  min-height: 118px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: rgba(2, 8, 18, 0.74);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.admin-damas-metric-card61 .metric-icon61 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.08);
+}
+
+.admin-damas-metric-card61 strong {
+  display: block;
+  color: #ffffff;
+  font-size: clamp(1.55rem, 5vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 7px;
+}
+
+.admin-damas-metric-card61 span:last-child {
+  display: block;
+  color: #9eb4d7;
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.admin-damas-metric-card61.blue61 { border-color: rgba(29,211,255,0.22); }
+.admin-damas-metric-card61.gold61 { border-color: rgba(247,181,0,0.26); }
+.admin-damas-metric-card61.green61 { border-color: rgba(74,222,128,0.24); }
+.admin-damas-metric-card61.purple61 { border-color: rgba(167,139,250,0.24); }
+
+.admin-damas-metric-card61.blue61 strong { color: #7dd3fc; }
+.admin-damas-metric-card61.gold61 strong { color: #ffd76a; }
+.admin-damas-metric-card61.green61 strong { color: #86efac; }
+.admin-damas-metric-card61.purple61 strong { color: #c4b5fd; }
+
+.admin-damas-topbox61 {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.admin-damas-mini-panel61 {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(3,10,22,0.74);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.admin-damas-mini-title61 {
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  margin-bottom: 8px;
+}
+
+.admin-damas-mini-line61 {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: #dbeafe;
+  font-size: 0.82rem;
+}
+
+.admin-damas-mini-line61:last-child {
+  border-bottom: 0;
+}
+
+.admin-damas-mini-line61 em {
+  color: #7dd3fc;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@media (max-width: 820px) {
+  .admin-damas-metric-grid61 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-damas-topbox61 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-damas-premium-metrics61 {
+    padding: 14px;
+  }
+  .admin-damas-premium-head61 {
+    flex-direction: column;
+  }
+  .admin-damas-live-badge61 {
+    width: 100%;
+  }
+  .admin-damas-metric-grid61 {
+    grid-template-columns: 1fr;
+  }
+  .admin-damas-metric-card61 {
+    min-height: auto;
+  }
+}
