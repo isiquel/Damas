@@ -1371,3 +1371,92 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Fase 73 — Corrige botão Baixar/Jogo instalado no celular.
+   Ajuste somente visual/responsivo. Não altera Damas, Xadrez, Firebase ou regras. */
+#browser-install-panel,
+.browser-install-panel,
+.premium-install-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#browser-install-main-btn,
+.btn-premium-install,
+.btn-browser-install {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-align: center !important;
+}
+
+#browser-install-main-btn .premium-install-text,
+.btn-premium-install .premium-install-text {
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.15 !important;
+}
+
+@media (max-width: 560px) {
+  body.platform-start-active .games-hub-panel,
+  body.mode-selecting .games-hub-panel {
+    width: 100% !important;
+    max-width: calc(100vw - 24px) !important;
+    overflow: hidden !important;
+  }
+
+  #browser-install-panel,
+  .premium-install-panel {
+    padding: 0 !important;
+    margin-top: 14px !important;
+  }
+
+  #browser-install-main-btn,
+  .btn-premium-install {
+    min-height: 64px !important;
+    padding: 14px 12px !important;
+    border-radius: 20px !important;
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-items: center !important;
+    font-size: 0.92rem !important;
+  }
+
+  #browser-install-main-btn .premium-install-icon,
+  .btn-premium-install .premium-install-icon {
+    font-size: 1.15rem !important;
+  }
+
+  #browser-install-main-btn .premium-install-text,
+  .btn-premium-install .premium-install-text {
+    font-size: 0.9rem !important;
+    letter-spacing: 0.7px !important;
+  }
+
+  #browser-install-main-btn .premium-install-badge,
+  .btn-premium-install .premium-install-badge {
+    font-size: 0.62rem !important;
+    padding: 3px 7px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #browser-install-main-btn,
+  .btn-premium-install {
+    grid-template-columns: 1fr !important;
+    gap: 5px !important;
+  }
+
+  #browser-install-main-btn .premium-install-badge,
+  .btn-premium-install .premium-install-badge {
+    display: none !important;
+  }
+}
