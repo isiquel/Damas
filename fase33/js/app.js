@@ -18805,6 +18805,138 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarCentralEscolarDamas65();
     }
 
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
+    }
+
 })();
 
 
@@ -20021,6 +20153,138 @@ setInterval(() => {
         iniciarCentralEscolarDamas65();
     }
 
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
+    }
+
 })();
 
 
@@ -21220,6 +21484,138 @@ setInterval(() => {
         iniciarCentralEscolarDamas65();
     }
 
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
+    }
+
 })();
 
 /*
@@ -22020,6 +22416,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarCentralEscolarDamas65();
     }
 
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
+    }
+
 })();
 
 
@@ -22803,6 +23331,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarCentralEscolarDamas65();
     }
 
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
+    }
+
 })();
 
 
@@ -23568,6 +24228,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
     } else {
         iniciarCentralEscolarDamas65();
+    }
+
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
     }
 
 })();
@@ -24594,6 +25386,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarCentralEscolarDamas65);
     } else {
         iniciarCentralEscolarDamas65();
+    }
+
+
+    /* PROF66_MODO_ESCOLA_FUNCIONAL_DAMAS
+       Deixa o Modo Escola recolhido e transforma os cards em atalhos reais:
+       - Aula abre orientação e destaca regras
+       - Treino abre seletor de treino
+       - Torneio rola para área de torneio escolar
+       - Ranking abre ranking se o botão existir
+       Não altera regra de jogo nem Firebase. */
+    function iniciarModoEscolaFuncional66() {
+        const btn = document.getElementById('modo-escola-toggle66');
+        const area = document.getElementById('modo-escola-area66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+        const msg = document.getElementById('damas-edu-message63');
+        if (!btn || !area || btn.dataset.prof66Started === '1') return;
+        btn.dataset.prof66Started = '1';
+
+        const abrir = () => {
+            area.classList.remove('modo-escola-fechado66');
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fechar = () => {
+            area.classList.add('modo-escola-fechado66');
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const toggle = () => area.classList.contains('modo-escola-fechado66') ? abrir() : fechar();
+
+        btn.addEventListener('click', toggle);
+
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrir();
+        } catch(e) {}
+
+        const rolarPara = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const mostrarMsg = (html) => {
+            if (msg) msg.innerHTML = html;
+        };
+
+        const cards = document.querySelectorAll('#damas-educacional-premium63 [data-edu-action]');
+        cards.forEach((card) => {
+            card.addEventListener('click', () => {
+                const tipo = card.getAttribute('data-edu-action');
+                abrir();
+
+                if (tipo === 'aula') {
+                    mostrarMsg(`
+                        🎓 <strong>Aula de Damas ativada.</strong><br>
+                        Use esta aula para explicar: objetivo do jogo, movimento das peças, captura obrigatória, dama/coroação e respeito às regras.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-regras">Abrir regras</button>
+                            <button type="button" id="edu66-ir-central">Ir para relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-regras')?.addEventListener('click', () => document.getElementById('rules-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-central')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+
+                if (tipo === 'treino') {
+                    mostrarMsg(`
+                        🎯 <strong>Treino Guiado pronto.</strong><br>
+                        Use o treino contra a máquina para avaliar concentração, cálculo e tomada de decisão do aluno.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-treino">Abrir treino</button>
+                            <button type="button" id="edu66-desafio-treino">Criar desafio</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-treino')?.addEventListener('click', () => {
+                            const p = document.getElementById('practice-btn');
+                            if (p) {
+                                p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                p.classList.add('vitoria-animada');
+                                setTimeout(() => p.classList.remove('vitoria-animada'), 1800);
+                            }
+                        });
+                        document.getElementById('edu66-desafio-treino')?.addEventListener('click', () => {
+                            const desafio = document.getElementById('central65-desafio');
+                            if (desafio) desafio.value = 'Jogar 3 partidas no modo treino e escrever uma decisão importante tomada durante o jogo.';
+                            rolarPara('damas-central-escolar65');
+                        });
+                    }, 50);
+                }
+
+                if (tipo === 'torneio') {
+                    mostrarMsg(`
+                        🏆 <strong>Torneio Escolar selecionado.</strong><br>
+                        Use as salas liberadas pelo Admin para organizar partidas por turma, idade ou grupo.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-ir-torneio">Ver painel do torneio</button>
+                            <button type="button" id="edu66-ir-admin">Ir para Admin</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-ir-torneio')?.addEventListener('click', () => rolarPara('damas-torneio-escolar64'));
+                        document.getElementById('edu66-ir-admin')?.addEventListener('click', () => document.getElementById('back-to-games-btn')?.click());
+                    }, 50);
+                    rolarPara('damas-torneio-escolar64');
+                }
+
+                if (tipo === 'ranking') {
+                    mostrarMsg(`
+                        📊 <strong>Ranking e evolução.</strong><br>
+                        Use o ranking para incentivar participação, progresso e competição saudável.
+                        <div class="edu66-actions">
+                            <button type="button" id="edu66-abrir-ranking">Abrir ranking</button>
+                            <button type="button" id="edu66-ir-relatorio">Gerar relatório</button>
+                        </div>
+                    `);
+                    setTimeout(() => {
+                        document.getElementById('edu66-abrir-ranking')?.addEventListener('click', () => document.getElementById('rank-btn-lobby')?.click());
+                        document.getElementById('edu66-ir-relatorio')?.addEventListener('click', () => rolarPara('damas-central-escolar65'));
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
+    } else {
+        iniciarModoEscolaFuncional66();
     }
 
 })();

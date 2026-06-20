@@ -2036,3 +2036,163 @@ button:disabled {
     color: #111827 !important;
   }
 }
+
+
+/* Fase 66 — Modo Escola funcional e recolhido.
+   O painel educacional deixa de ocupar espaço sempre: abre/fecha e possui atalhos reais. */
+.modo-escola-launcher66 {
+  margin: 18px 0 16px 0;
+}
+
+.modo-escola-toggle66 {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 48px 1fr 42px;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  text-align: left;
+  text-transform: none;
+  background:
+    radial-gradient(circle at top left, rgba(29,211,255,0.16), transparent 34%),
+    linear-gradient(90deg, rgba(7,16,33,0.98), rgba(20,18,56,0.96));
+  border: 1px solid rgba(29,211,255,0.24);
+  box-shadow: 0 18px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.modo-escola-toggle66:hover:not(:disabled) {
+  border-color: rgba(247,181,0,0.34);
+  box-shadow: 0 22px 42px rgba(0,0,0,0.40), 0 0 28px rgba(29,211,255,0.10);
+}
+
+.modo-escola-toggle-icon66 {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29,211,255,0.12);
+  border: 1px solid rgba(29,211,255,0.18);
+  font-size: 1.5rem;
+}
+
+.modo-escola-toggle66 strong {
+  display: block;
+  color: #ffffff;
+  font-size: clamp(1rem, 3.8vw, 1.25rem);
+  letter-spacing: -0.02em;
+}
+
+.modo-escola-toggle66 small {
+  display: block;
+  color: #aebfdd;
+  font-size: 0.78rem;
+  margin-top: 3px;
+  line-height: 1.3;
+}
+
+.modo-escola-toggle66 em {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  background: linear-gradient(180deg, #f7b500, #c88600);
+  color: #2d2100;
+  font-size: 1.45rem;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.modo-escola-area66 {
+  display: block;
+  animation: modoEscolaAbrir66 .22s ease-out;
+}
+
+.modo-escola-area66.modo-escola-fechado66 {
+  display: none !important;
+}
+
+@keyframes modoEscolaAbrir66 {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.damas-edu-card63[data-edu-action] {
+  cursor: pointer;
+}
+
+.damas-edu-card63[data-edu-action]::after {
+  content: "Usar";
+  display: inline-flex;
+  margin-top: 9px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #06111f;
+  background: linear-gradient(90deg, #1dd3ff, #7dd3fc);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.4px;
+}
+
+.damas-edu-card63[data-edu-action="torneio"]::after {
+  content: "Ver torneio";
+  background: linear-gradient(90deg, #f7b500, #ffd76a);
+  color: #2d2100;
+}
+
+.damas-edu-card63[data-edu-action="ranking"]::after {
+  content: "Ver ranking";
+  background: linear-gradient(90deg, #a78bfa, #c4b5fd);
+  color: #1e1b4b;
+}
+
+.damas-edu-card63[data-edu-action="treino"]::after {
+  content: "Abrir treino";
+  background: linear-gradient(90deg, #4ade80, #86efac);
+  color: #052e16;
+}
+
+#damas-edu-message63 {
+  font-weight: 800;
+}
+
+#damas-edu-message63 .edu66-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#damas-edu-message63 .edu66-actions button {
+  width: auto;
+  min-width: 130px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  font-size: 0.74rem;
+  text-transform: none;
+}
+
+@media (max-width: 520px) {
+  .modo-escola-toggle66 {
+    grid-template-columns: 42px 1fr 36px;
+    min-height: 70px;
+    padding: 12px;
+  }
+
+  .modo-escola-toggle-icon66 {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .modo-escola-toggle66 em {
+    width: 34px;
+    height: 34px;
+  }
+}
