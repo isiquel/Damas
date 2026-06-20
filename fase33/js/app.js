@@ -18479,6 +18479,91 @@ Compartilhe com os amigos e entre no horário marcado.`;
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
+    }
+
 })();
 
 
@@ -19369,6 +19454,91 @@ setInterval(() => {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
+    }
+
 })();
 
 
@@ -20242,6 +20412,91 @@ setInterval(() => {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
+    }
+
 })();
 
 /*
@@ -20716,6 +20971,91 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
+    }
+
 })();
 
 
@@ -21173,6 +21513,91 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
     }
 
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
+    }
+
 })();
 
 
@@ -21612,6 +22037,91 @@ na Damas, no Admin, nas salas, ranking ou torneios.
     } else {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
     }
 
 })();
@@ -22312,6 +22822,91 @@ na Damas, no Admin, nas salas, ranking ou torneios.
     } else {
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 600);
         setTimeout(iniciarCorrecaoSalasLiberadasDamas62, 1800);
+    }
+
+
+    /* PROF63_DAMAS_EDUCACIONAL_PREMIUM
+       Liga a área educacional aos mesmos dados do dashboard e mostra orientações.
+       Não altera regras, partidas, Firebase original, Xadrez ou Admin existente. */
+    function iniciarDamasEducacionalPremium63() {
+        const painel = document.getElementById('damas-educacional-premium63');
+        if (!painel || painel.dataset.prof63Started === '1') return;
+        painel.dataset.prof63Started = '1';
+
+        const msg = document.getElementById('damas-edu-message63');
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(txt);
+        };
+
+        const textos = {
+            aula: '🎓 Aula de Damas: apresente o tabuleiro, explique objetivo, movimentos, captura obrigatória e mostre uma partida curta para os alunos entenderem a lógica.',
+            treino: '🎯 Treino Guiado: peça para os alunos jogarem contra a máquina e acompanhe concentração, paciência, cálculo e tomada de decisão.',
+            torneio: '🏆 Torneio Escolar: use salas liberadas e ranking para organizar disputas por turma, idade, grupo ou evento especial da escola.',
+            ranking: '📊 Ranking e Evolução: acompanhe participação, vitórias e progresso para incentivar competição saudável e desenvolvimento contínuo.'
+        };
+
+        painel.querySelectorAll('[data-edu-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tipo = btn.getAttribute('data-edu-action');
+                if (msg) msg.textContent = textos[tipo] || 'Opção selecionada.';
+            });
+        });
+
+        const contarRooms = (rooms) => {
+            let total = 0;
+            Object.values(rooms || {}).forEach((sala) => {
+                if (!sala || typeof sala !== 'object') return;
+                const status = String(sala.status || sala.roomStatus || sala.gameStatus || '').toLowerCase();
+                const finalizada = status === 'finished' || status === 'ended' || status === 'closed' || status === 'encerrada' || status === 'finalizada';
+                const bloqueada = sala.blocked === true || sala.locked === true || sala.bloqueada === true || sala.liberada === false || sala.enabled === false || sala.active === false;
+                const temSinal = !!(sala.p1Id || sala.p2Id || sala.p1Name || sala.p2Name || sala.createdAt || sala.updatedAt || sala.liberada === true || sala.enabled === true || sala.active === true);
+                if (!finalizada && !bloqueada && temSinal) total += 1;
+            });
+            return total;
+        };
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-ranking-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler ranking educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'practiceLeaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                setTxt('edu63-treino-total', Object.keys(data).length);
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler treino educacional:', e);
+        }
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                setTxt('edu63-salas-total', contarRooms(snapshot.val() || {}));
+            });
+        } catch (e) {
+            console.warn('Prof63: não consegui ler salas educacionais:', e);
+        }
+
+        ['releasedRooms','salasLiberadas','roomsLiberadas','adminRooms','damasAdminRooms','damas/rooms','damas/salasLiberadas'].forEach((caminho) => {
+            try {
+                onValue(ref(db, caminho), (snapshot) => {
+                    const qtd = contarRooms(snapshot.val() || {});
+                    const atual = Number(document.getElementById('edu63-salas-total')?.textContent || 0);
+                    if (qtd > atual) setTxt('edu63-salas-total', qtd);
+                });
+            } catch(e) {}
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDamasEducacionalPremium63);
+    } else {
+        iniciarDamasEducacionalPremium63();
     }
 
 })();

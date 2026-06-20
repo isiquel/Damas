@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabuleiro Arena - Plataforma de Jogos</title>
     <!-- Versão limpa: Damas Arena preservada; Dominó removido temporariamente para refazer separado depois. -->
-    <link rel="stylesheet" href="css/style.css?v=prof62">
-    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof62">
-    <link rel="manifest" href="manifest.json?v=prof62">
+    <link rel="stylesheet" href="css/style.css?v=prof63">
+    <link rel="stylesheet" href="css/fase40-controles-recolhidos.css?v=prof63">
+    <link rel="manifest" href="manifest.json?v=prof63">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Tabuleiro Arena">
@@ -204,6 +204,83 @@
                 </div>
             </div>
         </section>
+
+        <section id="damas-educacional-premium63" class="damas-educacional-premium63" aria-label="Modo Escola e Professor da Damas">
+            <div class="damas-edu-hero63">
+                <div>
+                    <div class="damas-edu-kicker63">🏫 Damas Educacional</div>
+                    <h2>Modo Escola e Professor</h2>
+                    <p>Uma área preparada para transformar a Damas em ferramenta de ensino, acompanhamento, torneios e evolução dos alunos.</p>
+                </div>
+                <div class="damas-edu-impact63">
+                    <span>PROJETO</span>
+                    <strong>ESCOLAR</strong>
+                </div>
+            </div>
+
+            <div class="damas-edu-actions63">
+                <button type="button" class="damas-edu-card63" data-edu-action="aula">
+                    <span class="damas-edu-icon63">🎓</span>
+                    <strong>Aula de Damas</strong>
+                    <small>Explicação simples para ensinar regras, peças, captura e estratégia.</small>
+                </button>
+                <button type="button" class="damas-edu-card63" data-edu-action="treino">
+                    <span class="damas-edu-icon63">🎯</span>
+                    <strong>Treino Guiado</strong>
+                    <small>Use o modo treino para desenvolver concentração e raciocínio lógico.</small>
+                </button>
+                <button type="button" class="damas-edu-card63" data-edu-action="torneio">
+                    <span class="damas-edu-icon63">🏆</span>
+                    <strong>Torneio Escolar</strong>
+                    <small>Organize disputas por turma, sala, grupo ou evento especial.</small>
+                </button>
+                <button type="button" class="damas-edu-card63" data-edu-action="ranking">
+                    <span class="damas-edu-icon63">📊</span>
+                    <strong>Ranking e Evolução</strong>
+                    <small>Acompanhe desempenho, participação e progresso dos jogadores.</small>
+                </button>
+            </div>
+
+            <div class="damas-edu-grid63">
+                <div class="damas-edu-box63">
+                    <div class="damas-edu-box-title63">📚 Passo a passo para usar em escola</div>
+                    <div class="damas-edu-step63"><span>1</span><p><strong>Apresente o jogo</strong><small>Explique regras, objetivo e importância do raciocínio.</small></p></div>
+                    <div class="damas-edu-step63"><span>2</span><p><strong>Crie uma sala</strong><small>Use as salas liberadas para organizar alunos e partidas.</small></p></div>
+                    <div class="damas-edu-step63"><span>3</span><p><strong>Acompanhe resultados</strong><small>Use ranking, treino e participação como incentivo.</small></p></div>
+                </div>
+
+                <div class="damas-edu-box63">
+                    <div class="damas-edu-box-title63">🏅 Conquistas sugeridas</div>
+                    <div class="damas-achievement63"><span>🥇</span><strong>Primeira vitória</strong></div>
+                    <div class="damas-achievement63"><span>🔥</span><strong>10 partidas jogadas</strong></div>
+                    <div class="damas-achievement63"><span>👑</span><strong>Campeão da semana</strong></div>
+                    <div class="damas-achievement63"><span>🚀</span><strong>Aluno destaque</strong></div>
+                </div>
+            </div>
+
+            <div id="damas-edu-live63" class="damas-edu-live63">
+                <div class="damas-edu-live-card63">
+                    <span>👥</span>
+                    <strong id="edu63-ranking-total">0</strong>
+                    <small>jogadores no ranking</small>
+                </div>
+                <div class="damas-edu-live-card63">
+                    <span>🎮</span>
+                    <strong id="edu63-salas-total">0</strong>
+                    <small>salas disponíveis/ativas</small>
+                </div>
+                <div class="damas-edu-live-card63">
+                    <span>🎓</span>
+                    <strong id="edu63-treino-total">0</strong>
+                    <small>jogadores no treino</small>
+                </div>
+            </div>
+
+            <div id="damas-edu-message63" class="damas-edu-message63">
+                Selecione uma opção acima para ver uma orientação rápida de apresentação.
+            </div>
+        </section>
+
 
         <p id="auth-status" style="color: #2ecc71; margin-bottom: 10px;">Autenticando com segurança...</p>
         <div class="live-podium" style="display:none !important;">
@@ -550,12 +627,12 @@
     </div>
 </div>
 
-<script src="js/config.js?v=prof62"></script>
-<script src="js/utils.js?v=prof62"></script>
-<script src="js/ui.js?v=prof62"></script>
-<script src="js/chat-ui.js?v=prof62"></script>
-<script type="module" src="js/app.js?v=prof62"></script>
-<script src="js/fase40-controles-recolhidos.js?v=prof62"></script>
+<script src="js/config.js?v=prof63"></script>
+<script src="js/utils.js?v=prof63"></script>
+<script src="js/ui.js?v=prof63"></script>
+<script src="js/chat-ui.js?v=prof63"></script>
+<script type="module" src="js/app.js?v=prof63"></script>
+<script src="js/fase40-controles-recolhidos.js?v=prof63"></script>
 
 
 <!--
