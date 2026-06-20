@@ -1785,3 +1785,21 @@ button:disabled {
     grid-column: 2;
   }
 }
+
+
+/* Fase 71 — Dashboard real corrigido.
+   Salas liberadas agora contam igual ao Admin: rooms/* com isAuthorized !== false. */
+.dash70-metric small,
+.dash70-action small {
+  overflow-wrap: anywhere;
+}
+
+.dash70-message.dash71-ok {
+  border-color: rgba(74,222,128,0.22);
+  color: #dfffea;
+}
+
+.dash70-message.dash71-warn {
+  border-color: rgba(247,181,0,0.22);
+  color: #fff3c4;
+}

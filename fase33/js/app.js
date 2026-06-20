@@ -18725,6 +18725,202 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarDashboardRealDamas70();
     }
 
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
+    }
+
 })();
 
 
@@ -19861,6 +20057,202 @@ setInterval(() => {
         iniciarDashboardRealDamas70();
     }
 
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
+    }
+
 })();
 
 
@@ -20980,6 +21372,202 @@ setInterval(() => {
         iniciarDashboardRealDamas70();
     }
 
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
+    }
+
 })();
 
 /*
@@ -21700,6 +22288,202 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarDashboardRealDamas70();
     }
 
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
+    }
+
 })();
 
 
@@ -22403,6 +23187,202 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarDashboardRealDamas70();
     }
 
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
+    }
+
 })();
 
 
@@ -23088,6 +24068,202 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
     } else {
         iniciarDashboardRealDamas70();
+    }
+
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
     }
 
 })();
@@ -24034,6 +25210,202 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarDashboardRealDamas70);
     } else {
         iniciarDashboardRealDamas70();
+    }
+
+
+    /* PROF71_DASHBOARD_REAL_CORRIGIDO_DAMAS
+       Corrige a contagem para bater com o Admin:
+       - salas liberadas = rooms/*, ignorando "00", com isAuthorized !== false
+       - partidas registradas = soma das vitórias no leaderboard
+       - jogadores no ranking = quantidade de entradas no leaderboard
+       - espectadores = rooms/*/spectators
+       Não mexe no jogo, regras, Firebase, ranking original ou Xadrez. */
+    function iniciarDashboardRealCorrigidoDamas71() {
+        const painel = document.getElementById('damas-dashboard-real70');
+        if (!painel || painel.dataset.prof71Started === '1') return;
+        painel.dataset.prof71Started = '1';
+
+        const setTxt = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(value);
+        };
+
+        const msg = document.getElementById('dash70-msg');
+        const setMsg = (texto, tipo) => {
+            if (!msg) return;
+            msg.textContent = texto;
+            msg.classList.remove('dash71-ok', 'dash71-warn');
+            if (tipo) msg.classList.add(tipo);
+        };
+
+        const nomeCurto71 = (nome) => {
+            const s = String(nome || '').trim();
+            if (!s) return 'Jogador';
+            return s.length > 18 ? s.slice(0, 18) + '…' : s;
+        };
+
+        const numero71 = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        };
+
+        const pontos71 = (p) => {
+            const wins = numero71(p?.wins);
+            const losses = numero71(p?.losses);
+            const draws = numero71(p?.draws);
+            const score = numero71(p?.score);
+            return score || (wins * 3 + draws - losses);
+        };
+
+        const contarSalas71 = (rooms) => {
+            let totalSalas = 0;
+            let salasLiberadas = 0;
+            let espectadores = 0;
+            let partidasEmAndamento = 0;
+            let finalizadasNasSalas = 0;
+
+            Object.entries(rooms || {}).forEach(([idSala, sala]) => {
+                if (!idSala || idSala === '00') return;
+                if (!sala || typeof sala !== 'object') return;
+
+                totalSalas += 1;
+
+                const autorizada = sala.isAuthorized !== false;
+                if (autorizada) salasLiberadas += 1;
+
+                const p1 = !!(sala.p1Id || sala.p1Name || sala.player1 || sala.player1Name || sala.redPlayer);
+                const p2 = !!(sala.p2Id || sala.p2Name || sala.player2 || sala.player2Name || sala.blackPlayer);
+                const status = String(sala.status || '').toLowerCase();
+
+                if (p1 || p2) partidasEmAndamento += 1;
+                if (status === 'finished' || status === 'ended' || status === 'encerrada' || status === 'finalizada' || sala.finishedAt) {
+                    finalizadasNasSalas += 1;
+                }
+
+                if (sala.spectators && typeof sala.spectators === 'object') {
+                    espectadores += Object.keys(sala.spectators).length;
+                }
+            });
+
+            return { totalSalas, salasLiberadas, espectadores, partidasEmAndamento, finalizadasNasSalas };
+        };
+
+        try {
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const info = contarSalas71(snapshot.val() || {});
+                setTxt('dash70-salas', info.salasLiberadas);
+                setTxt('dash70-espectadores', info.espectadores);
+
+                if (info.totalSalas > 0) {
+                    setMsg(`Dashboard conectado: ${info.salasLiberadas} sala(s) liberada(s) de ${info.totalSalas} registrada(s).`, 'dash71-ok');
+                } else {
+                    setMsg('Dashboard conectado, mas ainda não encontrei salas registradas em rooms/*. Libere uma sala pelo Admin.', 'dash71-warn');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de rooms falhou:', error);
+                setMsg('Não consegui ler as salas no Firebase para o dashboard. O jogo continua funcionando pelos botões abaixo.', 'dash71-warn');
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de rooms:', e);
+            setMsg('Erro ao iniciar leitura das salas. O jogo continua funcionando pelos botões oficiais abaixo.', 'dash71-warn');
+        }
+
+        try {
+            onValue(ref(db, 'leaderboard'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.entries(data).map(([id, p]) => {
+                    const wins = numero71(p?.wins);
+                    const losses = numero71(p?.losses);
+                    const draws = numero71(p?.draws);
+                    return {
+                        id,
+                        name: p?.name || 'Jogador',
+                        wins,
+                        losses,
+                        draws,
+                        pontos: pontos71(p)
+                    };
+                }).sort((a, b) => (b.pontos || 0) - (a.pontos || 0));
+
+                const jogadores = lista.length;
+                const partidasPorVitorias = lista.reduce((acc, p) => acc + numero71(p.wins), 0);
+                const partidasPorDerrotas = lista.reduce((acc, p) => acc + numero71(p.losses), 0);
+                const partidas = partidasPorVitorias || Math.ceil(partidasPorDerrotas / 2);
+
+                setTxt('dash70-jogadores', jogadores);
+                setTxt('dash70-partidas', partidas);
+
+                for (let i = 0; i < 3; i++) {
+                    const item = lista[i];
+                    setTxt(`dash70-top${i + 1}`, item ? nomeCurto71(item.name) : 'Aguardando ranking');
+                    setTxt(`dash70-top${i + 1}-score`, item ? `${item.wins} vit.` : '0 vit.');
+                }
+            }, (error) => {
+                console.warn('Prof71: permissão/leitura de leaderboard falhou:', error);
+            });
+        } catch (e) {
+            console.warn('Prof71: erro ao iniciar leitura de leaderboard:', e);
+        }
+
+        const rolarPara71 = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const piscar71 = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('vitoria-animada');
+            setTimeout(() => el.classList.remove('vitoria-animada'), 1700);
+        };
+
+        if (!window.__prof71DashClickFix) {
+            window.__prof71DashClickFix = true;
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-dash70-action]');
+                if (!btn) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const action = btn.getAttribute('data-dash70-action');
+
+                if (action === 'online') {
+                    setMsg('Jogar online: preencha seu nome e o código da sala, depois clique em “Jogar Online (Multiplayer)”.', 'dash71-ok');
+                    rolarPara71('name-input');
+                    document.getElementById('name-input')?.focus({ preventScroll: true });
+                    piscar71('join-btn');
+                }
+
+                if (action === 'treino') {
+                    setMsg('Treino: clique em “Contra a Máquina (Modo Treino)” e escolha o nível.', 'dash71-ok');
+                    rolarPara71('practice-btn');
+                    piscar71('practice-btn');
+                }
+
+                if (action === 'assistir') {
+                    setMsg('Assistir: informe o código da sala e clique em “Assistir Jogo (Espectador)”.', 'dash71-ok');
+                    rolarPara71('room-input');
+                    piscar71('spectate-btn');
+                }
+
+                if (action === 'ranking') {
+                    setMsg('Ranking: abrindo a classificação da Damas.', 'dash71-ok');
+                    const rank = document.getElementById('rank-btn-lobby');
+                    if (rank && !rank.disabled) rank.click();
+                    else {
+                        rolarPara71('rank-btn-lobby');
+                        piscar71('rank-btn-lobby');
+                    }
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarDashboardRealCorrigidoDamas71);
+    } else {
+        iniciarDashboardRealCorrigidoDamas71();
     }
 
 })();
