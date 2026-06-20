@@ -2196,3 +2196,166 @@ button:disabled {
     height: 34px;
   }
 }
+
+
+/* Fase 67 — Corrige acesso para jogar Damas e Modo Escola.
+   Deixa claro como jogar e garante que o + abre/fecha. */
+.damas-jogar-agora67 {
+  margin: 18px 0 16px 0;
+  padding: 18px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(74,222,128,0.13), transparent 34%),
+    radial-gradient(circle at top right, rgba(29,211,255,0.10), transparent 36%),
+    linear-gradient(180deg, rgba(7,16,33,0.98), rgba(4,10,22,0.98));
+  border: 1px solid rgba(74,222,128,0.22);
+  box-shadow: 0 24px 46px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.damas-jogar-agora67::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,0.04), transparent 30%, transparent 76%, rgba(29,211,255,0.04));
+}
+
+.damas-jogar-head67 {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.damas-jogar-kicker67 {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: #86efac;
+  background: rgba(74,222,128,0.10);
+  border: 1px solid rgba(74,222,128,0.20);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.damas-jogar-head67 h2 {
+  margin: 0 0 7px 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.damas-jogar-head67 p {
+  color: #b8c9e8;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.damas-jogar-grid67 {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.damas-jogar-card67 {
+  min-height: 126px;
+  padding: 14px 12px;
+  border-radius: 20px;
+  text-align: left;
+  text-transform: none;
+  background: rgba(2, 8, 18, 0.76);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.damas-jogar-card67:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(29,211,255,0.35);
+}
+
+.damas-jogar-card67 span {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.09);
+  margin-bottom: 10px;
+}
+
+.damas-jogar-card67 strong {
+  display: block;
+  color: #fff;
+  font-size: 0.92rem;
+  margin-bottom: 5px;
+}
+
+.damas-jogar-card67 small {
+  display: block;
+  color: #9eb4d7;
+  font-size: 0.75rem;
+  line-height: 1.32;
+}
+
+.jogar67-online { border-color: rgba(74,222,128,0.20); }
+.jogar67-assistir { border-color: rgba(29,211,255,0.20); }
+.jogar67-treino { border-color: rgba(247,181,0,0.22); }
+.jogar67-ranking { border-color: rgba(167,139,250,0.22); }
+
+.damas67-aviso {
+  position: relative;
+  margin-top: 12px;
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: rgba(2,8,18,0.68);
+  border: 1px solid rgba(29,211,255,0.12);
+  color: #cfe4ff;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+#modo-escola-toggle66 {
+  cursor: pointer !important;
+  user-select: none;
+  position: relative;
+  z-index: 5;
+}
+
+#modo-escola-toggle66 * {
+  pointer-events: none;
+}
+
+#modo-escola-area66:not(.modo-escola-fechado66) {
+  display: block !important;
+}
+
+#modo-escola-area66.modo-escola-fechado66 {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .damas-jogar-grid67 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .damas-jogar-agora67 {
+    padding: 14px;
+    border-radius: 22px;
+  }
+  .damas-jogar-grid67 {
+    grid-template-columns: 1fr;
+  }
+  .damas-jogar-card67 {
+    min-height: auto;
+  }
+}

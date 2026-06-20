@@ -18937,6 +18937,138 @@ Compartilhe com os amigos e entre no horário marcado.`;
         iniciarModoEscolaFuncional66();
     }
 
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
+    }
+
 })();
 
 
@@ -20285,6 +20417,138 @@ setInterval(() => {
         iniciarModoEscolaFuncional66();
     }
 
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
+    }
+
 })();
 
 
@@ -21616,6 +21880,138 @@ setInterval(() => {
         iniciarModoEscolaFuncional66();
     }
 
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
+    }
+
 })();
 
 /*
@@ -22548,6 +22944,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarModoEscolaFuncional66();
     }
 
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
+    }
+
 })();
 
 
@@ -23463,6 +23991,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         iniciarModoEscolaFuncional66();
     }
 
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
+    }
+
 })();
 
 
@@ -24360,6 +25020,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
     } else {
         iniciarModoEscolaFuncional66();
+    }
+
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
     }
 
 })();
@@ -25518,6 +26310,138 @@ na Damas, no Admin, nas salas, ranking ou torneios.
         document.addEventListener('DOMContentLoaded', iniciarModoEscolaFuncional66);
     } else {
         iniciarModoEscolaFuncional66();
+    }
+
+
+    /* PROF67_CORRIGE_JOGAR_DAMAS_E_MODO_ESCOLA
+       Corrige o problema visto no teste:
+       1) coloca atalhos claros para jogar Damas;
+       2) força o botão + do Modo Escola a abrir/fechar;
+       3) não altera regra de partida nem Firebase. */
+    function iniciarCorrecoesDamas67() {
+        const area = document.getElementById('modo-escola-area66');
+        const toggleBtn = document.getElementById('modo-escola-toggle66');
+        const state = document.getElementById('modo-escola-toggle-state66');
+
+        const abrirEscola = () => {
+            if (!area) return;
+            area.classList.remove('modo-escola-fechado66');
+            area.style.display = 'block';
+            if (state) state.textContent = '−';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '1'); } catch(e) {}
+        };
+
+        const fecharEscola = () => {
+            if (!area) return;
+            area.classList.add('modo-escola-fechado66');
+            area.style.display = 'none';
+            if (state) state.textContent = '+';
+            try { localStorage.setItem('tabuleiroArenaModoEscolaAberto66', '0'); } catch(e) {}
+        };
+
+        const alternarEscola = () => {
+            if (!area) return;
+            if (area.classList.contains('modo-escola-fechado66') || area.style.display === 'none') abrirEscola();
+            else fecharEscola();
+        };
+
+        if (toggleBtn && toggleBtn.dataset.prof67Fixed !== '1') {
+            toggleBtn.dataset.prof67Fixed = '1';
+            toggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                alternarEscola();
+            }, true);
+        }
+
+        const aviso = document.getElementById('damas67-aviso');
+        const mostrarAviso = (txt) => {
+            if (aviso) aviso.textContent = txt;
+        };
+
+        const rolarParaEntrada = () => {
+            const nome = document.getElementById('name-input');
+            const sala = document.getElementById('room-input');
+            const alvo = nome || sala || document.getElementById('join-btn');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (nome) nome.focus({ preventScroll: true });
+        };
+
+        const clickSeguro = (id, fallback) => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+                el.click();
+                return true;
+            }
+            if (fallback) fallback();
+            return false;
+        };
+
+        const ligar = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el && el.dataset.prof67Click !== '1') {
+                el.dataset.prof67Click = '1';
+                el.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    fn();
+                });
+            }
+        };
+
+        ligar('damas67-jogar-online', () => {
+            mostrarAviso('Para jogar online: preencha seu nome, o código da sala e clique em “Jogar Online (Multiplayer)” logo abaixo.');
+            rolarParaEntrada();
+            const join = document.getElementById('join-btn');
+            if (join) {
+                join.classList.add('vitoria-animada');
+                setTimeout(() => join.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-assistir', () => {
+            mostrarAviso('Para assistir: preencha o código da sala e clique em “Assistir Jogo (Espectador)” logo abaixo.');
+            rolarParaEntrada();
+            const spectate = document.getElementById('spectate-btn');
+            if (spectate) {
+                spectate.classList.add('vitoria-animada');
+                setTimeout(() => spectate.classList.remove('vitoria-animada'), 1600);
+            }
+        });
+
+        ligar('damas67-treino', () => {
+            mostrarAviso('Treino selecionado: escolha o modo contra a máquina logo abaixo.');
+            clickSeguro('practice-btn', () => {
+                const p = document.getElementById('practice-btn');
+                if (p) {
+                    p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    p.classList.add('vitoria-animada');
+                    setTimeout(() => p.classList.remove('vitoria-animada'), 1600);
+                }
+            });
+        });
+
+        ligar('damas67-ranking', () => {
+            mostrarAviso('Ranking selecionado: abrindo painel de classificação da Damas.');
+            clickSeguro('rank-btn-lobby', () => {
+                const r = document.getElementById('rank-btn-lobby');
+                if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Garante estado inicial fechado, para não ocupar a tela.
+        try {
+            if (localStorage.getItem('tabuleiroArenaModoEscolaAberto66') === '1') abrirEscola();
+            else fecharEscola();
+        } catch(e) {
+            fecharEscola();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarCorrecoesDamas67);
+    } else {
+        iniciarCorrecoesDamas67();
     }
 
 })();
